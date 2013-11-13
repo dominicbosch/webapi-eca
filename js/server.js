@@ -75,7 +75,7 @@ fs.readFile(path.resolve(__dirname, '..', 'config', 'config.json'), 'utf8', func
   }
   var config = JSON.parse(data);
   if(!config.http_port || !config.db_port || !config.crypto_key) {
-    log.error('RS', 'you forgot to define either http_port, db_port, crypto_key, or even all of them!');
+    log.error('RS', new Error('you forgot to define either http_port, db_port, crypto_key, or even all of them!'));
   } else {
     log.print('RS', 'Initialzing DB');
     db.init(config.db_port, config.crypto_key, function() {
