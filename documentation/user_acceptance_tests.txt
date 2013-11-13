@@ -1,0 +1,10 @@
+load rules rules
+load rules
+load action probinder
+load actions
+load event probinder
+load events
+-> all these from server started from shell and node (different cwd!)
+shutdown
+upload rules/actions/events
+look at doc ([host]/doc/)
