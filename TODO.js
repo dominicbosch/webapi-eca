@@ -11,7 +11,7 @@
  * 
  * TODO's per module:
  * ==================
- * Testing | clean documentation | Clean error handling (Especially in loading of modules):
+ * Testing | clean documentation | Clean error handling (Especially in loading of modules and their credentials):
  * 
  * - [ ] DB Interface
  * - [ ] Engine
