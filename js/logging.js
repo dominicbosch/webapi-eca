@@ -15,7 +15,7 @@ exports.print = function(module, msg) {
   console.log((new Date()).toISOString() + ' | ' + module + ' | ' + msg);
 };
 
-// @function error(module, msg)
+// @method error(module, msg)
 
 /*
  * Prints a log to stderr.

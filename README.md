@@ -50,8 +50,7 @@ Run test suite:
     
 Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 
-    node create_doc  
-
+    node create_doc
 
 _
 

@@ -88,6 +88,7 @@ fs.readFile(path.resolve(__dirname, '..', 'config', 'config.json'), 'utf8', func
   }
 });
 
+// Send message
 process.on('message', function(cmd) {
   if(typeof procCmds[cmd] === 'function') procCmds[cmd]();
   else console.error('err with command');
