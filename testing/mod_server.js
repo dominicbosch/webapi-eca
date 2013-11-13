@@ -1,12 +1,27 @@
-exports.setUp = function() {
-  // this.srv = require('../js/webapi_eca_server.js');
+var path = require('path');
+//FIXME handle EADDR in use!
+exports.setUp = function(cb) {
+  this.srv = require('child_process').fork(path.resolve(__dirname, '..', 'js', 'server'));
+  cb();
 };
 
 exports.testUnit_SRV = function(test){
-  console.log(this.srv);
-    test.ok(true, "SRV");
+  setTimeout(
+    function() {
+      
+  test.ok(true, "SRV");
   test.done();
+    }
+  , 2000);
 };
+exports.tearDown = function(cb) {
+    console.log('this.srv: ');
+    // console.log(global.srv);
+    this.srv.send('die');
+    this.srv = null;
+  cb();
+};
+
 // var http_listener = require('./http_listener'),
   // db = require('./db_interface'),
   // engine = require('./engine'),

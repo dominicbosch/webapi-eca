@@ -240,8 +240,8 @@ function loadEventModules(args, answHandler) {
 function shutDown() {
   log.print('EN', 'Shutting down Poller and DB Link');
   isRunning = false;
-  poller.send('cmd|shutdown');
-  db.shutDown();
+  if(poller) poller.send('cmd|shutdown');
+  if(db) db.shutDown();
 }
 
 exports.init = init;

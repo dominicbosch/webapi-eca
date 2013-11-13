@@ -22,6 +22,7 @@ dog's back.
 >
 > ## This is an H2 in a blockquote
 */
+
 var http_listener = require('./http_listener'),
   db = require('./db_interface'),
   engine = require('./engine'),
@@ -29,6 +30,9 @@ var http_listener = require('./http_listener'),
   log = require('./logging'),
   fs = require('fs'),
   path = require('path'),
+  procCmds = {
+    'die': function() { shutDown(); }
+  },
   objCmds = {
     'loadrules': mm.loadRulesFile,
     'loadaction': mm.loadActionModule,
@@ -53,10 +57,14 @@ function handleAdminCommands(args, answHandler) {
 }
 
 function shutDown(args, answHandler) {
-	answHandler.answerSuccess('Goodbye!');
+  if(answHandler) answHandler.answerSuccess('Goodbye!');
   log.print('RS', 'Received shut down command!');
-  engine.shutDown();
-  http_listener.shutDown();
+  if(engine && typeof engine.shutDown === 'function') engine.shutDown();
+  else { 
+    console.error(typeof engine.shutDown);
+    console.error('no function!');
+  }
+  if(http_listener) http_listener.shutDown();
 }
 
 fs.readFile(path.resolve(__dirname, '..', 'config', 'config.json'), 'utf8', function (err, data) {
@@ -78,4 +86,9 @@ fs.readFile(path.resolve(__dirname, '..', 'config', 'config.json'), 'utf8', func
     log.print('RS', 'Initialzing module manager');
     mm.init(db, engine.loadActionModule, engine.loadRule);
   }
+});
+
+process.on('message', function(cmd) {
+  if(typeof procCmds[cmd] === 'function') procCmds[cmd]();
+  else console.error('err with command');
 });

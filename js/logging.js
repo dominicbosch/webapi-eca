@@ -28,10 +28,13 @@ exports.error = function(module, err) {
     var e = new Error();
     if(module) console.error(ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
     else console.error(ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);
-  } else {
+  } else if(err) {
     if(err.addInfo) ai = ' (' + err.addInfo + ')';
     if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
     if(module) console.error(ts + module + ' | ERROR'+ai+': ' + err.message);
     else console.error(ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
+  } else {
+    var e = new Error('Unexpected error');
+    console.error(e.message + ': \n' + e.stack);
   }
 };
