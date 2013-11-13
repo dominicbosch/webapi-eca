@@ -31,7 +31,7 @@ exports.error = function(module, err) {
   } else if(err) {
     if(err.addInfo) ai = ' (' + err.addInfo + ')';
     if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
-    if(module) console.error(ts + module + ' | ERROR'+ai+': ' + err.message);
+    if(module) console.error(ts + module + ' | ERROR'+ai+': ' + err.message + '\n' + err.stack);
     else console.error(ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
   } else {
     var e = new Error('Unexpected error');

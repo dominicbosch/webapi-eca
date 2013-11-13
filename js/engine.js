@@ -17,10 +17,10 @@ var regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
  * @param {String} db_port the db port
  * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
  */
-function init(db_link, db_port, crypto_key) {
+function init(db_link) {
   db = db_link;
   loadActions();
-  poller = cp.fork(path.resolve(__dirname, 'eventpoller'), [db_port, crypto_key]);
+  poller = cp.fork(path.resolve(__dirname, 'eventpoller'));
   poller.on('message', function(evt) {
     if(evt.event === 'ep_finished_loading') {
       eventsLoaded = true;

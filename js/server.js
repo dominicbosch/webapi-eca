@@ -67,29 +67,29 @@ function shutDown(args, answHandler) {
   if(http_listener) http_listener.shutDown();
 }
 
-fs.readFile(path.resolve(__dirname, '..', 'config', 'config.json'), 'utf8', function (err, data) {
-  if (err) {
-    console.log(err);
-    log.error('RS', 'Loading config file');
-    return;
-  }
-  var config = JSON.parse(data);
-  if(!config.http_port || !config.db_port || !config.crypto_key) {
-    log.error('RS', new Error('you forgot to define either http_port, db_port, crypto_key, or even all of them!'));
-  } else {
-    log.print('RS', 'Initialzing DB');
-    db.init(config.db_port, config.crypto_key, function() {
-      engine.init(db, config.db_port, config.crypto_key);
-    });
-    log.print('RS', 'Initialzing http listener');
-    http_listener.init(config.http_port, handleAdminCommands, engine.pushEvent);
-    log.print('RS', 'Initialzing module manager');
-    mm.init(db, engine.loadActionModule, engine.loadRule);
-  }
-});
-
 // Send message
 process.on('message', function(cmd) {
   if(typeof procCmds[cmd] === 'function') procCmds[cmd]();
   else console.error('err with command');
+});
+
+
+log.print('RS', 'STARTING SERVER');
+log.print('RS', 'Initialzing DB');
+//FIXME initialization of all modules should depend on one after the other
+// in a transaction style manner 
+db.init(function(err) {
+  if(!err) {
+    engine.init(db);
+    log.print('RS', 'Initialzing http listener');
+    //FIXME http_port shouldn't be passed here we can load it inside the listener via the new config.js module 
+    http_listener.init(null/*config.http_port*/, handleAdminCommands, engine.pushEvent);
+    log.print('RS', 'Initialzing module manager');
+    mm.init(db, engine.loadActionModule, engine.loadRule);
+  }
+  else {
+    err.addInfo = err.message; 
+    err.message = 'Not Starting engine!';
+    log.error(err);
+  }
 });

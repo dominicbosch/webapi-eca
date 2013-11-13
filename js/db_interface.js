@@ -17,24 +17,26 @@ var redis = require('redis'),
     crypto_key, db;
 
 
-// @function init()
-
 /* 
  * Initializes the DB connection. Requires a port where the DB listens to requests
  * and a key that is used for encryptions.
  * @param {int} db_port
  */
-exports.init = function(db_port, key, cbDone){
-  if(!db_port || !key) {
-    log.error('DB', 'No DB port or cipher key defined!');
-    return null;
-  }
-  crypto_key = key;
-  db = redis.createClient(db_port);
-  db.on("error", function (err) {
-    log.error('DB', ' Message from DB: ' + err);
+exports.init = function(cb){
+  require('./config').getConfig(null, function(err, data) {
+    if(!err) {
+      crypto_key = data.crypto_key;
+      db = redis.createClient(data.db_port);
+      db.on("error", function (err) {
+        err.addInfo = 'message from DB';
+        log.error('DB', err);
+      });
+      if(typeof cb === 'function') cb();
+    } else {
+      err.addInfo = 'fetching db_port and crypto_key';
+      if(typeof cb === 'function') cb(err);
+    }
   });
-  if(cbDone) cbDone();
 };
 
 /**
