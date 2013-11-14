@@ -3,21 +3,25 @@
  * =======
  * Functions to handle logging and errors.
  * 
- * Valid log methods are:
+ * Valid log types are:
  * 
  * - 0 standard I/O
  * - 1 file
  * - 2 silent
  */
-var logMethods = [ flushToConsole, flushToFile, null],
-    logMethod = 0, logFile;
+var logTypes = [ flushToConsole, flushToFile, null],
+    logType = 0, logFile;
 
-exports = module.exports = function(logMeth) {
-  if(logMeth) logMethod = parseInt(logMeth) || 0;
+exports = module.exports = function(args) {
+  args = args || {};
+  if(args.logType) logType = parseInt(args.logType) || 0;
+  return module.exports;
 };
 
+exports.getLogType = function() { return logType; };
+
 function flush(err, msg) {
-  if(typeof logMethods[logMethod] === 'function') logMethods[logMethod](err, msg);
+  if(typeof logTypes[logType] === 'function') logTypes[logType](err, msg);
 }
 
 function flushToConsole(err, msg) {

@@ -2,23 +2,25 @@
 // Isso
 'use strict';
 
-var log, config;
-exports.init = function(args, cb) {
-  args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  
-  config = require('./config').init(args);
-  
-  if(typeof cb === 'function') cb();
-};
-
 var path = require('path'),
     express = require('express'),
     app = express(),
     RedisStore = require('connect-redis')(express),
     qs = require('querystring'),
-    adminHandler, eventHandler, server;
+    log = require('./logging'),
+    sess_sec = '#C[>;j`@".TXm2TA;A2Tg)',
+    db_port, http_port, server,
+    adminHandler, eventHandler;
+
+exports = module.exports = function(args) {
+  args = args || {};
+  log(args);
+  var config = require('./config')(args);
+  db_port = config.getDBPort(),
+  sess_sec = config.getSessionSecret(),
+  http_port = config.getHttpPort();
+  return module.exports;
+};
 
 exports.addHandlers = function(funcAdminHandler, funcEvtHandler) {
   if(!funcEvtHandler) {
@@ -37,9 +39,6 @@ exports.addHandlers = function(funcAdminHandler, funcEvtHandler) {
   app.use('/rulesforge/', express.static(path.resolve(__dirname, '..', 'webpages', 'rulesforge')));
   app.get('/admin', onAdminCommand);
   app.post('/pushEvents', onPushEvent);
-  var db_port = config.getDBPort(),
-      sess_sec = config.getSessionSecret(),
-      http_port = config.getHttpPort();
   if(db_port) {
     app.use(express.session({
       store: new RedisStore({
@@ -54,11 +53,7 @@ exports.addHandlers = function(funcAdminHandler, funcEvtHandler) {
     }));
     log.print('HL', 'Added redis DB as session backbone'); 
   } else {
-    if(sess_sec) app.use(express.session({secret: sess_sec})); 
-    else {
-      app.use(express.session({ secret: '#C[>;j`@".TXm2TA;A2Tg)' }));
-      log.print('HL', 'no session secret found?!');
-    }
+    app.use(express.session({secret: sess_sec}));
     log.print('HL', 'no session backbone');
   }
   if(http_port) server = app.listen(http_port); // inbound event channel
@@ -136,8 +131,3 @@ exports.shutDown = function() {
   log.print('HL', 'Shutting down HTTP listener');
   process.exit(); // This is a bit brute force...
 };
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
- 

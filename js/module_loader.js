@@ -1,16 +1,15 @@
 'use strict';
 
-var log;
-exports.init = function(args, cb) {
+var fs = require('fs'),
+    path = require('path'),
+    log = require('./logging');
+
+exports = module.exports = function(args) {
   args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  if(typeof cb === 'function') cb();
+  log(args);
+  return module.exports;
 };
 
-var fs = require('fs'),
-    path = require('path');
-  
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
   //FIXME load modules only into a safe environment with given modules, no access to whole application
@@ -70,9 +69,5 @@ exports.loadModules = function(directory, callback) {
       });
     });
   });
-};
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
 };
  

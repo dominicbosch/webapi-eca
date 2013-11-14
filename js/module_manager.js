@@ -9,20 +9,17 @@
 
 'use strict';
 
-var log, ml;
-exports.init = function(args, cb) {
-  args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  
-  ml = require('./module_loader').init(args);
-  
-  if(typeof cb === 'function') cb();
-};
-
 var fs = require('fs'),
-  path = require('path'),
-  db = null, funcLoadAction, funcLoadRule;
+    path = require('path'),
+    log = require('./logging'),
+    ml, db, funcLoadAction, funcLoadRule;
+
+exports = module.exports = function(args) {
+  args = args || {};
+  log(args);
+  ml = require('./module_loader')(args);
+  return module.exports;
+};
 
 exports.addHandlers = function(db_link, fLoadAction, fLoadRule) {
   db = db_link;
@@ -95,18 +92,16 @@ function loadActionCallback(name, data, mod, auth) {
 }
 
 exports.loadActionModule = function (args, answHandler) {
-  if(args && args.name) {
+  if(ml && args && args.name) {
 		answHandler.answerSuccess('Loading action module ' + args.name + '...');
     ml.loadModule('mod_actions', args.name, loadActionCallback);
   }
 };
 
 exports.loadActionModules = function(args, answHandler) {
-	answHandler.answerSuccess('Loading action modules...');
-  ml.loadModules('mod_actions', loadActionCallback);
-};
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
+  if(ml) {
+  	answHandler.answerSuccess('Loading action modules...');
+    ml.loadModules('mod_actions', loadActionCallback);
+  }
 };
  

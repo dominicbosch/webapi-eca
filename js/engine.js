@@ -1,35 +1,22 @@
 'use strict';
 
-var log, ml;
-exports.init = function(args, cb) {
-  args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  
-  ml = require('./module_loader').init(args);
-  
-  if(typeof cb === 'function') cb();
-};
-
 var path = require('path'),
     cp = require('child_process'),
-    poller, db, isRunning = true,
-    qEvents = new (require('./queue')).Queue(); // export queue into redis
+    log = require('./logging'),
+    qEvents = new (require('./queue')).Queue(), //TODO export queue into redis
+    regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
+    listRules = {},
+    listActionModules = {},
+    isRunning = true,
+    actionsLoaded = false,
+    eventsLoaded = false,
+    ml, poller, db;
 
-var regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
-  listRules = {},
-  listActionModules = {}, 
-  actionsLoaded = false, eventsLoaded = false;
-/*
- * Initialize the rules engine which initializes the module loader.
- * @param {Object} db_link the link to the db, see [db\_interface](db_interface.html)
- * @param {String} db_port the db port
- * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
- */
-exports.addDBLink = function(db_link) {
-  db = db_link;
-  loadActions();
-  poller = cp.fork(path.resolve(__dirname, 'eventpoller'));
+exports = module.exports = function(args) {
+  args = args || {};
+  log(args);
+  ml = require('./module_loader')(args);
+  poller = cp.fork(path.resolve(__dirname, 'eventpoller'), [log.getLogType()]);
   poller.on('message', function(evt) {
     if(evt.event === 'ep_finished_loading') {
       eventsLoaded = true;
@@ -38,10 +25,19 @@ exports.addDBLink = function(db_link) {
   });
   //start to poll the event queue
   pollQueue();
+  return module.exports;
 };
 
-function loadActions() {
-  db.getActionModules(function(err, obj) {
+/*
+ * Initialize the rules engine which initializes the module loader.
+ * @param {Object} db_link the link to the db, see [db\_interface](db_interface.html)
+ * @param {String} db_port the db port
+ * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
+ */
+exports.addDBLink = function(db_link) { db = db_link; };
+
+exports.loadActions = function(cb) {
+  if(ml && db) db.getActionModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
       if(!obj) {
@@ -66,12 +62,13 @@ function loadActions() {
           listActionModules[el] = m;
         }
       }
-      }
+    }
   });
-}
+  else log.severe('EN', new Error('Module Loader not defined!'));
+};
 
 function tryToLoadRules() {
-  if(eventsLoaded && actionsLoaded) {
+  if(db && eventsLoaded && actionsLoaded) {
     db.getRules(function(err, obj) {
       for(var el in obj) exports.loadRule(JSON.parse(obj[el]));
     });
@@ -252,8 +249,3 @@ exports.shutDown = function() {
   if(poller) poller.send('cmd|shutdown');
   if(db) db.shutDown();
 };
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
- 

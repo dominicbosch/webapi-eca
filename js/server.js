@@ -24,85 +24,49 @@ dog's back.
 */
 
 //FIXME server should be started via command line arguments http_port and logging level to allow proper testing
-var log = require('./logging'), http_port;
-log.print('RS', 'STARTING SERVER');
-if(process.argv.length > 2) log(process.argv[2]);
-else log.print('RS', 'No log method passed, using stdI/O');
-if(process.argv.length > 3) http_port = parseInt(process.argv[3]);
-else log.print('RS', 'No HTTP port passed, using standard port from config file');
-
 var fs = require('fs'),
-  path = require('path'),
-  procCmds = {
-    'die': function() { shutDown(); }
-  };
+    path = require('path'),
+    log = require('./logging'),
+    procCmds = {
+      'die': function() { shutDown(); }
+    },
+    semaphore = 0,
+    args = {},
+    http_listener, mm, db, engine, objCmds;
+
+function init() {
+  log.print('RS', 'STARTING SERVER');
   
-function handleModuleLoad(cb, msg) {
-  return function(err) {
-    if(!err) {
-      if(typeof cb === 'function') cb();
-      log.print('RS', msg + ' initialized successfully');
-    } else {
-      err.addInfo = msg + ' init failed';
-      log.error('RS', err);
-    } 
+  if(process.argv.length > 2) {
+    args.logType = parseInt(process.argv[2]) || 0 ;
+    log(args);
+  } else log.print('RS', 'No log method passed, using stdI/O');
+  
+  if(process.argv.length > 3) args.http_port = parseInt(process.argv[3]);
+  else log.print('RS', 'No HTTP port passed, using standard port from config file');
+  
+  engine = require('./engine')(args);
+  http_listener = require('./http_listener')(args);
+  mm = require('./module_manager')(args);
+  db = require('./db_interface')(args);
+  log.print('RS', 'Initialzing DB');
+  objCmds = {
+    'loadrules': mm.loadRulesFile,
+    'loadaction': mm.loadActionModule,
+    'loadactions':  mm.loadActionModules,
+    'loadevent': engine.loadEventModule,
+    'loadevents': engine.loadEventModules,
+    'shutdown': shutDown
   };
+  engine.addDBLink(db);
+  log.print('RS', 'Initialzing http listener');
+  http_listener.addHandlers(handleAdminCommands, engine.pushEvent);
+  log.print('RS', 'Initialzing module manager');
+  mm.addHandlers(db, engine.loadActionModule, engine.loadRule);
+  //FIXME load actions and events, then rules, do this here, visible for everybody on the first glance
+  //TODO for such events we should forge the architecture more into an event driven one
 }
 
-function loadHL() {
-  http_listener = require('./http_listener').init(log,
-    handleModuleLoad(loadEN, 'http listener')
-  );
-}
-
-function loadEN(cb) {
-  engine = require('./engine').init(log,
-    handleModuleLoad(loadMM, 'engine')
-  );
-}
-
-function loadMM(cb) {
-  mm = require('./module_manager').init(log,
-    handleModuleLoad(loadDB, 'module manager')
-  );
-}
-
-function loadDB(cb) {
-  db = require('./db_interface').init(log,
-    handleModuleLoad(doneInitDB, 'db interface init failed')
-  );
-}
-
-function doneInitDB(err) {
-  if(!err) {
-    objCmds = {
-      'loadrules': mm.loadRulesFile,
-      'loadaction': mm.loadActionModule,
-      'loadactions':  mm.loadActionModules,
-      'loadevent': engine.loadEventModule,
-      'loadevents': engine.loadEventModules,
-      'shutdown': shutDown
-    };
-    //FIXME engine requires db to be finished with init...
-    engine.addDBLink(db);
-    log.print('RS', 'Initialzing http listener');
-    http_listener.addHandlers(handleAdminCommands, engine.pushEvent);
-    log.print('RS', 'Initialzing module manager');
-    mm.addHandlers(db, engine.loadActionModule, engine.loadRule);
-  }
-  else {
-    err.addInfo = err.message; 
-    err.message = 'Not Starting engine!';
-    log.error(err);
-  }
-}
-
-(function() {
-  loadHL();
-  // engine = require('./engine').init(log),
-  // mm = require('./module_manager').init(log),
-  // db = require('./db_interface').init(log, doneInitDB), //TODO have a close lok at this special case
-})();
 
 function handleAdminCommands(args, answHandler) {
   if(args && args.cmd) {
@@ -134,8 +98,6 @@ process.on('message', function(cmd) {
   else console.error('err with command');
 });
 
-
-log.print('RS', 'Initialzing DB');
 //FIXME initialization of all modules should depend on one after the other
 // in a transaction style manner 
 
@@ -153,3 +115,5 @@ log.print('RS', 'Initialzing DB');
  *  - init(args, cb)
  *  - die()
  */
+
+init();

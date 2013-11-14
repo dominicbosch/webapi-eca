@@ -1,22 +1,18 @@
 'use strict';
 
-var path = require('path'), log, config;
+var path = require('path'),
+    log = require('./logging'),
+    config;
 
-exports = module.exports = function(relPath) {
-  if(typeof relPath !== 'string') relPath = path.join('config', 'config.json');
-  loadConfigFile(relPath);
-};
-
-exports.init = function(args, cb) {
+exports = module.exports = function(args) {
   args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  
-  loadConfigFile(path.join('config', 'config.json'));
-
-  if(typeof cb === 'function') cb();
+  log(args);
+  if(typeof args.relPath === 'string') loadConfigFile(args.relPath);
+  //TODO check all modules whether they can be loaded without calling the module.exports with args
+  return module.exports;
 };
 
+loadConfigFile(path.join('config', 'config.json'));
 
 function loadConfigFile(relPath) {
   try {
@@ -73,7 +69,4 @@ exports.getSessionSecret = function() {
   return fetchProp('session_secret');
 };
 
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
  

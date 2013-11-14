@@ -12,31 +12,28 @@
 // (e.g. action\_module\_probinder). 
 'use strict';
 
-var log, crypto_key, db,
-    redis = require('redis'),
-    crypto = require('crypto');
+var redis = require('redis'),
+    crypto = require('crypto'),
+    log = require('./logging'),
+    crypto_key, db;
    
 /**
  * Initializes the DB connection. Requires a valid configuration file which contains
  * a db port and a crypto key.
  * @param args {Object}
- * @param cb {function}
  */
-exports.init = function(args, cb) {
+exports = module.exports = function(args) {
   args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
+  log(args);
   
-  var config = require('./config');
-  config.init(args);
+  var config = require('./config')(args);
   crypto_key = config.getCryptoKey();
   db = redis.createClient(config.getDBPort());
   db.on("error", function (err) {
     err.addInfo = 'message from DB';
     log.error('DB', err);
   });
-  
-  if(typeof cb === 'function') cb();
+  return module.exports;
 };
 
 /**
@@ -93,7 +90,7 @@ function replyHandler(action) {
  *                    arguments (err, obj)
  */
 function getSetRecords(set, funcSingle, callback) {
-  db.smembers(set, function(err, reply) {
+  if(db) db.smembers(set, function(err, reply) {
     if(err) log.error('DB', 'fetching ' + set + ': ' + err);
     else {
       if(reply.length === 0) {
@@ -124,7 +121,7 @@ function getSetRecords(set, funcSingle, callback) {
 // @method shutDown()
 
 // Shuts down the db link.
-exports.shutDown = function() { db.quit(); };
+exports.shutDown = function() { if(db) db.quit(); };
 
 // ## Action Modules
 
@@ -135,8 +132,10 @@ exports.shutDown = function() { db.quit(); };
  * @param {String} data the string representation
  */
 exports.storeActionModule = function(id, data) {
-  db.sadd('action_modules', id, replyHandler('storing action module key ' + id));
-  db.set('action_module_' + id, data, replyHandler('storing action module ' + id));
+  if(db) {
+    db.sadd('action_modules', id, replyHandler('storing action module key ' + id));
+    db.set('action_module_' + id, data, replyHandler('storing action module ' + id));
+  }
 };
 
 /**
@@ -146,7 +145,7 @@ exports.storeActionModule = function(id, data) {
  * @param {function} callback the callback to receive the answer (err, obj)
  */
 exports.getActionModule = function(id, callback) {
-  if(callback) db.get('action_module_' + id, callback);
+  if(callback && db) db.get('action_module_' + id, callback);
 };
 
 /**
@@ -165,7 +164,7 @@ exports.getActionModules = function(callback) {
  * @param {String} data the string representation
  */
 exports.storeActionModuleAuth = function(id, data) {
-  if(data) {
+  if(data && db) {
     db.sadd('action_modules_auth', id, replyHandler('storing action module auth key ' + id));
     db.set('action_module_' + id +'_auth', encrypt(data), replyHandler('storing action module auth ' + id));
   }
@@ -178,7 +177,7 @@ exports.storeActionModuleAuth = function(id, data) {
  * @param {function} callback the callback to receive the answer (err, obj)
  */
 exports.getActionModuleAuth = function(id, callback) {
-  if(callback) db.get('action_module_' + id + '_auth', function(err, txt) { callback(err, decrypt(txt)); });
+  if(callback && db) db.get('action_module_' + id + '_auth', function(err, txt) { callback(err, decrypt(txt)); });
 };
 
 // ## Event Modules
@@ -190,8 +189,10 @@ exports.getActionModuleAuth = function(id, callback) {
  * @param {String} data the string representation
  */
 exports.storeEventModule = function(id, data) {
-  db.sadd('event_modules', id, replyHandler('storing event module key ' + id));
-  db.set('event_module_' + id, data, replyHandler('storing event module ' + id));
+  if(db) {
+    db.sadd('event_modules', id, replyHandler('storing event module key ' + id));
+    db.set('event_module_' + id, data, replyHandler('storing event module ' + id));
+  }
 };
 
 /**
@@ -201,7 +202,7 @@ exports.storeEventModule = function(id, data) {
  * @param {function} callback the callback to receive the answer (err, obj)
  */
 exports.getEventModule = function(id, callback) {
-  if(callback) db.get('event_module_' + id, callback);
+  if(callback && db) db.get('event_module_' + id, callback);
 };
 
 /**
@@ -220,7 +221,7 @@ exports.getEventModules = function(callback) {
  * @param {String} data the string representation
  */
 exports.storeEventModuleAuth = function(id, data) {
-  if(data) {
+  if(data && db) {
     db.sadd('event_modules_auth', id, replyHandler('storing event module auth key ' + id));
     db.set('event_module_' + id +'_auth', encrypt(data), replyHandler('storing event module auth ' + id));
   }
@@ -243,8 +244,10 @@ exports.getEventModuleAuth = function(id, callback) {
 // @param {String} id the unique identifier of the rule
 // @param {String} data the string representation
 exports.storeRule = function(id, data) {
-  db.sadd('rules', id, replyHandler('storing rule key ' + id));
-  db.set('rule_' + id, data, replyHandler('storing rule ' + id));
+  if(db) {
+    db.sadd('rules', id, replyHandler('storing rule key ' + id));
+    db.set('rule_' + id, data, replyHandler('storing rule ' + id));
+  }
 };
 
 // @method getRule(id, callback)
@@ -253,7 +256,7 @@ exports.storeRule = function(id, data) {
 // @param {String} id the rule id
 // @param {function} callback the callback to receive the answer (err, obj)
 exports.getRule = function(id, callback) {
-  db.get('rule_' + id, callback);
+  if(db) db.get('rule_' + id, callback);
 };
 
 // @method getRules(callback)
@@ -270,13 +273,8 @@ exports.getRules = function(callback) {
  * @param {Object} objUser
  */
 exports.storeUser = function(cb, objUser) {
-  if(objUser && objUser.id) {
+  if(db && objUser && objUser.id) {
     db.sadd('users', objUser.id, replyHandler('storing user key ' + objUser.id));
     db.set('user:' + objUser.id, data, replyHandler('storing user properties ' + objUser.id));
   }
 };
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
- 

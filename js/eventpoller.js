@@ -2,63 +2,64 @@
 
 'use strict';
 
-var log, db, ml;
-function init() {
-  log = require('./logging');
-  if(process.argv.length > 2) log(parseInt(process.argv[2]) || 0);
-  
-  ml = require('./module_loader').init({ log: log }),
-  db = require('./db_interface').init({ log: log }, doneInitDB);
-  
-  if(typeof cb === 'function') cb();
-};
-
 var fs = require('fs'),
-  path = require('path'),
-  listMessageActions = {},
-  listAdminCommands = {},
-  listEventModules = {},
-  listPoll = {},  //TODO this will change in the future because it could have
-                  //several parameterized (user-specific) instances of each event module 
-  isRunning = true,
-  eId = 0;
+    path = require('path'),
+    log = require('./logging'),
+    listMessageActions = {},
+    listAdminCommands = {},
+    listEventModules = {},
+    listPoll = {},  //TODO this will change in the future because it could have
+                    //several parameterized (user-specific) instances of each event module 
+    isRunning = true,
+    eId = 0,
+    db, ml;
+
 //TODO allow different polling intervals (a wrapper together with settimeout per to be polled could be an easy and solution)
 
-function doneInitDB(err) {
-  if(!err) {
-      
+
+function init() {
+  //FIXME ensure eventpoller receives the log method from the engine
+  console.log('EP receives args:');
+  console.log('logmeth: ' + parseInt(process.argv[2]) || 0);
+  console.log(process.argv);
+  if(process.argv.length > 2) log({ logType: parseInt(process.argv[2]) || 0 });
+  var args = { logType: log.getLogType() };
+  ml = require('./module_loader')(args);
+  db = require('./db_interface')(args);
+  initAdminCommands();
+  initMessageActions();
+  loadEventModules();
+  pollLoop();
+};
+
+
+function loadEventModules() {
   //TODO eventpoller will not load event modules from filesystem, this will be done by
   // the moduel manager and the eventpoller receives messages about new/updated active rules 
   
-    db.getEventModules(function(err, obj) {
-      if(err) log.error('EP', 'retrieving Event Modules from DB!');
-      else {
-        if(!obj) {
-          log.print('EP', 'No Event Modules found in DB!');
-          process.send({ event: 'ep_finished_loading' });
-        } else {
-          var m, semaphore = 0;
-          for(var el in obj) {
-            semaphore++;
-            m = ml.requireFromString(obj[el], el);
-            db.getEventModuleAuth(el, function(mod) {
-              return function(err, obj) {
-                if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
-                if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-              };
-            }(m));
-            log.print('EP', 'Loading Event Module: ' + el);
-            listEventModules[el] = m;
-          }
+  if(db && ml) db.getEventModules(function(err, obj) {
+    if(err) log.error('EP', 'retrieving Event Modules from DB!');
+    else {
+      if(!obj) {
+        log.print('EP', 'No Event Modules found in DB!');
+        process.send({ event: 'ep_finished_loading' });
+      } else {
+        var m, semaphore = 0;
+        for(var el in obj) {
+          semaphore++;
+          log.print('EP', 'Loading Event Module: ' + el);
+          m = ml.requireFromString(obj[el], el);
+          db.getEventModuleAuth(el, function(mod) {
+            return function(err, obj) {
+              if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
+              if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
+            };
+          }(m));
+          listEventModules[el] = m;
         }
-        initAdminCommands();
-        initMessageActions();
       }
-    });
-  } else {
-    err.addInfo = 'eventpoller init failed';
-    log.error('EP', err);
-  }
+    }
+  });
 }
 
 function initMessageActions() {
@@ -101,22 +102,24 @@ function initMessageActions() {
 
 function initAdminCommands() {
   listAdminCommands['loadevent'] = function(args) {
-    ml.loadModule('mod_events', args[2], loadEventCallback);
+    if(ml) ml.loadModule('mod_events', args[2], loadEventCallback);
   };
   listAdminCommands['loadevents'] = function(args) {
-    ml.loadModules('mod_events', loadEventCallback);
+    if(ml) ml.loadModules('mod_events', loadEventCallback);
   };
   listAdminCommands['shutdown'] = function(args) {
     log.print('EP', 'Shutting down DB Link');
     isRunning = false;
-    db.shutDown();
+    if(db) db.shutDown();
   };
 }
 
 function loadEventCallback(name, data, mod, auth) {
-  db.storeEventModule(name, data); // store module in db
-  if(auth) db.storeEventModuleAuth(name, auth);
-  listEventModules[name] = mod; // store compiled module for polling
+  if(db) {
+    db.storeEventModule(name, data); // store module in db
+    if(auth) db.storeEventModuleAuth(name, auth);
+    listEventModules[name] = mod; // store compiled module for polling
+  }
 }
 
 function checkRemotes() {
@@ -155,11 +158,5 @@ function pollLoop() {
     setTimeout(pollLoop, 10000);
   }
 }
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
- 
  
 init();
-pollLoop();

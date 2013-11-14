@@ -1,20 +1,19 @@
 'use strict';
 
-var log;
-exports.init = function(args, cb) {
-  args = args || {};
-  if(args.log) log = args.log;
-  else log = args.log = require('./logging');
-  if(typeof cb === 'function') cb();
-};
+var log = require('./logging'),
+    objCmds = {
+      addUser: addUser,
+      getUser: getUser,
+      delUser: delUser,
+      addRule: addRule,
+      getRules: getRules,
+      delRule: delRule
+    };
 
-var objCmds = {
-  addUser: addUser,
-  getUser: getUser,
-  delUser: delUser,
-  addRule: addRule,
-  getRules: getRules,
-  delRule: delRule
+exports = module.exports = function(args) {
+  args = args || {};
+  log(args);
+  return module.exports;
 };
 
 exports.handleCommand = function(args, cb) {
@@ -80,8 +79,3 @@ function getRule(args, cb) {
 function delRule(args, cb) {
   
 }
-
-exports.die = function(cb) {
-  if(typeof cb === 'function') cb();
-};
- 
