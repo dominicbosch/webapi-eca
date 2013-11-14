@@ -6,17 +6,29 @@
 > Event and Action modules are loaded as strings and stored in the database,
 > then compiled into node modules and  and rules
  */
+
+'use strict';
+
+var log, ml;
+exports.init = function(args, cb) {
+  args = args || {};
+  if(args.log) log = args.log;
+  else log = args.log = require('./logging');
+  
+  ml = require('./module_loader').init(args);
+  
+  if(typeof cb === 'function') cb();
+};
+
 var fs = require('fs'),
   path = require('path'),
-  log = require('./logging'),
-  ml = require('./module_loader'),
   db = null, funcLoadAction, funcLoadRule;
 
-function init(db_link, fLoadAction, fLoadRule) {
+exports.addHandlers = function(db_link, fLoadAction, fLoadRule) {
   db = db_link;
   funcLoadAction = fLoadAction;
   funcLoadRule = fLoadRule;
-}
+};
 /*
 # A First Level Header
 
@@ -43,7 +55,7 @@ This is the function documentation
 @param {Object} [args] the optional arguments
 @param {String} [args.name] the optional name in the arguments
  */
-function loadRulesFile(args, answHandler) {
+exports.loadRulesFile = function(args, answHandler) {
   if(!args) args = {};
   if(!args.name) args.name = 'rules';
   if(!funcLoadRule) log.error('ML', 'no rule loader function available');
@@ -67,7 +79,7 @@ function loadRulesFile(args, answHandler) {
       }
     });
   }
-}
+};
 
 /**
  * 
@@ -82,19 +94,19 @@ function loadActionCallback(name, data, mod, auth) {
   if(auth) db.storeActionModuleAuth(name, auth);
 }
 
-function loadActionModule(args, answHandler) {
+exports.loadActionModule = function (args, answHandler) {
   if(args && args.name) {
 		answHandler.answerSuccess('Loading action module ' + args.name + '...');
     ml.loadModule('mod_actions', args.name, loadActionCallback);
   }
-}
+};
 
-function loadActionModules(args, answHandler) {
+exports.loadActionModules = function(args, answHandler) {
 	answHandler.answerSuccess('Loading action modules...');
   ml.loadModules('mod_actions', loadActionCallback);
-}
+};
 
-exports.init = init;
-exports.loadRulesFile = loadRulesFile;
-exports.loadActionModule = loadActionModule;
-exports.loadActionModules = loadActionModules;
+exports.die = function(cb) {
+  if(typeof cb === 'function') cb();
+};
+ 

@@ -1,11 +1,12 @@
 var path = require('path');
 //FIXME handle EADDR in use!
 exports.setUp = function(cb) {
-  this.srv = require('child_process').fork(path.resolve(__dirname, '..', 'js', 'server'));
+  this.srv = require('child_process').fork(path.resolve(__dirname, '..', 'js', 'server'), ['2']);
   cb();
 };
 
 exports.testUnit_SRV = function(test){
+    test.ok(false, "needs implementation");
   setTimeout(
     function() {
       

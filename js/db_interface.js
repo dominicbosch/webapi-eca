@@ -11,32 +11,32 @@
 // 'action_modules' and then stored in the db with the key 'action\_module\_' + ID
 // (e.g. action\_module\_probinder). 
 'use strict';
-var redis = require('redis'),
-    crypto = require('crypto'),
-    log = require('./logging'),
-    crypto_key, db;
 
-
-/* 
- * Initializes the DB connection. Requires a port where the DB listens to requests
- * and a key that is used for encryptions.
- * @param {int} db_port
+var log, crypto_key, db,
+    redis = require('redis'),
+    crypto = require('crypto');
+   
+/**
+ * Initializes the DB connection. Requires a valid configuration file which contains
+ * a db port and a crypto key.
+ * @param args {Object}
+ * @param cb {function}
  */
-exports.init = function(cb){
-  require('./config').getConfig(null, function(err, data) {
-    if(!err) {
-      crypto_key = data.crypto_key;
-      db = redis.createClient(data.db_port);
-      db.on("error", function (err) {
-        err.addInfo = 'message from DB';
-        log.error('DB', err);
-      });
-      if(typeof cb === 'function') cb();
-    } else {
-      err.addInfo = 'fetching db_port and crypto_key';
-      if(typeof cb === 'function') cb(err);
-    }
+exports.init = function(args, cb) {
+  args = args || {};
+  if(args.log) log = args.log;
+  else log = args.log = require('./logging');
+  
+  var config = require('./config');
+  config.init(args);
+  crypto_key = config.getCryptoKey();
+  db = redis.createClient(config.getDBPort());
+  db.on("error", function (err) {
+    err.addInfo = 'message from DB';
+    log.error('DB', err);
   });
+  
+  if(typeof cb === 'function') cb();
 };
 
 /**
@@ -264,3 +264,19 @@ exports.getRules = function(callback) {
   getSetRecords('rules', exports.getRule, callback);
 };
 
+/**
+ * 
+ * @param {function} cb
+ * @param {Object} objUser
+ */
+exports.storeUser = function(cb, objUser) {
+  if(objUser && objUser.id) {
+    db.sadd('users', objUser.id, replyHandler('storing user key ' + objUser.id));
+    db.set('user:' + objUser.id, data, replyHandler('storing user properties ' + objUser.id));
+  }
+};
+
+exports.die = function(cb) {
+  if(typeof cb === 'function') cb();
+};
+ 

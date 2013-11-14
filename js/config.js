@@ -1,78 +1,79 @@
 'use strict';
 
-/**
- * command standard config file loading and pass certain property back to the callback
- * @param {String} prop
- * @param {function} cb
- */
-function fetchProp(prop, cb) {
-  if(typeof cb === 'function') {
-    exports.getConfig(null, function(err, data) {
-      if(!err) cb(null, data[prop]);
-      else cb(err);
-    });
+var path = require('path'), log, config;
+
+exports = module.exports = function(relPath) {
+  if(typeof relPath !== 'string') relPath = path.join('config', 'config.json');
+  loadConfigFile(relPath);
+};
+
+exports.init = function(args, cb) {
+  args = args || {};
+  if(args.log) log = args.log;
+  else log = args.log = require('./logging');
+  
+  loadConfigFile(path.join('config', 'config.json'));
+
+  if(typeof cb === 'function') cb();
+};
+
+
+function loadConfigFile(relPath) {
+  try {
+    config = JSON.parse(require('fs').readFileSync(path.resolve(__dirname, '..', relPath)));
+    if(config && config.http_port && config.db_port
+        && config.crypto_key && config.session_secret) {
+      log.print('CF', 'config file loaded successfully!');
+    } else {
+      log.error('CF', new Error('Missing property in config file, requires:\n'
+        + ' - http_port\n'
+        + ' - db_port\n'
+        + ' - crypto_key\n'
+        + ' - session_secret'));
+    }
+  } catch (e) {
+    e.addInfo = 'no config ready';
+    log.error('CF', e);
   }
 }
 
 /**
- * 
- * @param {String[]} relPath
- * @param {Object} cb
+ * Fetch a property from the configuration
+ * @param {String} prop
  */
-exports.getConfig = function(relPath, cb) {
-  var fs = require('fs'), path = require('path'), log = require('./logging');
-  if(!relPath) relPath = path.join('config', 'config.json');
-  fs.readFile(
-    path.resolve(__dirname, '..', relPath),
-    'utf8',
-    function (err, data) {
-      if (err) {
-        err.addInfo = 'config file loading';
-        if(typeof cb === 'function') cb(err);
-        else log.error('CF', err);
-      } else {
-        try {
-          var config = JSON.parse(data);
-          if(!config.http_port || !config.db_port || !config.crypto_key) {
-            var e = new Error('Missing property, requires:\n'
-              + ' - http_port\n'
-              + ' - db_port\n'
-              + ' - crypto_key');
-            if(typeof cb === 'function') cb(e);
-            else log.error('CF', e);
-          } else {
-            if(typeof cb === 'function') cb(null, config);
-            else log.print('CF', 'config file loaded successfully but pointless since no callback defined...');
-          }
-        } catch(e) {
-          e.addInfo = 'config file parsing';
-          log.error('CF', e);
-        }
-      }
-    }
-  );
+function fetchProp(prop) {
+  if(config) return config[prop];
+}
+
+/**
+ * Get the HTTP port
+ */
+exports.getHttpPort = function() {
+  return fetchProp('http_port');
 };
 
 /**
- * Command config file loading and retrieve the http port via the callback.
- * @param {function} cb
+ * Get the DB port
  */
-exports.getHttpPort = function(cb) {
-  fetchProp('http_port', cb);
+exports.getDBPort = function() {
+  return fetchProp('db_port');
 };
 
 /**
- * Command config file loading and retrieve the DB port via the callback.
- * @param {function} cb
+ * Get the crypto key
  */
-exports.getDBPort = function(cb) {
-  fetchProp('db_port', cb);
+exports.getCryptoKey = function() {
+  return fetchProp('crypto_key');
 };
 
 /**
- * Command config file loading and retrieve the crypto key via the callback.
- * @param {function} cb
+ * Get the session secret
  */
-exports.getCryptoKey = function(cb) {
-  fetchProp('crypto_key', cb);
+exports.getSessionSecret = function() {
+  return fetchProp('session_secret');
 };
+
+exports.die = function(cb) {
+  if(typeof cb === 'function') cb();
+};
+ 

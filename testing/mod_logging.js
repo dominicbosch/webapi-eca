@@ -1,6 +1,6 @@
 
 exports.testUnit_LOG = function(test){
-    test.ok(true, "log");
+    test.ok(false, "needs implementation");
     test.done();
 };
 

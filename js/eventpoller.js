@@ -2,11 +2,19 @@
 
 'use strict';
 
+var log, db, ml;
+function init() {
+  log = require('./logging');
+  if(process.argv.length > 2) log(parseInt(process.argv[2]) || 0);
+  
+  ml = require('./module_loader').init({ log: log }),
+  db = require('./db_interface').init({ log: log }, doneInitDB);
+  
+  if(typeof cb === 'function') cb();
+};
+
 var fs = require('fs'),
   path = require('path'),
-  log = require('./logging'),
-  db = require('./db_interface'),
-  ml = require('./module_loader'),
   listMessageActions = {},
   listAdminCommands = {},
   listEventModules = {},
@@ -16,43 +24,41 @@ var fs = require('fs'),
   eId = 0;
 //TODO allow different polling intervals (a wrapper together with settimeout per to be polled could be an easy and solution)
 
-function init() {  
-  db.init(function(err) {
-    if(!err) {
+function doneInitDB(err) {
+  if(!err) {
       
   //TODO eventpoller will not load event modules from filesystem, this will be done by
   // the moduel manager and the eventpoller receives messages about new/updated active rules 
   
-      db.getEventModules(function(err, obj) {
-        if(err) log.error('EP', 'retrieving Event Modules from DB!');
-        else {
-          if(!obj) {
-            log.print('EP', 'No Event Modules found in DB!');
-            process.send({ event: 'ep_finished_loading' });
-          } else {
-            var m, semaphore = 0;
-            for(var el in obj) {
-              semaphore++;
-              m = ml.requireFromString(obj[el], el);
-              db.getEventModuleAuth(el, function(mod) {
-                return function(err, obj) {
-                  if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
-                  if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-                };
-              }(m));
-              log.print('EP', 'Loading Event Module: ' + el);
-              listEventModules[el] = m;
-            }
+    db.getEventModules(function(err, obj) {
+      if(err) log.error('EP', 'retrieving Event Modules from DB!');
+      else {
+        if(!obj) {
+          log.print('EP', 'No Event Modules found in DB!');
+          process.send({ event: 'ep_finished_loading' });
+        } else {
+          var m, semaphore = 0;
+          for(var el in obj) {
+            semaphore++;
+            m = ml.requireFromString(obj[el], el);
+            db.getEventModuleAuth(el, function(mod) {
+              return function(err, obj) {
+                if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
+                if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
+              };
+            }(m));
+            log.print('EP', 'Loading Event Module: ' + el);
+            listEventModules[el] = m;
           }
-          initAdminCommands();
-          initMessageActions();
         }
-      });
-    } else {
-      err.addInfo = 'eventpoller init failed';
-      log.error('EP', err);
-    }
-  });
+        initAdminCommands();
+        initMessageActions();
+      }
+    });
+  } else {
+    err.addInfo = 'eventpoller init failed';
+    log.error('EP', err);
+  }
 }
 
 function initMessageActions() {
@@ -150,5 +156,10 @@ function pollLoop() {
   }
 }
 
+exports.die = function(cb) {
+  if(typeof cb === 'function') cb();
+};
+ 
+ 
 init();
 pollLoop();

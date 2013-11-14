@@ -33,7 +33,8 @@ Insert your settings, for example:
     {
         "http_port": 8125,
         "db_port": 6379,
-        "crypto_key": "[your key]"
+        "crypto_key": "[your key]",
+        "session_secret": "[your secret]"
     }
 
 Start the server:

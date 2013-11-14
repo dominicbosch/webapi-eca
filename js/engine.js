@@ -1,9 +1,18 @@
 'use strict';
 
+var log, ml;
+exports.init = function(args, cb) {
+  args = args || {};
+  if(args.log) log = args.log;
+  else log = args.log = require('./logging');
+  
+  ml = require('./module_loader').init(args);
+  
+  if(typeof cb === 'function') cb();
+};
+
 var path = require('path'),
     cp = require('child_process'),
-    ml = require('./module_loader'),
-    log = require('./logging'),
     poller, db, isRunning = true,
     qEvents = new (require('./queue')).Queue(); // export queue into redis
 
@@ -17,7 +26,7 @@ var regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
  * @param {String} db_port the db port
  * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
  */
-function init(db_link) {
+exports.addDBLink = function(db_link) {
   db = db_link;
   loadActions();
   poller = cp.fork(path.resolve(__dirname, 'eventpoller'));
@@ -25,11 +34,11 @@ function init(db_link) {
     if(evt.event === 'ep_finished_loading') {
       eventsLoaded = true;
       tryToLoadRules();
-    } else pushEvent(evt);
+    } else exports.pushEvent(evt);
   });
   //start to poll the event queue
   pollQueue();
-}
+};
 
 function loadActions() {
   db.getActionModules(function(err, obj) {
@@ -64,7 +73,7 @@ function loadActions() {
 function tryToLoadRules() {
   if(eventsLoaded && actionsLoaded) {
     db.getRules(function(err, obj) {
-      for(var el in obj) loadRule(JSON.parse(obj[el]));
+      for(var el in obj) exports.loadRule(JSON.parse(obj[el]));
     });
   }
 }
@@ -73,16 +82,16 @@ function tryToLoadRules() {
  * Insert an action module into the list of available interfaces.
  * @param {Object} objModule the action module object
  */
-function loadActionModule(name, objModule) {
+exports.loadActionModule = function(name, objModule) {
   log.print('EN', 'Action module "' + name + '" loaded');
   listActionModules[name] = objModule;
-}
+};
 
 /**
  * Insert a rule into the eca rules repository
  * @param {Object} objRule the rule object
  */
-function loadRule(objRule) {
+exports.loadRule = function(objRule) {
   //TODO validate rule
   log.print('EN', 'Loading Rule: ' + objRule.id);
   if(listRules[objRule.id]) log.print('EN', 'Replacing rule: ' + objRule.id);
@@ -94,7 +103,7 @@ function loadRule(objRule) {
   } catch (err) {
     log.print('EN', 'Unable to inform poller about new active rule!');
   }
-}
+};
 
 function pollQueue() {
   if(isRunning) {
@@ -110,9 +119,9 @@ function pollQueue() {
  * Stores correctly posted events in the queue
  * @param {Object} evt The event object
  */
-function pushEvent(evt) {
+exports.pushEvent = function(evt) {
   qEvents.enqueue(evt);
-}
+};
 
 /**
  * Handles correctly posted events
@@ -225,29 +234,26 @@ function preprocessActionArguments(evt, act, res) {
   }
 }
 
-function loadEventModule(args, answHandler) {
+exports.loadEventModule = function(args, answHandler) {
   if(args && args.name) {
   	answHandler.answerSuccess('Loading event module ' + args.name + '...');
   	poller.send('cmd|loadevent|'+args.name);
   } else if(args) answHandler.answerError(args.name + ' not found');
-}
+};
 
-function loadEventModules(args, answHandler) {
+exports.loadEventModules = function(args, answHandler) {
 	answHandler.answerSuccess('Loading event moules...');
   poller.send('cmd|loadevents');
-}
+};
 
-function shutDown() {
+exports.shutDown = function() {
   log.print('EN', 'Shutting down Poller and DB Link');
   isRunning = false;
   if(poller) poller.send('cmd|shutdown');
   if(db) db.shutDown();
-}
+};
 
-exports.init = init;
-exports.loadActionModule = loadActionModule;
-exports.loadRule = loadRule;
-exports.loadEventModule = loadEventModule;
-exports.loadEventModules = loadEventModules;
-exports.pushEvent = pushEvent;
-exports.shutDown = shutDown;
+exports.die = function(cb) {
+  if(typeof cb === 'function') cb();
+};
+ 

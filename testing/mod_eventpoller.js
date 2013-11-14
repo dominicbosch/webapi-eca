@@ -1,6 +1,6 @@
 
 exports.testUnit_EventPoller = function(test){
-    test.ok(true, "ep");
+    test.ok(false, "needs implementation");
     test.done();
 };
 

@@ -9,6 +9,7 @@
     "url" : "https://github.com/dominicbosch/webapi-eca.git"
   },
   "dependencies": {
+    "connect-redis": "1.4.6",
     "express": "3.4.0",
     "groc": "0.6.1",
     "needle": "0.6.1",

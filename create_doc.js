@@ -1,20 +1,19 @@
 /*
  * # groc Documentation
  * Create the documentation to be displayed through the webserver.
- */
-require('groc').CLI([
-  "README.md",
-  "TODO.js",
-  "LICENSE.js",
-  "js/*",
-  "mod_actions/**/*.js",
-  "mod_events/**/*.js"
-  // ,
-  // "rules/*.json"
+ */  
+require('groc').CLI(
+  [
+    "README.md",
+    "TODO.js",
+    "LICENSE.js",
+    "js/*",
+    "mod_actions/**/*.js",
+    "mod_events/**/*.js",
+    "-o./webpages/doc"
   ],
-  function(error) {
-    if (error) {
-      process.exit(1);
-    }
+  function(err) {
+    if (err) console.error(err);
+    else console.log('Done!');
   }
 );
