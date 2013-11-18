@@ -39,6 +39,8 @@ exports = module.exports = function(args) {
 
 /**
  * ### encrypt
+ * this is used to decrypt
+ * @param {String} plainText
  */
 function encrypt(plainText) {
   if(!plainText) return null;
@@ -56,13 +58,13 @@ function encrypt(plainText) {
 /**
  * ### decrypt
  */
-function decrypt(crypticText) {
+function decrypt(crypticText, id) {
   if(!crypticText) return null;
   try {
     var deciph = crypto.createDecipher('aes-256-cbc', crypto_key);
     return deciph.update(crypticText, 'base64', 'utf8') + deciph.final('utf8');
   } catch (err) {
-    log.error('DB', 'in decrypting: ' + err);
+    log.error('DB', 'in decrypting "' + id + '": ' + err);
     return null;
   }
 }
@@ -179,7 +181,9 @@ exports.storeActionModuleAuth = function(id, data) {
  * @param {function} callback the callback to receive the answer (err, obj)
  */
 exports.getActionModuleAuth = function(id, callback) {
-  if(callback && db) db.get('action_module_' + id + '_auth', function(err, txt) { callback(err, decrypt(txt)); });
+  if(callback && db) db.get('action_module_' + id + '_auth', function(id) {
+    return function(err, txt) { callback(err, decrypt(txt, 'action_module_' + id + '_auth')); };
+  }(id));
 };
 
 // ## Event Modules
@@ -235,7 +239,9 @@ exports.storeEventModuleAuth = function(id, data) {
 // @param {String} id the module id
 // @param {function} callback the callback to receive the answer (err, obj)
 exports.getEventModuleAuth = function(id, callback) {
-  if(callback) db.get('event_module_' + id +'_auth', function(err, txt) { callback(err, decrypt(txt)); });
+  if(callback) db.get('event_module_' + id +'_auth',  function(id) {
+    return function(err, txt) { callback(err, decrypt(txt, 'event_module_' + id + '_auth')); };
+  }(id));
 };
 
 // ## Rules

@@ -1,5 +1,8 @@
-// # HTTP Listener
-// Isso
+// HTTP Listener
+// =============
+//
+// Handles the HTTP requests to the server at the port specified by the [config](config.html) file.
+
 'use strict';
 
 var path = require('path'),
@@ -10,12 +13,18 @@ var path = require('path'),
     log = require('./logging'),
     sess_sec = '#C[>;j`@".TXm2TA;A2Tg)',
     db_port, http_port, server,
-    adminHandler, eventHandler;
+    eventHandler, userHandler;
 
+/*
+ * The module needs to be called as a function to initialize it.
+ * After that it fetches the http\_port, db\_port & sess\_sec properties
+ * from the configuration file.
+ */
 exports = module.exports = function(args) {
   args = args || {};
   log(args);
   var config = require('./config')(args);
+  userHandler = require('./user_handler')(args);
   db_port = config.getDBPort(),
   sess_sec = config.getSessionSecret(),
   http_port = config.getHttpPort();
@@ -23,109 +32,77 @@ exports = module.exports = function(args) {
 };
 
 exports.addHandlers = function(funcAdminHandler, funcEvtHandler) {
-  if(!funcEvtHandler) {
-    log.error('HL', 'ERROR: either port or eventHandler function not defined!');
+  if(!funcAdminHandler || !funcEvtHandler) {
+    log.error('HL', 'ERROR: either adminHandler or eventHandler function not defined!');
     return;
   }
-  adminHandler = funcAdminHandler;
+  userHandler.addHandler(funcAdminHandler);
   eventHandler = funcEvtHandler;
-
-//FIXME this whole webserver requires clean approach together with session handling all over the engine.
-//One entry point, from then collecting response contents and one exit point that sends it!
-
+  // Add cookie support for session handling.
   app.use(express.cookieParser());
-  app.use('/doc/', express.static(path.resolve(__dirname, '..', 'webpages', 'doc')));
-  app.use('/mobile/', express.static(path.resolve(__dirname, '..', 'webpages', 'mobile')));
-  app.use('/rulesforge/', express.static(path.resolve(__dirname, '..', 'webpages', 'rulesforge')));
-  app.get('/admin', onAdminCommand);
-  app.post('/pushEvents', onPushEvent);
-  if(db_port) {
-    app.use(express.session({
-      store: new RedisStore({
-        host: 'localhost',
-        port: db_port,
-        db: 2
-        // ,
-        // pass: 'RedisPASS'
-      }),
-      // FIXME use a secret from config
-      secret: sess_sec
-    }));
-    log.print('HL', 'Added redis DB as session backbone'); 
-  } else {
-    app.use(express.session({secret: sess_sec}));
-    log.print('HL', 'no session backbone');
-  }
-  if(http_port) server = app.listen(http_port); // inbound event channel
-  else log.error('HL', new Error('No HTTP port found!?'));
-};
-
-function answerHandler(r) {
-	var response = r, hasBeenAnswered = false;
-	function postAnswer(msg) {
-		if(!hasBeenAnswered) {
-		  response.write(msg);
-		  response.end();
-		  hasBeenAnswered = true;
-		}
-	}
-	return {
-		answerSuccess: function(msg) {
-		  if(!hasBeenAnswered) response.writeHead(200, { "Content-Type": "text/plain" });
-		  postAnswer(msg);
-		},
-		answerError: function(msg) {
-  		if(!hasBeenAnswered) response.writeHead(400, { "Content-Type": "text/plain" });
-		  postAnswer(msg);
-		},
-		isAnswered: function() { return hasBeenAnswered; }
-	};
-};
-
-/**
- * Handles correct event posts, replies thank you.
- */
-function answerSuccess(resp, msg){
-  resp.writeHead(200, { "Content-Type": "text/plain" });
-  resp.write(msg);
-  resp.end();
-}
-
-/**
- * Handles erroneous requests.
- * @param {Object} msg the error message to be returned
- */
-function answerError(resp, msg) {
-  resp.writeHead(400, { "Content-Type": "text/plain" });
-  resp.write(msg);
-  resp.end();
-}
-
-//FIXME this answer handling is a very ugly hack, improve!
-function onAdminCommand(request, response) {
-  var q = request.query;
-  log.print('HL', 'Received admin request: ' + request.originalUrl);
-  if(q.cmd) {
-    adminHandler(q, answerHandler(response));
-    // answerSuccess(response, 'Thank you, we try our best!');
-  } else answerError(response, 'I\'m not sure about what you want from me...');
-}
+  app.use(express.session({secret: sess_sec}));
+  log.print('HL', 'no session backbone');
   
+  // ^ TODO figure out why redis backbone doesn't work. eventually the db pass has to be set in the DB?
+  // } session information seems to be stored in DB but not retrieved correctly
+  // } if(db_port) {
+    // } app.use(express.session({
+      // } store: new RedisStore({
+        // } host: 'localhost',
+        // } port: db_port,
+        // } db: 2
+        // } ,
+        // } pass: null
+      // } }),
+      // } secret: sess_sec
+    // } }));
+    // } log.print('HL', 'Added redis DB as session backbone'); 
+  // } } else {
+    // } app.use(express.session({secret: sess_sec}));
+    // } log.print('HL', 'no session backbone');
+  // } }
+
+  // Redirect the requests to the appropriate handler.
+  app.use('/doc/', express.static(path.resolve(__dirname, '..', 'webpages', 'doc')));
+  // app.get('/mobile', userHandler.handleRequest);
+  app.get('/rulesforge', userHandler.handleRequest);
+  app.use('/mobile/', express.static(path.resolve(__dirname, '..', 'webpages', 'mobile')));
+  // } app.use('/rulesforge/', express.static(path.resolve(__dirname, '..', 'webpages', 'rulesforge')));
+  app.get('/admin', userHandler.handleRequest);
+  app.post('/push_event', onPushEvent);
+  if(http_port) server = app.listen(http_port); // inbound event channel
+  else log.error('HL', new Error('No HTTP port found!? Nothing to listen on!...'));
+};
+
 /**
- * If a request is made to the server, this function is used to handle it.
+ * If a post request reaches the server, this function handles it and treats the request as a possible event.
  */
-function onPushEvent(request, response) {
+function onPushEvent(req, resp) {
   var body = '';
-  request.on('data', function (data) { body += data; });
-  request.on('end', function () {
+  req.on('data', function (data) { body += data; });
+  req.on('end', function () {
     var obj = qs.parse(body);
     /* If required event properties are present we process the event */
     if(obj && obj.event && obj.eventid){
-      answerSuccess(response, 'Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
+      resp.writeHead(200, { "Content-Type": "text/plain" });
+      resp.write('Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
+      resp.end();
       eventHandler(obj);
-    } else answerError(response, 'Your event was missing important parameters!');
+    } else {
+      resp.writeHead(400, { "Content-Type": "text/plain" });
+      resp.write('Your event was missing important parameters!');
+      resp.end();
+    }
+    resp.end();
   });
 }
+
+exports.loadUsers = function() {
+  var users = JSON.parse(require('fs').readFileSync(path.resolve(__dirname, '..', relPath)));
+  for(var name in users) {
+    
+  }
+};
 
 exports.shutDown = function() {
   log.print('HL', 'Shutting down HTTP listener');

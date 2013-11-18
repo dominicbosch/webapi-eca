@@ -132,7 +132,7 @@ function checkEvent(evt) {
   for(var rn in listRules) {
     //TODO this needs to get depth safe, not only data but eventually also
     // on one level above (eventid and other meta)
-    if(listRules[rn].event === evt.event && validConditions(evt.data, listRules[rn])) {
+    if(listRules[rn].event === evt.event && validConditions(evt.payload, listRules[rn])) {
       log.print('EN', 'Rule "' + rn + '" fired');
       actions = actions.concat(listRules[rn].actions);
     }
@@ -167,7 +167,7 @@ function invokeAction(evt, action) {
   var srvc = listActionModules[arrModule[0]];
   if(srvc && srvc[arrModule[1]]) {
     //FIXME preprocessing not only on data
-    preprocessActionArguments(evt.data, action.arguments, actionargs);
+    preprocessActionArguments(evt.payload, action.arguments, actionargs);
     try {
       if(srvc[arrModule[1]]) srvc[arrModule[1]](actionargs);
     } catch(err) {

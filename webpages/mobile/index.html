@@ -1,8 +1,53 @@
 <html>
   <head>
     <title>Mobile Page</title>
+    <script type="text/javascript">
+      document.write("\<script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'>\<\/script>");
+    </script>
+    <style>
+      body {
+        font-family: sans-serif, "Times New Roman", Georgia, Serif;
+      }
+    </style>
   </head>
   <body>
     <h1>Mobile Page</h1>
+    <script>
+      function displayPosition(position) {
+        var lat = position.coords.latitude,
+            lon = position.coords.longitude;
+        $('#print').html("<table border='1'><tr><th>Timestamp</th><td>" + position.timestamp +
+        "<tr><th>Latitude</th><td>" + lat + " deg</td></tr>" +
+        "<tr><th>Longitude</th><td>" + lon + " deg</td></tr></table>");
+        
+        var img_url="http://maps.googleapis.com/maps/api/staticmap?center="
+        +lat+","+lon+"&zoom=15&size=400x300&sensor=false&maptype=roadmap&markers=color:orange|label:1|"+lat+","+lon;
+        
+        document.getElementById("mapholder").innerHTML="<img src='"+img_url+"'>";
+        $.post('push_event', { event: 'geoposition', eventid: 'geoposition_' + position.timestamp })
+        .done(function(data) {
+          $('#info').text("Sent event to engine: " + data);
+        })
+        .fail(function(err) {
+          $('#info').text("Error: " + err);
+        });
+      }
+       
+      function displayError(positionError) {
+        $('#info').text('Error: ' + positionError);
+      }
+       
+      var gl = navigator.geolocation;
+       
+      if (gl) {
+        gl.getCurrentPosition(displayPosition, displayError);
+      } else {
+        $('#info').text('Geolocation services are not supported by your web browser.');
+      }
+
+    </script>
+    <div id="print"></div>
+    <div id="mapholder"></div>
+    <div id="info"></div>
   </body>
 </html>

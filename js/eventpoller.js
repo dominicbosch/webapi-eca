@@ -126,7 +126,7 @@ function checkRemotes() {
               process.send({
                 event: p,
                 eventid: 'polled_' + eId++,
-                data: obj
+                payload: obj
               });
             }
           };

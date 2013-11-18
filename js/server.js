@@ -24,8 +24,7 @@ dog's back.
 */
 
 //FIXME server should be started via command line arguments http_port and logging level to allow proper testing
-var fs = require('fs'),
-    path = require('path'),
+var path = require('path'),
     log = require('./logging'),
     procCmds = {
       'die': function() { shutDown(); }
@@ -36,7 +35,10 @@ var fs = require('fs'),
 
 function init() {
   log.print('RS', 'STARTING SERVER');
-  
+  if(!require('./config').isReady()) {
+    log.error('RS', 'Config file not ready!');
+    return;
+  } 
   if(process.argv.length > 2) {
     args.logType = parseInt(process.argv[2]) || 0 ;
     log(args);
@@ -56,12 +58,13 @@ function init() {
     'loadactions':  mm.loadActionModulesFromFS,
     'loadevent': mm.loadEventModuleFromFS,
     'loadevents': mm.loadEventModulesFromFS,
+    'loadusers': http_listener.loadUsers,
     'shutdown': shutDown
   };
   log.print('RS', 'Initialzing engine');
   engine.addDBLinkAndLoadActionsAndRules(db);
   log.print('RS', 'Initialzing http listener');
-  http_listener.addHandlers(handleAdminCommands, engine.pushEvent);
+  http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
   log.print('RS', 'Initialzing module manager');
   mm.addHandlers(db, engine.loadActionModule, engine.addRule);
   //FIXME load actions and events, then rules, do this here, visible for everybody on the first glance
@@ -81,6 +84,7 @@ function handleAdminCommands(args, answHandler) {
   	};
   }, 2000);
 }
+
 
 function shutDown(args, answHandler) {
   if(answHandler) answHandler.answerSuccess('Goodbye!');

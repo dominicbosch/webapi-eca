@@ -34,6 +34,14 @@ function loadConfigFile(relPath) {
 }
 
 /**
+ * Answer true if the config file is ready, else false
+ */
+exports.isReady = function() {
+  if(config) return true;
+  else return false;
+};
+
+/**
  * Fetch a property from the configuration
  * @param {String} prop
  */
