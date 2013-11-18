@@ -36,15 +36,20 @@ function loadEventModule(el, cb) {
     }
     else {
       // log.print('EP', 'Loading Event Module: ' + el);
-      var m = ml.requireFromString(obj, el);
-      db.getEventModuleAuth(el, function(mod) {
-        return function(err, objA) {
-          //TODO authentication needs to be done differently
-          if(objA && mod.loadCredentials) mod.loadCredentials(JSON.parse(objA));
-        };
-      }(m));
-      listEventModules[el] = m;
-      if(typeof cb === 'function') cb(null, m);
+      try {
+        var m = ml.requireFromString(obj, el);
+        db.getEventModuleAuth(el, function(mod) {
+          return function(err, objA) {
+            //TODO authentication needs to be done differently
+            if(objA && mod.loadCredentials) mod.loadCredentials(JSON.parse(objA));
+          };
+        }(m));
+        listEventModules[el] = m;
+        if(typeof cb === 'function') cb(null, m);
+      } catch(e) {
+        if(typeof cb === 'function') cb(e);
+        else log.error(e);
+      }
     }
   });
 }

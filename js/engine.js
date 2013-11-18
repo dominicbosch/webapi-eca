@@ -38,21 +38,23 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
         log.print('EN', 'No Action Modules found in DB!');
         loadRulesFromDB();
       } else {
-        var m, semaphore = 0;
+        var m;
         for(var el in obj) {
-          semaphore++;
           log.print('EN', 'Loading Action Module from DB: ' + el);
-          m = ml.requireFromString(obj[el], el);
-          db.getActionModuleAuth(el, function(mod) {
-            return function(err, obj) {
-              if(--semaphore == 0) {
-                loadRulesFromDB();
-              }
-              if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-            };
-          }(m));
-          listActionModules[el] = m;
+          try{
+            m = ml.requireFromString(obj[el], el);
+            db.getActionModuleAuth(el, function(mod) {
+              return function(err, obj) {
+                if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
+              };
+            }(m));
+            listActionModules[el] = m;
+          } catch(e) {
+            e.addInfo = 'error in action module "' + el + '"';
+            log.error('EN', e);
+          }
         }
+        loadRulesFromDB();
       }
     }
   });

@@ -12,8 +12,16 @@ exports = module.exports = function(args) {
 
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
-  //FIXME load modules only into a safe environment with given modules, no access to whole application
-  var id = path.resolve(dir, name, name + '.js');
+  var id = path.resolve(dir, name, name + '.vm');
+  //FIXME load modules only into a safe environment with given modules, no access to whole application,
+  var vm = require('vm'),
+    sandbox = {
+      log: log,
+      needle: require('needle')
+    };
+    
+  var mod = vm.runInNewContext(src, sandbox, 'myfile.vm');
+  console.log(mod);
   var m = new module.constructor(id, module);
   m.paths = module.paths;
   try {

@@ -1,14 +1,8 @@
 <html>
   <head>
     <title>Mobile Page</title>
-    <script type="text/javascript">
-      document.write("\<script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'>\<\/script>");
-    </script>
-    <style>
-      body {
-        font-family: sans-serif, "Times New Roman", Georgia, Serif;
-      }
-    </style>
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
     <h1>Mobile Page</h1>
@@ -24,7 +18,7 @@
         +lat+","+lon+"&zoom=15&size=400x300&sensor=false&maptype=roadmap&markers=color:orange|label:1|"+lat+","+lon;
         
         document.getElementById("mapholder").innerHTML="<img src='"+img_url+"'>";
-        $.post('push_event', { event: 'geoposition', eventid: 'geoposition_' + position.timestamp })
+        $.post('../push_event', { event: 'geoposition', eventid: 'geoposition_' + position.timestamp })
         .done(function(data) {
           $('#info').text("Sent event to engine: " + data);
         })

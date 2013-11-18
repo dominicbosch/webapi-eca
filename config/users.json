@@ -1,3 +1,6 @@
 {
-  "dominic": "test"
+  "dominic": {
+    "password": "test",
+    "roles": [ "admin" ]
+  }
 }

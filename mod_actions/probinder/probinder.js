@@ -7,7 +7,9 @@ var needle = require('needle');
 
 var urlService = 'https://probinder.com/service/',
   credentials = null;
-
+log.print('PB', module);
+log.print('PB', exports);
+log.print('PB', module.exports);
 function loadCredentials(cred) {
   if(!cred || !cred.username || !cred.password) {
     console.error('ERROR: ProBinder AM credentials file corrupt');

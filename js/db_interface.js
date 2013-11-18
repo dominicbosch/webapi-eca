@@ -89,20 +89,20 @@ function replyHandler(action) {
  * 
  * @param {String} set the set name how it is stored in the DB
  * @param {function} funcSingle the function that fetches single entries from the DB
- * @param {function} callback the function to be called on success or error, receives
+ * @param {function} cb the function to be called on success or error, receives
  *                    arguments (err, obj)
  */
-function getSetRecords(set, funcSingle, callback) {
+function getSetRecords(set, funcSingle, cb) {
   if(db) db.smembers(set, function(err, reply) {
     if(err) log.error('DB', 'fetching ' + set + ': ' + err);
     else {
       if(reply.length === 0) {
-        callback(null, null);
+        cb(null, null);
       } else {
         var semaphore = reply.length, objReplies = {};
         setTimeout(function() {
           if(semaphore > 0) {
-            callback('Timeout fetching ' + set, null);
+            cb('Timeout fetching ' + set, null);
           }
         }, 1000);
         for(var i = 0; i < reply.length; i++){
@@ -111,7 +111,7 @@ function getSetRecords(set, funcSingle, callback) {
               if(err) log.error('DB', ' fetching single element: ' + prop);
               else {
                 objReplies[prop] = reply;
-                if(--semaphore === 0) callback(null, objReplies);
+                if(--semaphore === 0) cb(null, objReplies);
               }
             };
           }(reply[i]));
@@ -143,22 +143,22 @@ exports.storeActionModule = function(id, data) {
 };
 
 /**
- * ### getActionModule(id, callback)
+ * ### getActionModule(id, cb)
  * Query the DB for an action module.
  * @param {String} id the module id
- * @param {function} callback the callback to receive the answer (err, obj)
+ * @param {function} cb the cb to receive the answer (err, obj)
  */
-exports.getActionModule = function(id, callback) {
-  if(callback && db) db.get('action_module_' + id, callback);
+exports.getActionModule = function(id, cb) {
+  if(cb && db) db.get('action_module_' + id, cb);
 };
 
 /**
- * ### getActionModules(callback)
+ * ### getActionModules(cb)
  * Fetch all action modules.
- * @param {function} callback the callback to receive the answer (err, obj)
+ * @param {function} cb the cb to receive the answer (err, obj)
  */
-exports.getActionModules = function(callback) {
-  getSetRecords('action_modules', exports.getActionModule, callback);
+exports.getActionModules = function(cb) {
+  getSetRecords('action_modules', exports.getActionModule, cb);
 };
 
 /**
@@ -175,14 +175,14 @@ exports.storeActionModuleAuth = function(id, data) {
 };
 
 /**
- * ### getActionModuleAuth(id, callback)
+ * ### getActionModuleAuth(id, cb)
  * Query the DB for an action module authentication token.
  * @param {String} id the module id
- * @param {function} callback the callback to receive the answer (err, obj)
+ * @param {function} cb the cb to receive the answer (err, obj)
  */
-exports.getActionModuleAuth = function(id, callback) {
-  if(callback && db) db.get('action_module_' + id + '_auth', function(id) {
-    return function(err, txt) { callback(err, decrypt(txt, 'action_module_' + id + '_auth')); };
+exports.getActionModuleAuth = function(id, cb) {
+  if(cb && db) db.get('action_module_' + id + '_auth', function(id) {
+    return function(err, txt) { cb(err, decrypt(txt, 'action_module_' + id + '_auth')); };
   }(id));
 };
 
@@ -202,22 +202,22 @@ exports.storeEventModule = function(id, data) {
 };
 
 /**
- * ### getEventModule(id, callback)
+ * ### getEventModule(id, cb)
  * Query the DB for an event module.
  * @param {String} id the module id
- * @param {function} callback the callback to receive the answer (err, obj)
+ * @param {function} cb the cb to receive the answer (err, obj)
  */
-exports.getEventModule = function(id, callback) {
-  if(callback && db) db.get('event_module_' + id, callback);
+exports.getEventModule = function(id, cb) {
+  if(cb && db) db.get('event_module_' + id, cb);
 };
 
 /**
- * ### getEventModules(callback)
+ * ### getEventModules(cb)
  * Fetch all event modules.
- * @param {function} callback the callback that receives the arguments (err, obj)
+ * @param {function} cb the cb that receives the arguments (err, obj)
  */
-exports.getEventModules = function(callback) {
-  getSetRecords('event_modules', exports.getEventModule, callback);
+exports.getEventModules = function(cb) {
+  getSetRecords('event_modules', exports.getEventModule, cb);
 };
 
 /**
@@ -233,14 +233,14 @@ exports.storeEventModuleAuth = function(id, data) {
   }
 };
 
-// @method getEventModuleAuth(id, callback)
+// @method getEventModuleAuth(id, cb)
 
 // Query the DB for an event module authentication token.
 // @param {String} id the module id
-// @param {function} callback the callback to receive the answer (err, obj)
-exports.getEventModuleAuth = function(id, callback) {
-  if(callback) db.get('event_module_' + id +'_auth',  function(id) {
-    return function(err, txt) { callback(err, decrypt(txt, 'event_module_' + id + '_auth')); };
+// @param {function} cb the cb to receive the answer (err, obj)
+exports.getEventModuleAuth = function(id, cb) {
+  if(cb) db.get('event_module_' + id +'_auth',  function(id) {
+    return function(err, txt) { cb(err, decrypt(txt, 'event_module_' + id + '_auth')); };
   }(id));
 };
 
@@ -258,31 +258,40 @@ exports.storeRule = function(id, data) {
   }
 };
 
-// @method getRule(id, callback)
+// @method getRule(id, cb)
 
 // Query the DB for a rule.
 // @param {String} id the rule id
-// @param {function} callback the callback to receive the answer (err, obj)
-exports.getRule = function(id, callback) {
-  if(db) db.get('rule_' + id, callback);
+// @param {function} cb the cb to receive the answer (err, obj)
+exports.getRule = function(id, cb) {
+  if(db) db.get('rule_' + id, cb);
 };
 
-// @method getRules(callback)
+// @method getRules(cb)
 
 // Fetch all rules from the database.  
-// @param {function} callback the callback to receive the answer (err, obj)
-exports.getRules = function(callback) {
-  getSetRecords('rules', exports.getRule, callback);
+// @param {function} cb
+exports.getRules = function(cb) {
+  getSetRecords('rules', exports.getRule, cb);
 };
 
 /**
  * 
- * @param {function} cb
  * @param {Object} objUser
+ * @param {function} cb
  */
-exports.storeUser = function(cb, objUser) {
+exports.storeUser = function(objUser, cb) {
   if(db && objUser && objUser.id) {
     db.sadd('users', objUser.id, replyHandler('storing user key ' + objUser.id));
     db.set('user:' + objUser.id, data, replyHandler('storing user properties ' + objUser.id));
   }
+};
+
+/**
+ * 
+ * @param {Object} objUser
+ * @param {function} cb
+ */
+exports.loginUser = function(objUser, cb) {
+  if(db) db.get('user:' + id, cb);
 };

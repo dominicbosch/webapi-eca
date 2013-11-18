@@ -1,6 +1,8 @@
-
-var log = require('./logging'),
-    db = require('./db_interface'), adminHandler;
+var path = require('path'),
+    qs = require('querystring'),
+    log = require('./logging'),
+    db = require('./db_interface'),
+    adminHandler;
     
 exports = module.exports = function(args) {
   args = args || {};
@@ -17,14 +19,33 @@ exports.handleRequest = function(req, resp) {
   req.on('end', function () {
     resp.end();
   });
-  if(req.session && req.session.lastPage) resp.send('You visited last: ' + req.session.lastPage);
-  else resp.send('You are new!');
+  if(req.session && req.session.user) {
+    resp.send('You\'re logged in');
+  } else resp.sendfile(path.resolve(__dirname, '..', 'webpages', 'handlers', 'login.html'));
   // resp.end();
   log.print('UH', 'last: '+ req.session.lastPage);
   req.session.lastPage = req.originalUrl;
   log.print('UH', 'last: '+ req.session.lastPage);
   log.print('UH', 'retrieved req: '+ req.originalUrl);
   // console.log(req);
+};
+
+exports.handleLogin = function(req, resp) {
+  var body = '';
+  req.on('data', function (data) { body += data; });
+  req.on('end', function () {
+    if(!req.session || !req.session.user) {
+      var obj = qs.parse(body);
+      req.session.user = db.loginUser(obj.username, obj.password);
+    }
+    if(req.session.user) {
+      resp.write('Welcome ' + req.session.user.name + '!');
+    } else {
+      resp.writeHead(401, { "Content-Type": "text/plain" });
+      resp.write('Login failed!');
+    }
+    resp.end();
+  });
 };
 
 function answerHandler(r) {

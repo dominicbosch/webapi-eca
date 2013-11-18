@@ -11,12 +11,14 @@
  */
 var fs = require('fs'),
     logTypes = [ flushToConsole, flushToFile, null],
-    logType = 0, logFile = './server.log';
+    logFile = require('path').resolve(__dirname, '..', 'server.log'),
+    logType = 0;
 
 exports = module.exports = function(args) {
   args = args || {};
   if(args.logType) logType = parseInt(args.logType) || 0;
   if(logType == 1) fs.truncateSync(logFile, 0);
+  if(logType > logTypes.length - 1) logType = 0;
   return module.exports;
 };
 

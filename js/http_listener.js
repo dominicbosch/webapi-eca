@@ -63,15 +63,23 @@ exports.addHandlers = function(funcAdminHandler, funcEvtHandler) {
   // } }
 
   // Redirect the requests to the appropriate handler.
-  app.use('/doc/', express.static(path.resolve(__dirname, '..', 'webpages', 'doc')));
+  app.use('/', express.static(path.resolve(__dirname, '..', 'webpages')));
+  // app.use('/doc/', express.static(path.resolve(__dirname, '..', 'webpages', 'doc')));
   // app.get('/mobile', userHandler.handleRequest);
   app.get('/rulesforge', userHandler.handleRequest);
-  app.use('/mobile/', express.static(path.resolve(__dirname, '..', 'webpages', 'mobile')));
+  // app.use('/mobile', express.static(path.resolve(__dirname, '..', 'webpages', 'mobile')));
   // } app.use('/rulesforge/', express.static(path.resolve(__dirname, '..', 'webpages', 'rulesforge')));
   app.get('/admin', userHandler.handleRequest);
+  app.post('/login', userHandler.handleLogin);
   app.post('/push_event', onPushEvent);
-  if(http_port) server = app.listen(http_port); // inbound event channel
-  else log.error('HL', new Error('No HTTP port found!? Nothing to listen on!...'));
+  try {
+    if(http_port) server = app.listen(http_port); // inbound event channel
+    else log.error('HL', new Error('No HTTP port found!? Nothing to listen on!...'));
+  } catch(e) {
+    e.addInfo = 'port unavailable';
+    log.error(e);
+    funcAdminHandler({cmd: 'shutdown'});
+  }
 };
 
 /**
@@ -86,12 +94,10 @@ function onPushEvent(req, resp) {
     if(obj && obj.event && obj.eventid){
       resp.writeHead(200, { "Content-Type": "text/plain" });
       resp.write('Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
-      resp.end();
       eventHandler(obj);
     } else {
       resp.writeHead(400, { "Content-Type": "text/plain" });
       resp.write('Your event was missing important parameters!');
-      resp.end();
     }
     resp.end();
   });

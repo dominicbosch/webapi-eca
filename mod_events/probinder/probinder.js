@@ -1,6 +1,6 @@
 'use strict';
 
-var needle = require('needle');
+// var needle = require('needle');
 
 /*
  * ProBinder EVENT MODULE
