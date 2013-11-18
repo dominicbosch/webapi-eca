@@ -19,9 +19,6 @@ var fs = require('fs'),
 
 function init() {
   //FIXME ensure eventpoller receives the log method from the engine
-  console.log('EP receives args:');
-  console.log('logmeth: ' + parseInt(process.argv[2]) || 0);
-  console.log(process.argv);
   if(process.argv.length > 2) log({ logType: parseInt(process.argv[2]) || 0 });
   var args = { logType: log.getLogType() };
   ml = require('./module_loader')(args);
@@ -34,15 +31,15 @@ function init() {
 
 
 function loadEventModules() {
-  //TODO eventpoller will not load event modules from filesystem, this will be done by
-  // the moduel manager and the eventpoller receives messages about new/updated active rules 
+  //TODO eventpoller will not load event modules from db on init, this will be done
+  // when receiving messages about new/updated active rules 
   
   if(db && ml) db.getEventModules(function(err, obj) {
     if(err) log.error('EP', 'retrieving Event Modules from DB!');
     else {
       if(!obj) {
         log.print('EP', 'No Event Modules found in DB!');
-        process.send({ event: 'ep_finished_loading' });
+        //process.send({ event: 'ep_finished_loading' });
       } else {
         var m, semaphore = 0;
         for(var el in obj) {
@@ -51,7 +48,7 @@ function loadEventModules() {
           m = ml.requireFromString(obj[el], el);
           db.getEventModuleAuth(el, function(mod) {
             return function(err, obj) {
-              if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
+              //if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
               if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
             };
           }(m));
@@ -99,7 +96,8 @@ function initMessageActions() {
     }
   });
 }
-
+//FIXME the eventpoller doesn't do the loading! this is done by the module manager, 
+// the ep only gets notified of new rules that require active polling!
 function initAdminCommands() {
   listAdminCommands['loadevent'] = function(args) {
     if(ml) ml.loadModule('mod_events', args[2], loadEventCallback);

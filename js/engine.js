@@ -8,8 +8,6 @@ var path = require('path'),
     listRules = {},
     listActionModules = {},
     isRunning = true,
-    actionsLoaded = false,
-    eventsLoaded = false,
     ml, poller, db;
 
 exports = module.exports = function(args) {
@@ -18,10 +16,7 @@ exports = module.exports = function(args) {
   ml = require('./module_loader')(args);
   poller = cp.fork(path.resolve(__dirname, 'eventpoller'), [log.getLogType()]);
   poller.on('message', function(evt) {
-    if(evt.event === 'ep_finished_loading') {
-      eventsLoaded = true;
-      tryToLoadRules();
-    } else exports.pushEvent(evt);
+    exports.pushEvent(evt);
   });
   //start to poll the event queue
   pollQueue();
@@ -34,16 +29,14 @@ exports = module.exports = function(args) {
  * @param {String} db_port the db port
  * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
  */
-exports.addDBLink = function(db_link) { db = db_link; };
-
-exports.loadActions = function(cb) {
+exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
+  db = db_link;
   if(ml && db) db.getActionModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
       if(!obj) {
         log.print('EN', 'No Action Modules found in DB!');
-        actionsLoaded = true;
-        tryToLoadRules();
+        loadRulesFromDB();
       } else {
         var m, semaphore = 0;
         for(var el in obj) {
@@ -53,8 +46,7 @@ exports.loadActions = function(cb) {
           db.getActionModuleAuth(el, function(mod) {
             return function(err, obj) {
               if(--semaphore == 0) {
-                actionsLoaded = true;
-                tryToLoadRules();
+                loadRulesFromDB();
               }
               if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
             };
@@ -67,12 +59,10 @@ exports.loadActions = function(cb) {
   else log.severe('EN', new Error('Module Loader not defined!'));
 };
 
-function tryToLoadRules() {
-  if(db && eventsLoaded && actionsLoaded) {
-    db.getRules(function(err, obj) {
-      for(var el in obj) exports.loadRule(JSON.parse(obj[el]));
-    });
-  }
+function loadRulesFromDB() {
+  if(db) db.getRules(function(err, obj) {
+    for(var el in obj) exports.loadRule(JSON.parse(obj[el]));
+  });
 }
 
 /**

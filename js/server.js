@@ -48,8 +48,8 @@ function init() {
   engine = require('./engine')(args);
   http_listener = require('./http_listener')(args);
   mm = require('./module_manager')(args);
-  db = require('./db_interface')(args);
   log.print('RS', 'Initialzing DB');
+  db = require('./db_interface')(args);
   objCmds = {
     'loadrules': mm.loadRulesFile,
     'loadaction': mm.loadActionModule,
@@ -58,7 +58,8 @@ function init() {
     'loadevents': engine.loadEventModules,
     'shutdown': shutDown
   };
-  engine.addDBLink(db);
+  log.print('RS', 'Initialzing engine');
+  engine.addDBLinkAndLoadActionsAndRules(db);
   log.print('RS', 'Initialzing http listener');
   http_listener.addHandlers(handleAdminCommands, engine.pushEvent);
   log.print('RS', 'Initialzing module manager');
