@@ -9,12 +9,14 @@
  * - 1 file
  * - 2 silent
  */
-var logTypes = [ flushToConsole, flushToFile, null],
-    logType = 0, logFile;
+var fs = require('fs'),
+    logTypes = [ flushToConsole, flushToFile, null],
+    logType = 0, logFile = './server.log';
 
 exports = module.exports = function(args) {
   args = args || {};
   if(args.logType) logType = parseInt(args.logType) || 0;
+  if(logType == 1) fs.truncateSync(logFile, 0);
   return module.exports;
 };
 
@@ -30,7 +32,7 @@ function flushToConsole(err, msg) {
 }
 
 function flushToFile(err, msg) {
-  fs.appendFile('./server.log', msg, function (err) {});
+  fs.appendFile(logFile, msg + '\n', function (err) {});
 }
 
 // @function print(module, msg)
@@ -51,11 +53,11 @@ exports.print = function(module, msg) {
  */
 function printError(module, err, isSevere) {
   var ts = (new Date()).toISOString() + ' | ', ai = '';
-  if(typeof err === 'string') {
-    var e = new Error();
-    if(module) flush(true, ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
-    else flush(true, ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);
-  } else if(err) {
+  if(!err) err = new Error('Unexpected error');
+  if(typeof err === 'string') err = new Error(err);
+    // if(module) flush(true, ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
+    // else flush(true, ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);
+  // } else if(err) {
     if(err.addInfo) ai = ' (' + err.addInfo + ')';
     if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
     if(module) {
@@ -63,10 +65,10 @@ function printError(module, err, isSevere) {
       if(isSevere) msg += '\n' + err.stack;
       flush(true, msg);
     } else flush(true, ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
-  } else {
-    var e = new Error('Unexpected error');
-    flush(true, e.message + ': \n' + e.stack);
-  }
+  // } else {
+    // var e = new Error('Unexpected error');
+    // flush(true, e.message + ': \n' + e.stack);
+  // }
 };
 
 /**

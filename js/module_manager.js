@@ -4,7 +4,7 @@
 > phase and on user request.
 
 > Event and Action modules are loaded as strings and stored in the database,
-> then compiled into node modules and  and rules
+> then compiled into node modules and rules
  */
 
 'use strict';
@@ -26,33 +26,12 @@ exports.addHandlers = function(db_link, fLoadAction, fLoadRule) {
   funcLoadAction = fLoadAction;
   funcLoadRule = fLoadRule;
 };
+
 /*
-# A First Level Header
-
-
-A Second Level Header
----------------------
-
-Now is the time for all good men to come to
-the aid of their country. This is just a
-regular paragraph.
-
-The quick brown fox jumped over the lazy
-dog's back.
-
-### Header 3
-
-> This is a blockquote.
-> 
-> This is the second paragraph in the blockquote.
->
-> ## This is an H2 in a blockquote
-
-This is the function documentation
-@param {Object} [args] the optional arguments
-@param {String} [args.name] the optional name in the arguments
+ * Load Rules from fs
+ * ------------------
  */
-exports.loadRulesFile = function(args, answHandler) {
+exports.loadRulesFromFS = function(args, answHandler) {
   if(!args) args = {};
   if(!args.name) args.name = 'rules';
   if(!funcLoadRule) log.error('ML', 'no rule loader function available');
@@ -78,6 +57,11 @@ exports.loadRulesFile = function(args, answHandler) {
   }
 };
 
+/*
+ * Load Action Modules from fs
+ * ---------------------------
+ */
+
 /**
  * 
  * @param {Object} name
@@ -87,21 +71,49 @@ exports.loadRulesFile = function(args, answHandler) {
  */
 function loadActionCallback(name, data, mod, auth) {
   db.storeActionModule(name, data); // store module in db
-  funcLoadAction(name, mod); // hand compiled module back
+  funcLoadAction(name, mod); // hand back compiled module
   if(auth) db.storeActionModuleAuth(name, auth);
 }
 
-exports.loadActionModule = function (args, answHandler) {
-  if(ml && args && args.name) {
-		answHandler.answerSuccess('Loading action module ' + args.name + '...');
-    ml.loadModule('mod_actions', args.name, loadActionCallback);
+exports.loadActionModuleFromFS = function (args, answHandler) {
+  if(ml) {
+    if(args && args.name) {
+  		answHandler.answerSuccess('Loading action module ' + args.name + '...');
+      ml.loadModule('mod_actions', args.name, loadActionCallback);
+    } else log.error('MM', 'Action Module name not provided!');
   }
 };
 
-exports.loadActionModules = function(args, answHandler) {
+exports.loadActionModulesFromFS = function(args, answHandler) {
   if(ml) {
   	answHandler.answerSuccess('Loading action modules...');
     ml.loadModules('mod_actions', loadActionCallback);
   }
 };
- 
+
+/*
+ * Load Event Modules from fs
+ * --------------------------
+ */
+
+function loadEventCallback(name, data, mod, auth) {
+  if(db) {
+    db.storeEventModule(name, data); // store module in db
+    if(auth) db.storeEventModuleAuth(name, auth);
+  }
+}
+
+exports.loadEventModuleFromFS = function(args, answHandler) {
+  if(ml) {
+    if(args && args.name) {
+      answHandler.answerSuccess('Loading event module ' + args.name + '...');
+      ml.loadModule('mod_events', args.name, loadEventCallback);
+    } else log.error('MM', 'Event Module name not provided!');
+  }
+};
+
+exports.loadEventModulesFromFS = function(args, answHandler) {
+  answHandler.answerSuccess('Loading event moules...');
+    ml.loadModules('mod_actions', loadEventCallback);
+};
+

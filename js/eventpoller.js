@@ -18,64 +18,67 @@ var fs = require('fs'),
 
 
 function init() {
-  //FIXME ensure eventpoller receives the log method from the engine
   if(process.argv.length > 2) log({ logType: parseInt(process.argv[2]) || 0 });
   var args = { logType: log.getLogType() };
   ml = require('./module_loader')(args);
   db = require('./db_interface')(args);
   initAdminCommands();
   initMessageActions();
-  loadEventModules();
   pollLoop();
 };
 
 
-function loadEventModules() {
-  //TODO eventpoller will not load event modules from db on init, this will be done
-  // when receiving messages about new/updated active rules 
-  
-  if(db && ml) db.getEventModules(function(err, obj) {
-    if(err) log.error('EP', 'retrieving Event Modules from DB!');
+function loadEventModule(el, cb) {
+  if(db && ml) db.getEventModule(el, function(err, obj) {
+    if(err || !obj) {
+      if(typeof cb === 'function') cb(new Error('Retrieving Event Module ' + el + ' from DB: ' + err));
+      else log.error('EP', 'Retrieving Event Module ' + el + ' from DB!');
+    }
     else {
-      if(!obj) {
-        log.print('EP', 'No Event Modules found in DB!');
-        //process.send({ event: 'ep_finished_loading' });
-      } else {
-        var m, semaphore = 0;
-        for(var el in obj) {
-          semaphore++;
-          log.print('EP', 'Loading Event Module: ' + el);
-          m = ml.requireFromString(obj[el], el);
-          db.getEventModuleAuth(el, function(mod) {
-            return function(err, obj) {
-              //if(--semaphore === 0) process.send({ event: 'ep_finished_loading' });
-              if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-            };
-          }(m));
-          listEventModules[el] = m;
-        }
-      }
+      // log.print('EP', 'Loading Event Module: ' + el);
+      var m = ml.requireFromString(obj, el);
+      db.getEventModuleAuth(el, function(mod) {
+        return function(err, objA) {
+          //TODO authentication needs to be done differently
+          if(objA && mod.loadCredentials) mod.loadCredentials(JSON.parse(objA));
+        };
+      }(m));
+      listEventModules[el] = m;
+      if(typeof cb === 'function') cb(null, m);
     }
   });
+}
+
+function fetchPollFunctionFromModule(mod, func) {
+  for(var i = 1; i < func.length; i++) {
+    if(mod) mod = mod[func[i]];
+  }
+  if(mod) {
+    log.print('EP', 'Found active event module "' + func.join('->') + '", adding it to polling list');
+    //FIXME change this to [module][prop] = module; because like this identical properties get overwritten
+    // also add some on a per user basis information because this should go into a user context for the users
+    // that sat up this rule!
+    listPoll[func.join('->')] = mod;
+  } else {
+    log.print('EP', 'No property "' + func.join('->') + '" found');
+  }
 }
 
 function initMessageActions() {
   listMessageActions['event'] = function(args) {
     var prop = args[1], arrModule = prop.split('->');
-    // var arrModule = obj.module.split('->');
     if(arrModule.length > 1){
-      var module = listEventModules[arrModule[0]];
-      for(var i = 1; i < arrModule.length; i++) {
-        if(module) module = module[arrModule[i]];
-      }
-      if(module) {
-        log.print('EP', 'Found active event module "' + prop + '", adding it to polling list');
-        //FIXME change this to [module][prop] = module; because like this identical properties get overwritten
-        // also add some on a per user basis information because this should go into a user context for the users
-        // that sat up this rule!
-        listPoll[prop] = module;
+      if(listEventModules[arrModule[0]]) {
+        fetchPollFunctionFromModule(listEventModules[arrModule[0]], arrModule);
       } else {
-        log.print('EP', 'No property "' + prop + '" found');
+        log.print('EP', 'Event Module ' + arrModule[0] + ' needs to be loaded, doing it now...');
+        loadEventModule(arrModule[0], function(err, obj) {
+          if(err || !obj) log.error('EP', 'Event Module "' + arrModule[0] + '" not found: ' + err);
+          else {
+            log.print('EP', 'Event Module ' + arrModule[0] + ' found and loaded');
+            fetchPollFunctionFromModule(obj, arrModule);
+          }
+        });
       }
     }
   };
@@ -96,28 +99,13 @@ function initMessageActions() {
     }
   });
 }
-//FIXME the eventpoller doesn't do the loading! this is done by the module manager, 
-// the ep only gets notified of new rules that require active polling!
+
 function initAdminCommands() {
-  listAdminCommands['loadevent'] = function(args) {
-    if(ml) ml.loadModule('mod_events', args[2], loadEventCallback);
-  };
-  listAdminCommands['loadevents'] = function(args) {
-    if(ml) ml.loadModules('mod_events', loadEventCallback);
-  };
   listAdminCommands['shutdown'] = function(args) {
     log.print('EP', 'Shutting down DB Link');
     isRunning = false;
     if(db) db.shutDown();
   };
-}
-
-function loadEventCallback(name, data, mod, auth) {
-  if(db) {
-    db.storeEventModule(name, data); // store module in db
-    if(auth) db.storeEventModuleAuth(name, auth);
-    listEventModules[name] = mod; // store compiled module for polling
-  }
 }
 
 function checkRemotes() {

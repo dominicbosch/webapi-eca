@@ -56,12 +56,12 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
       }
     }
   });
-  else log.severe('EN', new Error('Module Loader not defined!'));
+  else log.severe('EN', new Error('Module Loader or DB not defined!'));
 };
 
 function loadRulesFromDB() {
   if(db) db.getRules(function(err, obj) {
-    for(var el in obj) exports.loadRule(JSON.parse(obj[el]));
+    for(var el in obj) exports.addRule(JSON.parse(obj[el]));
   });
 }
 
@@ -75,10 +75,10 @@ exports.loadActionModule = function(name, objModule) {
 };
 
 /**
- * Insert a rule into the eca rules repository
+ * Add a rule into the working memory
  * @param {Object} objRule the rule object
  */
-exports.loadRule = function(objRule) {
+exports.addRule = function(objRule) {
   //TODO validate rule
   log.print('EN', 'Loading Rule: ' + objRule.id);
   if(listRules[objRule.id]) log.print('EN', 'Replacing rule: ' + objRule.id);
@@ -220,18 +220,6 @@ function preprocessActionArguments(evt, act, res) {
     }
   }
 }
-
-exports.loadEventModule = function(args, answHandler) {
-  if(args && args.name) {
-  	answHandler.answerSuccess('Loading event module ' + args.name + '...');
-  	poller.send('cmd|loadevent|'+args.name);
-  } else if(args) answHandler.answerError(args.name + ' not found');
-};
-
-exports.loadEventModules = function(args, answHandler) {
-	answHandler.answerSuccess('Loading event moules...');
-  poller.send('cmd|loadevents');
-};
 
 exports.shutDown = function() {
   log.print('EN', 'Shutting down Poller and DB Link');

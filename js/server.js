@@ -51,11 +51,11 @@ function init() {
   log.print('RS', 'Initialzing DB');
   db = require('./db_interface')(args);
   objCmds = {
-    'loadrules': mm.loadRulesFile,
-    'loadaction': mm.loadActionModule,
-    'loadactions':  mm.loadActionModules,
-    'loadevent': engine.loadEventModule,
-    'loadevents': engine.loadEventModules,
+    'loadrules': mm.loadRulesFromFS,
+    'loadaction': mm.loadActionModuleFromFS,
+    'loadactions':  mm.loadActionModulesFromFS,
+    'loadevent': mm.loadEventModuleFromFS,
+    'loadevents': mm.loadEventModulesFromFS,
     'shutdown': shutDown
   };
   log.print('RS', 'Initialzing engine');
@@ -63,7 +63,7 @@ function init() {
   log.print('RS', 'Initialzing http listener');
   http_listener.addHandlers(handleAdminCommands, engine.pushEvent);
   log.print('RS', 'Initialzing module manager');
-  mm.addHandlers(db, engine.loadActionModule, engine.loadRule);
+  mm.addHandlers(db, engine.loadActionModule, engine.addRule);
   //FIXME load actions and events, then rules, do this here, visible for everybody on the first glance
   //TODO for such events we should forge the architecture more into an event driven one
 }

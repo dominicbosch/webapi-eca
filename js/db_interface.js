@@ -17,10 +17,11 @@ var redis = require('redis'),
     log = require('./logging'),
     crypto_key, db;
    
+
 /**
  * Initializes the DB connection. Requires a valid configuration file which contains
  * a db port and a crypto key.
- * @param args {Object}
+ * 
  */
 exports = module.exports = function(args) {
   args = args || {};
@@ -122,6 +123,7 @@ function getSetRecords(set, funcSingle, callback) {
 
 // Shuts down the db link.
 exports.shutDown = function() { if(db) db.quit(); };
+
 
 // ## Action Modules
 
