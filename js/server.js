@@ -111,11 +111,10 @@ function handleAdminCommands(args, answHandler) {
     if(typeof func == 'function') func(args, answHandler);
   } else log.print('RS', 'No command in request');
   setTimeout(function(ah) {
-  	answHandler = ah;
   	return function() {
-  		if(!answHandler.isAnswered()) answHandler.answerError('Not handeled...');
+  		if(!ah.isAnswered()) ah.answerError('Not handeled...');
   	};
-  }, 2000);
+  }(answHandler), 2000);
 }
 
 /**

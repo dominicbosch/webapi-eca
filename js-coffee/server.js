@@ -18,17 +18,197 @@ Valid `log_type`'s are:
 
 
 (function() {
-  var root;
+  'use strict';
+  var adminCmds, args, conf, continueInit, db, engine, handleAdminCommands, http_listener, init, log, mm, path, procCmds, shutDown;
 
-  root = typeof exports !== "undefined" && exports !== null ? exports : this;
+  path = require('path');
 
-  root.foo = function() {
-    return 'Hello World';
+  log = require('./logging');
+
+  conf = require('./config');
+
+  db = require('./db_interface');
+
+  engine = require('./engine');
+
+  http_listener = require('./http_listener');
+
+  mm = require('./module_manager');
+
+  args = {};
+
+  procCmds = {};
+
+  /* Prepare the admin commands that are issued via HTTP requests.*/
+
+
+  adminCmds = {
+    'loadrules': mm.loadRulesFromFS,
+    'loadaction': mm.loadActionModuleFromFS,
+    'loadactions': mm.loadActionModulesFromFS,
+    'loadevent': mm.loadEventModuleFromFS,
+    'loadevents': mm.loadEventModulesFromFS,
+    'loadusers': http_listener.loadUsers,
+    'shutdown': shutDown
   };
 
   /*
-  My comments will show up here
+  Error handling of the express port listener requires special attention,
+  thus we have to catch the process error, which is issued if
+  the port is already in use.
   */
 
+
+  process.on('uncaughtException', function(err) {
+    switch (err.errno) {
+      case 'EADDRINUSE':
+        err.addInfo = 'http_port already in use, shutting down!';
+        log.error('RS', err);
+        shutDown();
+        break;
+      default:
+        log.error(err);
+    }
+    return null;
+  });
+
+  /*
+  ## Initialize the Server
+  This function is invoked right after the module is loaded and starts the server.
+  */
+
+
+  init = function() {
+    log.print('RS', 'STARTING SERVER');
+    if (!conf.isReady()) {
+      log.error('RS', 'Config file not ready!');
+      process.exit;
+    }
+    /* Fetch the `log_type` argument and post a log about which log type is used.*/
+
+    if (process.argv.length > 2) {
+      args.logType = parseInt(process.argv[2]) || 0;
+      switch (args.logType) {
+        case 0:
+          log.print('RS', 'Log type set to standard I/O output');
+          break;
+        case 1:
+          log.print('RS', 'Log type set to file output');
+          break;
+        case 2:
+          log.print('RS', 'Log type set to silent');
+          break;
+        default:
+          log.print('RS', 'Unknown log type, using standard I/O');
+      }
+      log(args);
+    } else {
+      log.print('RS', 'No log method argument provided, using standard I/O');
+    }
+    /* Fetch the `http_port` argument*/
+
+    if (process.argv.length > 3) {
+      args.http_port = parseInt(process.argv[3]);
+    } else {
+      log.print('RS', 'No HTTP port passed, using standard port from config file');
+    }
+    /* Initialize all required modules with the args object.*/
+
+    db(args);
+    return db.isConnected(function(err, result) {
+      if (!err) {
+        return continueInit();
+      }
+    });
+  };
+
+  continueInit = function() {
+    log.print('RS', 'Initialzing engine');
+    engine(args);
+    log.print('RS', 'Initialzing http listener');
+    http_listener(args);
+    log.print('RS', 'Initialzing module manager');
+    mm(args);
+    log.print('RS', 'Initialzing DB');
+    /* Distribute handlers between modules to link the application.*/
+
+    log.print('RS', 'Passing handlers to engine');
+    engine.addDBLinkAndLoadActionsAndRules(db);
+    log.print('RS', 'Passing handlers to http listener');
+    http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
+    log.print('RS', 'Passing handlers to module manager');
+    mm.addHandlers(db, engine.loadActionModule, engine.addRule);
+    return null;
+  };
+
+  /*
+  admin commands handler receives all command arguments and an answerHandler
+  object that eases response handling to the HTTP request issuer.
+  */
+
+
+  handleAdminCommands = function(args, answHandler) {
+    var fAnsw, _name;
+    if (args && args.cmd) {
+      if (typeof adminCmds[_name = args.cmd] === "function") {
+        adminCmds[_name](args, answHandler);
+      }
+    } else {
+      log.print('RS', 'No command in request');
+    }
+    fAnsw = function(ah) {
+      return function() {
+        if (!ah.isAnswered()) {
+          return answHandler.answerError('Not handled...');
+        }
+      };
+    };
+    setTimeout(fAnsw(answHandler), 2000);
+    return null;
+  };
+
+  /*
+  Shuts down the server.
+  @param {Object} args
+  @param {Object} answHandler
+  */
+
+
+  shutDown = function(args, answHandler) {
+    if (answHandler != null) {
+      answHandler.answerSuccess('Goodbye!');
+    }
+    log.print('RS', 'Received shut down command!');
+    if (engine != null) {
+      engine.shutDown();
+    }
+    return http_listener != null ? http_listener.shutDown() : void 0;
+  };
+
+  /*
+  ## Process Commands
+  
+  When the server is run as a child process, this function handles messages
+  from the parent process (e.g. the testing suite)
+  */
+
+
+  process.on('message', function(cmd) {
+    return typeof procCmds[cmd] === "function" ? procCmds[cmd]() : void 0;
+  });
+
+  /*
+  The die command redirects to the shutDown function.
+  */
+
+
+  procCmds.die = shutDown;
+
+  /*
+  *Start initialization*
+  */
+
+
+  init();
 
 }).call(this);
