@@ -66,6 +66,13 @@ function init() {
   else log.print('RS', 'No HTTP port passed, using standard port from config file');
   
   // Initialize all required modules with the args object.
+  db = require('./db_interface')(args);
+  db.isConnected(function(err, result) {
+    if(!err) continueInit();
+  });
+}
+
+function continueInit() {
   log.print('RS', 'Initialzing engine');
   engine = require('./engine')(args);
   log.print('RS', 'Initialzing http listener');
@@ -73,7 +80,6 @@ function init() {
   log.print('RS', 'Initialzing module manager');
   mm = require('./module_manager')(args);
   log.print('RS', 'Initialzing DB');
-  db = require('./db_interface')(args);
   
   // Load the admin commands that are issued via HTTP requests. 
   adminCmds = {

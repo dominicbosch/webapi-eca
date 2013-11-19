@@ -1,15 +1,17 @@
-// # DB Interface
-// Handles the connection to the database and provides functionalities for
-// event/action modules, rules and the encrypted storing of authentication tokens.
-
-// ## General
-// General functionality as a wrapper for the module holds initialization,
-// encryption/decryption, the retrieval of modules and shut down.
-// Modules of the same group, e.g. action modules are registered in an unordered
-// set in the database, from where they can be retrieved again. For example a new
-// action module has its ID (e.g 'probinder') first registered in the set
-// 'action_modules' and then stored in the db with the key 'action\_module\_' + ID
-// (e.g. action\_module\_probinder). 
+/**
+ *  # DB Interface
+ * Handles the connection to the database and provides functionalities for
+ * event/action modules, rules and the encrypted storing of authentication tokens.
+ * 
+ * ## General
+ * General functionality as a wrapper for the module holds initialization,
+ * encryption/decryption, the retrieval of modules and shut down.
+ * Modules of the same group, e.g. action modules are registered in an unordered
+ * set in the database, from where they can be retrieved again. For example a new
+ * action module has its ID (e.g 'probinder') first registered in the set
+ * 'action_modules' and then stored in the db with the key 'action\_module\_' + ID
+ * (e.g. action\_module\_probinder). 
+ */
 'use strict';
 
 var redis = require('redis'),
@@ -29,12 +31,26 @@ exports = module.exports = function(args) {
   
   var config = require('./config')(args);
   crypto_key = config.getCryptoKey();
-  db = redis.createClient(config.getDBPort());
+  db = redis.createClient(config.getDBPort(), 'localhost', { connect_timeout: 2000 });
   db.on("error", function (err) {
     err.addInfo = 'message from DB';
     log.error('DB', err);
   });
   return module.exports;
+};
+
+exports.isConnected = function(cb) {
+  if(db.connected) cb(null);
+  else setTimeout(function() {
+    if(db.connected) {
+      log.print('DB', 'Successfully connected to DB!');
+      cb(null);
+    } else {
+      var e = new Error('Connection to DB failed!');
+      log.error('DB', e);
+      cb(e);
+    }
+  }, 3000);
 };
 
 /**
@@ -281,17 +297,26 @@ exports.getRules = function(cb) {
  * @param {function} cb
  */
 exports.storeUser = function(objUser, cb) {
-  if(db && objUser && objUser.id) {
-    db.sadd('users', objUser.id, replyHandler('storing user key ' + objUser.id));
-    db.set('user:' + objUser.id, data, replyHandler('storing user properties ' + objUser.id));
+  if(db && objUser && objUser.username && objUser.password) {
+    db.sadd('users', objUser.username, replyHandler('storing user key ' + objUser.username));
+    objUser.password = encrypt(objUser.password);
+    db.set('user:' + objUser.username, objUser, replyHandler('storing user properties ' + objUser.username));
   }
 };
 
 /**
- * 
+ * Checks the credentials and on success returns the user object.
  * @param {Object} objUser
  * @param {function} cb
  */
-exports.loginUser = function(objUser, cb) {
-  if(db) db.get('user:' + id, cb);
+exports.loginUser = function(username, password, cb) {
+  if(typeof cb !== 'function') return;
+  if(db) db.get('user:' + username, function(p) {
+    return function(err, obj) {
+      if(err) cb(err);
+      else if(encrypt(obj.password) === p) cb(null, obj);
+      else cb(new Error('Wrong credentials!'));
+    };
+  }(password));
+  else cb(new Error('No database link available!'));
 };

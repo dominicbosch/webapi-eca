@@ -8,6 +8,11 @@ exports = module.exports = function(args) {
   args = args || {};
   log(args);
   db(args);
+  var users = JSON.parse(require('fs').readFileSync(path.resolve(__dirname, '..', 'config', 'users.json')));
+  for(var name in users) {
+    db.storeUser(users[name]);
+  }
+ 
   return module.exports;
 };
 
@@ -36,15 +41,17 @@ exports.handleLogin = function(req, resp) {
   req.on('end', function () {
     if(!req.session || !req.session.user) {
       var obj = qs.parse(body);
-      req.session.user = db.loginUser(obj.username, obj.password);
+      db.loginUser(obj.username, obj.password, function(err, obj) {
+        if(!err) req.session.user = obj;
+        if(req.session.user) {
+          resp.write('Welcome ' + req.session.user.name + '!');
+        } else {
+          resp.writeHead(401, { "Content-Type": "text/plain" });
+          resp.write('Login failed!');
+        }
+        resp.end();
+      });
     }
-    if(req.session.user) {
-      resp.write('Welcome ' + req.session.user.name + '!');
-    } else {
-      resp.writeHead(401, { "Content-Type": "text/plain" });
-      resp.write('Login failed!');
-    }
-    resp.end();
   });
 };
 
@@ -70,7 +77,6 @@ function answerHandler(r) {
   };
 };
 
-//FIXME this answer handling is a very ugly hack, improve!
 function onAdminCommand(request, response) {
   var q = request.query;
   log.print('HL', 'Received admin request: ' + request.originalUrl);
