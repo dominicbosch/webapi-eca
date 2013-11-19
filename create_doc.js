@@ -7,7 +7,7 @@ require('groc').CLI(
     "README.md",
     "TODO.js",
     "LICENSE.js",
-    "js/*",
+    "js-coffee/*",
     "mod_actions/**/*.js",
     "mod_events/**/*.js",
     "-o./webpages/doc"

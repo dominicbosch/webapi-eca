@@ -12,6 +12,13 @@ README: webapi-eca
 
 Getting started
 ---------------
+Prerequisites:
+
+ - node.js & npm (find it [here](http://nodejs.org/))
+ - *(optional) coffee, if you want to compile from coffee sources:*
+ 
+ 	sudo npm -g install coffee-script
+ 
 Clone project:
 
     git clone https://github.com/dominicbosch/webapi-eca.git
