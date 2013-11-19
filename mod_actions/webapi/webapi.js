@@ -1,6 +1,4 @@
 'use strict';
-  
-var needle = require('needle');
 
 /**
  * Call any arbitrary webAPI.

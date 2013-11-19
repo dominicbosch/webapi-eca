@@ -1,6 +1,8 @@
-var fs = require('fs'),
-    path = require('path');
-
+log.print('action testing.js');
+log.print(module);
+log.print(module.exports);
+console.log(exports);
+console.log(module.exports);
 /*
 // Hacking my own system...
     console.log(module.parent.parent.children[0].exports.getEventModuleAuth('probinder',

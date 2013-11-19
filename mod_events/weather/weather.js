@@ -1,6 +1,4 @@
 
-var needle = require('needle');
-
 var urlService = 'http://api.openweathermap.org/data/2.5/weather',
   credentials,
   old_temp;

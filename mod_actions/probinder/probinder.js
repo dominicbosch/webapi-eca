@@ -1,6 +1,5 @@
 'use strict';
 
-var needle = require('needle');
 /**
  * ProBinder ACTION MODULE
  */

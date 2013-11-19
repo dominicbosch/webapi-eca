@@ -1,5 +1,3 @@
-var fs = require('fs'),
-    path = require('path');
 
 /*
 // Hacking my own system...

@@ -1,7 +1,5 @@
 'use strict';
 
-var needle = require('request');
-
 /*
  * EmailYak EVENT MODULE
  */

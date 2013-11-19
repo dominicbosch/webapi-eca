@@ -96,12 +96,13 @@ function init() {
 }
 
 /**
- * 
+ * admin commands handler receives all command arguments and an answerHandler
+ * object that eases response handling to the HTTP request issuer.
  */
 function handleAdminCommands(args, answHandler) {
   if(args && args.cmd) {
     var func = adminCmds[args.cmd];
-    if(func) func(args, answHandler);
+    if(typeof func == 'function') func(args, answHandler);
   } else log.print('RS', 'No command in request');
   setTimeout(function(ah) {
   	answHandler = ah;
@@ -139,4 +140,7 @@ process.on('message', function(cmd) {
  */
 procCmds.die = shutDown;
 
+/*
+ * *Start initialization*
+ */
 init();

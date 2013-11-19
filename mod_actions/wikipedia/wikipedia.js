@@ -1,7 +1,5 @@
 'use strict';
 
-var needle = require('needle');
-
 var urlService = 'http://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&exchars=200&explaintext&titles=Computer%20science';
 //http://www.mediawiki.org/wiki/API:Search
 /*
