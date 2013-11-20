@@ -10,9 +10,7 @@
   },
   "dependencies": {
     "connect-redis": "1.4.6",
-    "docco": "0.6.2",
     "express": "3.4.0",
-    "glob" :"3.2.7",
     "groc": "0.6.1",
     "needle": "0.6.1",
     "nodeunit": "0.8.2",
@@ -21,6 +19,8 @@
   },
   "__comment": {
     "dependencies": {
+    	"glob" :"3.2.7",
+    	"docco": "0.6.2",
       "groc": "0.6.1",
       "diff": "1.0.5",
       "socket.io": "0.9.16",

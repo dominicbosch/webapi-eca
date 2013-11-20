@@ -23,7 +23,7 @@ Rules Server
   'use strict';
   /* Grab all required modules*/
 
-  var adminCmds, args, conf, db, engine, handleAdminCommands, http_listener, init, log, mm, path, procCmds, shutDown;
+  var adminCmds, args, conf, db, engine, fAdminCommands, http_listener, init, log, mm, path, procCmds, shutDown;
 
   path = require('path');
 
@@ -77,8 +77,9 @@ Rules Server
   });
 
   /*
-  ## Initialize the Server
   This function is invoked right after the module is loaded and starts the server.
+  
+  @private init()
   */
 
 
@@ -137,7 +138,7 @@ Rules Server
         log.print('RS', 'Passing handlers to engine');
         engine.addDBLinkAndLoadActionsAndRules(db);
         log.print('RS', 'Passing handlers to http listener');
-        http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
+        http_listener.addHandlers(db, fAdminCommands, engine.pushEvent);
         log.print('RS', 'Passing handlers to module manager');
         return mm.addHandlers(db, engine.loadActionModule, engine.addRule);
       }
@@ -147,10 +148,12 @@ Rules Server
   /*
   admin commands handler receives all command arguments and an answerHandler
   object that eases response handling to the HTTP request issuer.
+  
+  @private fAdminCommands( *args, answHandler* )
   */
 
 
-  handleAdminCommands = function(args, answHandler) {
+  fAdminCommands = function(args, answHandler) {
     var fAnsw, _name;
     if (args && args.cmd) {
       if (typeof adminCmds[_name = args.cmd] === "function") {
@@ -185,6 +188,8 @@ Rules Server
 
   /*
   Shuts down the server.
+  
+  @private shutDown( *args, answHandler* )
   @param {Object} args
   @param {Object} answHandler
   */

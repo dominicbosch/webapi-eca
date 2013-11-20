@@ -1,3 +1,10 @@
+###
+
+Config
+======
+
+Loads the configuration file and acts as an interface to it.
+###
 'use strict'
 
 path = require 'path'
@@ -5,8 +12,9 @@ log = require './logging'
 fs = require 'fs'
 config = null
 
-
 ###
+##Module call
+
 Calling the module as a function will make it look for the `relPath` property in the
 args object and then try to load a config file from that relative path.
 @param {Object} args
@@ -19,14 +27,14 @@ exports = module.exports = (args) ->
   module.exports
 
 ###
-@Function loadConfigFile 
-
 Tries to load a configuration file from the path relative to this module's parent folder. 
+Reads the config file synchronously from the file system and try to parse it.
+
+@private loadConfigFile
 @param {String} relPath
 ###
 loadConfigFile = (relPath) ->
   try
-    ### We read the config file synchronously from the file system and try to parse it ###
     config = JSON.parse fs.readFileSync path.resolve __dirname, '..', relPath
     if config and config.http_port and config.db_port and
                   config.crypto_key and config.session_secret
@@ -43,31 +51,45 @@ loadConfigFile = (relPath) ->
   
 loadConfigFile path.join('config', 'config.json')
 
-### Answer true if the config file is ready, else false ###
-exports.isReady = -> config?
-
 ###
 Fetch a property from the configuration
+
+@private fetchProp( *prop* )
 @param {String} prop
 ###
 fetchProp = (prop) -> config?[prop]
 
 ###
-Get the HTTP port
+Answer true if the config file is ready, else false
+
+@public isReady()
+###
+exports.isReady = -> config?
+
+###
+Returns the HTTP port
+
+@public getHttpPort()
 ###
 exports.getHttpPort = -> fetchProp 'http_port'
 
 ###
-Get the DB port
+Returns the DB port
+
+@public getDBPort()
 ###
 exports.getDBPort = -> fetchProp 'db_port'
 
 ###
-Get the crypto key
+Returns the crypto key
+
+@public getCryptoKey()
 ###
 exports.getCryptoKey = -> fetchProp 'crypto_key'
 
 ###
-Get the session secret
+Returns the session secret
+
+@public getSessionSecret()
 ###
 exports.getSessionSecret = -> fetchProp 'session_secret'

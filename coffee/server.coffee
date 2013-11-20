@@ -1,4 +1,3 @@
-
 ###
 Rules Server
 ============
@@ -57,8 +56,9 @@ process.on 'uncaughtException', (err) ->
   null
 
 ###
-## Initialize the Server
 This function is invoked right after the module is loaded and starts the server.
+
+@private init()
 ###
 
 init = ->
@@ -103,15 +103,17 @@ init = ->
       log.print 'RS', 'Passing handlers to engine'
       engine.addDBLinkAndLoadActionsAndRules db
       log.print 'RS', 'Passing handlers to http listener'
-      http_listener.addHandlers db, handleAdminCommands, engine.pushEvent
+      http_listener.addHandlers db, fAdminCommands, engine.pushEvent
       log.print 'RS', 'Passing handlers to module manager'
       mm.addHandlers db, engine.loadActionModule, engine.addRule
   
 ###
 admin commands handler receives all command arguments and an answerHandler
 object that eases response handling to the HTTP request issuer.
+
+@private fAdminCommands( *args, answHandler* )
 ###
-handleAdminCommands = (args, answHandler) ->
+fAdminCommands = (args, answHandler) ->
   if args and args.cmd 
     adminCmds[args.cmd]? args, answHandler
   else
@@ -137,6 +139,8 @@ handleAdminCommands = (args, answHandler) ->
 
 ###
 Shuts down the server.
+
+@private shutDown( *args, answHandler* )
 @param {Object} args
 @param {Object} answHandler
 ### 
