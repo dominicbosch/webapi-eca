@@ -2,24 +2,28 @@
 /*
 Rules Server
 ============
-This is the main module that is used to run the whole server:
-
-    node server [log_type http_port]
-
-Valid `log_type`'s are:
-
-- `0`: standard I/O output (default)
-- `1`: log file (server.log)
-- `2`: silent
-
-`http_port` can be set to use another port, than defined in the 
-[config](config.html) file, to listen to, e.g. used by the test suite.
+>This is the main module that is used to run the whole server:
+>
+>     node server [log_type http_port]
+>
+>Valid `log_type`'s are:
+>
+>- `0`: standard I/O output (default)
+>- `1`: log file (server.log)
+>- `2`: silent
+>
+>`http_port` can be set to use another port, than defined in the 
+>[config](config.html) file, to listen to, e.g. used by the test suite.
+>
+>---
 */
 
 
 (function() {
   'use strict';
-  var adminCmds, args, conf, continueInit, db, engine, handleAdminCommands, http_listener, init, log, mm, path, procCmds, shutDown;
+  /* Grab all required modules*/
+
+  var adminCmds, args, conf, db, engine, handleAdminCommands, http_listener, init, log, mm, path, procCmds, shutDown;
 
   path = require('path');
 
@@ -80,9 +84,11 @@ Valid `log_type`'s are:
 
   init = function() {
     log.print('RS', 'STARTING SERVER');
+    /* Check whether the config file is ready, which is required to start the server.*/
+
     if (!conf.isReady()) {
       log.error('RS', 'Config file not ready!');
-      process.exit;
+      process.exit();
     }
     /* Fetch the `log_type` argument and post a log about which log type is used.*/
 
@@ -112,33 +118,30 @@ Valid `log_type`'s are:
     } else {
       log.print('RS', 'No HTTP port passed, using standard port from config file');
     }
-    /* Initialize all required modules with the args object.*/
-
     db(args);
+    /* We only proceed with the initialization if the DB is ready*/
+
     return db.isConnected(function(err, result) {
       if (!err) {
-        return continueInit();
+        /* Initialize all required modules with the args object.*/
+
+        log.print('RS', 'Initialzing engine');
+        engine(args);
+        log.print('RS', 'Initialzing http listener');
+        http_listener(args);
+        log.print('RS', 'Initialzing module manager');
+        mm(args);
+        log.print('RS', 'Initialzing DB');
+        /* Distribute handlers between modules to link the application.*/
+
+        log.print('RS', 'Passing handlers to engine');
+        engine.addDBLinkAndLoadActionsAndRules(db);
+        log.print('RS', 'Passing handlers to http listener');
+        http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
+        log.print('RS', 'Passing handlers to module manager');
+        return mm.addHandlers(db, engine.loadActionModule, engine.addRule);
       }
     });
-  };
-
-  continueInit = function() {
-    log.print('RS', 'Initialzing engine');
-    engine(args);
-    log.print('RS', 'Initialzing http listener');
-    http_listener(args);
-    log.print('RS', 'Initialzing module manager');
-    mm(args);
-    log.print('RS', 'Initialzing DB');
-    /* Distribute handlers between modules to link the application.*/
-
-    log.print('RS', 'Passing handlers to engine');
-    engine.addDBLinkAndLoadActionsAndRules(db);
-    log.print('RS', 'Passing handlers to http listener');
-    http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
-    log.print('RS', 'Passing handlers to module manager');
-    mm.addHandlers(db, engine.loadActionModule, engine.addRule);
-    return null;
   };
 
   /*
@@ -156,15 +159,28 @@ Valid `log_type`'s are:
     } else {
       log.print('RS', 'No command in request');
     }
+    /*
+    The fAnsw function receives an answerHandler object as an argument when called
+    and returns an anonymous function
+    */
+
     fAnsw = function(ah) {
+      /*
+      The anonymous function checks whether the answerHandler was already used to
+      issue an answer, if no answer was provided we answer with an error message
+      */
+
       return function() {
         if (!ah.isAnswered()) {
-          return answHandler.answerError('Not handled...');
+          return ah.answerError('Not handled...');
         }
       };
     };
-    setTimeout(fAnsw(answHandler), 2000);
-    return null;
+    /*
+    Delayed function call of the anonymous function that checks the answer handler
+    */
+
+    return setTimeout(fAnsw(answHandler), 2000);
   };
 
   /*

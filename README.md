@@ -17,25 +17,24 @@ Prerequisites:
  - node.js & npm (find it [here](http://nodejs.org/))
  - *(optional) coffee, if you want to compile from coffee sources:*
  
- 	sudo npm -g install coffee-script
+	sudo npm -g install coffee-script
  
 Clone project:
 
-    git clone https://github.com/dominicbosch/webapi-eca.git
+        git clone https://github.com/dominicbosch/webapi-eca.git
 
 Download and install dependencies:
 
     cd webapi-eca
     npm install
 
-Get your [redis](http://redis.io/) instance up and running (and find the port for the config file below) or create your own `db_interface.js`.
+Get your [redis](http://redis.io/) instance up and running (and find the port for the config file below) or create your own `js/db_interface.js`.
 
-Create the configuration file:
+Edit the configuration file:
 
-    mkdir config
     vi config/config.json
     
-Insert your settings, for example:
+Apply your settings, for example:
 
     {
         "http_port": 8125,

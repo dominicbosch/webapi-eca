@@ -8,7 +8,6 @@ exports = module.exports = function(args) {
   args = args || {};
   log(args);
   if(typeof args.relPath === 'string') loadConfigFile(args.relPath);
-  //TODO check all modules whether they can be loaded without calling the module.exports with args
   return module.exports;
 };
 

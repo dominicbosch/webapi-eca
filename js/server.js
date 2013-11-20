@@ -1,27 +1,44 @@
 /*
  * Rules Server
  * ============
- * This is the main module that is used to run the whole server:
- * 
- *     node server [log_type http_port]
- * 
- * Valid `log_type`'s are:
- * 
- * - `0`: standard I/O output (default)
- * - `1`: log file (server.log)
- * - `2`: silent
- * 
- * `http_port` can be set to use another port, than defined in the 
- * [config](config.html) file, to listen to, e.g. used by the test suite.
+ * >This is the main module that is used to run the whole server:
+ * >
+ * >     node server [log_type http_port]
+ * >
+ * >Valid `log_type`'s are:
+ * >
+ * >- `0`: standard I/O output (default)
+ * >- `1`: log file (server.log)
+ * >- `2`: silent
+ * >
+ * >`http_port` can be set to use another port, than defined in the 
+ * >[config](config.html) file, to listen to, e.g. used by the test suite.
+ * >
+ * >---
  */
 'use strict';
 
+// Grab all required modules
 var path = require('path'),
     log = require('./logging'),
+    conf = require('./config'),
+    http_listener = require('./http_listener'),
+    mm = require('./module_manager'),
+    db = require('./db_interface'),
+    engine = require('./engine'),
     semaphore = 0,
     args = {},
     procCmds = {},
-    adminCmds, http_listener, mm, db, engine;
+  // Prepare the admin commands that are issued via HTTP requests. 
+    adminCmds = {
+      'loadrules': mm.loadRulesFromFS,
+      'loadaction': mm.loadActionModuleFromFS,
+      'loadactions':  mm.loadActionModulesFromFS,
+      'loadevent': mm.loadEventModuleFromFS,
+      'loadevents': mm.loadEventModulesFromFS,
+      'loadusers': http_listener.loadUsers,
+      'shutdown': shutDown
+    };
 
 /*
  * Error handling of the express port listener requires special attention,
@@ -40,15 +57,15 @@ process.on('uncaughtException', function(err) {
 });
 
 /**
- * ### Initialize the Server
+ * ## Initialize the Server
  * This function is invoked right after the module is loaded and starts the server.
  */
 function init() {
   log.print('RS', 'STARTING SERVER');
   // Check whether the config file is ready, which is required to start the server.
-  if(!require('./config').isReady()) {
+  if(!conf.isReady()) {
     log.error('RS', 'Config file not ready!');
-    return;
+    process.exit();
   }
   
   // Fetch the `log_type` argument and post a log about which log type is used.
@@ -65,41 +82,31 @@ function init() {
   if(process.argv.length > 3) args.http_port = parseInt(process.argv[3]);
   else log.print('RS', 'No HTTP port passed, using standard port from config file');
   
-  // Initialize all required modules with the args object.
-  db = require('./db_interface')(args);
+  db(args);
+  // We only proceed with the initialization if the DB is ready
   db.isConnected(function(err, result) {
-    if(!err) continueInit();
+    if(!err) {
+      
+      // Initialize all required modules with the args object.
+      log.print('RS', 'Initialzing engine');
+      engine(args);
+      log.print('RS', 'Initialzing http listener');
+      http_listener(args);
+      log.print('RS', 'Initialzing module manager');
+      mm(args);
+      log.print('RS', 'Initialzing DB');
+      
+      // Distribute handlers between modules to link the application.
+      log.print('RS', 'Passing handlers to engine');
+      engine.addDBLinkAndLoadActionsAndRules(db);
+      log.print('RS', 'Passing handlers to http listener');
+      http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
+      log.print('RS', 'Passing handlers to module manager');
+      mm.addHandlers(db, engine.loadActionModule, engine.addRule);
+    }
   });
 }
 
-function continueInit() {
-  log.print('RS', 'Initialzing engine');
-  engine = require('./engine')(args);
-  log.print('RS', 'Initialzing http listener');
-  http_listener = require('./http_listener')(args);
-  log.print('RS', 'Initialzing module manager');
-  mm = require('./module_manager')(args);
-  log.print('RS', 'Initialzing DB');
-  
-  // Load the admin commands that are issued via HTTP requests. 
-  adminCmds = {
-    'loadrules': mm.loadRulesFromFS,
-    'loadaction': mm.loadActionModuleFromFS,
-    'loadactions':  mm.loadActionModulesFromFS,
-    'loadevent': mm.loadEventModuleFromFS,
-    'loadevents': mm.loadEventModulesFromFS,
-    'loadusers': http_listener.loadUsers,
-    'shutdown': shutDown
-  };
-  
-  // Distribute handlers between modules to link the application.
-  log.print('RS', 'Passing handlers to engine');
-  engine.addDBLinkAndLoadActionsAndRules(db);
-  log.print('RS', 'Passing handlers to http listener');
-  http_listener.addHandlers(db, handleAdminCommands, engine.pushEvent);
-  log.print('RS', 'Passing handlers to module manager');
-  mm.addHandlers(db, engine.loadActionModule, engine.addRule);
-}
 
 /**
  * admin commands handler receives all command arguments and an answerHandler
