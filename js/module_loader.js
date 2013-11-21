@@ -13,24 +13,24 @@ exports = module.exports = function(args) {
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
   var id = path.resolve(dir, name, name + '.vm');
-  //FIXME load modules only into a safe environment with given modules, no access to whole application,
   var vm = require('vm'),
     sandbox = {
       log: log,
       needle: require('needle')
     };
     
-  var mod = vm.runInNewContext(src, sandbox, 'myfile.vm');
-  console.log(mod);
-  var m = new module.constructor(id, module);
-  m.paths = module.paths;
-  try {
-    m._compile(src); 
-  } catch(err) {
-    err.addInfo = 'during compilation of module ' + name;
-    log.error('LM', err);
-    // log.error('LM', ' during compilation of ' + name + ': ' + err);
-  }
+  var m = vm.runInNewContext(src, sandbox, id + '.vm');
+  console.log('module loader');
+  console.log(m);
+  // var m = new module.constructor(id, module);
+  // m.paths = module.paths;
+  // try {
+    // m._compile(src); 
+  // } catch(err) {
+    // err.addInfo = 'during compilation of module ' + name;
+    // log.error('LM', err);
+    // // log.error('LM', ' during compilation of ' + name + ': ' + err);
+  // }
   return m.exports;
 };
 

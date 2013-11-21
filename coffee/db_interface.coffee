@@ -48,8 +48,8 @@ exports = module.exports = (args) ->
     log.error 'DB', err
 
 ###
-Checks whether the db is connected and calls the callback function if successful,
-or an error after ten attempts within five seconds.
+Checks whether the db is connected and passes either an error on failure after
+ten attempts within five seconds, or nothing on success to the callback(err).
 
 @public isConnected( *cb* )
 @param {function} cb
@@ -122,12 +122,12 @@ replyHandler = (action) ->
 
 ###
 Fetches all linked data set keys from a linking set, fetches the single data objects
-via the provided function and returns the results to the callback function.
+via the provided function and returns the results to the callback(err, obj) function.
 
 @private getSetRecords( *set, fSingle, cb* )
 @param {String} set the set name how it is stored in the DB
 @param {function} fSingle a function to retrieve a single data element per set entry
-@param {function} cb the callback function that receives all the retrieved data or an error
+@param {function} cb the callback(err, obj) function that receives all the retrieved data or an error
 ###
 getSetRecords = (set, funcSingle, cb) ->
   db?.smembers set, (err, arrReply) ->
@@ -156,197 +156,226 @@ getSetRecords = (set, funcSingle, cb) ->
       fSingle reply, fCallback(reply) for reply in arrReply
 
 ###
-@Function shutDown()
-
-Shuts down the db link.
-###
-###exports.shutDown = function() { if(db) db.quit(); };
-###
-###
 ## Action Modules
+###
 
-@Function storeActionModule
+###
 Store a string representation of an action module in the DB.
-@param {String} id the unique identifier of the module
-@param {String} data the string representation
+
+@public storeActionModule ( *id, data* )
+@param {String} id
+@param {String} data
 ###
-###exports.storeActionModule = function(id, data) {
-  if(db) {
-    db.sadd('action_modules', id, replyHandler('storing action module key ' + id));
-    db.set('action_module_' + id, data, replyHandler('storing action module ' + id));
-  }
-};
+# FIXME can the data be an object?
+exports.storeActionModule = (id, data) ->
+  db?.sadd 'action-modules', id, replyHandler 'storing action module key ' + id
+  db?.set 'action-module:' + id, data, replyHandler 'storing action module ' + id
+
 ###
+Query the DB for an action module and pass it to the callback(err, obj) function.
+
+@public getActionModule( *id, cb* )
+@param {String} id
+@param {function} cb
 ###
-@Function getActionModule(id, cb)
-Query the DB for an action module.
-@param {String} id the module id
-@param {function} cb the cb to receive the answer (err, obj)
+exports.getActionModule = (id, cb) ->
+  db?.get 'action-module:' + id, cb
+
 ###
-###exports.getActionModule = function(id, cb) {
-  if(cb && db) db.get('action_module_' + id, cb);
-};
+Fetch all action modules and hand them to the callback(err, obj) function.
+
+@public getActionModules( *cb* )
+@param {function} cb
 ###
+exports.getActionModules = (cb) ->
+  getSetRecords 'action-modules', exports.getActionModule, cb
+
 ###
-@Function getActionModules(cb)
-Fetch all action modules.
-@param {function} cb the cb to receive the answer (err, obj)
-###
-###exports.getActionModules = function(cb) {
-  getSetRecords('action_modules', exports.getActionModule, cb);
-};
-###
-###
-@Function storeActionModuleAuth(id, data)
 Store a string representation of the authentication parameters for an action module.
-@param {String} id the unique identifier of the module
-@param {String} data the string representation
+
+@public storeActionAuth( *userId, moduleId, data* )
+@param {String} userId
+@param {String} moduleId
+@param {String} data
 ###
-###exports.storeActionModuleAuth = function(id, data) {
-  if(data && db) {
-    db.sadd('action_modules_auth', id, replyHandler('storing action module auth key ' + id));
-    db.set('action_module_' + id +'_auth', encrypt(data), replyHandler('storing action module auth ' + id));
-  }
-};
+exports.storeActionAuth = (userId, moduleId, data) ->
+  db?.set 'action-auth:' + userId + ':' + moduleId, encrypt(data),
+  replyHandler 'storing action auth ' + userId + ':' + moduleId
+
 ###
+Query the DB for an action module authentication token associated to a user
+and pass it to the callback(err, obj) function.
+
+@public getActionAuth( *userId, moduleId, cb* )
+@param {String} userId
+@param {String} moduleId
+@param {function} cb
 ###
-@Function getActionModuleAuth(id, cb)
-Query the DB for an action module authentication token.
-@param {String} id the module id
-@param {function} cb the cb to receive the answer (err, obj)
-###
-###exports.getActionModuleAuth = function(id, cb) {
-  if(cb && db) db.get('action_module_' + id + '_auth', function(id) {
-    return function(err, txt) { cb(err, decrypt(txt, 'action_module_' + id + '_auth')); };
-  }(id));
-};
-###
+exports.getActionAuth = (userId, moduleId, cb) ->
+  db?.get 'action-auth:' + userId + ':' + moduleId, (err, data) ->
+    cb err, decrypt data
+
+
 ###
 ## Event Modules
+###
 
-@Function storeEventModule(id, data)
+###
 Store a string representation of an event module in the DB.
-@param {String} id the unique identifier of the module
-@param {String} data the string representation
-###
-###exports.storeEventModule = function(id, data) {
-  if(db) {
-    db.sadd('event_modules', id, replyHandler('storing event module key ' + id));
-    db.set('event_module_' + id, data, replyHandler('storing event module ' + id));
-  }
-};
-###
-###
-@Function getEventModule(id, cb)
-Query the DB for an event module.
-@param {String} id the module id
-@param {function} cb the cb to receive the answer (err, obj)
-###
-###exports.getEventModule = function(id, cb) {
-  if(cb && db) db.get('event_module_' + id, cb);
-};
-###
-###
-@Function getEventModules(cb)
-Fetch all event modules.
-@param {function} cb the cb that receives the arguments (err, obj)
-###
-###exports.getEventModules = function(cb) {
-  getSetRecords('event_modules', exports.getEventModule, cb);
-};
-###
-###
-@Function storeEventModuleAuth(id, data)
-Store a string representation of he authentication parameters for an event module.
-@param {String} id the unique identifier of the module
-@param {String} data the string representation
-###
-###exports.storeEventModuleAuth = function(id, data) {
-  if(data && db) {
-    db.sadd('event_modules_auth', id, replyHandler('storing event module auth key ' + id));
-    db.set('event_module_' + id +'_auth', encrypt(data), replyHandler('storing event module auth ' + id));
-  }
-};
-###
-###
-@Function getEventModuleAuth(id, cb)
 
-Query the DB for an event module authentication token.
-@param {String} id the module id
-@param {function} cb the cb to receive the answer (err, obj)
+@public storeEventModule( *id, data* )
+@param {String} id
+@param {String} data
 ###
-###exports.getEventModuleAuth = function(id, cb) {
-  if(cb) db.get('event_module_' + id +'_auth',  function(id) {
-    return function(err, txt) { cb(err, decrypt(txt, 'event_module_' + id + '_auth')); };
-  }(id));
-};
+exports.storeEventModule = (id, data) ->
+  db?.sadd 'event-modules', id, replyHandler 'storing event module key ' + id
+  db?.set 'event-module:' + id, data, replyHandler 'storing event module ' + id
+
 ###
+Query the DB for an event module and pass it to the callback(err, obj) function.
+
+@public getEventModule( *id, cb* )
+@param {String} id 
+@param {function} cb
+###
+exports.getEventModule = (id, cb) ->
+  db?.get 'event_module:' + id, cb
+
+###
+Fetch all event modules and pass them to the callback(err, obj) function.
+
+@public getEventModules( *cb* )
+@param {function} cb
+###
+exports.getEventModules = (cb) ->
+  getSetRecords 'event_modules', exports.getEventModule, cb
+
+###
+Store a string representation of he authentication parameters for an event module.
+
+@public storeEventAuth( *userId, moduleId, data* )
+@param {String} id
+@param {String} data
+###
+exports.storeEventAuth = (userId, moduleId, data) ->
+  db?.set 'event-auth:' + userId + ':' + moduleId, encrypt(data),
+  replyHandler 'storing event auth ' + userId + ':' + moduleId
+  
+###
+Query the DB for an action module authentication token, associated with a user.
+
+@public getEventAuth( *id, cb* )
+@param {String} id
+@param {function} cb
+###
+exports.getEventAuth = (userId, moduleId, cb) ->
+  db?.get 'event-auth:' + userId + ':' + moduleId, (err, data) ->
+    cb err, decrypt data
+
+
 ###
 ## Rules
+###
 
-@Function storeRule(id, data)
-
+###
 Store a string representation of a rule in the DB.
-@param {String} id the unique identifier of the rule
-@param {String} data the string representation
-###
-###exports.storeRule = function(id, data) {
-  if(db) {
-    db.sadd('rules', id, replyHandler('storing rule key ' + id));
-    db.set('rule_' + id, data, replyHandler('storing rule ' + id));
-  }
-};
-###
-###
-@Function getRule(id, cb)
 
-Query the DB for a rule.
-@param {String} id the rule id
-@param {function} cb the cb to receive the answer (err, obj)
+@public storeRule( *id, data* )
+@param {String} id
+@param {String} data
 ###
-###exports.getRule = function(id, cb) {
-  if(db) db.get('rule_' + id, cb);
-};
-###
-###
-@Function getRules(cb)
+exports.storeRule = (id, data) ->
+  db?.sadd 'rules', id, replyHandler 'storing rule key ' + id
+  db?.set 'rule:' + id, data, replyHandler 'storing rule ' + id
 
-Fetch all rules from the database.  
+###
+Query the DB for a rule and pass it to the callback(err, obj) function.
+
+@public getRule( *id, cb* )
+@param {String} id
 @param {function} cb
 ###
-###exports.getRules = function(cb) {
-  getSetRecords('rules', exports.getRule, cb);
-};
-###
-###
-@Function storeUser
+exports.getRule = (id, cb) ->
+  db?.get 'rule:' + id, cb
 
+###
+Fetch all rules from the database and pass them to the callback function.  
+
+@public getRules( *cb* )
+@param {function} cb
+###
+exports.getRules = (cb) ->
+  getSetRecords 'rules', exports.getRule, cb
+
+###
+Store a user object (needs to be a flat structure).
+
+@public storeUser( *objUser* )
 @param {Object} objUser
-@param {function} cb
 ###
-###exports.storeUser = function(objUser, cb) {
-  if(db && objUser && objUser.username && objUser.password) {
-    db.sadd('users', objUser.username, replyHandler('storing user key ' + objUser.username));
-    objUser.password = encrypt(objUser.password);
-    db.set('user:' + objUser.username, objUser, replyHandler('storing user properties ' + objUser.username));
-  }
-};
-###
-###
-Checks the credentials and on success returns the user object.
-@param {Object} objUser
-@param {function} cb
-###
-### exports.loginUser = function(username, password, cb) {
-  if(typeof cb !== 'function') return;
-  if(db) db.get('user:' + username, function(p) {
-    return function(err, obj) {
-      if(err) cb(err);
-      else if(encrypt(obj.password) === p) cb(null, obj);
-      else cb(new Error('Wrong credentials!'));
-    };
-  }(password));
-  else cb(new Error('No database link available!'));
-};
+exports.storeUser = (objUser) ->
+  if objUser and objUser.username and objUser.password
+    db?.sadd 'users', objUser.username, replyHandler 'storing user key ' + objUser.username
+    objUser.password = encrypt objUser.password
+    db?.hmset 'user:' + objUser.username, objUser, replyHandler 'storing user properties ' + objUser.username
+  else
+    log.error 'DB', new Error 'username or password was missing'
 
 ###
+Associate a role with a user.
+
+@public storeUserRole( *username, role* )
+@param {String} username
+@param {String} role
+###
+exports.storeUserRole = (username, role) ->
+  db?.sadd 'user-roles:' + username, role, replyHandler 'adding role ' + role + ' to user ' + username
+  db?.sadd 'role-users:' + role, username, replyHandler 'adding user ' + username + ' to role ' + role
+
+###
+Fetch all roles of a user and pass them to the callback(err, obj)
+
+@public getUserRoles( *username* )
+@param {String} username
+###
+exports.getUserRoles = (username) ->
+  db?.get 'user-roles:' + username, cb
+  
+###
+Fetch all users of a role and pass them to the callback(err, obj)
+
+@public getUserRoles( *role* )
+@param {String} role
+###
+exports.getRoleUsers = (role) ->
+  db?.get 'role-users:' + role, cb
+
+###
+Checks the credentials and on success returns the user object to the callback(err, obj) function.
+
+@public loginUser( *username, password, cb* )
+@param {String} username
+@param {String} password
+@param {function} cb
+###
+# TODO verify and test whole function
+exports.loginUser = (username, password, cb) ->
+  fCheck = (pw) ->
+    (err, obj) ->
+      if err 
+        cb? err
+      else if obj and obj.password 
+        if encrypt(obj.password) == pw
+          cb? null, obj
+        else cb? new Error 'Wrong credentials!'
+      else
+        cb? new Error 'Empty arguments!'
+  db?.get 'user:' + username, fCheck password
+
+
+###
+Shuts down the db link.
+
+@public shutDown()
+###
+exports.shutDown = -> db?.quit()
