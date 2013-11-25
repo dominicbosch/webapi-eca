@@ -21,8 +21,6 @@
     "dependencies": {
     	"glob" :"3.2.7",
     	"docco": "0.6.2",
-      "groc": "0.6.1",
-      "diff": "1.0.5",
       "socket.io": "0.9.16",
       "contextify": "0.1.6"
     }

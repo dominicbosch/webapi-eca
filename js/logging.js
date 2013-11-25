@@ -55,18 +55,21 @@ exports.print = function(module, msg) {
  */
 function printError(module, err, isSevere) {
   var ts = (new Date()).toISOString() + ' | ', ai = '';
-  if(!err) err = new Error('Unexpected error');
+  if(!err) {
+    err = new Error('Unexpected error');
+    isSevere = true;
+  }
   if(typeof err === 'string') err = new Error(err);
     // if(module) flush(true, ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
     // else flush(true, ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);
   // } else if(err) {
-    if(err.addInfo) ai = ' (' + err.addInfo + ')';
-    if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
-    if(module) {
-      var msg = ts + module + ' | ERROR'+ai+': ' + err.message;
-      if(isSevere) msg += '\n' + err.stack;
-      flush(true, msg);
-    } else flush(true, ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
+  if(err.addInfo) ai = ' (' + err.addInfo + ')';
+  if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
+  if(module) {
+    var msg = ts + module + ' | ERROR'+ai+': ' + err.message;
+    if(isSevere) msg += '\n' + err.stack;
+    flush(true, msg);
+  } else flush(true, ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
   // } else {
     // var e = new Error('Unexpected error');
     // flush(true, e.message + ': \n' + e.stack);

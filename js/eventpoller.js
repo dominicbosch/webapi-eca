@@ -121,6 +121,7 @@ function checkRemotes() {
        * define and immediately call anonymous function with param prop.
        * This places the value of prop into the context of the callback
        * and thus doesn't change when the for loop keeps iterating over listPoll
+       * TODO add this example to the documentation and elaborate
        */
         (function(p) {
           return function(err, obj) {

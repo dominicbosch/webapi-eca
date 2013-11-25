@@ -9,8 +9,9 @@ exports = module.exports = function(args) {
   log(args);
   db(args);
   var users = JSON.parse(require('fs').readFileSync(path.resolve(__dirname, '..', 'config', 'users.json')));
-  for(var name in users) {
-    db.storeUser(users[name]);
+  for(var i = 0; i < users.length; i++) {
+    log.print('UH', 'Found user ' + users[i].username + ' in user file, storing him in the DB');
+    db.storeUser(users[i]);
   }
  
   return module.exports;
@@ -42,12 +43,19 @@ exports.handleLogin = function(req, resp) {
     if(!req.session || !req.session.user) {
       var obj = qs.parse(body);
       db.loginUser(obj.username, obj.password, function(err, obj) {
-        if(!err) req.session.user = obj;
-        if(req.session.user) {
-          resp.write('Welcome ' + req.session.user.name + '!');
-        } else {
+        if(err) {
+          log.error('UH', err);
           resp.writeHead(401, { "Content-Type": "text/plain" });
           resp.write('Login failed!');
+        }
+        else {
+          req.session.user = obj;
+          if(req.session.user) {
+            resp.write('Welcome ' + req.session.user.name + '!');
+          } else {
+            resp.writeHead(401, { "Content-Type": "text/plain" });
+            resp.write('Login failed!');
+          }
         }
         resp.end();
       });

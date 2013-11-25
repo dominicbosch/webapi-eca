@@ -55,7 +55,10 @@ exports.print = function(module, msg) {
  */
 function printError(module, err, isSevere) {
   var ts = (new Date()).toISOString() + ' | ', ai = '';
-  if(!err) err = new Error('Unexpected error');
+  if(!err) {
+    err = new Error('Unexpected error');
+    isSevere = true;
+  }
   if(typeof err === 'string') err = new Error(err);
     // if(module) flush(true, ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
     // else flush(true, ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);

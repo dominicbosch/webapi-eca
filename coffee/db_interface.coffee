@@ -22,7 +22,7 @@ DB Interface
 'use strict'
 ### Grab all required modules ###
 redis = require 'redis'
-crypto = require 'crypto'
+crypto = require 'crypto' # TODO change to Google's "crypto-js""
 log = require './logging'
 crypto_key = null
 db = null
@@ -129,7 +129,8 @@ via the provided function and returns the results to the callback(err, obj) func
 @param {function} fSingle a function to retrieve a single data element per set entry
 @param {function} cb the callback(err, obj) function that receives all the retrieved data or an error
 ###
-getSetRecords = (set, funcSingle, cb) ->
+getSetRecords = (set, fSingle, cb) ->
+  log.print 'DB', 'Fetching set records: ' + set
   db?.smembers set, (err, arrReply) ->
     if err
       err.addInfo = 'fetching ' + set
@@ -146,12 +147,15 @@ getSetRecords = (set, funcSingle, cb) ->
       , 2000
       fCallback = (prop) ->
         (err, data) ->
+          --semaphore
           if err
             err.addInfo = 'fetching single element: ' + prop
             log.error 'DB', err
-          else 
+          else if not data
+            log.error 'DB', new Error 'Empty key in DB: ' + prop
+          else
             objReplies[prop] = data
-            if --semaphore == 0
+            if semaphore == 0
               cb null, objReplies
       fSingle reply, fCallback(reply) for reply in arrReply
 
@@ -168,6 +172,7 @@ Store a string representation of an action module in the DB.
 ###
 # FIXME can the data be an object?
 exports.storeActionModule = (id, data) ->
+  log.print 'DB', 'storeActionModule: ' + id
   db?.sadd 'action-modules', id, replyHandler 'storing action module key ' + id
   db?.set 'action-module:' + id, data, replyHandler 'storing action module ' + id
 
@@ -179,6 +184,7 @@ Query the DB for an action module and pass it to the callback(err, obj) function
 @param {function} cb
 ###
 exports.getActionModule = (id, cb) ->
+  log.print 'DB', 'getActionModule: ' + id
   db?.get 'action-module:' + id, cb
 
 ###
@@ -199,6 +205,7 @@ Store a string representation of the authentication parameters for an action mod
 @param {String} data
 ###
 exports.storeActionAuth = (userId, moduleId, data) ->
+  log.print 'DB', 'storeActionAuth: ' + userId + ':' + moduleId
   db?.set 'action-auth:' + userId + ':' + moduleId, encrypt(data),
   replyHandler 'storing action auth ' + userId + ':' + moduleId
 
@@ -212,6 +219,7 @@ and pass it to the callback(err, obj) function.
 @param {function} cb
 ###
 exports.getActionAuth = (userId, moduleId, cb) ->
+  log.print 'DB', 'getActionAuth: ' + userId + ':' + moduleId
   db?.get 'action-auth:' + userId + ':' + moduleId, (err, data) ->
     cb err, decrypt data
 
@@ -228,6 +236,7 @@ Store a string representation of an event module in the DB.
 @param {String} data
 ###
 exports.storeEventModule = (id, data) ->
+  log.print 'DB', 'storeEventModule: ' + id
   db?.sadd 'event-modules', id, replyHandler 'storing event module key ' + id
   db?.set 'event-module:' + id, data, replyHandler 'storing event module ' + id
 
@@ -239,6 +248,7 @@ Query the DB for an event module and pass it to the callback(err, obj) function.
 @param {function} cb
 ###
 exports.getEventModule = (id, cb) ->
+  log.print 'DB', 'getEventModule: ' + id
   db?.get 'event_module:' + id, cb
 
 ###
@@ -258,6 +268,7 @@ Store a string representation of he authentication parameters for an event modul
 @param {String} data
 ###
 exports.storeEventAuth = (userId, moduleId, data) ->
+  log.print 'DB', 'storeEventAuth: ' + userId + ':' + moduleId
   db?.set 'event-auth:' + userId + ':' + moduleId, encrypt(data),
   replyHandler 'storing event auth ' + userId + ':' + moduleId
   
@@ -269,6 +280,7 @@ Query the DB for an action module authentication token, associated with a user.
 @param {function} cb
 ###
 exports.getEventAuth = (userId, moduleId, cb) ->
+  log.print 'DB', 'getEventAuth: ' + userId + ':' + moduleId
   db?.get 'event-auth:' + userId + ':' + moduleId, (err, data) ->
     cb err, decrypt data
 
@@ -285,6 +297,7 @@ Store a string representation of a rule in the DB.
 @param {String} data
 ###
 exports.storeRule = (id, data) ->
+  log.print 'DB', 'storeRule: ' + id
   db?.sadd 'rules', id, replyHandler 'storing rule key ' + id
   db?.set 'rule:' + id, data, replyHandler 'storing rule ' + id
 
@@ -296,6 +309,7 @@ Query the DB for a rule and pass it to the callback(err, obj) function.
 @param {function} cb
 ###
 exports.getRule = (id, cb) ->
+  log.print 'DB', 'getRule: ' + id
   db?.get 'rule:' + id, cb
 
 ###
@@ -305,6 +319,7 @@ Fetch all rules from the database and pass them to the callback function.
 @param {function} cb
 ###
 exports.getRules = (cb) ->
+  log.print 'DB', 'Fetching all Rules'
   getSetRecords 'rules', exports.getRule, cb
 
 ###
@@ -314,6 +329,7 @@ Store a user object (needs to be a flat structure).
 @param {Object} objUser
 ###
 exports.storeUser = (objUser) ->
+  log.print 'DB', 'storeUser: ' + objUser.username
   if objUser and objUser.username and objUser.password
     db?.sadd 'users', objUser.username, replyHandler 'storing user key ' + objUser.username
     objUser.password = encrypt objUser.password
@@ -329,6 +345,7 @@ Associate a role with a user.
 @param {String} role
 ###
 exports.storeUserRole = (username, role) ->
+  log.print 'DB', 'storeUserRole: ' + username + ':' + role
   db?.sadd 'user-roles:' + username, role, replyHandler 'adding role ' + role + ' to user ' + username
   db?.sadd 'role-users:' + role, username, replyHandler 'adding user ' + username + ' to role ' + role
 
@@ -339,6 +356,7 @@ Fetch all roles of a user and pass them to the callback(err, obj)
 @param {String} username
 ###
 exports.getUserRoles = (username) ->
+  log.print 'DB', 'getUserRole: ' + username
   db?.get 'user-roles:' + username, cb
   
 ###
@@ -348,6 +366,7 @@ Fetch all users of a role and pass them to the callback(err, obj)
 @param {String} role
 ###
 exports.getRoleUsers = (role) ->
+  log.print 'DB', 'getRoleUsers: ' + role
   db?.get 'role-users:' + role, cb
 
 ###
@@ -360,18 +379,22 @@ Checks the credentials and on success returns the user object to the callback(er
 ###
 # TODO verify and test whole function
 exports.loginUser = (username, password, cb) ->
+  log.print 'DB', 'User "' + username + '" tries to log in'
   fCheck = (pw) ->
     (err, obj) ->
       if err 
-        cb? err
-      else if obj and obj.password 
-        if encrypt(obj.password) == pw
-          cb? null, obj
-        else cb? new Error 'Wrong credentials!'
+        cb err
+      else if obj and obj.password
+        if encrypt(pw) == obj.password
+          log.print 'DB', 'User "' + obj.username + '" logged in!' 
+          cb null, obj
+        else
+          cb new Error 'Wrong credentials!'
       else
-        cb? new Error 'Empty arguments!'
-  db?.get 'user:' + username, fCheck password
+        cb new Error 'Empty arguments!'
+  db?.hgetall 'user:' + username, fCheck password
 
+# TODO implement functions required for user sessions and the rule activation
 
 ###
 Shuts down the db link.

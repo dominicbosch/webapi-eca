@@ -30,13 +30,14 @@ exports = module.exports = function(args) {
  * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
  */
 exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
+  //TODO only load rules on beginning, if rules require certain actions, load them in order to allow fast firing
+  // if rules are set inactive, remove the action module from the memory
   db = db_link;
   if(ml && db) db.getActionModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
       if(!obj) {
         log.print('EN', 'No Action Modules found in DB!');
-        loadRulesFromDB();
       } else {
         var m;
         for(var el in obj) {
@@ -54,23 +55,22 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
             log.error('EN', e);
           }
         }
-        loadRulesFromDB();
       }
     }
+    if(db) db.getRules(function(err, obj) {
+      for(var el in obj) exports.addRule(JSON.parse(obj[el]));
+    });
   });
   else log.severe('EN', new Error('Module Loader or DB not defined!'));
 };
 
-function loadRulesFromDB() {
-  if(db) db.getRules(function(err, obj) {
-    for(var el in obj) exports.addRule(JSON.parse(obj[el]));
-  });
-}
 
 /**
  * Insert an action module into the list of available interfaces.
  * @param {Object} objModule the action module object
  */
+//TODO action modules should be loaded once a user activates a rule with the respective
+// action, if the user deletes the rule it has to be garrbage collected from the engine's list 
 exports.loadActionModule = function(name, objModule) {
   log.print('EN', 'Action module "' + name + '" loaded');
   listActionModules[name] = objModule;
@@ -82,6 +82,7 @@ exports.loadActionModule = function(name, objModule) {
  */
 exports.addRule = function(objRule) {
   //TODO validate rule
+  log.print('EN', 'Loading Rule');
   log.print('EN', 'Loading Rule: ' + objRule.id);
   if(listRules[objRule.id]) log.print('EN', 'Replacing rule: ' + objRule.id);
   listRules[objRule.id] = objRule;

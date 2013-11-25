@@ -173,7 +173,8 @@ DB Interface
   */
 
 
-  getSetRecords = function(set, funcSingle, cb) {
+  getSetRecords = function(set, fSingle, cb) {
+    log.print('DB', 'Fetching set records: ' + set);
     return db != null ? db.smembers(set, function(err, arrReply) {
       var fCallback, objReplies, reply, semaphore, _i, _len, _results;
       if (err) {
@@ -191,12 +192,15 @@ DB Interface
         }, 2000);
         fCallback = function(prop) {
           return function(err, data) {
+            --semaphore;
             if (err) {
               err.addInfo = 'fetching single element: ' + prop;
               return log.error('DB', err);
+            } else if (!data) {
+              return log.error('DB', new Error('Empty key in DB: ' + prop));
             } else {
               objReplies[prop] = data;
-              if (--semaphore === 0) {
+              if (semaphore === 0) {
                 return cb(null, objReplies);
               }
             }
@@ -227,6 +231,7 @@ DB Interface
 
 
   exports.storeActionModule = function(id, data) {
+    log.print('DB', 'storeActionModule: ' + id);
     if (db != null) {
       db.sadd('action-modules', id, replyHandler('storing action module key ' + id));
     }
@@ -243,6 +248,7 @@ DB Interface
 
 
   exports.getActionModule = function(id, cb) {
+    log.print('DB', 'getActionModule: ' + id);
     return db != null ? db.get('action-module:' + id, cb) : void 0;
   };
 
@@ -269,6 +275,7 @@ DB Interface
 
 
   exports.storeActionAuth = function(userId, moduleId, data) {
+    log.print('DB', 'storeActionAuth: ' + userId + ':' + moduleId);
     return db != null ? db.set('action-auth:' + userId + ':' + moduleId, encrypt(data), replyHandler('storing action auth ' + userId + ':' + moduleId)) : void 0;
   };
 
@@ -284,6 +291,7 @@ DB Interface
 
 
   exports.getActionAuth = function(userId, moduleId, cb) {
+    log.print('DB', 'getActionAuth: ' + userId + ':' + moduleId);
     return db != null ? db.get('action-auth:' + userId + ':' + moduleId, function(err, data) {
       return cb(err, decrypt(data));
     }) : void 0;
@@ -304,6 +312,7 @@ DB Interface
 
 
   exports.storeEventModule = function(id, data) {
+    log.print('DB', 'storeEventModule: ' + id);
     if (db != null) {
       db.sadd('event-modules', id, replyHandler('storing event module key ' + id));
     }
@@ -320,6 +329,7 @@ DB Interface
 
 
   exports.getEventModule = function(id, cb) {
+    log.print('DB', 'getEventModule: ' + id);
     return db != null ? db.get('event_module:' + id, cb) : void 0;
   };
 
@@ -345,6 +355,7 @@ DB Interface
 
 
   exports.storeEventAuth = function(userId, moduleId, data) {
+    log.print('DB', 'storeEventAuth: ' + userId + ':' + moduleId);
     return db != null ? db.set('event-auth:' + userId + ':' + moduleId, encrypt(data), replyHandler('storing event auth ' + userId + ':' + moduleId)) : void 0;
   };
 
@@ -358,6 +369,7 @@ DB Interface
 
 
   exports.getEventAuth = function(userId, moduleId, cb) {
+    log.print('DB', 'getEventAuth: ' + userId + ':' + moduleId);
     return db != null ? db.get('event-auth:' + userId + ':' + moduleId, function(err, data) {
       return cb(err, decrypt(data));
     }) : void 0;
@@ -378,6 +390,7 @@ DB Interface
 
 
   exports.storeRule = function(id, data) {
+    log.print('DB', 'storeRule: ' + id);
     if (db != null) {
       db.sadd('rules', id, replyHandler('storing rule key ' + id));
     }
@@ -394,6 +407,7 @@ DB Interface
 
 
   exports.getRule = function(id, cb) {
+    log.print('DB', 'getRule: ' + id);
     return db != null ? db.get('rule:' + id, cb) : void 0;
   };
 
@@ -406,6 +420,7 @@ DB Interface
 
 
   exports.getRules = function(cb) {
+    log.print('DB', 'Fetching all Rules');
     return getSetRecords('rules', exports.getRule, cb);
   };
 
@@ -418,6 +433,7 @@ DB Interface
 
 
   exports.storeUser = function(objUser) {
+    log.print('DB', 'storeUser: ' + objUser.username);
     if (objUser && objUser.username && objUser.password) {
       if (db != null) {
         db.sadd('users', objUser.username, replyHandler('storing user key ' + objUser.username));
@@ -439,6 +455,7 @@ DB Interface
 
 
   exports.storeUserRole = function(username, role) {
+    log.print('DB', 'storeUserRole: ' + username + ':' + role);
     if (db != null) {
       db.sadd('user-roles:' + username, role, replyHandler('adding role ' + role + ' to user ' + username));
     }
@@ -454,6 +471,7 @@ DB Interface
 
 
   exports.getUserRoles = function(username) {
+    log.print('DB', 'getUserRole: ' + username);
     return db != null ? db.get('user-roles:' + username, cb) : void 0;
   };
 
@@ -466,6 +484,7 @@ DB Interface
 
 
   exports.getRoleUsers = function(role) {
+    log.print('DB', 'getRoleUsers: ' + role);
     return db != null ? db.get('role-users:' + role, cb) : void 0;
   };
 
@@ -481,22 +500,24 @@ DB Interface
 
   exports.loginUser = function(username, password, cb) {
     var fCheck;
+    log.print('DB', 'User "' + username + '" tries to log in');
     fCheck = function(pw) {
       return function(err, obj) {
         if (err) {
-          return typeof cb === "function" ? cb(err) : void 0;
+          return cb(err);
         } else if (obj && obj.password) {
-          if (encrypt(obj.password) === pw) {
-            return typeof cb === "function" ? cb(null, obj) : void 0;
+          if (encrypt(pw) === obj.password) {
+            log.print('DB', 'User "' + obj.username + '" logged in!');
+            return cb(null, obj);
           } else {
-            return typeof cb === "function" ? cb(new Error('Wrong credentials!')) : void 0;
+            return cb(new Error('Wrong credentials!'));
           }
         } else {
-          return typeof cb === "function" ? cb(new Error('Empty arguments!')) : void 0;
+          return cb(new Error('Empty arguments!'));
         }
       };
     };
-    return db != null ? db.get('user:' + username, fCheck(password)) : void 0;
+    return db != null ? db.hgetall('user:' + username, fCheck(password)) : void 0;
   };
 
   /*

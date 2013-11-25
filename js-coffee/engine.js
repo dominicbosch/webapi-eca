@@ -63,7 +63,10 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
 
 function loadRulesFromDB() {
   if(db) db.getRules(function(err, obj) {
-    for(var el in obj) exports.addRule(JSON.parse(obj[el]));
+    for(var el in obj){
+      if(obj[el]) exports.addRule(JSON.parse(obj[el]));
+    }
+      
   });
 }
 
@@ -82,6 +85,8 @@ exports.loadActionModule = function(name, objModule) {
  */
 exports.addRule = function(objRule) {
   //TODO validate rule
+  log.print('EN', 'Loading Rule');
+  log.print('EN', objRule);
   log.print('EN', 'Loading Rule: ' + objRule.id);
   if(listRules[objRule.id]) log.print('EN', 'Replacing rule: ' + objRule.id);
   listRules[objRule.id] = objRule;
