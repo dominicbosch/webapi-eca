@@ -2,15 +2,16 @@
 
 Config
 ======
+> Loads the configuration file and acts as an interface to it.
 
-Loads the configuration file and acts as an interface to it.
 ###
-'use strict'
 
-path = require 'path'
-log = require './logging'
 fs = require 'fs'
-config = null
+path = require 'path'
+# Requires:
+
+# - The [Logging](logging.html) module
+log = require './logging'
 
 ###
 ##Module call
@@ -19,7 +20,7 @@ Calling the module as a function will make it look for the `relPath` property in
 args object and then try to load a config file from that relative path.
 @param {Object} args
 ###
-exports = module.exports = (args) -> 
+exports = module.exports = ( args ) -> 
   args = args ? {}
   log args
   if typeof args.relPath is 'string'
@@ -33,11 +34,11 @@ Reads the config file synchronously from the file system and try to parse it.
 @private loadConfigFile
 @param {String} relPath
 ###
-loadConfigFile = (relPath) ->
+loadConfigFile = ( relPath ) =>
   try
-    config = JSON.parse fs.readFileSync path.resolve __dirname, '..', relPath
-    if config and config.http_port and config.db_port and
-                  config.crypto_key and config.session_secret
+    @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', relPath
+    if @config and @config.http_port and @config.db_port and
+                  @config.crypto_key and @config.session_secret
       log.print 'CF', 'config file loaded successfully'
     else
       log.error 'CF', new Error("""Missing property in config file, requires:
@@ -57,14 +58,14 @@ Fetch a property from the configuration
 @private fetchProp( *prop* )
 @param {String} prop
 ###
-fetchProp = (prop) -> config?[prop]
+fetchProp = ( prop ) => @config?[prop]
 
 ###
 Answer true if the config file is ready, else false
 
 @public isReady()
 ###
-exports.isReady = -> config?
+exports.isReady = => @config?
 
 ###
 Returns the HTTP port

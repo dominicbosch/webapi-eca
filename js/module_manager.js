@@ -21,10 +21,11 @@ exports = module.exports = function(args) {
   return module.exports;
 };
 
-exports.addHandlers = function(db_link, fLoadAction, fLoadRule) {
+exports.addDBLink = function(db_link) {
   db = db_link;
-  funcLoadAction = fLoadAction;
-  funcLoadRule = fLoadRule;
+  //TODO Remove fLoadAction and fLoadRule and replace them with user commands
+  // funcLoadAction = fLoadAction;
+  // funcLoadRule = fLoadRule;
 };
 
 /*
@@ -34,8 +35,8 @@ exports.addHandlers = function(db_link, fLoadAction, fLoadRule) {
 exports.loadRulesFromFS = function(args, answHandler) {
   if(!args) args = {};
   if(!args.name) args.name = 'rules';
-  if(!funcLoadRule) log.error('ML', 'no rule loader function available');
-  else {
+  // if(!funcLoadRule) log.error('ML', 'no rule loader function available');
+  // else {
     fs.readFile(path.resolve(__dirname, '..', 'rules', args.name + '.json'), 'utf8', function (err, data) {
       if (err) {
         log.error('ML', 'Loading rules file: ' + args.name + '.json');
@@ -47,14 +48,14 @@ exports.loadRulesFromFS = function(args, answHandler) {
         for(var i = 0; i < arr.length; i++) {
           txt += arr[i].id + ', ';
           db.storeRule(arr[i].id, JSON.stringify(arr[i]));
-          funcLoadRule(arr[i]);
+          // funcLoadRule(arr[i]);
         }
         answHandler.answerSuccess('Yep, loaded rules: ' + txt);
       } catch (e) {
         log.error('ML', 'rules file was corrupt! (' + args.name + '.json)');
       }
     });
-  }
+  // }
 };
 
 /*
@@ -71,7 +72,7 @@ exports.loadRulesFromFS = function(args, answHandler) {
  */
 function loadActionCallback(name, data, mod, auth) {
   db.storeActionModule(name, data); // store module in db
-  funcLoadAction(name, mod); // hand back compiled module
+  // funcLoadAction(name, mod); // hand back compiled module
   if(auth) db.storeActionModuleAuth(name, auth);
 }
 

@@ -3,22 +3,19 @@
 
 Config
 ======
-
-Loads the configuration file and acts as an interface to it.
+> Loads the configuration file and acts as an interface to it.
 */
 
 
 (function() {
-  'use strict';
-  var config, exports, fetchProp, fs, loadConfigFile, log, path;
+  var exports, fetchProp, fs, loadConfigFile, log, path,
+    _this = this;
+
+  fs = require('fs');
 
   path = require('path');
 
   log = require('./logging');
-
-  fs = require('fs');
-
-  config = null;
 
   /*
   ##Module call
@@ -50,8 +47,8 @@ Loads the configuration file and acts as an interface to it.
   loadConfigFile = function(relPath) {
     var e;
     try {
-      config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', relPath)));
-      if (config && config.http_port && config.db_port && config.crypto_key && config.session_secret) {
+      _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', relPath)));
+      if (_this.config && _this.config.http_port && _this.config.db_port && _this.config.crypto_key && _this.config.session_secret) {
         return log.print('CF', 'config file loaded successfully');
       } else {
         return log.error('CF', new Error("Missing property in config file, requires:\n- http_port\n- db_port\n- crypto_key\n- session_secret"));
@@ -74,7 +71,8 @@ Loads the configuration file and acts as an interface to it.
 
 
   fetchProp = function(prop) {
-    return config != null ? config[prop] : void 0;
+    var _ref;
+    return (_ref = _this.config) != null ? _ref[prop] : void 0;
   };
 
   /*
@@ -85,7 +83,7 @@ Loads the configuration file and acts as an interface to it.
 
 
   exports.isReady = function() {
-    return config != null;
+    return _this.config != null;
   };
 
   /*

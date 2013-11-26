@@ -1,6 +1,8 @@
 ###
+
 Rules Server
 ============
+
 >This is the main module that is used to run the whole server:
 >
 >     node server [log_type http_port]
@@ -14,31 +16,24 @@ Rules Server
 >`http_port` can be set to use another port, than defined in the 
 >[config](config.html) file, to listen to, e.g. used by the test suite.
 >
->---
+>
 
 ###
 
-'use strict'
-### Grab all required modules ###
-path = require 'path'
+# Requires:
+
+# - The [Logging](logging.html) module
 log = require './logging'
+# - The [Config](config.html) module
 conf = require './config'
+# - The [DB Interface](db_interface.html) module
 db = require './db_interface'
+# - The [Engine](engine.html) module
 engine = require './engine'
+# - The [HTTP Listener](http_listener.html) module
 http_listener = require './http_listener'
-mm = require './module_manager'
 args = {}
 procCmds = {}
-
-### Prepare the admin commands that are issued via HTTP requests. ###
-adminCmds = 
-  'loadrules': mm.loadRulesFromFS,
-  'loadaction': mm.loadActionModuleFromFS,
-  'loadactions':  mm.loadActionModulesFromFS,
-  'loadevent': mm.loadEventModuleFromFS,
-  'loadevents': mm.loadEventModulesFromFS,
-  'loadusers': http_listener.loadUsers,
-  'shutdown': shutDown
 
 
 ###
@@ -46,14 +41,13 @@ Error handling of the express port listener requires special attention,
 thus we have to catch the process error, which is issued if
 the port is already in use.
 ###
-process.on 'uncaughtException', (err) ->
+process.on 'uncaughtException', ( err ) ->
   switch err.errno
     when 'EADDRINUSE'
       err.addInfo = 'http_port already in use, shutting down!'
       log.error 'RS', err
       shutDown()
-    else log.error err
-  null
+    else throw err
 
 ###
 This function is invoked right after the module is loaded and starts the server.
@@ -85,9 +79,10 @@ init = ->
   if process.argv.length > 3 then args.http_port = parseInt process.argv[3]
   else log.print 'RS', 'No HTTP port passed, using standard port from config file'
   
+  log.print 'RS', 'Initialzing DB'
   db args
   ### We only proceed with the initialization if the DB is ready ###
-  db.isConnected (err, result) ->
+  db.isConnected ( err, result ) ->
     if !err
     
       ### Initialize all required modules with the args object.###
@@ -95,57 +90,23 @@ init = ->
       engine args
       log.print 'RS', 'Initialzing http listener'
       http_listener args
-      log.print 'RS', 'Initialzing module manager'
-      mm args
-      log.print 'RS', 'Initialzing DB'
       
       ### Distribute handlers between modules to link the application. ###
       log.print 'RS', 'Passing handlers to engine'
       engine.addDBLinkAndLoadActionsAndRules db
       log.print 'RS', 'Passing handlers to http listener'
-      http_listener.addHandlers db, fAdminCommands, engine.pushEvent
-      log.print 'RS', 'Passing handlers to module manager'
-      mm.addHandlers db, engine.loadActionModule, engine.addRule
-  
-###
-admin commands handler receives all command arguments and an answerHandler
-object that eases response handling to the HTTP request issuer.
-
-@private fAdminCommands( *args, answHandler* )
-###
-fAdminCommands = (args, answHandler) ->
-  if args and args.cmd 
-    adminCmds[args.cmd]? args, answHandler
-  else
-    log.print 'RS', 'No command in request'
-    
-  ###
-  The fAnsw function receives an answerHandler object as an argument when called
-  and returns an anonymous function
-  ###
-  fAnsw = (ah) ->
-    ###
-    The anonymous function checks whether the answerHandler was already used to
-    issue an answer, if no answer was provided we answer with an error message
-    ###
-    () ->
-      if not ah.isAnswered()
-        ah.answerError 'Not handled...'
-        
-  ###
-  Delayed function call of the anonymous function that checks the answer handler
-  ###
-  setTimeout fAnsw(answHandler), 2000
+      # TODO engine pushEvent needs to go into redis queue
+      http_listener.addHandlers db, engine.pushEvent, shutDown
+      # log.print 'RS', 'Passing handlers to module manager'
+      # TODO loadAction and addRule will be removed
+      # mm.addHandlers db, engine.loadActionModule, engine.addRule
 
 ###
 Shuts down the server.
 
-@private shutDown( *args, answHandler* )
-@param {Object} args
-@param {Object} answHandler
+@private shutDown()
 ### 
-shutDown = (args, answHandler) ->
-  answHandler?.answerSuccess 'Goodbye!'
+shutDown = ->
   log.print 'RS', 'Received shut down command!'
   engine?.shutDown()
   http_listener?.shutDown()
@@ -157,7 +118,7 @@ When the server is run as a child process, this function handles messages
 from the parent process (e.g. the testing suite)
 ###
 
-process.on 'message', (cmd) -> procCmds[cmd]?()
+process.on 'message', ( cmd ) -> procCmds[cmd]?()
 
 ###
 The die command redirects to the shutDown function.
