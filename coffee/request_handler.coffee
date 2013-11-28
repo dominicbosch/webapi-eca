@@ -1,25 +1,35 @@
 ###
 
-User Handler
+Request Handler
 ============
 > TODO Add documentation
 
 ###
 
+# **Requires:**
+
+# - [Logging](logging.html)
+log = require './logging'
+
+# - [DB Interface](db_interface.html)
+db = require './db_interface'
+
+# - [Module Manager](module_manager.html)
+mm = require './module_manager'
+
+# - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
+#   [path](http://nodejs.org/api/path.html) and
+#   [querystring](http://nodejs.org/api/querystring.html)
 fs = require 'fs'
 path = require 'path'
 qs = require 'querystring'
 
-# Requires:
+# - External Modules: [mustache](https://github.com/janl/mustache.js) and
+#   [crypto-js](https://github.com/evanvosberg/crypto-js)
+mustache = require 'mustache'
+crypto = require 'crypto-js'
 
-# - The [Logging](logging.html) module
-log = require './logging'
-# - The [DB Interface](db_interface.html) module
-db = require './db_interface'
-# - The [Module Manager](module_manager.html) module
-mm = require './module_manager'
-
-### Prepare the admin command handlers that are issued via HTTP requests. ###
+# Prepare the admin command handlers that are invoked via HTTP requests.
 objAdminCmds =
   'loadrules': mm.loadRulesFromFS,
   'loadaction': mm.loadActionModuleFromFS,
@@ -38,69 +48,149 @@ exports = module.exports = ( args ) ->
   db.storeUser user for user in users
   module.exports
 
+###
+This allows the parent to add handlers. The event handler will receive
+the events that were received. The shutdown function will be called if the
+admin command shutdown is issued.
 
-exports.addShutdownHandler = ( fShutdown ) ->
+@public addHandlers( *fEvtHandler, fShutdown* )
+@param {function} fEvtHandler
+@param {function} fShutdown
+###
+exports.addHandlers = ( fEvtHandler, fShutdown ) =>
+  @eventHanlder = fEvtHandler
   objAdminCmds.shutdown = fShutdown
 
 
-exports.handleRequest = ( req, resp ) ->
-  req.on 'end', -> resp.end()
-  if req.session and req.session.user
-    resp.send 'You\'re logged in'
-  else
-    resp.sendfile path.resolve __dirname, '..', 'webpages', 'handlers', 'login.html'
-  req.session.lastPage = req.originalUrl
+###
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleEvent( *req, resp* )
+###
+exports.handleEvent = ( req, resp ) =>
+  body = ''
+  req.on 'data', ( data ) ->
+    body += data
+  req.on 'end', =>
+    obj = qs.parse body
+    # If required event properties are present we process the event #
+    if obj and obj.event and obj.eventid
+      resp.send 'Thank you for the event (' + obj.event + '[' + obj.eventid + '])!'
+      @eventHandler obj
+    else
+      resp.writeHead 400, { "Content-Type": "text/plain" }
+      resp.send 'Your event was missing important parameters!'
 
 
+###
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleLogin( *req, resp* )
+###
 exports.handleLogin = ( req, resp ) ->
   body = ''
   req.on 'data', ( data ) -> body += data
   req.on 'end', ->
     if not req.session or not req.session.user
       obj = qs.parse body
-      db.loginUser obj.username, obj.password, ( err, obj ) ->
-        if not err
-          req.session.user = obj
-        if req.session.user
-          resp.write 'Welcome ' + req.session.user.name + '!'
+      db.loginUser obj.username, obj.password, ( err, usr ) ->
+        if(err)
+          # Tapping on fingers, at least in log...
+          log.print 'RH', "AUTH-UH-OH (#{obj.username}): " + err.message
         else
-          resp.writeHead 401, { "Content-Type": "text/plain" }
-          resp.write 'Login failed!'
-        resp.end()
+          # no error, so we can associate the user object from the DB to the session
+          req.session.user = usr
+        if req.session.user
+          resp.send 'OK!'
+        else
+          resp.send 401, 'NO!'
     else
-      resp.write 'Welcome ' + req.session.user.name + '!'
-      resp.end()
+      resp.send 'Welcome ' + req.session.user.name + '!'
+
+###
+A post request retrieved on this handler causes the user object to be
+purged from the session, thus the user will be logged out.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleLogout( *req, resp* )
+###
+exports.handleLogout = ( req, resp ) ->
+  if req.session 
+    req.session.user = null
+    resp.send 'Bye!'
 
 
-answerHandler = ( resp ) ->
-  hasBeenAnswered = false
-  postAnswer( msg ) ->
-    if not hasBeenAnswered
-      resp.write msg
-      resp.end()
-      hasBeenAnswered = true
-  {
-    answerSuccess: ( msg ) ->
-      if not hasBeenAnswered
-        postAnswer msg,
-    answerError: ( msg ) ->
-      if not hasBeenAnswered
-        resp.writeHead 400, { "Content-Type": "text/plain" }
-      postAnswer msg,
-    isAnswered: -> hasBeenAnswered
-  }
+getHandlerPath = (name) ->
+  path.resolve __dirname, '..', 'webpages', 'handlers', name + '.html'
 
-# TODO add loadUsers as directive to admin commands
-# exports.loadUsers = ->
-  # var users = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'users.json')));
-  # for(var name in users) {
-    # db.storeUser(users[name]);
-  # }
-# };
+
+getHandlerFileAsString = (name) ->
+  fs.readFileSync getHandlerPath( name ), 'utf8'
+###
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleUser( *req, resp* )
+###
+exports.handleUser = ( req, resp ) ->
+  if req.session and req.session.user
+    welcome = getHandlerFileAsString 'welcome'
+    menubar = getHandlerFileAsString 'menubar'
+    view = {
+      user: req.session.user,
+      div_menubar: menubar
+    }
+    resp.send mustache.render welcome, view
+  else
+    resp.sendfile getHandlerPath 'login'
+
+###
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleAdmin( *req, resp* )
+###
+exports.handleAdmin = ( req, resp ) ->
+  if req.session and req.session.user
+    if req.session.user.isAdmin is "true"
+      welcome = getHandlerFileAsString 'welcome'
+      menubar = getHandlerFileAsString 'menubar'
+      view =
+        user: req.session.user,
+        div_menubar: menubar
+      resp.send mustache.render welcome, view
+    else
+      unauthorized = getHandlerFileAsString 'unauthorized'
+      menubar = getHandlerFileAsString 'menubar'
+      view =
+        user: req.session.user,
+        div_menubar: menubar
+      resp.send mustache.render unauthorized, view
+  else
+    resp.sendfile getHandlerPath 'login'
+
 
 onAdminCommand = ( req, response ) ->
-  q = req.query;
-  log.print 'HL', 'Received admin request: ' + req.originalUrl
+  q = req.query
+  log.print 'RH', 'Received admin request: ' + q
   if q.cmd
     fAdminCommands q, answerHandler response
     #answerSuccess(response, 'Thank you, we try our best!');
@@ -117,7 +207,7 @@ fAdminCommands = ( args, answHandler ) ->
   if args and args.cmd 
     adminCmds[args.cmd]? args, answHandler
   else
-    log.print 'RS', 'No command in request'
+    log.print 'RH', 'No command in request'
     
   ###
   The fAnsw function receives an answerHandler object as an argument when called

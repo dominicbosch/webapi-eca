@@ -1,0 +1,11 @@
+<div id="menubar">
+	<div id="menubar_menu">menu</div>
+	<div id="menubar_logout">logout</div>
+  <script>
+		$('#menubar_logout').click(function() {
+      $.post('../logout').done(function() {
+        window.location.href = document.URL;
+      });
+    });
+  </script>
+</div>

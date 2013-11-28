@@ -1,27 +1,28 @@
 README: webapi-eca
 ==================
 
+# TODO Remake
+
 >A Modular ECA Engine Server which acts as a middleware between WebAPI's.
 >This folder continues examples of an ECA engine and how certain use cases could be implemented together with a rules language.
->Be sure the user which runs the server doesn't have ANY write rights on the server!
->Malicious modules could capture or destroy your server!
 >
 >
->The server is started through the [rules_server.js](rules_server.html) module by calling `node rule_server.js`. 
+>The server is started through the [server.js](server.html) module by calling `node rule_server.js`. 
 
 
 Getting started
 ---------------
-Prerequisites:
 
- - node.js & npm (find it [here](http://nodejs.org/))
- - *(optional) coffee, if you want to compile from coffee sources:*
+**Prerequisites:**
+
+ - node.js (find it [here](http://nodejs.org/))
+ - *(optional) [CoffeeScript](http://coffeescript.org/), if you want to compile from coffee sources:*
  
-	sudo npm -g install coffee-script
+		sudo npm -g install coffee-script
  
 Clone project:
 
-        git clone https://github.com/dominicbosch/webapi-eca.git
+    git clone https://github.com/dominicbosch/webapi-eca.git
 
 Download and install dependencies:
 
@@ -33,7 +34,7 @@ Get your [redis](http://redis.io/) instance up and running (and find the port fo
 Edit the configuration file:
 
     vi config/config.json
-    
+
 Apply your settings, for example:
 
     {
@@ -49,15 +50,17 @@ Start the server:
     
 *Congratulations, your own WebAPI based ECA engine server is now up and running!*
 
+
 Optional command line tools:
 ----------------------------
-Run test suite:
-
-    node run_tests
     
 Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 
     node create_doc
+    
+Run test suite:
+
+    node run_tests
 
 _
 

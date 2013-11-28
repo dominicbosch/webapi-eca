@@ -65,14 +65,10 @@ Rules Server
 
   init = function() {
     log.print('RS', 'STARTING SERVER');
-    /* Check whether the config file is ready, which is required to start the server.*/
-
     if (!conf.isReady()) {
       log.error('RS', 'Config file not ready!');
       process.exit();
     }
-    /* Fetch the `log_type` argument and post a log about which log type is used.*/
-
     if (process.argv.length > 2) {
       args.logType = parseInt(process.argv[2]) || 0;
       switch (args.logType) {
@@ -92,8 +88,6 @@ Rules Server
     } else {
       log.print('RS', 'No log method argument provided, using standard I/O');
     }
-    /* Fetch the `http_port` argument*/
-
     if (process.argv.length > 3) {
       args.http_port = parseInt(process.argv[3]);
     } else {
@@ -101,18 +95,12 @@ Rules Server
     }
     log.print('RS', 'Initialzing DB');
     db(args);
-    /* We only proceed with the initialization if the DB is ready*/
-
     return db.isConnected(function(err, result) {
       if (!err) {
-        /* Initialize all required modules with the args object.*/
-
         log.print('RS', 'Initialzing engine');
         engine(args);
         log.print('RS', 'Initialzing http listener');
         http_listener(args);
-        /* Distribute handlers between modules to link the application.*/
-
         log.print('RS', 'Passing handlers to engine');
         engine.addDBLinkAndLoadActionsAndRules(db);
         log.print('RS', 'Passing handlers to http listener');
@@ -148,17 +136,7 @@ Rules Server
     return typeof procCmds[cmd] === "function" ? procCmds[cmd]() : void 0;
   });
 
-  /*
-  The die command redirects to the shutDown function.
-  */
-
-
   procCmds.die = shutDown;
-
-  /*
-  *Start initialization*
-  */
-
 
   init();
 

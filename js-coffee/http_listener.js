@@ -3,54 +3,65 @@
 
 HTTP Listener
 =============
-> Handles the HTTP requests to the server at the port specified by the
-> [config](config.html) file.
+> Receives the HTTP requests to the server at the port specified by the
+> [config](config.html) file. These requests (bound to a method) are then 
+> redirected to the appropriate handler which then takes care of the request.
 */
 
 
 (function() {
-  var app, config, exports, express, log, onPushEvent, path, qs, sess_sec, userHandler,
-    _this = this;
-
-  path = require('path');
-
-  express = require('express');
-
-  app = express();
-
-  qs = require('querystring');
+  var app, config, exports, express, log, path, qs, requestHandler, sess_sec;
 
   log = require('./logging');
 
   config = require('./config');
 
-  userHandler = require('./user_handler');
+  requestHandler = require('./request_handler');
+
+  path = require('path');
+
+  qs = require('querystring');
+
+  express = require('express');
+
+  app = express();
 
   sess_sec = '#C[>;j`@".TXm2TA;A2Tg)';
+
+  /*
+  Module call
+  -----------
+  Initializes the HTTP Listener and its child modules Logging,
+  Configuration and Request Handler, then tries to fetch the session
+  key from the configuration.
+  
+  @param {Object} args
+  */
+
 
   exports = module.exports = function(args) {
     args = args != null ? args : {};
     log(args);
     config(args);
-    userHandler(args);
+    requestHandler(args);
     sess_sec = config.getSessionSecret() || sess_sec;
     return module.exports;
   };
 
   exports.addHandlers = function(fEvtHandler, fShutDown) {
     var e, http_port;
-    userHandler.addShutdownHandler(fShutDown);
-    _this.eventHandler = fEvtHandler;
+    requestHandler.addHandlers(fEvtHandler, fShutDown);
     app.use(express.cookieParser());
     app.use(express.session({
       secret: sess_sec
     }));
     log.print('HL', 'no session backbone');
-    app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages')));
-    app.get('/rulesforge', userHandler.handleRequest);
-    app.get('/admin', userHandler.handleRequest);
-    app.post('/login', userHandler.handleLogin);
-    app.post('/push_event', onPushEvent);
+    app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
+    app.post('/event', requestHandler.handleEvent);
+    app.get('/user', requestHandler.handleUser);
+    app.get('/admin', requestHandler.handleAdmin);
+    app.post('/login', requestHandler.handleLogin);
+    app.post('/logout', requestHandler.handleLogout);
     try {
       http_port = config.getHttpPort();
       if (http_port) {
@@ -63,28 +74,6 @@ HTTP Listener
       e.addInfo = 'opening port';
       return log.error(e);
     }
-  };
-
-  onPushEvent = function(req, resp) {
-    var body;
-    body = '';
-    req.on('data', function(data) {
-      return body += data;
-    });
-    return req.on('end', function() {
-      var obj;
-      obj = qs.parse(body);
-      if (obj && obj.event && obj.eventid) {
-        resp.write('Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
-        _this.eventHandler(obj);
-      } else {
-        resp.writeHead(400, {
-          "Content-Type": "text/plain"
-        });
-        resp.write('Your event was missing important parameters!');
-      }
-      return resp.end();
-    });
   };
 
   exports.shutDown = function() {

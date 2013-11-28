@@ -4,17 +4,21 @@
     <title>Login</title>
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+		<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha3.js"></script>
   </head>
   <body>
-    <h1>Login</h1>
-    <table>
-      <tr><td>username: </td><td><input type="text" id="username" /></td></tr>
-      <tr><td>password: </td><td><input type="password" id="password" /></td></tr>
-    </table>
-    <button id="but_submit">login</button>
+		<div id="mainbody">
+	    <div id="pagetitle">Login</div>
+	    <table>
+	      <tr><td>username: </td><td><input type="text" id="username" /></td></tr>
+	      <tr><td>password: </td><td><input type="password" id="password" /></td></tr>
+	    </table>
+	    <button id="but_submit">login</button>
+    </div>
     <script>
       $('#but_submit').click(function() {
-        $.post('../login', { username: $('#username').val(), password: $('#password').val() })
+      	var hashedPassword = (CryptoJS.SHA3($('#password').val(), { outputLength: 512 })).toString();
+        $.post('../login', { username: $('#username').val(), password: hashedPassword })
         .done(function(data) {
           window.location.href = document.URL;
         })

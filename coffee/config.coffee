@@ -1,17 +1,20 @@
 ###
 
-Config
-======
+Configuration
+=============
 > Loads the configuration file and acts as an interface to it.
 
 ###
 
+# **Requires:**
+
+# - [Logging](logging.html)
+log = require './logging'
+
+# - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
+#   [path](http://nodejs.org/api/path.html)
 fs = require 'fs'
 path = require 'path'
-# Requires:
-
-# - The [Logging](logging.html) module
-log = require './logging'
 
 ###
 ##Module call
@@ -24,7 +27,7 @@ exports = module.exports = ( args ) ->
   args = args ? {}
   log args
   if typeof args.relPath is 'string'
-    loadConfigFiles args.relPath
+    loadConfigFile args.relPath
   module.exports
 
 ###
@@ -61,35 +64,35 @@ Fetch a property from the configuration
 fetchProp = ( prop ) => @config?[prop]
 
 ###
-Answer true if the config file is ready, else false
+***Returns*** true if the config file is ready, else false
 
 @public isReady()
 ###
 exports.isReady = => @config?
 
 ###
-Returns the HTTP port
+***Returns*** the HTTP port
 
 @public getHttpPort()
 ###
 exports.getHttpPort = -> fetchProp 'http_port'
 
 ###
-Returns the DB port
+***Returns*** the DB port*
 
 @public getDBPort()
 ###
 exports.getDBPort = -> fetchProp 'db_port'
 
 ###
-Returns the crypto key
+***Returns*** the crypto key
 
 @public getCryptoKey()
 ###
 exports.getCryptoKey = -> fetchProp 'crypto_key'
 
 ###
-Returns the session secret
+***Returns*** the session secret
 
 @public getSessionSecret()
 ###

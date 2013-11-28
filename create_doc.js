@@ -10,7 +10,7 @@ require('groc').CLI(
     "coffee/*.coffee",
     "mod_actions/**/*.js",
     "mod_events/**/*.js",
-    "-o./webpages/doc"
+    "-o./webpages/public/doc"
   ],
   function(err) {
     if (err) console.error(err);

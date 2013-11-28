@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Command "{{command}}" Result</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+  </head>
+  <body>
+  	{{{div_menubar}}}
+		<div id="mainbody">
+	    <div id="pagetitle">{{user.username}} unauthorized!</div>
+	    <p>
+	    	Sorry this roles is missing for you.<br />
+	    	You only have these privileges: {{user.roles}}
+	    </p>
+		</div>
+  </body>
+</html>

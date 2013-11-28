@@ -21,14 +21,14 @@ DB Interface
 
 
 (function() {
-  var crypto, decrypt, encrypt, exports, getSetRecords, log, redis, replyHandler,
+  var crypto, decrypt, encrypt, exports, getSetRecords, hash, log, redis, replyHandler,
     _this = this;
 
-  redis = require('redis');
-
-  crypto = require('crypto');
-
   log = require('./logging');
+
+  crypto = require('crypto-js');
+
+  redis = require('redis');
 
   /*
   Module call
@@ -85,6 +85,31 @@ DB Interface
         }
       };
       return setTimeout(fCheckConnection, 500);
+    }
+  };
+
+  /*
+  Hashes a string based on SHA-3-512.
+  
+  @private hash( *plainText* )
+  @param {String} plainText
+  */
+
+
+  hash = function(plainText) {
+    var err;
+    if (plainText == null) {
+      return null;
+    }
+    try {
+      return (crypto.SHA3(plainText, {
+        outputLength: 512
+      })).toString();
+    } catch (_error) {
+      err = _error;
+      err.addInfo = 'during hashing';
+      log.error('DB', err);
+      return null;
     }
   };
 
@@ -269,7 +294,7 @@ DB Interface
 
   exports.storeActionAuth = function(userId, moduleId, data) {
     log.print('DB', 'storeActionAuth: ' + userId + ':' + moduleId);
-    return _this.db.set('action-auth:' + userId + ':' + moduleId, encrypt(data), replyHandler('storing action auth ' + userId + ':' + moduleId));
+    return _this.db.set('action-auth:' + userId + ':' + moduleId, hash(data), replyHandler('storing action auth ' + userId + ':' + moduleId));
   };
 
   /*
@@ -348,7 +373,7 @@ DB Interface
 
   exports.storeEventAuth = function(userId, moduleId, data) {
     log.print('DB', 'storeEventAuth: ' + userId + ':' + moduleId);
-    return _this.db.set('event-auth:' + userId + ':' + moduleId, encrypt(data), replyHandler('storing event auth ' + userId + ':' + moduleId));
+    return _this.db.set('event-auth:' + userId + ':' + moduleId, hash(data), replyHandler('storing event auth ' + userId + ':' + moduleId));
   };
 
   /*
@@ -427,7 +452,7 @@ DB Interface
     log.print('DB', 'storeUser: ' + objUser.username);
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler('storing user key ' + objUser.username));
-      objUser.password = encrypt(objUser.password);
+      objUser.password = hash(objUser.password);
       return _this.db.hmset('user:' + objUser.username, objUser, replyHandler('storing user properties ' + objUser.username));
     } else {
       return log.error('DB', new Error('username or password was missing'));
@@ -476,7 +501,10 @@ DB Interface
   };
 
   /*
-  Checks the credentials and on success returns the user object to the callback(err, obj) function.
+  Checks the credentials and on success returns the user object to the
+  callback(err, obj) function. The password has to be hashed (SHA-3-512)
+  beforehand by the instance closest to the user that enters the password,
+  because we only store hashes of passwords for safety reasons.
   
   @public loginUser( *username, password, cb* )
   @param {String} username
@@ -493,14 +521,14 @@ DB Interface
         if (err) {
           return cb(err);
         } else if (obj && obj.password) {
-          if (encrypt(pw) === obj.password) {
+          if (pw === obj.password) {
             log.print('DB', 'User "' + obj.username + '" logged in!');
             return cb(null, obj);
           } else {
             return cb(new Error('Wrong credentials!'));
           }
         } else {
-          return cb(new Error('Empty arguments!'));
+          return cb(new Error('User not found!'));
         }
       };
     };

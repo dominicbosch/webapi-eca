@@ -19,14 +19,15 @@ DB Interface
 
 ###
 
-redis = require 'redis'
-crypto = require 'crypto' # TODO change to Google's "crypto-js""
+# **Requires:**
 
-# Requires:
-
-# - The [Logging](logging.html) module
+# - [Logging](logging.html)
 log = require './logging'
 
+# - External Modules: [crypto-js](https://github.com/evanvosberg/crypto-js) and
+#   [redis](https://github.com/mranney/node_redis)
+crypto = require 'crypto-js'
+redis = require 'redis'
 
 ###
 Module call
@@ -54,7 +55,7 @@ ten attempts within five seconds, or nothing on success to the callback(err).
 @public isConnected( *cb* )
 @param {function} cb
 ###
-#}TODO check if timeout works with func in func
+#TODO check if timeout works with func in func
 exports.isConnected = ( cb ) =>
   if @db.connected then cb()
   else
@@ -70,6 +71,22 @@ exports.isConnected = ( cb ) =>
         log.error 'DB', e
         cb e
     setTimeout fCheckConnection, 500
+
+
+###
+Hashes a string based on SHA-3-512.
+
+@private hash( *plainText* )
+@param {String} plainText
+###
+hash = ( plainText ) => 
+  if !plainText? then return null
+  try
+    (crypto.SHA3 plainText, { outputLength: 512 }).toString()
+  catch err
+    err.addInfo = 'during hashing'
+    log.error 'DB', err
+    null
 
 
 ###
@@ -140,7 +157,7 @@ getSetRecords = ( set, fSingle, cb ) =>
     else
       semaphore = arrReply.length
       objReplies = {}
-      # } TODO What if the DB needs longer than two seconds to respond?...
+      #TODO What if the DB needs longer than two seconds to respond?...
       setTimeout ->
         if semaphore > 0
           cb new Error('Timeout fetching ' + set)
@@ -206,7 +223,7 @@ Store a string representation of the authentication parameters for an action mod
 ###
 exports.storeActionAuth = ( userId, moduleId, data ) =>
   log.print 'DB', 'storeActionAuth: ' + userId + ':' + moduleId
-  @db.set 'action-auth:' + userId + ':' + moduleId, encrypt(data),
+  @db.set 'action-auth:' + userId + ':' + moduleId, hash(data),
   replyHandler 'storing action auth ' + userId + ':' + moduleId
 
 ###
@@ -270,7 +287,7 @@ Store a string representation of he authentication parameters for an event modul
 ###
 exports.storeEventAuth = ( userId, moduleId, data ) =>
   log.print 'DB', 'storeEventAuth: ' + userId + ':' + moduleId
-  @db.set 'event-auth:' + userId + ':' + moduleId, encrypt(data),
+  @db.set 'event-auth:' + userId + ':' + moduleId, hash(data),
   replyHandler 'storing event auth ' + userId + ':' + moduleId
   
 ###
@@ -331,12 +348,12 @@ Store a user object (needs to be a flat structure).
 @param {Object} objUser
 ###
 exports.storeUser = ( objUser ) =>
-  # TODO Only store user if not already existing, or at least only then add a private key
-  # for his encryption. we would want to have one private key per user, right?  
+  #TODO Only store user if not already existing, or at least only then add a private key
+  #for his encryption. we would want to have one private key per user, right?  
   log.print 'DB', 'storeUser: ' + objUser.username
   if objUser and objUser.username and objUser.password
     @db.sadd 'users', objUser.username, replyHandler 'storing user key ' + objUser.username
-    objUser.password = encrypt objUser.password
+    objUser.password = hash objUser.password
     @db.hmset 'user:' + objUser.username, objUser, replyHandler 'storing user properties ' + objUser.username
   else
     log.error 'DB', new Error 'username or password was missing'
@@ -374,14 +391,17 @@ exports.getRoleUsers = ( role ) =>
   @db.get 'role-users:' + role, cb
 
 ###
-Checks the credentials and on success returns the user object to the callback(err, obj) function.
+Checks the credentials and on success returns the user object to the
+callback(err, obj) function. The password has to be hashed (SHA-3-512)
+beforehand by the instance closest to the user that enters the password,
+because we only store hashes of passwords for safety reasons.
 
 @public loginUser( *username, password, cb* )
 @param {String} username
 @param {String} password
 @param {function} cb
 ###
-# TODO verify and test whole function
+#TODO verify and test whole function
 exports.loginUser = ( username, password, cb ) =>
   log.print 'DB', 'User "' + username + '" tries to log in'
   fCheck = ( pw ) ->
@@ -389,16 +409,16 @@ exports.loginUser = ( username, password, cb ) =>
       if err 
         cb err
       else if obj and obj.password
-        if encrypt(pw) == obj.password
+        if pw == obj.password
           log.print 'DB', 'User "' + obj.username + '" logged in!' 
           cb null, obj
         else
           cb new Error 'Wrong credentials!'
       else
-        cb new Error 'Empty arguments!'
+        cb new Error 'User not found!'
   @db.hgetall 'user:' + username, fCheck password
 
-# TODO implement functions required for user sessions and the rule activation
+#TODO implement functions required for user sessions and the rule activation
 
 ###
 Shuts down the db link.

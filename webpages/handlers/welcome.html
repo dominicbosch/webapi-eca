@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Welcome {{user.username}}</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+  </head>
+  <body>
+  	{{{div_menubar}}}
+		<div id="mainbody">
+	    <div id="pagetitle">Welcome {{user.username}}</div>
+	    <p>
+	    	We're glad you're back!<br />
+	    	Your roles are: {{user.roles}}
+	    </p>
+    </div>
+  </body>
+</html>

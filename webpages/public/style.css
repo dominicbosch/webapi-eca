@@ -1,0 +1,40 @@
+
+body {
+  font-family: sans-serif, "Times New Roman", Georgia, Serif;
+  font-size: 80%;
+  margin: 0px;
+}
+
+#menubar {
+	font-size: 0.75em;
+	width: 100%;
+	padding: 2px;
+	height: 1em;
+	background-color: #DDD;
+}
+
+#menubar_menu {
+	float: left;
+  margin:0 auto;
+}
+
+#menubar_logout {
+	height: 100%;
+	float: right;
+	padding-left: 10px;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+#menubar_logout:hover {
+	background-color: #AAA;
+}
+
+#mainbody {
+	padding: 5px;
+}
+
+#pagetitle {
+	font-size: 1.5em;
+	font-weight: bold;
+}
