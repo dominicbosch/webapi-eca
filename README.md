@@ -3,11 +3,12 @@ README: webapi-eca
 
 # TODO Remake
 
->A Modular ECA Engine Server which acts as a middleware between WebAPI's.
->This folder continues examples of an ECA engine and how certain use cases could be implemented together with a rules language.
->
->
->The server is started through the [server.js](server.html) module by calling `node rule_server.js`. 
+> A Modular ECA Engine Server which acts as a middleware between WebAPI's.
+> This folder continues examples of an ECA engine and how certain use cases
+> could be implemented together with a rules language.
+> 
+> The server is started through the [server.js](server.html) module by calling
+> `node rule_server.js`. 
 
 
 Getting started
@@ -16,7 +17,8 @@ Getting started
 **Prerequisites:**
 
  - node.js (find it [here](http://nodejs.org/))
- - *(optional) [CoffeeScript](http://coffeescript.org/), if you want to compile from coffee sources:*
+ - *(optional) [CoffeeScript](http://coffeescript.org/), if you want to develop
+ 		and compile from coffee sources:*
  
 		sudo npm -g install coffee-script
  

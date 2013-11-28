@@ -53,16 +53,16 @@ This allows the parent to add handlers. The event handler will receive
 the events that were received. The shutdown function will be called if the
 admin command shutdown is issued.
 
-@public addHandlers( *fEvtHandler, fShutdown* )
-@param {function} fEvtHandler
+@public addHandlers( *fShutdown* )
 @param {function} fShutdown
 ###
-exports.addHandlers = ( fEvtHandler, fShutdown ) =>
-  @eventHanlder = fEvtHandler
+exports.addHandlers = ( fShutdown ) =>
   objAdminCmds.shutdown = fShutdown
 
 
 ###
+Handles possible events that were posted to this server and pushes them into the
+event queue.
 
 *Requires
 the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
@@ -80,7 +80,7 @@ exports.handleEvent = ( req, resp ) =>
     # If required event properties are present we process the event #
     if obj and obj.event and obj.eventid
       resp.send 'Thank you for the event (' + obj.event + '[' + obj.eventid + '])!'
-      @eventHandler obj
+      db.pushEvent obj
     else
       resp.writeHead 400, { "Content-Type": "text/plain" }
       resp.send 'Your event was missing important parameters!'
@@ -132,14 +132,26 @@ exports.handleLogout = ( req, resp ) ->
     resp.send 'Bye!'
 
 
-getHandlerPath = (name) ->
+###
+Resolves the path to a handler webpage.
+
+@private getHandlerPath( *name* )
+@param {String} name
+###
+getHandlerPath = ( name ) ->
   path.resolve __dirname, '..', 'webpages', 'handlers', name + '.html'
 
 
-getHandlerFileAsString = (name) ->
-  fs.readFileSync getHandlerPath( name ), 'utf8'
 ###
+Resolves the path to a handler webpage and returns it as a string.
 
+@private getHandlerFileAsString( *name* )
+@param {String} name
+###
+getHandlerFileAsString = ( name ) ->
+  fs.readFileSync getHandlerPath( name ), 'utf8'
+  
+###
 *Requires
 the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
 and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)

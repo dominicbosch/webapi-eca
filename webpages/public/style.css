@@ -5,6 +5,12 @@ body {
   margin: 0px;
 }
 
+textarea {
+	-moz-tab-size: 2;
+	-o-tab-size:2;
+	tab-size:2;
+}
+
 #menubar {
 	font-size: 0.75em;
 	width: 100%;

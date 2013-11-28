@@ -52,8 +52,8 @@ exports = module.exports = ( args ) ->
   sess_sec = config.getSessionSecret() || sess_sec 
   module.exports
 
-exports.addHandlers = ( fEvtHandler, fShutDown ) ->
-  requestHandler.addHandlers fEvtHandler, fShutDown
+exports.addHandlers = ( fShutDown ) ->
+  requestHandler.addHandlers fShutDown
   # Add cookie support for session handling.
   app.use express.cookieParser()
   app.use express.session { secret: sess_sec }

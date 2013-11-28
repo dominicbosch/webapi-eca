@@ -18,8 +18,6 @@ exports = module.exports = function(args) {
   poller.on('message', function(evt) {
     exports.pushEvent(evt);
   });
-  //start to poll the event queue
-  pollQueue();
   return module.exports;
 };
 
@@ -31,6 +29,8 @@ exports = module.exports = function(args) {
  */
 exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
   db = db_link;
+  if(!db) log.error('EN', 'No DB!');
+  console.log(db);
   if(ml && db) db.getActionModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
@@ -68,6 +68,8 @@ function loadRulesFromDB() {
     }
       
   });
+  //start to poll the event queue
+  pollQueue();
 }
 
 /**
@@ -101,21 +103,18 @@ exports.addRule = function(objRule) {
 
 function pollQueue() {
   if(isRunning) {
-    var evt = qEvents.dequeue();
-    if(evt) {
-      processEvent(evt);
-    }
-    setTimeout(pollQueue, 50); //TODO adapt to load
+    db.popEvent(function (err, text) {
+      if(!err && text) {
+        processEvent(JSON.parse(text));
+      }
+      setTimeout(pollQueue, 50); //TODO adapt to load
+    });
+    // var evt = qEvents.dequeue();
+    // if(evt) {
+      // processEvent(evt);
+    // }
   }
 }
-
-/**
- * Stores correctly posted events in the queue
- * @param {Object} evt The event object
- */
-exports.pushEvent = function(evt) {
-  qEvents.enqueue(evt);
-};
 
 /**
  * Handles correctly posted events

@@ -48,9 +48,9 @@ HTTP Listener
     return module.exports;
   };
 
-  exports.addHandlers = function(fEvtHandler, fShutDown) {
+  exports.addHandlers = function(fShutDown) {
     var e, http_port;
-    requestHandler.addHandlers(fEvtHandler, fShutDown);
+    requestHandler.addHandlers(fShutDown);
     app.use(express.cookieParser());
     app.use(express.session({
       secret: sess_sec

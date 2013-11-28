@@ -99,7 +99,7 @@ init = ->
       engine.addDBLinkAndLoadActionsAndRules db
       log.print 'RS', 'Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
-      http_listener.addHandlers db, engine.pushEvent, shutDown
+      http_listener.addHandlers shutDown
       #log.print 'RS', 'Passing handlers to module manager'
       #TODO loadAction and addRule will be removed
       #mm.addHandlers db, engine.loadActionModule, engine.addRule

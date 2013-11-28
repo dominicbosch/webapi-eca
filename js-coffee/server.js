@@ -104,7 +104,7 @@ Rules Server
         log.print('RS', 'Passing handlers to engine');
         engine.addDBLinkAndLoadActionsAndRules(db);
         log.print('RS', 'Passing handlers to http listener');
-        return http_listener.addHandlers(db, engine.pushEvent, shutDown);
+        return http_listener.addHandlers(shutDown);
       }
     });
   };

@@ -55,18 +55,18 @@ Request Handler
   the events that were received. The shutdown function will be called if the
   admin command shutdown is issued.
   
-  @public addHandlers( *fEvtHandler, fShutdown* )
-  @param {function} fEvtHandler
+  @public addHandlers( *fShutdown* )
   @param {function} fShutdown
   */
 
 
-  exports.addHandlers = function(fEvtHandler, fShutdown) {
-    _this.eventHanlder = fEvtHandler;
+  exports.addHandlers = function(fShutdown) {
     return objAdminCmds.shutdown = fShutdown;
   };
 
   /*
+  Handles possible events that were posted to this server and pushes them into the
+  event queue.
   
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
@@ -88,7 +88,7 @@ Request Handler
       obj = qs.parse(body);
       if (obj && obj.event && obj.eventid) {
         resp.send('Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
-        return _this.eventHandler(obj);
+        return db.pushEvent(obj);
       } else {
         resp.writeHead(400, {
           "Content-Type": "text/plain"
@@ -157,16 +157,31 @@ Request Handler
     }
   };
 
+  /*
+  Resolves the path to a handler webpage.
+  
+  @private getHandlerPath( *name* )
+  @param {String} name
+  */
+
+
   getHandlerPath = function(name) {
     return path.resolve(__dirname, '..', 'webpages', 'handlers', name + '.html');
   };
+
+  /*
+  Resolves the path to a handler webpage and returns it as a string.
+  
+  @private getHandlerFileAsString( *name* )
+  @param {String} name
+  */
+
 
   getHandlerFileAsString = function(name) {
     return fs.readFileSync(getHandlerPath(name), 'utf8');
   };
 
   /*
-  
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
   and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)

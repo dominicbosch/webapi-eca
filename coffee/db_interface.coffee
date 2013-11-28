@@ -74,6 +74,27 @@ exports.isConnected = ( cb ) =>
 
 
 ###
+Push an event into the event queue.
+
+@public pushEvent( *event* )
+@param {Object} event
+###
+exports.pushEvent = ( event ) =>
+  log.print 'DB', 'Event pushed into the queue: ' + event.eventid
+  @db.rpush 'event_queue', JSON.stringify(event)
+
+
+###
+Pop an event from the event queue and pass it to the callback(err, obj) function.
+
+@public popEvent( *cb* )
+@param {function} cb
+###
+exports.popEvent = ( cb )=>
+  @db.lpop 'event_queue', cb
+  
+
+###
 Hashes a string based on SHA-3-512.
 
 @private hash( *plainText* )
