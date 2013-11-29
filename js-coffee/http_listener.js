@@ -57,11 +57,13 @@ HTTP Listener
     }));
     log.print('HL', 'no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
-    app.post('/event', requestHandler.handleEvent);
-    app.get('/user', requestHandler.handleUser);
     app.get('/admin', requestHandler.handleAdmin);
+    app.get('/forge_modules', requestHandler.handleForgeModules);
+    app.get('/invoke_event', requestHandler.handleInvokeEvent);
+    app.post('/event', requestHandler.handleEvent);
     app.post('/login', requestHandler.handleLogin);
     app.post('/logout', requestHandler.handleLogout);
+    app.post('/usercommand', requestHandler.handleUserCommand);
     try {
       http_port = config.getHttpPort();
       if (http_port) {

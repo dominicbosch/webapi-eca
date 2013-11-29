@@ -27,6 +27,24 @@ exports.addDBLink = function(db_link) {
   // funcLoadRule = fLoadRule;
 };
 
+exports.storeEventModule = function (user, obj) {
+  log.print('MM', 'implement storeEventModule');
+};
+
+exports.storeActionModule = function (user, obj) {
+  log.print('MM', 'implement storeActionModule');
+};
+
+exports.storeRule = function (user, obj) {
+  log.print('MM', 'implement storeRule');
+};
+
+
+/*
+ * Legacy file system loaders
+ */
+
+
 /*
  * Load Rules from fs
  * ------------------

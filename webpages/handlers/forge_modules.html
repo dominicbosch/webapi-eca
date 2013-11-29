@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Forge A Module</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+    <script type = "text/template" id="templ_action">
+exports.myOwnActionFunction = function( args ) {
+  var data = { 
+    companyId: '961',
+    context: '17936',
+    text: 'Binder entry based on event: ' + args.info
+  };
+  needle.post('https://probinder.com/service/27/save', data);
+};
+    </script>
+    
+    <script type = "text/template" id="templ_event">
+exports.myOwnEventFunction = function( callback ) {
+	var myEvent = {
+		event: 'mail',
+		eventid: 'mail_0',
+		payload: {
+			subject: 'My mail event subject'
+			body: 'Complex text body'
+		}
+	}
+	callback( myEvent );
+};
+    </script>
+  </head>
+  <body>
+    {{{div_menubar}}}
+		<div id="mainbody">
+	    <div id="pagetitle">Hi {{user.username}}, forge your own modules!</div>
+    	<p>
+    		<select id="select_type">
+    			<option value="0">Action Module</option>
+    			<option value="1">Event Module</option>
+				</select>
+    	</p>
+	    <p>
+	    	<textarea id="textarea_module" rows="30" cols="100">
+	    	</textarea>
+	    </p>
+    	<p>
+    		<button id="but_submit">save</button>
+    	</p>
+    </div>
+    
+    <script type="text/javascript">
+    	$('#select_type').change(function(e) {
+    		if($(this).val() === '0') {
+	  			$('#textarea_module').val($('#templ_action').html());
+    		} else {
+	  			$('#textarea_module').val($('#templ_event').html());
+    		}
+    	});
+      $('#but_submit').click(function() {
+        var obj = { data: $('#textarea_event').val() };
+        if($('#select_type').val() === '0') obj.command = 'store_action';
+        else obj.command = 'store_event';
+        console.log('posting:');
+        console.log(obj);
+        $.post('usercommand', obj)
+        .done(function(data) {
+        	alert(data);
+        })
+        .fail(function(err) {
+        	console.log(err);
+          alert('Posting of module failed: ' + err.responseText);
+        });
+      });
+			$('#textarea_module').val($('#templ_action').html());
+    </script>
+  </body>
+</html>

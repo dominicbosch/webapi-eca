@@ -6,9 +6,11 @@ body {
 }
 
 textarea {
+	font-family: Tahoma, sans-serif;
+  font-size: 0.9em;
 	-moz-tab-size: 2;
-	-o-tab-size:2;
-	tab-size:2;
+  -o-tab-size: 2;
+  tab-size: 2;
 }
 
 #menubar {

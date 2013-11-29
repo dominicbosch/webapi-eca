@@ -61,19 +61,28 @@ exports.addHandlers = ( fShutDown ) ->
   log.print 'HL', 'no session backbone'
 
   # **Accepted requests to paths:**
-  
+
+  # GET Requests
+
   # - **`GET` to _"/"_:** Static redirect to the _"webpages/public"_ directory
   app.use '/', express.static path.resolve __dirname, '..', 'webpages', 'public'
-  # - **`POST` to _"/event"_:** Events coming from remote systems are passed to the engine
-  app.post '/event', requestHandler.handleEvent
-  # - **`GET` to _"/user"_:** User requests are possible for all users with an account
-  app.get '/user', requestHandler.handleUser
   # - **`GET` to _"/admin"_:** Only admins can issue requests to this handler
   app.get '/admin', requestHandler.handleAdmin
+  # - **`GET` to _"/forge\_modules"_:** Webpages that lets the user to create modules
+  app.get '/forge_modules', requestHandler.handleForgeModules
+  # - **`GET` to _"/invoke\_event"_:** Webpage that lets the user invoke events
+  app.get '/invoke_event', requestHandler.handleInvokeEvent
+
+  # POST Requests
+
+  # - **`POST` to _"/event"_:** Events coming from remote systems are passed to the engine
+  app.post '/event', requestHandler.handleEvent
   # - **`POST` to _"/login"_:** Credentials will be verified
   app.post '/login', requestHandler.handleLogin
   # - **`POST` to _"/logout"_:** User will be logged out
   app.post '/logout', requestHandler.handleLogout
+  # - **`POST` to _"/user"_:** User requests are possible for all users with an account
+  app.post '/usercommand', requestHandler.handleUserCommand
   try
     http_port = config.getHttpPort()
     if http_port

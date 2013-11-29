@@ -29,8 +29,6 @@ exports = module.exports = function(args) {
  */
 exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
   db = db_link;
-  if(!db) log.error('EN', 'No DB!');
-  console.log(db);
   if(ml && db) db.getActionModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
@@ -109,10 +107,6 @@ function pollQueue() {
       }
       setTimeout(pollQueue, 50); //TODO adapt to load
     });
-    // var evt = qEvents.dequeue();
-    // if(evt) {
-      // processEvent(evt);
-    // }
   }
 }
 
@@ -173,6 +167,7 @@ function invokeAction(evt, action) {
   var srvc = listActionModules[arrModule[0]];
   if(srvc && srvc[arrModule[1]]) {
     //FIXME preprocessing not only on data
+    //FIXME no preprocessing at all, why don't we just pass the whole event to the action?'
     preprocessActionArguments(evt.payload, action.arguments, actionargs);
     try {
       if(srvc[arrModule[1]]) srvc[arrModule[1]](actionargs);

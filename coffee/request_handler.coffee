@@ -29,13 +29,19 @@ qs = require 'querystring'
 mustache = require 'mustache'
 crypto = require 'crypto-js'
 
-# Prepare the admin command handlers that are invoked via HTTP requests.
+# Prepare the admin command handlers which are invoked via HTTP requests.
 objAdminCmds =
   'loadrules': mm.loadRulesFromFS,
   'loadaction': mm.loadActionModuleFromFS,
   'loadactions':  mm.loadActionModulesFromFS,
   'loadevent': mm.loadEventModuleFromFS,
   'loadevents': mm.loadEventModulesFromFS
+  
+# Prepare the user command handlers which are invoked via HTTP requests.
+objUserCmds =
+  'store_action': mm.storeActionModule
+  'store_event': mm.storeEventModule
+  'store_rule': mm.storeRule
 
 
 exports = module.exports = ( args ) -> 
@@ -79,7 +85,7 @@ exports.handleEvent = ( req, resp ) =>
     obj = qs.parse body
     # If required event properties are present we process the event #
     if obj and obj.event and obj.eventid
-      resp.send 'Thank you for the event (' + obj.event + '[' + obj.eventid + '])!'
+      resp.send 'Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!'
       db.pushEvent obj
     else
       resp.writeHead 400, { "Content-Type": "text/plain" }
@@ -152,6 +158,41 @@ getHandlerFileAsString = ( name ) ->
   fs.readFileSync getHandlerPath( name ), 'utf8'
   
 ###
+Renders a page depending on the user session and returns it.
+
+@private renderPage( *name, sess* )
+@param {String} name
+@param {Object} sess
+###
+renderPage = ( name, sess ) ->
+  template = getHandlerFileAsString name
+  menubar = getHandlerFileAsString 'menubar'
+  view =
+    user: sess.user,
+    div_menubar: menubar
+  mustache.render template, view
+
+###
+Sends the desired page or the login to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public renderPageOrLogin( *req, resp, pagename* )
+@param {String} pagename
+###
+sendLoginOrPage = ( pagename, req, resp ) ->
+  if req.session and req.session.user
+    resp.send renderPage pagename, req.session
+  else
+    resp.sendfile getHandlerPath 'login'
+
+
+###
+Handles the user command requests.
+
 *Requires
 the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
 and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
@@ -159,19 +200,50 @@ objects.*
 
 @public handleUser( *req, resp* )
 ###
-exports.handleUser = ( req, resp ) ->
-  if req.session and req.session.user
-    welcome = getHandlerFileAsString 'welcome'
-    menubar = getHandlerFileAsString 'menubar'
-    view = {
-      user: req.session.user,
-      div_menubar: menubar
-    }
-    resp.send mustache.render welcome, view
+exports.handleUserCommand = ( req, resp ) ->
+  if not req.session or not req.session.user
+    resp.send 401, 'Login first!'
   else
-    resp.sendfile getHandlerPath 'login'
+    body = ''
+    req.on 'data', ( data ) ->
+      body += data
+    req.on 'end', ->
+      obj = qs.parse body
+      if objUserCmds[obj.command] is 'function'
+        resp.send 'Command accepted!'
+        objUserCmds[obj.command] req.session.user, obj
+      else
+        resp.send 404, 'Command unknown!'
 
 ###
+Present the module forge to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleForgeModules( *req, resp* )
+###
+exports.handleForgeModules = ( req, resp ) ->
+  sendLoginOrPage 'forge_modules', req, resp
+
+###
+Present the event invoke page to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleInvokeEvent( *req, resp* )
+###
+exports.handleInvokeEvent = ( req, resp ) ->
+  sendLoginOrPage 'push_event', req, resp
+
+
+###
+Handles the admin command requests.
 
 *Requires
 the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
@@ -183,19 +255,9 @@ objects.*
 exports.handleAdmin = ( req, resp ) ->
   if req.session and req.session.user
     if req.session.user.isAdmin is "true"
-      welcome = getHandlerFileAsString 'welcome'
-      menubar = getHandlerFileAsString 'menubar'
-      view =
-        user: req.session.user,
-        div_menubar: menubar
-      resp.send mustache.render welcome, view
+      resp.send renderPage 'welcome', req.session
     else
-      unauthorized = getHandlerFileAsString 'unauthorized'
-      menubar = getHandlerFileAsString 'menubar'
-      view =
-        user: req.session.user,
-        div_menubar: menubar
-      resp.send mustache.render unauthorized, view
+      resp.send renderPage 'unauthorized', req.session
   else
     resp.sendfile getHandlerPath 'login'
 

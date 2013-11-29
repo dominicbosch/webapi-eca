@@ -8,7 +8,7 @@ Request Handler
 
 
 (function() {
-  var crypto, db, exports, fAdminCommands, fs, getHandlerFileAsString, getHandlerPath, log, mm, mustache, objAdminCmds, onAdminCommand, path, qs,
+  var crypto, db, exports, fAdminCommands, fs, getHandlerFileAsString, getHandlerPath, log, mm, mustache, objAdminCmds, objUserCmds, onAdminCommand, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   log = require('./logging');
@@ -33,6 +33,12 @@ Request Handler
     'loadactions': mm.loadActionModulesFromFS,
     'loadevent': mm.loadEventModuleFromFS,
     'loadevents': mm.loadEventModulesFromFS
+  };
+
+  objUserCmds = {
+    'store_action': mm.storeActionModule,
+    'store_event': mm.storeEventModule,
+    'store_rule': mm.storeRule
   };
 
   exports = module.exports = function(args) {
@@ -87,7 +93,7 @@ Request Handler
       var obj;
       obj = qs.parse(body);
       if (obj && obj.event && obj.eventid) {
-        resp.send('Thank you for the event (' + obj.event + '[' + obj.eventid + '])!');
+        resp.send('Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!');
         return db.pushEvent(obj);
       } else {
         resp.writeHead(400, {
@@ -182,6 +188,49 @@ Request Handler
   };
 
   /*
+  Renders a page depending on the user session and returns it.
+  
+  @private renderPage( *name, sess* )
+  @param {String} name
+  @param {Object} sess
+  */
+
+
+  renderPage = function(name, sess) {
+    var menubar, template, view;
+    template = getHandlerFileAsString(name);
+    menubar = getHandlerFileAsString('menubar');
+    view = {
+      user: sess.user,
+      div_menubar: menubar
+    };
+    return mustache.render(template, view);
+  };
+
+  /*
+  Sends the desired page or the login to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public renderPageOrLogin( *req, resp, pagename* )
+  @param {String} pagename
+  */
+
+
+  sendLoginOrPage = function(pagename, req, resp) {
+    if (req.session && req.session.user) {
+      return resp.send(renderPage(pagename, req.session));
+    } else {
+      return resp.sendfile(getHandlerPath('login'));
+    }
+  };
+
+  /*
+  Handles the user command requests.
+  
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
   and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
@@ -191,22 +240,62 @@ Request Handler
   */
 
 
-  exports.handleUser = function(req, resp) {
-    var menubar, view, welcome;
-    if (req.session && req.session.user) {
-      welcome = getHandlerFileAsString('welcome');
-      menubar = getHandlerFileAsString('menubar');
-      view = {
-        user: req.session.user,
-        div_menubar: menubar
-      };
-      return resp.send(mustache.render(welcome, view));
+  exports.handleUserCommand = function(req, resp) {
+    var body;
+    if (!req.session || !req.session.user) {
+      return resp.send(401, 'Login first!');
     } else {
-      return resp.sendfile(getHandlerPath('login'));
+      body = '';
+      req.on('data', function(data) {
+        return body += data;
+      });
+      return req.on('end', function() {
+        var obj;
+        obj = qs.parse(body);
+        if (objUserCmds[obj.command] === 'function') {
+          resp.send('Command accepted!');
+          return objUserCmds[obj.command](req.session.user, obj);
+        } else {
+          return resp.send(404, 'Command unknown!');
+        }
+      });
     }
   };
 
   /*
+  Present the module forge to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleForgeModules( *req, resp* )
+  */
+
+
+  exports.handleForgeModules = function(req, resp) {
+    return sendLoginOrPage('forge_modules', req, resp);
+  };
+
+  /*
+  Present the event invoke page to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleInvokeEvent( *req, resp* )
+  */
+
+
+  exports.handleInvokeEvent = function(req, resp) {
+    return sendLoginOrPage('push_event', req, resp);
+  };
+
+  /*
+  Handles the admin command requests.
   
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
@@ -218,24 +307,11 @@ Request Handler
 
 
   exports.handleAdmin = function(req, resp) {
-    var menubar, unauthorized, view, welcome;
     if (req.session && req.session.user) {
       if (req.session.user.isAdmin === "true") {
-        welcome = getHandlerFileAsString('welcome');
-        menubar = getHandlerFileAsString('menubar');
-        view = {
-          user: req.session.user,
-          div_menubar: menubar
-        };
-        return resp.send(mustache.render(welcome, view));
+        return resp.send(renderPage('welcome', req.session));
       } else {
-        unauthorized = getHandlerFileAsString('unauthorized');
-        menubar = getHandlerFileAsString('menubar');
-        view = {
-          user: req.session.user,
-          div_menubar: menubar
-        };
-        return resp.send(mustache.render(unauthorized, view));
+        return resp.send(renderPage('unauthorized', req.session));
       }
     } else {
       return resp.sendfile(getHandlerPath('login'));

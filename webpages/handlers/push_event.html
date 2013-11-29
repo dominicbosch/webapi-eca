@@ -6,8 +6,9 @@
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
   </head>
   <body>
+    {{{div_menubar}}}
 		<div id="mainbody">
-	    <div id="pagetitle">Invoke an Event</div>
+	    <div id="pagetitle">Hi {{user.username}}, invoke your own Event!</div>
 	    <p>
 	    	<textarea id="textarea_event" rows="20" cols="50">
 {
@@ -25,15 +26,13 @@
     </div>
     
     <script>
-    //{ \"event\": \"mail\", \"eventid\": \"0\",... }"
       $('#but_submit').click(function() {
         $.post('../event', JSON.parse($('#textarea_event').val()))
         .done(function(data) {
         	alert(data);
         })
         .fail(function(err) {
-        	console.log(err);
-          alert('Posting of event failed: ' + err);
+          alert('Posting of event failed: ' + err.responseText);
         });
       });
     </script>
