@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Forge A Rule</title>
+    {{{head_requires}}}
+  </head>
+  <body>
+    {{{div_menubar}}}
+		<div id="mainbody">
+	    <div id="pagetitle">Hi {{user.username}}, forge your own rules!</div>
+	    <p>
+        <input type="radio" name="radio_event" id="radio_input" checked />
+        <input type="text" id="input_event" /><br />
+        <input type="radio" name="radio_event" id="radio_select" />
+        <select id="select_event">
+        </select>
+        
+	    </p>
+    	<p>
+    		<button id="but_submit">save</button>
+    	</p>
+    </div>
+    
+    <script type="text/javascript">
+      $('#but_submit').click(function() {
+        var obj = {
+          command : 'store_rule', 
+          data: $('#textarea_event').val()
+        };
+        $.post('/usercommand', obj)
+        .done(function(data) {
+        	alert(data);
+        })
+        .fail(function(err) {
+        	console.log(err);
+          alert('Posting of rule failed: ' + err.responseText);
+        });
+      });
+      $.post('/usercommand', { command: 'get_actionmodules' })
+      .done(function(data) {
+        for(var el in data) {
+          
+        }
+      });
+      $.post('/usercommand', { command: 'get_eventmodules' })
+      .done(function(data) {
+        for(var mod in data) {
+          var mthds = data[mod].methods;
+          if(mthds) {
+            var arr = mthds.split(',');
+            for(var i = 0; i < arr.length; i++) {
+              $('#select_event').append($('<option>').text(mod + '->' + arr[i]));
+            }
+          }
+        }
+      });
+      $('#input_event').focus(function() {
+        $('#radio_input').prop('checked', true);
+      });
+      $('#select_event').focus(function() {
+        $('#radio_select').prop('checked', true);
+      });
+    </script>
+  </body>
+</html>

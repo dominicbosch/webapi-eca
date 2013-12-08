@@ -3,7 +3,7 @@
 	<div id="menubar_logout">logout</div>
   <script>
 		$('#menubar_logout').click(function() {
-      $.post('../logout').done(function() {
+      $.post('/logout').done(function() {
         window.location.href = document.URL;
       });
     });

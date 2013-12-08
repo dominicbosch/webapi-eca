@@ -2,8 +2,7 @@
 <html>
   <head>
     <title>Invoke an event</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+    {{{head_requires}}}
   </head>
   <body>
     {{{div_menubar}}}
@@ -27,7 +26,7 @@
     
     <script>
       $('#but_submit').click(function() {
-        $.post('../event', JSON.parse($('#textarea_event').val()))
+        $.post('/event', JSON.parse($('#textarea_event').val()))
         .done(function(data) {
         	alert(data);
         })

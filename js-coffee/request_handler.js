@@ -8,7 +8,7 @@ Request Handler
 
 
 (function() {
-  var crypto, db, exports, fAdminCommands, fs, getHandlerFileAsString, getHandlerPath, log, mm, mustache, objAdminCmds, objUserCmds, onAdminCommand, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   log = require('./logging');
@@ -37,7 +37,9 @@ Request Handler
 
   objUserCmds = {
     'store_action': mm.storeActionModule,
+    'get_actionmodules': mm.getAllActionModules,
     'store_event': mm.storeEventModule,
+    'get_eventmodules': mm.getAllEventModules,
     'store_rule': mm.storeRule
   };
 
@@ -67,7 +69,10 @@ Request Handler
 
 
   exports.addHandlers = function(fShutdown) {
-    return objAdminCmds.shutdown = fShutdown;
+    return objAdminCmds.shutdown = function(args, answerHandler) {
+      answerHandler.answerSuccess('Shutting down... BYE!');
+      return setTimeout(fShutdown, 500);
+    };
   };
 
   /*
@@ -196,13 +201,16 @@ Request Handler
   */
 
 
-  renderPage = function(name, sess) {
-    var menubar, template, view;
+  renderPage = function(name, sess, msg) {
+    var menubar, requires, template, view;
     template = getHandlerFileAsString(name);
-    menubar = getHandlerFileAsString('menubar');
+    menubar = getHandlerFileAsString('part_menubar');
+    requires = getHandlerFileAsString('part_requires');
     view = {
       user: sess.user,
-      div_menubar: menubar
+      head_requires: requires,
+      div_menubar: menubar,
+      message: msg
     };
     return mustache.render(template, view);
   };
@@ -229,6 +237,54 @@ Request Handler
   };
 
   /*
+  Present the module forge to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleForgeModules( *req, resp* )
+  */
+
+
+  exports.handleForgeModules = function(req, resp) {
+    return sendLoginOrPage('forge_modules', req, resp);
+  };
+
+  /*
+  Present the rules forge to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleForgeRules( *req, resp* )
+  */
+
+
+  exports.handleForgeRules = function(req, resp) {
+    return sendLoginOrPage('forge_rules', req, resp);
+  };
+
+  /*
+  Present the event invoke page to the user.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleInvokeEvent( *req, resp* )
+  */
+
+
+  exports.handleInvokeEvent = function(req, resp) {
+    return sendLoginOrPage('push_event', req, resp);
+  };
+
+  /*
   Handles the user command requests.
   
   *Requires
@@ -252,46 +308,13 @@ Request Handler
       return req.on('end', function() {
         var obj;
         obj = qs.parse(body);
-        if (objUserCmds[obj.command] === 'function') {
-          resp.send('Command accepted!');
-          return objUserCmds[obj.command](req.session.user, obj);
+        if (typeof objUserCmds[obj.command] === 'function') {
+          return objUserCmds[obj.command](req.session.user, obj, answerHandler(req, resp));
         } else {
           return resp.send(404, 'Command unknown!');
         }
       });
     }
-  };
-
-  /*
-  Present the module forge to the user.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
-  @public handleForgeModules( *req, resp* )
-  */
-
-
-  exports.handleForgeModules = function(req, resp) {
-    return sendLoginOrPage('forge_modules', req, resp);
-  };
-
-  /*
-  Present the event invoke page to the user.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
-  @public handleInvokeEvent( *req, resp* )
-  */
-
-
-  exports.handleInvokeEvent = function(req, resp) {
-    return sendLoginOrPage('push_event', req, resp);
   };
 
   /*
@@ -307,9 +330,16 @@ Request Handler
 
 
   exports.handleAdmin = function(req, resp) {
+    var q, _name;
     if (req.session && req.session.user) {
       if (req.session.user.isAdmin === "true") {
-        return resp.send(renderPage('welcome', req.session));
+        q = req.query;
+        log.print('RH', 'Received admin request: ' + req.originalUrl);
+        if (q.cmd) {
+          return typeof objAdminCmds[_name = q.cmd] === "function" ? objAdminCmds[_name](q, answerHandler(req, resp, true)) : void 0;
+        } else {
+          return resp.send(404, 'Command unknown!');
+        }
       } else {
         return resp.send(renderPage('unauthorized', req.session));
       }
@@ -318,56 +348,41 @@ Request Handler
     }
   };
 
-  onAdminCommand = function(req, response) {
-    var q;
-    q = req.query;
-    log.print('RH', 'Received admin request: ' + q);
-    if (q.cmd) {
-      return fAdminCommands(q, answerHandler(response));
-    } else {
-      return answerError(response, 'I\'m not sure about what you want from me...');
-    }
-  };
-
-  /*
-  admin commands handler receives all command arguments and an answerHandler
-  object that eases response handling to the HTTP request issuer.
-  
-  @private fAdminCommands( *args, answHandler* )
-  */
-
-
-  fAdminCommands = function(args, answHandler) {
-    var fAnsw, _name;
-    if (args && args.cmd) {
-      if (typeof adminCmds[_name = args.cmd] === "function") {
-        adminCmds[_name](args, answHandler);
-      }
-    } else {
-      log.print('RH', 'No command in request');
-    }
-    /*
-    The fAnsw function receives an answerHandler object as an argument when called
-    and returns an anonymous function
-    */
-
-    fAnsw = function(ah) {
-      /*
-      The anonymous function checks whether the answerHandler was already used to
-      issue an answer, if no answer was provided we answer with an error message
-      */
-
-      return function() {
-        if (!ah.isAnswered()) {
-          return ah.answerError('Not handled...');
+  answerHandler = function(req, resp, ntbr) {
+    var hasBeenAnswered, needsToBeRendered, request, response, ret;
+    request = req;
+    response = resp;
+    needsToBeRendered = ntbr;
+    hasBeenAnswered = false;
+    ret = {
+      answerSuccess: function(msg) {
+        if (!hasBeenAnswered) {
+          if (needsToBeRendered) {
+            response.send(renderPage('command_answer', request.session, msg));
+          } else {
+            response.send(msg);
+          }
         }
-      };
+        return hasBeenAnswered = true;
+      },
+      answerError: function(msg) {
+        if (!hasBeenAnswered) {
+          if (needsToBeRendered) {
+            response.send(400, renderPage('error', request.session, msg));
+          } else {
+            response.send(400, msg);
+          }
+        }
+        return hasBeenAnswered = true;
+      },
+      isAnswered: function() {
+        return hasBeenAnswered;
+      }
     };
-    /*
-    Delayed function call of the anonymous function that checks the answer handler
-    */
-
-    return setTimeout(fAnsw(answHandler), 2000);
+    setTimeout(function() {
+      return ret.answerError('Strange... maybe try again?');
+    }, 5000);
+    return ret;
   };
 
 }).call(this);

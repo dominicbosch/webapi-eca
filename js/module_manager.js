@@ -23,10 +23,28 @@ exports = module.exports = function(args) {
 
 exports.addDBLink = function(db_link) {
   db = db_link;
-  //TODO Remove fLoadAction and fLoadRule and replace them with user commands
-  // funcLoadAction = fLoadAction;
-  // funcLoadRule = fLoadRule;
 };
+
+exports.storeEventModule = function (user, obj, answHandler) {
+  log.print('MM', 'implement storeEventModule');
+  answHandler.answerSuccess('Thank you for the event!');
+};
+
+exports.storeActionModule = function (user, obj, answHandler) {
+  log.print('MM', 'implement storeActionModule');
+  answHandler.answerSuccess('Thank you for the action!');
+};
+
+exports.storeRule = function (user, obj, answHandler) {
+  log.print('MM', 'implement storeRule');
+  answHandler.answerSuccess('Thank you for the rule!');
+};
+
+
+/*
+ * Legacy file system loaders
+ */
+
 
 /*
  * Load Rules from fs
@@ -35,8 +53,8 @@ exports.addDBLink = function(db_link) {
 exports.loadRulesFromFS = function(args, answHandler) {
   if(!args) args = {};
   if(!args.name) args.name = 'rules';
-  // if(!funcLoadRule) log.error('ML', 'no rule loader function available');
-  // else {
+  if(!funcLoadRule) log.error('ML', 'no rule loader function available');
+  else {
     fs.readFile(path.resolve(__dirname, '..', 'rules', args.name + '.json'), 'utf8', function (err, data) {
       if (err) {
         log.error('ML', 'Loading rules file: ' + args.name + '.json');
@@ -55,7 +73,7 @@ exports.loadRulesFromFS = function(args, answHandler) {
         log.error('ML', 'rules file was corrupt! (' + args.name + '.json)');
       }
     });
-  // }
+  }
 };
 
 /*
@@ -79,7 +97,7 @@ function loadActionCallback(name, data, mod, auth) {
 exports.loadActionModuleFromFS = function (args, answHandler) {
   if(ml) {
     if(args && args.name) {
-  		answHandler.answerSuccess('Loading action module ' + args.name + '...');
+      answHandler.answerSuccess('Loading action module ' + args.name + '...');
       ml.loadModule('mod_actions', args.name, loadActionCallback);
     } else log.error('MM', 'Action Module name not provided!');
   }
@@ -87,7 +105,7 @@ exports.loadActionModuleFromFS = function (args, answHandler) {
 
 exports.loadActionModulesFromFS = function(args, answHandler) {
   if(ml) {
-  	answHandler.answerSuccess('Loading action modules...');
+    answHandler.answerSuccess('Loading action modules...');
     ml.loadModules('mod_actions', loadActionCallback);
   }
 };

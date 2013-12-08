@@ -42,7 +42,7 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
         var m;
         for(var el in obj) {
           log.print('EN', 'Loading Action Module from DB: ' + el);
-          try{
+          try {
             m = ml.requireFromString(obj[el], el);
             db.getActionModuleAuth(el, function(mod) {
               return function(err, obj) {

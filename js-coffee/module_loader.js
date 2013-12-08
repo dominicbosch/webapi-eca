@@ -13,25 +13,20 @@ exports = module.exports = function(args) {
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
   var id = path.resolve(dir, name, name + '.vm');
-  //FIXME load modules only into a safe environment with given modules, no access to whole application,
   var vm = require('vm'),
+    // FIXME not log but debug module is required to provide information to the user
     sandbox = {
+      id: id, // use this to gather kill info
+      needle: require('needle'),
       log: log,
-      needle: require('needle')
+      exports: {}
     };
-    
-  var mod = vm.runInNewContext(src, sandbox, 'myfile.vm');
-  console.log(mod);
-  var m = new module.constructor(id, module);
-  m.paths = module.paths;
-  try {
-    m._compile(src); 
-  } catch(err) {
-    err.addInfo = 'during compilation of module ' + name;
-    log.error('LM', err);
-    // log.error('LM', ' during compilation of ' + name + ': ' + err);
-  }
-  return m.exports;
+  //TODO child_process to run module!
+  // Define max runtime per loop as 10 seconds, after that the child will be killed
+  // it can still be active after that if there was a timing function or a callback used...
+  // kill the child each time? how to determine whether there's still a token in the module?
+  var mod = vm.runInNewContext(src, sandbox, id + '.vm');
+  return sandbox.exports;
 };
 
 exports.loadModule = function(directory, name, callback) {

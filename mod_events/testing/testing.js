@@ -16,3 +16,8 @@ try {
 
 //FIXME add several standard methods for testing (also rules to be inserted during testing)
 throw new Error('Testing your error handling');
+
+// FIXME catch these cases by instantiating a child process to run on a event retrieval
+//        then if the child_process doesn't end automatically after a certain time (statistics?)
+//        it ha sto be killed 
+// while (true) {}

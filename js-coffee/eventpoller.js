@@ -20,8 +20,8 @@ var fs = require('fs'),
 function init() {
   if(process.argv.length > 2) log({ logType: parseInt(process.argv[2]) || 0 });
   var args = { logType: log.getLogType() };
-  ml = require('./module_loader')(args);
-  db = require('./db_interface')(args);
+  (ml = require('./module_loader'))(args);
+  (db = require('./db_interface'))(args);
   initAdminCommands();
   initMessageActions();
   pollLoop();

@@ -193,8 +193,8 @@ getSetRecords = ( set, fSingle, cb ) =>
             log.error 'DB', new Error 'Empty key in DB: ' + prop
           else
             objReplies[prop] = data
-            if semaphore == 0
-              cb null, objReplies
+          if semaphore == 0
+            cb null, objReplies
       fSingle reply, fCallback(reply) for reply in arrReply
 
 ###
@@ -212,7 +212,7 @@ Store a string representation of an action module in the DB.
 exports.storeActionModule = ( id, data ) =>
   log.print 'DB', 'storeActionModule: ' + id
   @db.sadd 'action-modules', id, replyHandler 'storing action module key ' + id
-  @db.set 'action-module:' + id, data, replyHandler 'storing action module ' + id
+  @db.hmset 'action-module:' + id, data, replyHandler 'storing action module ' + id
 
 ###
 Query the DB for an action module and pass it to the callback(err, obj) function.
@@ -223,7 +223,7 @@ Query the DB for an action module and pass it to the callback(err, obj) function
 ###
 exports.getActionModule = ( id, cb ) =>
   log.print 'DB', 'getActionModule: ' + id
-  @db.get 'action-module:' + id, cb
+  @db.hgetall 'action-module:' + id, cb
 
 ###
 Fetch all action modules and hand them to the callback(err, obj) function.
@@ -276,7 +276,7 @@ Store a string representation of an event module in the DB.
 exports.storeEventModule = ( id, data ) =>
   log.print 'DB', 'storeEventModule: ' + id
   @db.sadd 'event-modules', id, replyHandler 'storing event module key ' + id
-  @db.set 'event-module:' + id, data, replyHandler 'storing event module ' + id
+  @db.hmset 'event-module:' + id, data, replyHandler 'storing event module ' + id
 
 ###
 Query the DB for an event module and pass it to the callback(err, obj) function.
@@ -287,7 +287,7 @@ Query the DB for an event module and pass it to the callback(err, obj) function.
 ###
 exports.getEventModule = ( id, cb ) =>
   log.print 'DB', 'getEventModule: ' + id
-  @db.get 'event_module:' + id, cb
+  @db.hgetall 'event-module:' + id, cb
 
 ###
 Fetch all event modules and pass them to the callback(err, obj) function.
@@ -296,7 +296,7 @@ Fetch all event modules and pass them to the callback(err, obj) function.
 @param {function} cb
 ###
 exports.getEventModules = ( cb ) ->
-  getSetRecords 'event_modules', exports.getEventModule, cb
+  getSetRecords 'event-modules', exports.getEventModule, cb
 
 ###
 Store a string representation of he authentication parameters for an event module.

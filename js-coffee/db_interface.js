@@ -240,14 +240,14 @@ DB Interface
             --semaphore;
             if (err) {
               err.addInfo = 'fetching single element: ' + prop;
-              return log.error('DB', err);
+              log.error('DB', err);
             } else if (!data) {
-              return log.error('DB', new Error('Empty key in DB: ' + prop));
+              log.error('DB', new Error('Empty key in DB: ' + prop));
             } else {
               objReplies[prop] = data;
-              if (semaphore === 0) {
-                return cb(null, objReplies);
-              }
+            }
+            if (semaphore === 0) {
+              return cb(null, objReplies);
             }
           };
         };
@@ -278,7 +278,7 @@ DB Interface
   exports.storeActionModule = function(id, data) {
     log.print('DB', 'storeActionModule: ' + id);
     _this.db.sadd('action-modules', id, replyHandler('storing action module key ' + id));
-    return _this.db.set('action-module:' + id, data, replyHandler('storing action module ' + id));
+    return _this.db.hmset('action-module:' + id, data, replyHandler('storing action module ' + id));
   };
 
   /*
@@ -292,7 +292,7 @@ DB Interface
 
   exports.getActionModule = function(id, cb) {
     log.print('DB', 'getActionModule: ' + id);
-    return _this.db.get('action-module:' + id, cb);
+    return _this.db.hgetall('action-module:' + id, cb);
   };
 
   /*
@@ -357,7 +357,7 @@ DB Interface
   exports.storeEventModule = function(id, data) {
     log.print('DB', 'storeEventModule: ' + id);
     _this.db.sadd('event-modules', id, replyHandler('storing event module key ' + id));
-    return _this.db.set('event-module:' + id, data, replyHandler('storing event module ' + id));
+    return _this.db.hmset('event-module:' + id, data, replyHandler('storing event module ' + id));
   };
 
   /*
@@ -371,7 +371,7 @@ DB Interface
 
   exports.getEventModule = function(id, cb) {
     log.print('DB', 'getEventModule: ' + id);
-    return _this.db.get('event_module:' + id, cb);
+    return _this.db.hgetall('event-module:' + id, cb);
   };
 
   /*
@@ -383,7 +383,7 @@ DB Interface
 
 
   exports.getEventModules = function(cb) {
-    return getSetRecords('event_modules', exports.getEventModule, cb);
+    return getSetRecords('event-modules', exports.getEventModule, cb);
   };
 
   /*

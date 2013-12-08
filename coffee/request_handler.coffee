@@ -31,16 +31,18 @@ crypto = require 'crypto-js'
 
 # Prepare the admin command handlers which are invoked via HTTP requests.
 objAdminCmds =
-  'loadrules': mm.loadRulesFromFS,
-  'loadaction': mm.loadActionModuleFromFS,
-  'loadactions':  mm.loadActionModulesFromFS,
-  'loadevent': mm.loadEventModuleFromFS,
+  'loadrules': mm.loadRulesFromFS
+  'loadaction': mm.loadActionModuleFromFS
+  'loadactions':  mm.loadActionModulesFromFS
+  'loadevent': mm.loadEventModuleFromFS
   'loadevents': mm.loadEventModulesFromFS
   
 # Prepare the user command handlers which are invoked via HTTP requests.
 objUserCmds =
   'store_action': mm.storeActionModule
+  'get_actionmodules': mm.getAllActionModules
   'store_event': mm.storeEventModule
+  'get_eventmodules': mm.getAllEventModules
   'store_rule': mm.storeRule
 
 
@@ -63,7 +65,9 @@ admin command shutdown is issued.
 @param {function} fShutdown
 ###
 exports.addHandlers = ( fShutdown ) =>
-  objAdminCmds.shutdown = fShutdown
+  objAdminCmds.shutdown = ( args, answerHandler ) ->
+    answerHandler.answerSuccess 'Shutting down... BYE!'
+    setTimeout fShutdown, 500
 
 
 ###
@@ -164,12 +168,15 @@ Renders a page depending on the user session and returns it.
 @param {String} name
 @param {Object} sess
 ###
-renderPage = ( name, sess ) ->
+renderPage = ( name, sess, msg ) ->
   template = getHandlerFileAsString name
-  menubar = getHandlerFileAsString 'menubar'
+  menubar = getHandlerFileAsString 'part_menubar'
+  requires = getHandlerFileAsString 'part_requires'
   view =
     user: sess.user,
-    div_menubar: menubar
+    head_requires: requires,
+    div_menubar: menubar,
+    message: msg
   mustache.render template, view
 
 ###
@@ -188,6 +195,45 @@ sendLoginOrPage = ( pagename, req, resp ) ->
     resp.send renderPage pagename, req.session
   else
     resp.sendfile getHandlerPath 'login'
+
+###
+Present the module forge to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleForgeModules( *req, resp* )
+###
+exports.handleForgeModules = ( req, resp ) ->
+  sendLoginOrPage 'forge_modules', req, resp
+
+###
+Present the rules forge to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleForgeRules( *req, resp* )
+###
+exports.handleForgeRules = ( req, resp ) ->
+  sendLoginOrPage 'forge_rules', req, resp
+
+###
+Present the event invoke page to the user.
+
+*Requires
+the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+objects.*
+
+@public handleInvokeEvent( *req, resp* )
+###
+exports.handleInvokeEvent = ( req, resp ) ->
+  sendLoginOrPage 'push_event', req, resp
 
 
 ###
@@ -209,38 +255,10 @@ exports.handleUserCommand = ( req, resp ) ->
       body += data
     req.on 'end', ->
       obj = qs.parse body
-      if objUserCmds[obj.command] is 'function'
-        resp.send 'Command accepted!'
-        objUserCmds[obj.command] req.session.user, obj
+      if typeof objUserCmds[obj.command] is 'function'
+        objUserCmds[obj.command] req.session.user, obj, answerHandler req, resp
       else
         resp.send 404, 'Command unknown!'
-
-###
-Present the module forge to the user.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleForgeModules( *req, resp* )
-###
-exports.handleForgeModules = ( req, resp ) ->
-  sendLoginOrPage 'forge_modules', req, resp
-
-###
-Present the event invoke page to the user.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleInvokeEvent( *req, resp* )
-###
-exports.handleInvokeEvent = ( req, resp ) ->
-  sendLoginOrPage 'push_event', req, resp
-
 
 ###
 Handles the admin command requests.
@@ -255,48 +273,44 @@ objects.*
 exports.handleAdmin = ( req, resp ) ->
   if req.session and req.session.user
     if req.session.user.isAdmin is "true"
-      resp.send renderPage 'welcome', req.session
+      q = req.query
+      log.print 'RH', 'Received admin request: ' + req.originalUrl
+      if q.cmd 
+        objAdminCmds[q.cmd]? q, answerHandler req, resp, true
+      else
+        resp.send 404, 'Command unknown!'
     else
       resp.send renderPage 'unauthorized', req.session
   else
     resp.sendfile getHandlerPath 'login'
 
 
-onAdminCommand = ( req, response ) ->
-  q = req.query
-  log.print 'RH', 'Received admin request: ' + q
-  if q.cmd
-    fAdminCommands q, answerHandler response
-    #answerSuccess(response, 'Thank you, we try our best!');
-  else answerError response, 'I\'m not sure about what you want from me...'
+ 
+answerHandler = (req, resp, ntbr) ->
+  request = req
+  response = resp
+  needsToBeRendered = ntbr
+  hasBeenAnswered = false
+  ret =
+    answerSuccess: (msg) ->
+      if not hasBeenAnswered
+        if needsToBeRendered
+          response.send renderPage 'command_answer', request.session, msg
+        else
+          response.send msg
+      hasBeenAnswered = true
+    ,
+    answerError: (msg) ->
+      if not hasBeenAnswered
+        if needsToBeRendered
+          response.send 400, renderPage 'error', request.session, msg
+        else
+          response.send 400, msg
+      hasBeenAnswered = true
+    ,
+    isAnswered: -> hasBeenAnswered
+  setTimeout(() ->
+    ret.answerError 'Strange... maybe try again?'
+  , 5000)
+  ret
 
-
-###
-admin commands handler receives all command arguments and an answerHandler
-object that eases response handling to the HTTP request issuer.
-
-@private fAdminCommands( *args, answHandler* )
-###
-fAdminCommands = ( args, answHandler ) ->
-  if args and args.cmd 
-    adminCmds[args.cmd]? args, answHandler
-  else
-    log.print 'RH', 'No command in request'
-    
-  ###
-  The fAnsw function receives an answerHandler object as an argument when called
-  and returns an anonymous function
-  ###
-  fAnsw = ( ah ) ->
-    ###
-    The anonymous function checks whether the answerHandler was already used to
-    issue an answer, if no answer was provided we answer with an error message
-    ###
-    () ->
-      if not ah.isAnswered()
-        ah.answerError 'Not handled...'
-        
-  ###
-  Delayed function call of the anonymous function that checks the answer handler
-  ###
-  setTimeout fAnsw(answHandler), 2000

@@ -10,7 +10,7 @@
 		<div id="mainbody">
 	    <div id="pagetitle">Login</div>
 	    <table>
-	      <tr><td>username: </td><td><input type="text" id="username" /></td></tr>
+	      <tr><td>username: </td><td><input type="text" id="username" autofocus /></td></tr>
 	      <tr><td>password: </td><td><input type="password" id="password" /></td></tr>
 	    </table>
 	    <button id="but_submit">login</button>
@@ -18,7 +18,7 @@
     <script>
       $('#but_submit').click(function() {
       	var hashedPassword = (CryptoJS.SHA3($('#password').val(), { outputLength: 512 })).toString();
-        $.post('../login', { username: $('#username').val(), password: hashedPassword })
+        $.post('/login', { username: $('#username').val(), password: hashedPassword })
         .done(function(data) {
           window.location.href = document.URL;
         })

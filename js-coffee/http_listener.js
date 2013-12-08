@@ -59,6 +59,7 @@ HTTP Listener
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
     app.get('/admin', requestHandler.handleAdmin);
     app.get('/forge_modules', requestHandler.handleForgeModules);
+    app.get('/forge_rules', requestHandler.handleForgeRules);
     app.get('/invoke_event', requestHandler.handleInvokeEvent);
     app.post('/event', requestHandler.handleEvent);
     app.post('/login', requestHandler.handleLogin);

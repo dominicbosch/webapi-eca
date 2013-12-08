@@ -68,8 +68,10 @@ exports.addHandlers = ( fShutDown ) ->
   app.use '/', express.static path.resolve __dirname, '..', 'webpages', 'public'
   # - **`GET` to _"/admin"_:** Only admins can issue requests to this handler
   app.get '/admin', requestHandler.handleAdmin
-  # - **`GET` to _"/forge\_modules"_:** Webpages that lets the user to create modules
+  # - **`GET` to _"/forge\_modules"_:** Webpage that lets the user create modules
   app.get '/forge_modules', requestHandler.handleForgeModules
+  # - **`GET` to _"/forge\_rules"_:** Webpage that lets the user create rules
+  app.get '/forge_rules', requestHandler.handleForgeRules
   # - **`GET` to _"/invoke\_event"_:** Webpage that lets the user invoke events
   app.get '/invoke_event', requestHandler.handleInvokeEvent
 

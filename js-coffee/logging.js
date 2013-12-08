@@ -93,3 +93,9 @@ exports.error = function(module, err) {
 exports.severe = function(module, err) {
   printError(module, err, true);
 };
+
+exports.obj = function (varname, obj) {
+  var arrS = (new Error).stack.split('\n');
+  console.log('Dumping object "' + varname + '"' + arrS[2]);
+  console.log(obj);
+};

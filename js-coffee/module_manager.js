@@ -23,20 +23,47 @@ exports = module.exports = function(args) {
 
 exports.addDBLink = function(db_link) {
   db = db_link;
-  // funcLoadAction = fLoadAction;
-  // funcLoadRule = fLoadRule;
 };
 
-exports.storeEventModule = function (user, obj) {
-  log.print('MM', 'implement storeEventModule');
+exports.storeEventModule = function (user, obj, answHandler) {
+  try {
+    // TODO in the future we might want to link the modules close to the user
+    // and allow for e.g. private modules
+    // we need a child process to run this code and kill it after invocation
+    var m = ml.requireFromString(obj.data, obj.id);
+    obj.methods = Object.keys(m);
+    answHandler.answerSuccess('Thank you for the event module!');
+    db.storeEventModule(obj.id, obj);
+  } catch (err) {
+    answHandler.answerError(err.message);
+    console.error(err);
+  }
 };
 
-exports.storeActionModule = function (user, obj) {
-  log.print('MM', 'implement storeActionModule');
+exports.getAllEventModules = function ( user, obj, answHandler ) {
+  db.getEventModules(function(err, obj) {
+    if(err) answHandler.answerError('Failed fetching event modules: ' + err.message);
+    else answHandler.answerSuccess(obj);
+  });
 };
 
-exports.storeRule = function (user, obj) {
+exports.storeActionModule = function (user, obj, answHandler) {
+  var m = ml.requireFromString(obj.data, obj.id);
+  obj.methods = Object.keys(m);
+  answHandler.answerSuccess('Thank you for the action module!');
+  db.storeActionModule(obj.id, obj);
+};
+
+exports.getAllActionModules = function ( user, obj, answHandler ) {
+  db.getActionModules(function(err, obj) {
+    if(err) answHandler.answerError('Failed fetching action modules: ' + err.message);
+    else answHandler.answerSuccess(obj);
+  });
+};
+
+exports.storeRule = function (user, obj, answHandler) {
   log.print('MM', 'implement storeRule');
+  answHandler.answerSuccess('Thank you for the rule!');
 };
 
 
