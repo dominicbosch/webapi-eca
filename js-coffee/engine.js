@@ -75,8 +75,17 @@ function loadRulesFromDB() {
  * @param {Object} objModule the action module object
  */
 exports.loadActionModule = function(name, objModule) {
+  
+  //TODO not used yet, load action modules from db for each rule per user
+  // TODO only load module once, load user specific parameters per user
+  // when rule is activated by user. invoked action then uses user specific
+  // parameters
   log.print('EN', 'Action module "' + name + '" loaded');
   listActionModules[name] = objModule;
+};
+
+exports.getActionModule = function(name) {
+  return listActionModules[name];
 };
 
 /**
@@ -160,6 +169,8 @@ function validConditions(evt, rule) {
 function invokeAction(evt, action) {
   var actionargs = {},
       arrModule = action.module.split('->');
+      //TODO this requires change. the module property will be the identifier
+      // in the actions object (or shall we allow several times the same action?)
   if(arrModule.length < 2) {
     log.error('EN', 'Invalid rule detected!');
     return;

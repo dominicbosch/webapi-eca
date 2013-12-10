@@ -387,18 +387,18 @@ DB Interface
   };
 
   /*
-  Store a string representation of he authentication parameters for an event module.
+  Store a string representation of user-specific parameters for an event module.
   
-  @public storeEventAuth( *userId, moduleId, data* )
+  @public storeEventParams( *userId, moduleId, data* )
   @param {String} userId
   @param {String} moduleId
   @param {Object} data
   */
 
 
-  exports.storeEventAuth = function(userId, moduleId, data) {
-    log.print('DB', 'storeEventAuth: ' + userId + ':' + moduleId);
-    return _this.db.set('event-auth:' + userId + ':' + moduleId, hash(data), replyHandler('storing event auth ' + userId + ':' + moduleId));
+  exports.storeEventParams = function(userId, moduleId, data) {
+    log.print('DB', 'storeEventParams: ' + userId + ':' + moduleId);
+    return _this.db.set('event-params:' + moduleId + ':' + userId, encrypt(data), replyHandler('storing event auth ' + userId + ':' + moduleId));
   };
 
   /*
@@ -432,10 +432,12 @@ DB Interface
   */
 
 
-  exports.storeRule = function(id, data) {
+  exports.storeRule = function(id, user, data) {
     log.print('DB', 'storeRule: ' + id);
-    _this.db.sadd('rules', id, replyHandler('storing rule key ' + id));
-    return _this.db.set('rule:' + id, data, replyHandler('storing rule ' + id));
+    _this.db.sadd('rules', id + ':' + user, replyHandler('storing rule key "' + id + ':' + user + '"'));
+    _this.db.sadd('user:' + user + ':rules', id, replyHandler('storing rule key to "user:' + user + ':rules"'));
+    _this.db.sadd('rule:' + id + ':users', user, replyHandler('storing user key to "rule:' + id + ':users"'));
+    return _this.db.set('rule:' + id + ':' + user, data, replyHandler('storing rule "' + id + ':' + user + '"'));
   };
 
   /*

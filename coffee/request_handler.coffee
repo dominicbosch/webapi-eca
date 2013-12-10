@@ -254,6 +254,7 @@ exports.handleUserCommand = ( req, resp ) ->
       body += data
     req.on 'end', ->
       obj = qs.parse body
+      console.log obj
       if typeof objUserCmds[obj.command] is 'function'
         objUserCmds[obj.command] req.session.user, obj, answerHandler req, resp
       else

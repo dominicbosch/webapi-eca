@@ -17,10 +17,11 @@ Getting started
 **Prerequisites:**
 
  - node.js (find it [here](http://nodejs.org/))
+ - *(optional) Pygments if you want to generate the doc:
+    `sudo apt-get install python-setuptools` and then 
+    `sudo easy_install Pygments`*
  - *(optional) [CoffeeScript](http://coffeescript.org/), if you want to develop
- 		and compile from coffee sources:*
- 
-		sudo npm -g install coffee-script
+ 		and compile from coffee sources: `sudo npm -g install coffee-script`*
  
 Clone project:
 

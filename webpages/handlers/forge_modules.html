@@ -31,11 +31,11 @@ exports.myOwnEventFunction = function( callback ) {
 
 <script type = "text/template" id="templ_params">
 {
-  username: {
-    description: "The username for the Web API"
+  "username": {
+    "description": "The username for the Web API"
   },
-  password: {
-    description: "The password for the Web API"
+  "password": {
+    "description": "The password for the Web API"
   }
 }
 </script>
@@ -57,10 +57,10 @@ exports.myOwnEventFunction = function( callback ) {
       <p>
         <textarea id="textarea_module" rows="20" cols="100"> </textarea>
       </p>
-      <p>
+      <!-- <p>
         Description of module:<br />
         <textarea id="textarea_description" rows="2" cols="100">This module does...</textarea>
-      </p>
+      </p> -->
       <p>
        <!-- <input id="checkbox_public" type="checkbox"> Module is public, reusable for everybody<br />-->
         <input id="checkbox_params" type="checkbox"> Module requires user-specific parameters
@@ -87,23 +87,29 @@ exports.myOwnEventFunction = function( callback ) {
         else {
           var obj = {
             id: $('#input_id').val(),
-            data: $('#textarea_module').val(),
-            description: $('#textarea_description').val(),
+            data: $('#textarea_module').val()
+            // description: $('#textarea_description').val(),
            // ispublic: $('#checkbox_public').is(':checked')
           };
-          if($('#checkbox_params').is(':checked')) {
-            obj.params = $('#textarea_params').val();
+          try {
+            if($('#checkbox_params').is(':checked')) {
+              //TODO if syntax error we should make better info's
+              JSON.parse($('#textarea_params').val());
+              obj.params = $('#textarea_params').val();
+            }
+            if($('#select_type').val() === '0') obj.command = 'store_action';
+            else obj.command = 'store_event';
+            $.post('/usercommand', obj)
+            .done(function(data) {
+              alert(data);
+            })
+            .fail(function(err) {
+              console.error(err);
+              alert('Posting of module failed: ' + err.responseText);
+            }); 
+          } catch(err) {
+            alert(err);
           }
-          if($('#select_type').val() === '0') obj.command = 'store_action';
-          else obj.command = 'store_event';
-          $.post('/usercommand', obj)
-          .done(function(data) {
-            alert(data);
-          })
-          .fail(function(err) {
-            console.error(err);
-            alert('Posting of module failed: ' + err.responseText);
-          }); 
         }
       });
       $('#checkbox_params').click(function() {

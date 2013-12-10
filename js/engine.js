@@ -163,6 +163,8 @@ function validConditions(evt, rule) {
 function invokeAction(evt, action) {
   var actionargs = {},
       arrModule = action.module.split('->');
+      //TODO this requires change. the module property will be the identifier
+      // in the actions object (or shall we allow several times the same action?)
   if(arrModule.length < 2) {
     log.error('EN', 'Invalid rule detected!');
     return;
@@ -170,6 +172,7 @@ function invokeAction(evt, action) {
   var srvc = listActionModules[arrModule[0]];
   if(srvc && srvc[arrModule[1]]) {
     //FIXME preprocessing not only on data
+    //FIXME no preprocessing at all, why don't we just pass the whole event to the action?'
     preprocessActionArguments(evt.payload, action.arguments, actionargs);
     try {
       if(srvc[arrModule[1]]) srvc[arrModule[1]](actionargs);

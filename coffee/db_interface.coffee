@@ -300,16 +300,18 @@ exports.getEventModules = ( cb ) ->
   getSetRecords 'event-modules', exports.getEventModule, cb
 
 ###
-Store a string representation of he authentication parameters for an event module.
+Store a string representation of user-specific parameters for an event module.
 
-@public storeEventAuth( *userId, moduleId, data* )
+@public storeEventParams( *userId, moduleId, data* )
 @param {String} userId
 @param {String} moduleId
 @param {Object} data
 ###
-exports.storeEventAuth = ( userId, moduleId, data ) =>
-  log.print 'DB', 'storeEventAuth: ' + userId + ':' + moduleId
-  @db.set 'event-auth:' + userId + ':' + moduleId, hash(data),
+# TODO is used, remove unused ones
+exports.storeEventParams = ( userId, moduleId, data ) =>
+  log.print 'DB', 'storeEventParams: ' + userId + ':' + moduleId
+  # TODO encryption based on user specific key?
+  @db.set 'event-params:' + moduleId + ':' + userId, encrypt(data),
   replyHandler 'storing event auth ' + userId + ':' + moduleId
   
 ###
@@ -337,10 +339,12 @@ Store a string representation of a rule in the DB.
 @param {String} id
 @param {String} data
 ###
-exports.storeRule = ( id, data ) =>
+exports.storeRule = ( id, user, data ) =>
   log.print 'DB', 'storeRule: ' + id
-  @db.sadd 'rules', id, replyHandler 'storing rule key ' + id
-  @db.set 'rule:' + id, data, replyHandler 'storing rule ' + id
+  @db.sadd 'rules', id + ':' + user, replyHandler 'storing rule key "' + id + ':' + user + '"'
+  @db.sadd 'user:' + user + ':rules', id, replyHandler 'storing rule key to "user:' + user + ':rules"'
+  @db.sadd 'rule:' + id + ':users', user, replyHandler 'storing user key to "rule:' + id + ':users"'
+  @db.set 'rule:' + id + ':' + user, data, replyHandler 'storing rule "' + id + ':' + user + '"'
 
 ###
 Query the DB for a rule and pass it to the callback(err, obj) function.

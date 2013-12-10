@@ -49,9 +49,14 @@ textarea {
 
 #div_left {
   float: left;
-  padding-right: 10px;
+}
+
+#div_middle li {
+  font-size: 78%;
+  list-style-type: none;
 }
 
 #div_right li {
+  font-size: 78%;
   list-style-type: none;
 }

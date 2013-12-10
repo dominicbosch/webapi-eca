@@ -3,6 +3,22 @@
   <head>
     <title>Forge A Rule</title>
     {{{head_requires}}}
+
+<script type = "text/template" id="templ_rule">
+{
+  "id": "rule_id",
+  "event": "custom",
+  "condition": { "property": "yourValue" },
+  "actions": [
+    {
+      "module": "probinder->newContent",
+      "arguments": {
+        "content": "Rule#2: $X.subject"
+      }
+    }
+  ]
+}
+</script>
   </head>
   <body>
     {{{div_menubar}}}
@@ -10,13 +26,21 @@
 	    <div id="pagetitle">Hi {{user.username}}, forge your own rules!</div>
 	    <p>
         <div id="div_left">
-          <textarea id="textarea_module" rows="20" cols="100"> </textarea>
+          <input type="hidden" id="command" value="store_rule" />
+          <textarea id="textarea_rule" rows="20" cols="60"> </textarea>
+          <p id="required_params">
+            
+          </p>
           <p>
             <button id="but_submit">save</button>
           </p>
         </div>
-        <div id="div_right">
+        <div id="div_middle">
           <p><b>Available Event Modules:</b></p>
+          <ul> </ul>
+        </div>
+        <div id="div_right">
+          <p><b>Available Action Modules:</b></p>
           <ul> </ul>
         </div>
 	    </p>
@@ -24,26 +48,54 @@
     
     <script type="text/javascript">
       $('#but_submit').click(function() {
+        // var req_fields = 
         var obj = {
           command : 'store_rule', 
-          data: $('#textarea_event').val()
+          data: $('#textarea_rule').val()
         };
         $.post('/usercommand', obj)
+        // $.post('/usercommand', $('form#rules_form').serialize())
         .done(function(data) {
-        	alert(data);
+          $('#required_params').children().remove();
+          if(data.success) {
+            alert(data.info);
+          } else {
+            if(data.eventmodule) {
+              var oEM = JSON.parse(data.eventmodule);
+              $('#required_params').append($('<p>').html($('<b>Required Event Module Parameters</b>')));
+              for(var el in oEM){
+                var inp = '<b>' + el + ': </b><input type="password" id="em_'+oEM[el]+'" />('+oEM[el].description+')';
+                $('#required_params').append($('<p>').html(inp));
+              }
+            }
+            for(var el in data.actionmodules) {
+              $('#required_params').append($('<p>').html($('<b>Required Action Module "'+el+'" Parameters</b>')));
+              var oAM = JSON.parse(data.actionmodules[el]);
+              for(var ael in oAM){
+                var inp = '<b>' + ael + ': </b><input type="password" id="am_'+ael+'_'+oAM[ael]+'" />('+oAM[ael].description+')';
+                $('#required_params').append($('<p>').html(inp));
+              }
+            }
+          }
         })
         .fail(function(err) {
         	console.log(err);
           alert('Posting of rule failed: ' + err.responseText);
         });
       });
-      $.post('/usercommand', { command: 'get_actionmodules' })
+      $.post('/usercommand', { command: 'get_eventmodules' })
       .done(function(data) {
-        for(var el in data) {
-          
+        for(var mod in data) {
+          var mthds = data[mod].methods;
+          if(mthds) {
+            var arr = mthds.split(',');
+            for(var i = 0; i < arr.length; i++) {
+              $('#div_middle ul').append($('<li>').text(mod + '->' + arr[i]));
+            }
+          }
         }
       });
-      $.post('/usercommand', { command: 'get_eventmodules' })
+      $.post('/usercommand', { command: 'get_actionmodules' })
       .done(function(data) {
         for(var mod in data) {
           var mthds = data[mod].methods;
@@ -55,12 +107,7 @@
           }
         }
       });
-      $('#input_event').focus(function() {
-        $('#radio_input').prop('checked', true);
-      });
-      $('#select_event').focus(function() {
-        $('#radio_select').prop('checked', true);
-      });
+      $('#textarea_rule').val($('#templ_rule').html());
     </script>
   </body>
 </html>

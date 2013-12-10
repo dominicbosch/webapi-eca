@@ -25,7 +25,7 @@ exports.addDBLink = function(db_link) {
   db = db_link;
 };
 
-exports.storeEventModule = function (user, obj, answHandler) {
+exports.storeEventModule = function (objUser, obj, answHandler) {
   try {
     // TODO in the future we might want to link the modules close to the user
     // and allow for e.g. private modules
@@ -40,33 +40,78 @@ exports.storeEventModule = function (user, obj, answHandler) {
   }
 };
 
-exports.getAllEventModules = function ( user, obj, answHandler ) {
+exports.getAllEventModules = function ( objUser, obj, answHandler ) {
   db.getEventModules(function(err, obj) {
     if(err) answHandler.answerError('Failed fetching event modules: ' + err.message);
     else answHandler.answerSuccess(obj);
   });
 };
 
-exports.storeActionModule = function (user, obj, answHandler) {
+exports.storeActionModule = function (objUser, obj, answHandler) {
   var m = ml.requireFromString(obj.data, obj.id);
   obj.methods = Object.keys(m);
   answHandler.answerSuccess('Thank you for the action module!');
   db.storeActionModule(obj.id, obj);
 };
 
-exports.getAllActionModules = function ( user, obj, answHandler ) {
+exports.getAllActionModules = function ( objUser, obj, answHandler ) {
   db.getActionModules(function(err, obj) {
     if(err) answHandler.answerError('Failed fetching action modules: ' + err.message);
     else answHandler.answerSuccess(obj);
   });
 };
 
-exports.storeRule = function (user, obj, answHandler) {
-  log.print('MM', 'implement storeRule');
-  answHandler.answerSuccess('Thank you for the rule!');
+exports.storeRule = function (objUser, obj, answHandler) {
+  var cbEventModule = function (lst) {
+    return function(err, data) {
+      if(err) {
+        err.addInfo = 'fetching event module';
+        log.error('MM', err);
+      }
+      if(!err && data) {
+        if(data.params) {
+          lst.eventmodule = data.params;
+        }
+      }
+      if(--semaphore === 0) answHandler.answerSuccess(lst);
+    };
+  };
+  var cbActionModule = function (lstParams) {
+    return function(err, data) {
+      if(err) {
+        err.addInfo = 'fetching action module';
+        log.error('MM', err);
+      }
+      if(!err && data) {
+        if(data.params) {
+          lstParams.actionmodules[data.id] = data.params;
+        }
+      }
+      if(--semaphore === 0) answHandler.answerSuccess(lstParams);
+    };
+  };
+  
+  var semaphore = 1;
+  var lst = {
+    eventmodule: null,
+    actionmodules: {}
+  };
+  try {
+    var objRule = JSON.parse(obj.data);
+    for(var i = 0; i < objRule.actions.length; i++) {
+      semaphore++;
+      db.getActionModule(objRule.actions[i].module.split('->')[0], cbActionModule(lst));
+    }
+    db.getEventModule(objRule.event.split('->')[0], cbEventModule(lst));
+    db.storeRule(objRule.id, objUser.username, obj.data);
+  } catch(err) {
+    answHandler.answerError(err.message);
+    log.error('MM', err);
+  }
+
 };
 
-
+// FIXME REMOVE
 /*
  * Legacy file system loaders
  */
@@ -91,7 +136,7 @@ exports.loadRulesFromFS = function(args, answHandler) {
         log.print('ML', 'Loading ' + arr.length + ' rules:');
         for(var i = 0; i < arr.length; i++) {
           txt += arr[i].id + ', ';
-          db.storeRule(arr[i].id, JSON.stringify(arr[i]));
+          db.storeRule(arr[i].id, 'james-t', JSON.stringify(arr[i]));
           // funcLoadRule(arr[i]);
         }
         answHandler.answerSuccess('Yep, loaded rules: ' + txt);

@@ -101,10 +101,7 @@ Request Handler
         resp.send('Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!');
         return db.pushEvent(obj);
       } else {
-        resp.writeHead(400, {
-          "Content-Type": "text/plain"
-        });
-        return resp.send('Your event was missing important parameters!');
+        return resp.send(400, 'Your event was missing important parameters!');
       }
     });
   };
@@ -308,6 +305,7 @@ Request Handler
       return req.on('end', function() {
         var obj;
         obj = qs.parse(body);
+        console.log(obj);
         if (typeof objUserCmds[obj.command] === 'function') {
           return objUserCmds[obj.command](req.session.user, obj, answerHandler(req, resp));
         } else {
