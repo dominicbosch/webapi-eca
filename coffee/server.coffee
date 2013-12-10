@@ -1,6 +1,6 @@
 ###
 
-Rules Server
+Server
 ============
 
 >This is the main module that is used to run the whole server:

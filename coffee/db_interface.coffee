@@ -43,7 +43,8 @@ exports = module.exports = ( args ) =>
   config = require './config'
   config args
   @crypto_key = config.getCryptoKey()
-  @db = redis.createClient config.getDBPort(), 'localhost', { connect_timeout: 2000 }
+  @db = redis.createClient config.getDBPort(),
+    'localhost', { connect_timeout: 2000 }
   @db.on "error", ( err ) ->
     err.addInfo = 'message from DB'
     log.error 'DB', err

@@ -92,8 +92,7 @@ exports.handleEvent = ( req, resp ) =>
       resp.send 'Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!'
       db.pushEvent obj
     else
-      resp.writeHead 400, { "Content-Type": "text/plain" }
-      resp.send 'Your event was missing important parameters!'
+      resp.send 400, 'Your event was missing important parameters!'
 
 
 ###

@@ -9,16 +9,17 @@
 		<div id="mainbody">
 	    <div id="pagetitle">Hi {{user.username}}, forge your own rules!</div>
 	    <p>
-        <input type="radio" name="radio_event" id="radio_input" checked />
-        <input type="text" id="input_event" /><br />
-        <input type="radio" name="radio_event" id="radio_select" />
-        <select id="select_event">
-        </select>
-        
+        <div id="div_left">
+          <textarea id="textarea_module" rows="20" cols="100"> </textarea>
+          <p>
+            <button id="but_submit">save</button>
+          </p>
+        </div>
+        <div id="div_right">
+          <p><b>Available Event Modules:</b></p>
+          <ul> </ul>
+        </div>
 	    </p>
-    	<p>
-    		<button id="but_submit">save</button>
-    	</p>
     </div>
     
     <script type="text/javascript">
@@ -49,7 +50,7 @@
           if(mthds) {
             var arr = mthds.split(',');
             for(var i = 0; i < arr.length; i++) {
-              $('#select_event').append($('<option>').text(mod + '->' + arr[i]));
+              $('#div_right ul').append($('<li>').text(mod + '->' + arr[i]));
             }
           }
         }

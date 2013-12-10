@@ -46,3 +46,12 @@ textarea {
 	font-size: 1.5em;
 	font-weight: bold;
 }
+
+#div_left {
+  float: left;
+  padding-right: 10px;
+}
+
+#div_right li {
+  list-style-type: none;
+}

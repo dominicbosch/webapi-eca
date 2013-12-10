@@ -30,14 +30,14 @@ exports.myOwnEventFunction = function( callback ) {
 </script>
 
 <script type = "text/template" id="templ_params">
-[
+{
   username: {
     description: "The username for the Web API"
   },
   password: {
     description: "The password for the Web API"
   }
-]
+}
 </script>
 
   </head>
@@ -55,8 +55,7 @@ exports.myOwnEventFunction = function( callback ) {
         Module name: <input type="text" id="input_id" />
       </p>
       <p>
-        <textarea id="textarea_module" rows="20" cols="100">
-        </textarea>
+        <textarea id="textarea_module" rows="20" cols="100"> </textarea>
       </p>
       <p>
         Description of module:<br />
