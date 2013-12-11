@@ -62,7 +62,8 @@ exports.getAllActionModules = function ( objUser, obj, answHandler ) {
 };
 
 exports.storeRule = function (objUser, obj, answHandler) {
-  var cbEventModule = function (lst) {
+  //TODO fix, twice same logic
+  var cbEventModule = function (lstParams) {
     return function(err, data) {
       if(err) {
         err.addInfo = 'fetching event module';
@@ -70,10 +71,10 @@ exports.storeRule = function (objUser, obj, answHandler) {
       }
       if(!err && data) {
         if(data.params) {
-          lst.eventmodule = data.params;
+          lstParams.eventmodules[data.id] = data.params;
         }
       }
-      if(--semaphore === 0) answHandler.answerSuccess(lst);
+      if(--semaphore === 0) answHandler.answerSuccess(lstParams);
     };
   };
   var cbActionModule = function (lstParams) {
@@ -93,7 +94,7 @@ exports.storeRule = function (objUser, obj, answHandler) {
   
   var semaphore = 1;
   var lst = {
-    eventmodule: null,
+    eventmodules: {},
     actionmodules: {}
   };
   try {

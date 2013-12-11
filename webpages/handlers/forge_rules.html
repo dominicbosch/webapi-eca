@@ -25,28 +25,38 @@
 		<div id="mainbody">
 	    <div id="pagetitle">Hi {{user.username}}, forge your own rules!</div>
 	    <p>
-        <div id="div_left">
-          <input type="hidden" id="command" value="store_rule" />
-          <textarea id="textarea_rule" rows="20" cols="60"> </textarea>
-          <p id="required_params">
-            
-          </p>
-          <p>
-            <button id="but_submit">save</button>
-          </p>
-        </div>
-        <div id="div_middle">
-          <p><b>Available Event Modules:</b></p>
-          <ul> </ul>
-        </div>
-        <div id="div_right">
-          <p><b>Available Action Modules:</b></p>
-          <ul> </ul>
-        </div>
+	      <form id="form_rule">
+          <div id="div_left">
+            <input type="hidden" id="command" value="store_rule" />
+            <textarea id="textarea_rule" rows="20" cols="60"> </textarea>
+            <p id="required_params">
+              
+            </p>
+            <p>
+              <button id="but_submit">save</button>
+            </p>
+          </div>
+          <div id="div_middle">
+            <p><b>Available Event Modules:</b></p>
+            <ul> </ul>
+          </div>
+          <div id="div_right">
+            <p><b>Available Action Modules:</b></p>
+            <ul> </ul>
+          </div>
+        </form>
 	    </p>
     </div>
     
     <script type="text/javascript">
+      $( "#form_rule" ).submit(function( event ) {
+        var arrInputs = $( "#form_rule .inp_param" );
+        console.log(arrInputs);
+        for( var i = 0; i < arrInputs.length; i++) {
+          console.log(arrInputs[i]);
+        }
+        event.preventDefault();
+      });
       $('#but_submit').click(function() {
         // var req_fields = 
         var obj = {
@@ -60,19 +70,24 @@
           if(data.success) {
             alert(data.info);
           } else {
-            if(data.eventmodule) {
-              var oEM = JSON.parse(data.eventmodule);
-              $('#required_params').append($('<p>').html($('<b>Required Event Module Parameters</b>')));
-              for(var el in oEM){
-                var inp = '<b>' + el + ': </b><input type="password" id="em_'+oEM[el]+'" />('+oEM[el].description+')';
+            // TODO fix, same logic twice
+                console.log(data.actionmodules);
+                console.log(data.eventmodules);
+            for(var el in data.eventmodules) {
+              var oEM = JSON.parse(data.eventmodules[el]);
+                console.log(oEM);
+              $('#required_params').append($('<p>').html($('<b>Event Module "'+el+'" requires parameters:</b>')));
+              for(var eel in oEM){
+                var inp = '<b>' + eel + ': </b><input type="password" id="em_'+el+'_'+eel+'" class="inp_param" />('+oEM[eel].description+')';
                 $('#required_params').append($('<p>').html(inp));
               }
             }
             for(var el in data.actionmodules) {
-              $('#required_params').append($('<p>').html($('<b>Required Action Module "'+el+'" Parameters</b>')));
+              $('#required_params').append($('<p>').html($('<b>Action Module "'+el+'" requires parameters:</b>')));
               var oAM = JSON.parse(data.actionmodules[el]);
+                console.log(oAM);
               for(var ael in oAM){
-                var inp = '<b>' + ael + ': </b><input type="password" id="am_'+ael+'_'+oAM[ael]+'" />('+oAM[ael].description+')';
+                var inp = '<b>' + ael + ': </b><input type="password" id="am_'+el+'_'+ael+'" class="inp_param" />('+oAM[ael].description+')';
                 $('#required_params').append($('<p>').html(inp));
               }
             }
@@ -83,6 +98,7 @@
           alert('Posting of rule failed: ' + err.responseText);
         });
       });
+      // TODO fix, same logic twice
       $.post('/usercommand', { command: 'get_eventmodules' })
       .done(function(data) {
         for(var mod in data) {
