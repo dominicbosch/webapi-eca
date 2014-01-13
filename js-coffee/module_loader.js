@@ -25,7 +25,12 @@ exports.requireFromString = function(src, name, dir) {
   // Define max runtime per loop as 10 seconds, after that the child will be killed
   // it can still be active after that if there was a timing function or a callback used...
   // kill the child each time? how to determine whether there's still a token in the module?
-  var mod = vm.runInNewContext(src, sandbox, id + '.vm');
+  try {
+    var mod = vm.runInNewContext(src, sandbox, id);
+    
+  } catch (err) {
+    log.error('ML', 'Error running module in sandbox: ' + err.message);
+  }
   return sandbox.exports;
 };
 

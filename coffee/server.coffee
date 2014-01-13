@@ -18,6 +18,7 @@ Server
 >
 >
 
+TODO how about we allow spawning child processes with servers based on address?
 ###
 
 # **Requires:**
@@ -52,6 +53,7 @@ process.on 'uncaughtException', ( err ) ->
       err.addInfo = 'http_port already in use, shutting down!'
       log.error 'RS', err
       shutDown()
+    # else log.error 'RS', err
     else throw err
 ###
 This function is invoked right after the module is loaded and starts the server.

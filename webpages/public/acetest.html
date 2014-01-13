@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>HTML</title>
+    <style>
+        #editor { 
+        position: relative !important;
+        border: 1px solid lightgray;
+        margin: auto;
+        height: 200px;
+        width: 80%;
+            }
+    </style>
+</head>
+<body>
+    <table>
+        <tr>
+            <td>test</td>
+            <td>test</td>
+        </tr>
+        <tr>
+            <td>test</td>
+            <td>test</td>
+        </tr>
+    </table>
+    <div id="editor">
+        function foo(items) {
+            var x = "All this is syntax highlighted";
+            return x;
+        }
+    </div>
+    <script src="ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/javascript");
+    </script>
+</body>
+</html>

@@ -46,6 +46,7 @@ Configuration
 
   loadConfigFile = function(relPath) {
     var e;
+    _this.config = null;
     try {
       _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', relPath)));
       if (_this.config && _this.config.http_port && _this.config.db_port && _this.config.crypto_key && _this.config.session_secret) {

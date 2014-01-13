@@ -213,7 +213,7 @@ Store a string representation of an action module in the DB.
 exports.storeActionModule = ( id, data ) =>
   log.print 'DB', 'storeActionModule: ' + id
   @db.sadd 'action-modules', id, replyHandler 'storing action module key ' + id
-  @db.hmset 'action-module:' + id, data, replyHandler 'storing action module ' + id
+  @db.set 'action-module:' + id, data, replyHandler 'storing action module ' + id
 
 ###
 Query the DB for an action module and pass it to the callback(err, obj) function.
@@ -224,7 +224,7 @@ Query the DB for an action module and pass it to the callback(err, obj) function
 ###
 exports.getActionModule = ( id, cb ) =>
   log.print 'DB', 'getActionModule: ' + id
-  @db.hgetall 'action-module:' + id, cb
+  @db.get 'action-module:' + id, cb
 
 ###
 Fetch all action modules and hand them to the callback(err, obj) function.
@@ -246,7 +246,7 @@ Store a string representation of the authentication parameters for an action mod
 exports.storeActionAuth = ( userId, moduleId, data ) =>
   log.print 'DB', 'storeActionAuth: ' + userId + ':' + moduleId
   @db.set 'action-auth:' + userId + ':' + moduleId, hash(data),
-  replyHandler 'storing action auth ' + userId + ':' + moduleId
+    replyHandler 'storing action auth ' + userId + ':' + moduleId
 
 ###
 Query the DB for an action module authentication token associated to a user
@@ -277,7 +277,7 @@ Store a string representation of an event module in the DB.
 exports.storeEventModule = ( id, data ) =>
   log.print 'DB', 'storeEventModule: ' + id
   @db.sadd 'event-modules', id, replyHandler 'storing event module key ' + id
-  @db.hmset 'event-module:' + id, data, replyHandler 'storing event module ' + id
+  @db.set 'event-module:' + id, data, replyHandler 'storing event module ' + id
 
 ###
 Query the DB for an event module and pass it to the callback(err, obj) function.
@@ -288,7 +288,7 @@ Query the DB for an event module and pass it to the callback(err, obj) function.
 ###
 exports.getEventModule = ( id, cb ) =>
   log.print 'DB', 'getEventModule: ' + id
-  @db.hgetall 'event-module:' + id, cb
+  @db.get 'event-module:' + id, cb
 
 ###
 Fetch all event modules and pass them to the callback(err, obj) function.
@@ -312,7 +312,7 @@ exports.storeEventParams = ( userId, moduleId, data ) =>
   log.print 'DB', 'storeEventParams: ' + userId + ':' + moduleId
   # TODO encryption based on user specific key?
   @db.set 'event-params:' + moduleId + ':' + userId, encrypt(data),
-  replyHandler 'storing event auth ' + userId + ':' + moduleId
+    replyHandler 'storing event auth ' + userId + ':' + moduleId
   
 ###
 Query the DB for an action module authentication token, associated with a user.

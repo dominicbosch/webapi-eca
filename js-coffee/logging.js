@@ -29,8 +29,10 @@ function flush(err, msg) {
 }
 
 function flushToConsole(err, msg) {
-  if(err) console.error(msg);
+  if(err) console.error("\033[31m" + msg + "\033[0m");
   else console.log(msg);
+  // if(err) console.error(msg);
+  // else console.log(msg);
 }
 
 function flushToFile(err, msg) {

@@ -38,6 +38,7 @@ Reads the config file synchronously from the file system and try to parse it.
 @param {String} relPath
 ###
 loadConfigFile = ( relPath ) =>
+  @config = null
   try
     @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', relPath
     if @config and @config.http_port and @config.db_port and
