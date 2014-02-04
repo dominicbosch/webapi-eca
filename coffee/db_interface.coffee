@@ -238,6 +238,18 @@ exports.getActionModule = ( amId, cb ) =>
   log.print 'DB', "getActionModule: #{ amId }"
   @db.get "action-module:#{ amId }", cb
 
+exports.getSetMembers = ( setId, cb ) =>
+  @db.smembers setId, cb
+
+###
+Fetch all action module IDs and hand them to the callback(err, obj) function.
+
+@public getActionModuleIds( *cb* )
+@param {function} cb
+###
+exports.getActionModuleIds = ( cb ) =>
+  @db.smembers 'action-modules', cb
+
 ###
 Fetch all action modules and hand them to the callback(err, obj) function.
 
@@ -246,6 +258,16 @@ Fetch all action modules and hand them to the callback(err, obj) function.
 ###
 exports.getActionModules = ( cb ) ->
   getSetRecords 'action-modules', exports.getActionModule, cb
+
+###
+Fetch all action modules and hand them to the callback(err, obj) function.
+
+@public getActionModules( *cb* )
+@param {function} cb
+###
+exports.deleteActionModule = ( amId ) =>
+  @db.srem 'action-modules', amId, replyHandler "deleting action module key #{ amId }"
+  @db.del "action-module:#{ amId }", replyHandler "deleting action module #{ amId }"
 
 ###
 Store user-specific action module parameters .

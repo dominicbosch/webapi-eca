@@ -1,5 +1,6 @@
 
 exports.setUp = ( cb ) =>
+	@log = require '../js-coffee/logging'
 	@db = require '../js-coffee/db_interface'
 	@db logType: 2
 	cb()
@@ -69,14 +70,6 @@ exports.events =
 			test.strictEqual obj, null, 'There was an event in the queue!?'
 			test.done()
 
-	testPushing: ( test ) =>
-		test.expect 1
-		fPush = ->
-			@db.pushEvent null
-			@db.pushEvent @evt1
-		test.throws fPush, Error, 'This should not throw an error'
-		test.done()
-
 	testNonEmptyPopping: ( test ) =>
 		test.expect 3
 		@db.pushEvent @evt1
@@ -107,63 +100,98 @@ exports.events =
 			forkEnds()
 
 exports.action_modules =
-	setUp: ( cb ) =>
-		@action1 = '
-			exports.testFunctionOne = function( args ) {
-			  var data = { 
-			    companyId: \'961\',
-			    context: \'17936\',
-			    text: \'Binder entry based on event: \' + args.info
-			  };
-			  needle.post(\'https://probinder.com/service/27/save\', data);
-			};'
-		@action2 = '
-		  // This is just a console.log which should fail
-		  console.log(\'Why is this being printed??\');
-			exports.testFunctionTwo = function( args ) {
-				// empty function)
-			};'
-		cb()
+	# setUp: ( cb ) =>
+	# 	@db logType: 1
+	# 	cb()
 
-	testStoreModule: ( test ) =>
-		test.expect 1
-		fStore = ->
-			@db.storeActionModule 'test-action-module_null', null
-			@db.storeActionModule 'test-action-module_1', @action1
-		test.throws fStore, Error, 'Storing Action Module should not throw an error'
-		test.done()
+	testModule: ( test ) =>
+		test.expect 4
+		action1name = 'test-action-module_1'
+		action1 = 'unit-test action module 1 content'
 
-	testFetchModule: ( test ) =>
-		test.expect 0
-		test.done()
+		fCheckSetEntry = ( err , obj ) =>
+			test.ok action1name in obj, 'Expected key not in action-modules set'
+			@db.getActionModule action1name, fCheckModuleExists
 
-	testFetchModules: ( test ) =>
-		test.expect 0
-		test.done()
+		fCheckModuleExists = ( err , obj ) =>
+			test.strictEqual obj, action1, 'Retrieved Action Module is not what we expected'
+			@log.print 'delete action module'
+			@db.deleteActionModule action1name
+			@log.print 'tried to delete action module'
+			@db.getActionModule action1name, fCheckModuleNotExists
 
-	testStoreParams: ( test ) =>
-		test.expect 0
-		test.done()
+		fCheckModuleNotExists = ( err , obj ) =>
+			@log.print 'got action module'
+			test.strictEqual obj, null, 'Action module still exists'
+			@log.print 'compared action module'
+			@db.getActionModuleIds fCheckModuleNotExistsInSet
 
-	testFetchParams: ( test ) =>
-		test.expect 0
-		test.done()
+		fCheckModuleNotExistsInSet = ( err , obj ) =>
+			test.ok action1name not in obj, 'Action module key still exists in set'
+			test.done()
 
-exports.event_modules = 
-	test: ( test ) =>
-		test.expect 0
-		test.done()
+		@db.storeActionModule action1name, action1
+		@db.getActionModuleIds fCheckSetEntry
+		
+	testFetchSeveralModules: ( test ) =>
+		semaphore = 2
+
+		test.expect 3
+		action1name = 'test-action-module_1'
+		action2name = 'test-action-module_2'
+		action1 = 'unit-test action module 1 content'
+		action2 = 'unit-test action module 2 content'
+
+		fCheckModule = ( mod ) ->
+			myTest = test
+			sem = semaphore
+			forkEnds = () ->
+				console.log 'fork ends'
+				myTest.done() if --sem is 0
+			console.log 'check module'
+			( err, obj ) ->
+				console.log 'db answered'
+				myTest.strictEqual mod, obj, "Module does not equal the expected one"
+				forkEnds()
+
+		fCheckSetEntries = ( err, obj ) ->
+			test.ok action1name in obj and action2name in obj, 'Not all action module Ids in set'
+			console.log 'setentries fetched'
+			@db.getActionModule action1name, fCheckModule(action1)
+			@db.getActionModule action2name, fCheckModule(action2)
+
+		@db.storeActionModule action1name, action1
+		@db.storeActionModule action2name, action2
+		@db.getActionModuleIds fCheckSetEntries
 
 
-exports.rules = 
-	test: ( test ) =>
-		test.expect 0
-		test.done()
+# 	testFetchModules: ( test ) =>
+# 		test.expect 0
+# 		test.done()
 
-exports.users = 
-	test: ( test ) =>
-		test.expect 0
-		test.done()
+# 	testStoreParams: ( test ) =>
+# 		test.expect 0
+# 		test.done()
+
+# 	testFetchParams: ( test ) =>
+# 		test.expect 0
+# 		test.done()
+
+# exports.event_modules = 
+# 	test: ( test ) =>
+# 		test.expect 0
+# 		test.done()
+
+
+# exports.rules = 
+# 	test: ( test ) =>
+# 		test.expect 0
+# 		test.done()
+
+# exports.users = 
+# 	test: ( test ) =>
+# 		test.expect 0
+# 		test.done()
 
 
 exports.tearDown = ( cb ) =>

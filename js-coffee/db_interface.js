@@ -321,6 +321,22 @@ DB Interface
     return _this.db.get("action-module:" + amId, cb);
   };
 
+  exports.getSetMembers = function(setId, cb) {
+    return _this.db.smembers(setId, cb);
+  };
+
+  /*
+  Fetch all action module IDs and hand them to the callback(err, obj) function.
+  
+  @public getActionModuleIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getActionModuleIds = function(cb) {
+    return _this.db.smembers('action-modules', cb);
+  };
+
   /*
   Fetch all action modules and hand them to the callback(err, obj) function.
   
@@ -331,6 +347,19 @@ DB Interface
 
   exports.getActionModules = function(cb) {
     return getSetRecords('action-modules', exports.getActionModule, cb);
+  };
+
+  /*
+  Fetch all action modules and hand them to the callback(err, obj) function.
+  
+  @public getActionModules( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.deleteActionModule = function(amId) {
+    _this.db.srem('action-modules', amId, replyHandler("deleting action module key " + amId));
+    return _this.db.del("action-module:" + amId, replyHandler("deleting action module " + amId));
   };
 
   /*

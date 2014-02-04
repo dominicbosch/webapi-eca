@@ -9,6 +9,7 @@
  * - 1 file
  * - 2 silent
  */
+ //TODO dynamic log file names (especially to track unit test logs)
 var fs = require('fs'),
     logTypes = [ flushToConsole, flushToFile, null],
     logFile = require('path').resolve(__dirname, '..', 'server.log'),
