@@ -1,0 +1,6 @@
+{
+  "http_port": 2,
+  "db_port": 9,
+  "crypto_key": "",
+  "session_secret": ""
+}

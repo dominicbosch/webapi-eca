@@ -30,10 +30,6 @@ app = express()
 
 #RedisStore = require('connect-redis')(express), # TODO use RedisStore for persistent sessions
 
-# Just to have at least something. I know all of you know it now ;-P
-sess_sec = '#C[>;j`@".TXm2TA;A2Tg)'
-
-
 ###
 Module call
 -----------
@@ -48,16 +44,20 @@ exports = module.exports = ( args ) ->
   log args
   config args
   requestHandler args
-  #TODO check whether this really does what it's supposed to do (fetch wrong sess property)
-  sess_sec = config.getSessionSecret() || sess_sec 
   module.exports
 
+###
+Adds the shutdown handler to the admin commands.
+
+@param {function} fshutDown
+@public addHandlers( *fShutDown* )
+###
 exports.addHandlers = ( fShutDown ) ->
   requestHandler.addHandlers fShutDown
   # Add cookie support for session handling.
   app.use express.cookieParser()
-  app.use express.session { secret: sess_sec }
-  # At the moment there's no redis session backbone (didn't work straight away)
+  app.use express.session { secret: config.getSessionSecret() }
+  #At the moment there's no redis session backbone (didn't work straight away)
   log.print 'HL', 'no session backbone'
 
   # **Accepted requests to paths:**
@@ -95,6 +95,11 @@ exports.addHandlers = ( fShutDown ) ->
     e.addInfo = 'opening port'
     log.error e
 
+###
+Shuts down the http listener.
+
+@public shutDown()
+###
 exports.shutDown = () ->
   log.print 'HL', 'Shutting down HTTP listener'
   process.exit() # This is a bit brute force...

@@ -42,12 +42,16 @@ exports = module.exports = ( args ) =>
   log args
   config = require './config'
   config args
-  @crypto_key = config.getCryptoKey()
-  @db = redis.createClient config.getDBPort(),
-    'localhost', { connect_timeout: 2000 }
-  @db.on "error", ( err ) ->
-    err.addInfo = 'message from DB'
-    log.error 'DB', err
+  @db?.quit()
+  if config.isReady()
+    @crypto_key = config.getCryptoKey()
+    @db = redis.createClient config.getDBPort(),
+      'localhost', { connect_timeout: 2000 }
+    @db.on 'error', ( err ) ->
+      err.addInfo = 'message from DB'
+      log.error 'DB', err
+  else
+    log.error 'DB', 'Initialization failed because of missing config file!'
 
 ###
 Checks whether the db is connected and passes either an error on failure after
@@ -56,7 +60,6 @@ ten attempts within five seconds, or nothing on success to the callback(err).
 @public isConnected( *cb* )
 @param {function} cb
 ###
-#TODO check if timeout works with func in func
 exports.isConnected = ( cb ) =>
   if @db.connected then cb()
   else
@@ -66,13 +69,24 @@ exports.isConnected = ( cb ) =>
         log.print 'DB', 'Successfully connected to DB!'
         cb()
       else if numAttempts++ < 10
-        setTimeout fCheckConnection, 500
+        setTimeout fCheckConnection, 100
       else
-        e = new Error 'Connection to DB failed!'
-        log.error 'DB', e
-        cb e
-    setTimeout fCheckConnection, 500
+        cb new Error 'Connection to DB failed!'
+    setTimeout fCheckConnection, 100
 
+###
+Abstracts logging for simple action replies from the DB.
+
+@private replyHandler( *action* )
+@param {String} action
+###
+replyHandler = ( action ) ->
+  ( err, reply ) ->
+    if err
+      err.addInfo = 'during "' + action + '"'
+      log.error 'DB', err
+    else
+      log.print 'DB', action + ': ' + reply
 
 ###
 Push an event into the event queue.
@@ -81,8 +95,11 @@ Push an event into the event queue.
 @param {Object} event
 ###
 exports.pushEvent = ( event ) =>
-  log.print 'DB', 'Event pushed into the queue: ' + event.eventid
-  @db.rpush 'event_queue', JSON.stringify(event)
+  if event
+    log.print 'DB', 'Event pushed into the queue: ' + event.eventid
+    @db.rpush 'event_queue', JSON.stringify( event )
+  else
+    log.error 'DB', 'Why would you give me an empty event...'
 
 
 ###
@@ -91,9 +108,19 @@ Pop an event from the event queue and pass it to the callback(err, obj) function
 @public popEvent( *cb* )
 @param {function} cb
 ###
-exports.popEvent = ( cb )=>
-  @db.lpop 'event_queue', cb
+exports.popEvent = ( cb ) =>
+  makeObj = ( pcb ) ->
+    ( err, obj ) ->
+      pcb err, JSON.parse( obj )
+  @db.lpop 'event_queue', makeObj( cb )
   
+###
+Purge the event queue.
+
+@public purgeEventQueue()
+###
+exports.purgeEventQueue = () =>
+  @db.del 'event_queue', replyHandler 'purging event queue'  
 
 ###
 Hashes a string based on SHA-3-512.
@@ -104,7 +131,7 @@ Hashes a string based on SHA-3-512.
 hash = ( plainText ) => 
   if !plainText? then return null
   try
-    (crypto.SHA3 plainText, { outputLength: 512 }).toString()
+    ( crypto.SHA3 plainText, { outputLength: 512 } ).toString()
   catch err
     err.addInfo = 'during hashing'
     log.error 'DB', err
@@ -146,20 +173,6 @@ decrypt = ( crypticText ) =>
     null
 
 ###
-Abstracts logging for simple action replies from the DB.
-
-@private replyHandler( *action* )
-@param {String} action
-###
-replyHandler = ( action ) ->
-  ( err, reply ) ->
-    if err
-      err.addInfo = 'during "' + action + '"'
-      log.error 'DB', err
-    else
-      log.print 'DB', action + ': ' + reply
-
-###
 Fetches all linked data set keys from a linking set, fetches the single data objects
 via the provided function and returns the results to the callback(err, obj) function.
 
@@ -179,7 +192,6 @@ getSetRecords = ( set, fSingle, cb ) =>
     else
       semaphore = arrReply.length
       objReplies = {}
-      #TODO What if the DB needs longer than two seconds to respond?...
       setTimeout ->
         if semaphore > 0
           cb new Error('Timeout fetching ' + set)
@@ -193,10 +205,10 @@ getSetRecords = ( set, fSingle, cb ) =>
           else if not data
             log.error 'DB', new Error 'Empty key in DB: ' + prop
           else
-            objReplies[prop] = data
+            objReplies[ prop ] = data
           if semaphore == 0
             cb null, objReplies
-      fSingle reply, fCallback(reply) for reply in arrReply
+      fSingle reply, fCallback( reply ) for reply in arrReply
 
 ###
 ## Action Modules
@@ -236,30 +248,30 @@ exports.getActionModules = ( cb ) ->
   getSetRecords 'action-modules', exports.getActionModule, cb
 
 ###
-Store a string representation of the authentication parameters for an action module.
+Store user-specific action module parameters .
 
-@public storeActionAuth( *userId, moduleId, data* )
+@public storeActionParams( *userId, moduleId, data* )
 @param {String} userId
 @param {String} moduleId
 @param {String} data
 ###
-exports.storeActionAuth = ( userId, moduleId, data ) =>
-  log.print 'DB', 'storeActionAuth: ' + userId + ':' + moduleId
-  @db.set 'action-auth:' + userId + ':' + moduleId, hash(data),
-    replyHandler 'storing action auth ' + userId + ':' + moduleId
+exports.storeActionParams = ( userId, moduleId, data ) =>
+  log.print 'DB', 'storeActionParams: ' + moduleId + ':' + userId
+  @db.set 'action-params:' + moduleId + ':' + userId, hash(data),
+    replyHandler 'storing action params ' + moduleId + ':' + userId
 
 ###
-Query the DB for an action module authentication token associated to a user
+Query the DB for user-specific action module parameters,
 and pass it to the callback(err, obj) function.
 
-@public getActionAuth( *userId, moduleId, cb* )
+@public getActionParams( *userId, moduleId, cb* )
 @param {String} userId
 @param {String} moduleId
 @param {function} cb
 ###
-exports.getActionAuth = ( userId, moduleId, cb ) =>
-  log.print 'DB', 'getActionAuth: ' + userId + ':' + moduleId
-  @db.get 'action-auth:' + userId + ':' + moduleId, ( err, data ) ->
+exports.getActionParams = ( userId, moduleId, cb ) =>
+  log.print 'DB', 'getActionParams: ' + moduleId + ':' + userId
+  @db.get 'action-params:' + moduleId + ':' + userId, ( err, data ) ->
     cb err, decrypt data
 
 
@@ -309,10 +321,10 @@ Store a string representation of user-specific parameters for an event module.
 ###
 # TODO is used, remove unused ones
 exports.storeEventParams = ( userId, moduleId, data ) =>
-  log.print 'DB', 'storeEventParams: ' + userId + ':' + moduleId
+  log.print 'DB', 'storeEventParams: ' + moduleId + ':' + userId
   # TODO encryption based on user specific key?
   @db.set 'event-params:' + moduleId + ':' + userId, encrypt(data),
-    replyHandler 'storing event auth ' + userId + ':' + moduleId
+    replyHandler 'storing event auth ' + moduleId + ':' + userId
   
 ###
 Query the DB for an action module authentication token, associated with a user.
@@ -323,8 +335,8 @@ Query the DB for an action module authentication token, associated with a user.
 @param {function} cb
 ###
 exports.getEventAuth = ( userId, moduleId, cb ) =>
-  log.print 'DB', 'getEventAuth: ' + userId + ':' + moduleId
-  @db.get 'event-auth:' + userId + ':' + moduleId, ( err, data ) ->
+  log.print 'DB', 'getEventAuth: ' + moduleId + ':' + userId
+  @db.get 'event-auth:' + moduleId + ':' + userId, ( err, data ) ->
     cb err, decrypt data
 
 
@@ -335,16 +347,17 @@ exports.getEventAuth = ( userId, moduleId, cb ) =>
 ###
 Store a string representation of a rule in the DB.
 
-@public storeRule( *id, data* )
-@param {String} id
+@public storeRule( *ruleId, userId, data* )
+@param {String} ruleId
+@param {String} userId
 @param {String} data
 ###
-exports.storeRule = ( id, user, data ) =>
-  log.print 'DB', 'storeRule: ' + id
-  @db.sadd 'rules', id + ':' + user, replyHandler 'storing rule key "' + id + ':' + user + '"'
-  @db.sadd 'user:' + user + ':rules', id, replyHandler 'storing rule key to "user:' + user + ':rules"'
-  @db.sadd 'rule:' + id + ':users', user, replyHandler 'storing user key to "rule:' + id + ':users"'
-  @db.set 'rule:' + id + ':' + user, data, replyHandler 'storing rule "' + id + ':' + user + '"'
+exports.storeRule = ( ruleId, userId, data ) =>
+  log.print 'DB', 'storeRule: ' + ruleId
+  @db.sadd 'rules', ruleId + ':' + user, replyHandler 'storing rule key "' + ruleId + ':' + user + '"'
+  @db.sadd 'user-set:' + user + ':rules', ruleId, replyHandler 'storing rule key to "user:' + user + ':rules"'
+  @db.sadd 'rule-set:' + ruleId + ':users', user, replyHandler 'storing user key to "rule:' + ruleId + ':users"'
+  @db.set 'rule:' + ruleId + ':' + user, data, replyHandler 'storing rule "' + ruleId + ':' + user + '"'
 
 ###
 Query the DB for a rule and pass it to the callback(err, obj) function.
@@ -391,10 +404,11 @@ Associate a role with a user.
 @param {String} username
 @param {String} role
 ###
-exports.storeUserRole = ( username, role ) =>
+exports.storeUserRole = ( userId, roleId ) =>
   log.print 'DB', 'storeUserRole: ' + username + ':' + role
-  @db.sadd 'user-roles:' + username, role, replyHandler 'adding role ' + role + ' to user ' + username
-  @db.sadd 'role-users:' + role, username, replyHandler 'adding user ' + username + ' to role ' + role
+  @db.sadd 'roles', role, replyHandler 'adding role ' + role + ' to role index set'
+  @db.sadd 'user:' + userId + ':roles', role, replyHandler 'adding role ' + role + ' to user ' + username
+  @db.sadd 'role:' + roleId + ':users', username, replyHandler 'adding user ' + username + ' to role ' + role
 
 ###
 Fetch all roles of a user and pass them to the callback(err, obj)

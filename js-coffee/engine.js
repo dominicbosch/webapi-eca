@@ -110,9 +110,9 @@ exports.addRule = function(objRule) {
 
 function pollQueue() {
   if(isRunning) {
-    db.popEvent(function (err, text) {
-      if(!err && text) {
-        processEvent(JSON.parse(text));
+    db.popEvent(function (err, obj) {
+      if(!err && obj) {
+        processEvent(obj);
       }
       setTimeout(pollQueue, 50); //TODO adapt to load
     });

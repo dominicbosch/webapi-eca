@@ -20,7 +20,7 @@ Configuration
   /*
   ##Module call
   
-  Calling the module as a function will make it look for the `relPath` property in the
+  Calling the module as a function will make it look for the `configPath` property in the
   args object and then try to load a config file from that relative path.
   @param {Object} args
   */
@@ -29,8 +29,10 @@ Configuration
   exports = module.exports = function(args) {
     args = args != null ? args : {};
     log(args);
-    if (typeof args.relPath === 'string') {
-      loadConfigFile(args.relPath);
+    if (typeof args.configPath === 'string') {
+      loadConfigFile(args.configPath);
+    } else {
+      loadConfigFile(path.join('config', 'config.json'));
     }
     return module.exports;
   };
@@ -40,15 +42,15 @@ Configuration
   Reads the config file synchronously from the file system and try to parse it.
   
   @private loadConfigFile
-  @param {String} relPath
+  @param {String} configPath
   */
 
 
-  loadConfigFile = function(relPath) {
+  loadConfigFile = function(configPath) {
     var e;
     _this.config = null;
     try {
-      _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', relPath)));
+      _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', configPath)));
       if (_this.config && _this.config.http_port && _this.config.db_port && _this.config.crypto_key && _this.config.session_secret) {
         return log.print('CF', 'config file loaded successfully');
       } else {
@@ -60,8 +62,6 @@ Configuration
       return log.error('CF', e);
     }
   };
-
-  loadConfigFile(path.join('config', 'config.json'));
 
   /*
   Fetch a property from the configuration

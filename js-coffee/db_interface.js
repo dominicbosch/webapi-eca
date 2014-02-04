@@ -41,19 +41,26 @@ DB Interface
 
 
   exports = module.exports = function(args) {
-    var config;
+    var config, _ref;
     args = args != null ? args : {};
     log(args);
     config = require('./config');
     config(args);
-    _this.crypto_key = config.getCryptoKey();
-    _this.db = redis.createClient(config.getDBPort(), 'localhost', {
-      connect_timeout: 2000
-    });
-    return _this.db.on("error", function(err) {
-      err.addInfo = 'message from DB';
-      return log.error('DB', err);
-    });
+    if ((_ref = _this.db) != null) {
+      _ref.quit();
+    }
+    if (config.isReady()) {
+      _this.crypto_key = config.getCryptoKey();
+      _this.db = redis.createClient(config.getDBPort(), 'localhost', {
+        connect_timeout: 2000
+      });
+      return _this.db.on('error', function(err) {
+        err.addInfo = 'message from DB';
+        return log.error('DB', err);
+      });
+    } else {
+      return log.error('DB', 'Initialization failed because of missing config file!');
+    }
   };
 
   /*
@@ -72,20 +79,36 @@ DB Interface
     } else {
       numAttempts = 0;
       fCheckConnection = function() {
-        var e;
         if (_this.db.connected) {
           log.print('DB', 'Successfully connected to DB!');
           return cb();
         } else if (numAttempts++ < 10) {
-          return setTimeout(fCheckConnection, 500);
+          return setTimeout(fCheckConnection, 100);
         } else {
-          e = new Error('Connection to DB failed!');
-          log.error('DB', e);
-          return cb(e);
+          return cb(new Error('Connection to DB failed!'));
         }
       };
-      return setTimeout(fCheckConnection, 500);
+      return setTimeout(fCheckConnection, 100);
     }
+  };
+
+  /*
+  Abstracts logging for simple action replies from the DB.
+  
+  @private replyHandler( *action* )
+  @param {String} action
+  */
+
+
+  replyHandler = function(action) {
+    return function(err, reply) {
+      if (err) {
+        err.addInfo = 'during "' + action + '"';
+        return log.error('DB', err);
+      } else {
+        return log.print('DB', action + ': ' + reply);
+      }
+    };
   };
 
   /*
@@ -97,8 +120,12 @@ DB Interface
 
 
   exports.pushEvent = function(event) {
-    log.print('DB', 'Event pushed into the queue: ' + event.eventid);
-    return _this.db.rpush('event_queue', JSON.stringify(event));
+    if (event) {
+      log.print('DB', 'Event pushed into the queue: ' + event.eventid);
+      return _this.db.rpush('event_queue', JSON.stringify(event));
+    } else {
+      return log.error('DB', 'Why would you give me an empty event...');
+    }
   };
 
   /*
@@ -110,7 +137,24 @@ DB Interface
 
 
   exports.popEvent = function(cb) {
-    return _this.db.lpop('event_queue', cb);
+    var makeObj;
+    makeObj = function(pcb) {
+      return function(err, obj) {
+        return pcb(err, JSON.parse(obj));
+      };
+    };
+    return _this.db.lpop('event_queue', makeObj(cb));
+  };
+
+  /*
+  Purge the event queue.
+  
+  @public purgeEventQueue()
+  */
+
+
+  exports.purgeEventQueue = function() {
+    return _this.db.del('event_queue', replyHandler('purging event queue'));
   };
 
   /*
@@ -186,25 +230,6 @@ DB Interface
       log.error('DB', err);
       return null;
     }
-  };
-
-  /*
-  Abstracts logging for simple action replies from the DB.
-  
-  @private replyHandler( *action* )
-  @param {String} action
-  */
-
-
-  replyHandler = function(action) {
-    return function(err, reply) {
-      if (err) {
-        err.addInfo = 'during "' + action + '"';
-        return log.error('DB', err);
-      } else {
-        return log.print('DB', action + ': ' + reply);
-      }
-    };
   };
 
   /*
@@ -308,34 +333,34 @@ DB Interface
   };
 
   /*
-  Store a string representation of the authentication parameters for an action module.
+  Store user-specific action module parameters .
   
-  @public storeActionAuth( *userId, moduleId, data* )
+  @public storeActionParams( *userId, moduleId, data* )
   @param {String} userId
   @param {String} moduleId
   @param {String} data
   */
 
 
-  exports.storeActionAuth = function(userId, moduleId, data) {
-    log.print('DB', 'storeActionAuth: ' + userId + ':' + moduleId);
-    return _this.db.set('action-auth:' + userId + ':' + moduleId, hash(data), replyHandler('storing action auth ' + userId + ':' + moduleId));
+  exports.storeActionParams = function(userId, moduleId, data) {
+    log.print('DB', 'storeActionParams: ' + moduleId + ':' + userId);
+    return _this.db.set('action-params:' + moduleId + ':' + userId, hash(data), replyHandler('storing action params ' + moduleId + ':' + userId));
   };
 
   /*
-  Query the DB for an action module authentication token associated to a user
+  Query the DB for user-specific action module parameters,
   and pass it to the callback(err, obj) function.
   
-  @public getActionAuth( *userId, moduleId, cb* )
+  @public getActionParams( *userId, moduleId, cb* )
   @param {String} userId
   @param {String} moduleId
   @param {function} cb
   */
 
 
-  exports.getActionAuth = function(userId, moduleId, cb) {
-    log.print('DB', 'getActionAuth: ' + userId + ':' + moduleId);
-    return _this.db.get('action-auth:' + userId + ':' + moduleId, function(err, data) {
+  exports.getActionParams = function(userId, moduleId, cb) {
+    log.print('DB', 'getActionParams: ' + moduleId + ':' + userId);
+    return _this.db.get('action-params:' + moduleId + ':' + userId, function(err, data) {
       return cb(err, decrypt(data));
     });
   };
@@ -397,8 +422,8 @@ DB Interface
 
 
   exports.storeEventParams = function(userId, moduleId, data) {
-    log.print('DB', 'storeEventParams: ' + userId + ':' + moduleId);
-    return _this.db.set('event-params:' + moduleId + ':' + userId, encrypt(data), replyHandler('storing event auth ' + userId + ':' + moduleId));
+    log.print('DB', 'storeEventParams: ' + moduleId + ':' + userId);
+    return _this.db.set('event-params:' + moduleId + ':' + userId, encrypt(data), replyHandler('storing event auth ' + moduleId + ':' + userId));
   };
 
   /*
@@ -412,8 +437,8 @@ DB Interface
 
 
   exports.getEventAuth = function(userId, moduleId, cb) {
-    log.print('DB', 'getEventAuth: ' + userId + ':' + moduleId);
-    return _this.db.get('event-auth:' + userId + ':' + moduleId, function(err, data) {
+    log.print('DB', 'getEventAuth: ' + moduleId + ':' + userId);
+    return _this.db.get('event-auth:' + moduleId + ':' + userId, function(err, data) {
       return cb(err, decrypt(data));
     });
   };
@@ -426,18 +451,19 @@ DB Interface
   /*
   Store a string representation of a rule in the DB.
   
-  @public storeRule( *id, data* )
-  @param {String} id
+  @public storeRule( *ruleId, userId, data* )
+  @param {String} ruleId
+  @param {String} userId
   @param {String} data
   */
 
 
-  exports.storeRule = function(id, user, data) {
-    log.print('DB', 'storeRule: ' + id);
-    _this.db.sadd('rules', id + ':' + user, replyHandler('storing rule key "' + id + ':' + user + '"'));
-    _this.db.sadd('user:' + user + ':rules', id, replyHandler('storing rule key to "user:' + user + ':rules"'));
-    _this.db.sadd('rule:' + id + ':users', user, replyHandler('storing user key to "rule:' + id + ':users"'));
-    return _this.db.set('rule:' + id + ':' + user, data, replyHandler('storing rule "' + id + ':' + user + '"'));
+  exports.storeRule = function(ruleId, userId, data) {
+    log.print('DB', 'storeRule: ' + ruleId);
+    _this.db.sadd('rules', ruleId + ':' + user, replyHandler('storing rule key "' + ruleId + ':' + user + '"'));
+    _this.db.sadd('user-set:' + user + ':rules', ruleId, replyHandler('storing rule key to "user:' + user + ':rules"'));
+    _this.db.sadd('rule-set:' + ruleId + ':users', user, replyHandler('storing user key to "rule:' + ruleId + ':users"'));
+    return _this.db.set('rule:' + ruleId + ':' + user, data, replyHandler('storing rule "' + ruleId + ':' + user + '"'));
   };
 
   /*
@@ -495,10 +521,11 @@ DB Interface
   */
 
 
-  exports.storeUserRole = function(username, role) {
+  exports.storeUserRole = function(userId, roleId) {
     log.print('DB', 'storeUserRole: ' + username + ':' + role);
-    _this.db.sadd('user-roles:' + username, role, replyHandler('adding role ' + role + ' to user ' + username));
-    return _this.db.sadd('role-users:' + role, username, replyHandler('adding user ' + username + ' to role ' + role));
+    _this.db.sadd('roles', role, replyHandler('adding role ' + role + ' to role index set'));
+    _this.db.sadd('user:' + userId + ':roles', role, replyHandler('adding role ' + role + ' to user ' + username));
+    return _this.db.sadd('role:' + roleId + ':users', username, replyHandler('adding user ' + username + ' to role ' + role));
   };
 
   /*

@@ -62,7 +62,7 @@ This function is invoked right after the module is loaded and starts the server.
 ###
 init = ->
   log.print 'RS', 'STARTING SERVER'
-  
+  conf args
   # > Check whether the config file is ready, which is required to start the server.
   if !conf.isReady()
     log.error 'RS', 'Config file not ready!'

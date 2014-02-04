@@ -21,20 +21,15 @@ textarea {
 	background-color: #DDD;
 }
 
-#menubar_menu {
-	float: left;
-  margin:0 auto;
+#menubar div {
+  height: 100%;
+  float: left;
+  padding-left: 10px;
+  padding-right: 10px;
+  cursor: pointer;
 }
 
-#menubar_logout {
-	height: 100%;
-	float: right;
-	padding-left: 10px;
-	padding-right: 10px;
-	cursor: pointer;
-}
-
-#menubar_logout:hover {
+#menubar div:hover {
 	background-color: #AAA;
 }
 

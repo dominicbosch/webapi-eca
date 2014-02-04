@@ -1,5 +1,6 @@
 'use strict';
 
+var cs = require('coffee-script');
 var fs = require('fs'),
     path = require('path'),
     log = require('./logging');
@@ -12,6 +13,10 @@ exports = module.exports = function(args) {
 
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
+  
+  // Allow coffee scripts!
+  console.log(cs.compile(src));
+  
   var id = path.resolve(dir, name, name + '.vm');
   var vm = require('vm'),
     sandbox = {

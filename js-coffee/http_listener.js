@@ -10,7 +10,7 @@ HTTP Listener
 
 
 (function() {
-  var app, config, exports, express, log, path, qs, requestHandler, sess_sec;
+  var app, config, exports, express, log, path, qs, requestHandler;
 
   log = require('./logging');
 
@@ -25,8 +25,6 @@ HTTP Listener
   express = require('express');
 
   app = express();
-
-  sess_sec = '#C[>;j`@".TXm2TA;A2Tg)';
 
   /*
   Module call
@@ -44,16 +42,23 @@ HTTP Listener
     log(args);
     config(args);
     requestHandler(args);
-    sess_sec = config.getSessionSecret() || sess_sec;
     return module.exports;
   };
+
+  /*
+  Adds the shutdown handler to the admin commands.
+  
+  @param {function} fshutDown
+  @public addHandlers( *fShutDown* )
+  */
+
 
   exports.addHandlers = function(fShutDown) {
     var e, http_port;
     requestHandler.addHandlers(fShutDown);
     app.use(express.cookieParser());
     app.use(express.session({
-      secret: sess_sec
+      secret: config.getSessionSecret()
     }));
     log.print('HL', 'no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
@@ -78,6 +83,13 @@ HTTP Listener
       return log.error(e);
     }
   };
+
+  /*
+  Shuts down the http listener.
+  
+  @public shutDown()
+  */
+
 
   exports.shutDown = function() {
     log.print('HL', 'Shutting down HTTP listener');

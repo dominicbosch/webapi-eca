@@ -67,6 +67,7 @@ TODO how about we allow spawning child processes with servers based on address?
 
   init = function() {
     log.print('RS', 'STARTING SERVER');
+    conf(args);
     if (!conf.isReady()) {
       log.error('RS', 'Config file not ready!');
       process.exit();

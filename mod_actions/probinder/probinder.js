@@ -7,6 +7,10 @@
 var urlService = 'https://probinder.com/service/',
   credentials = null;
 
+exports.validUserParams = function() {
+  
+}
+
 function loadCredentials(cred) {
   if(!cred || !cred.username || !cred.password) {
     console.error('ERROR: ProBinder AM credentials file corrupt');
