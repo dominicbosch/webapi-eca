@@ -32,8 +32,11 @@ exports.availability =
 			test.done()
 
 	testPurgeQueue: ( test ) =>
+		evt = 
+			eventid: '1'
+			event: 'mail'
 		test.expect 2
-		@db.pushEvent @evt1
+		@db.pushEvent evt
 		@db.purgeEventQueue()
 		@db.popEvent ( err, obj ) =>
 			test.ifError err, 'Error during pop after purging!'
@@ -85,9 +88,9 @@ exports.events =
 
 	testMultiplePushAndPops: ( test ) =>
 		test.expect 6
-		numForks = 2
-		isFinished = () ->
-			test.done() if --numForks is 0
+		semaphore = 2
+		forkEnds = () ->
+			test.done() if --semaphore is 0
 
 		@db.pushEvent @evt1
 		@db.pushEvent @evt2
@@ -96,31 +99,71 @@ exports.events =
 			test.ifError err, 'Error during multiple push and pop!'
 			test.notStrictEqual obj, null, 'There was no event in the queue!'
 			test.deepEqual @evt1, obj, 'Wrong event in queue!'
-			isFinished()
+			forkEnds()
 		@db.popEvent ( err, obj ) =>
 			test.ifError err, 'Error during multiple push and pop!'
 			test.notStrictEqual obj, null, 'There was no event in the queue!'
 			test.deepEqual @evt2, obj, 'Wrong event in queue!'
-			isFinished()
+			forkEnds()
 
-exports.action_modules = 
-	test: (test) =>
-		test.ok false, 'implement testing!'
+exports.action_modules =
+	setUp: ( cb ) =>
+		@action1 = '
+			exports.testFunctionOne = function( args ) {
+			  var data = { 
+			    companyId: \'961\',
+			    context: \'17936\',
+			    text: \'Binder entry based on event: \' + args.info
+			  };
+			  needle.post(\'https://probinder.com/service/27/save\', data);
+			};'
+		@action2 = '
+		  // This is just a console.log which should fail
+		  console.log(\'Why is this being printed??\');
+			exports.testFunctionTwo = function( args ) {
+				// empty function)
+			};'
+		cb()
+
+	testStoreModule: ( test ) =>
+		test.expect 1
+		fStore = ->
+			@db.storeActionModule 'test-action-module_null', null
+			@db.storeActionModule 'test-action-module_1', @action1
+		test.throws fStore, Error, 'Storing Action Module should not throw an error'
+		test.done()
+
+	testFetchModule: ( test ) =>
+		test.expect 0
+		test.done()
+
+	testFetchModules: ( test ) =>
+		test.expect 0
+		test.done()
+
+	testStoreParams: ( test ) =>
+		test.expect 0
+		test.done()
+
+	testFetchParams: ( test ) =>
+		test.expect 0
 		test.done()
 
 exports.event_modules = 
-	test: (test) =>
+	test: ( test ) =>
+		test.expect 0
 		test.done()
 
 
 exports.rules = 
-	test: (test) =>
+	test: ( test ) =>
+		test.expect 0
 		test.done()
 
 exports.users = 
-	test: (test) =>
+	test: ( test ) =>
+		test.expect 0
 		test.done()
-
 
 
 exports.tearDown = ( cb ) =>

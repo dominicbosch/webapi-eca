@@ -1,8 +1,5 @@
 README: webapi-eca
 ==================
-
-# TODO Remake
-
 > A Modular ECA Engine Server which acts as a middleware between WebAPI's.
 > This folder continues examples of an ECA engine and how certain use cases
 > could be implemented together with a rules language.
@@ -39,6 +36,8 @@ Edit the configuration file:
     vi config/config.json
 
 Apply your settings, for example:
+# TODO Remake
+
 
     {
         "http_port": 8125,
@@ -49,7 +48,7 @@ Apply your settings, for example:
 
 Start the server:
 
-    node js/server
+    run_server.sh
     
 *Congratulations, your own WebAPI based ECA engine server is now up and running!*
 
@@ -59,11 +58,17 @@ Optional command line tools:
     
 Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 
-    node create_doc
+> **WARNING:**
+
+> *manual adjustment of `./node_modules/groc/lib/styles/default/docPage.jade` required until groc is fixed:*
+
+> *`!!! 5` needs to be relaced with  `doctype html`*
+
+    run_doc.sh
     
 Run test suite:
 
-    node run_tests
+    run_tests.sh
 
 _
 

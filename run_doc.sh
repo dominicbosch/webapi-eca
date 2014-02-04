@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * # groc Documentation
  * Create the documentation to be displayed through the webserver.

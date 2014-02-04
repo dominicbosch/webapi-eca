@@ -83,21 +83,21 @@ Abstracts logging for simple action replies from the DB.
 replyHandler = ( action ) ->
   ( err, reply ) ->
     if err
-      err.addInfo = 'during "' + action + '"'
+      err.addInfo = "during \"#{ action }\""
       log.error 'DB', err
     else
-      log.print 'DB', action + ': ' + reply
+      log.print 'DB', "#{ action }: #{ reply }"
 
 ###
 Push an event into the event queue.
 
-@public pushEvent( *event* )
-@param {Object} event
+@public pushEvent( *oEvent* )
+@param {Object} oEvent
 ###
-exports.pushEvent = ( event ) =>
-  if event
-    log.print 'DB', 'Event pushed into the queue: ' + event.eventid
-    @db.rpush 'event_queue', JSON.stringify( event )
+exports.pushEvent = ( oEvent ) =>
+  if oEvent
+    log.print 'DB', "Event pushed into the queue: #{ oEvent.eventid }"
+    @db.rpush 'event_queue', JSON.stringify( oEvent )
   else
     log.error 'DB', 'Why would you give me an empty event...'
 
@@ -182,10 +182,10 @@ via the provided function and returns the results to the callback(err, obj) func
 @param {function} cb the callback(err, obj) function that receives all the retrieved data or an error
 ###
 getSetRecords = ( set, fSingle, cb ) =>
-  log.print 'DB', 'Fetching set records: ' + set
+  log.print 'DB', "Fetching set records: #{ set }"
   @db.smembers set, ( err, arrReply ) ->
     if err
-      err.addInfo = 'fetching ' + set
+      err.addInfo = "fetching #{ set }"
       log.error 'DB', err
     else if arrReply.length == 0
       cb()
@@ -194,16 +194,16 @@ getSetRecords = ( set, fSingle, cb ) =>
       objReplies = {}
       setTimeout ->
         if semaphore > 0
-          cb new Error('Timeout fetching ' + set)
+          cb new Error "Timeout fetching #{ set }"
       , 2000
       fCallback = ( prop ) ->
         ( err, data ) ->
           --semaphore
           if err
-            err.addInfo = 'fetching single element: ' + prop
+            err.addInfo = "fetching single element: #{ prop }"
             log.error 'DB', err
           else if not data
-            log.error 'DB', new Error 'Empty key in DB: ' + prop
+            log.error 'DB', new Error "Empty key in DB: #{ prop }"
           else
             objReplies[ prop ] = data
           if semaphore == 0
@@ -212,31 +212,31 @@ getSetRecords = ( set, fSingle, cb ) =>
 
 ###
 ## Action Modules
+#TODO Rename Action Modules into something like Action Caller
 ###
 
 ###
 Store a string representation of an action module in the DB.
 
-@public storeActionModule ( *id, data* )
-@param {String} id
+@public storeActionModule ( *amId, data* )
+@param {String} amId
 @param {String} data
 ###
-# FIXME can the data be an object?
-exports.storeActionModule = ( id, data ) =>
-  log.print 'DB', 'storeActionModule: ' + id
-  @db.sadd 'action-modules', id, replyHandler 'storing action module key ' + id
-  @db.set 'action-module:' + id, data, replyHandler 'storing action module ' + id
+exports.storeActionModule = ( amId, data ) =>
+  log.print 'DB', "storeActionModule: #{ amId }"
+  @db.sadd 'action-modules', amId, replyHandler "storing action module key #{ amId }"
+  @db.set "action-module:#{ amId }", data, replyHandler "storing action module #{ amId }"
 
 ###
 Query the DB for an action module and pass it to the callback(err, obj) function.
 
-@public getActionModule( *id, cb* )
-@param {String} id
+@public getActionModule( *amId, cb* )
+@param {String} amId
 @param {function} cb
 ###
-exports.getActionModule = ( id, cb ) =>
-  log.print 'DB', 'getActionModule: ' + id
-  @db.get 'action-module:' + id, cb
+exports.getActionModule = ( amId, cb ) =>
+  log.print 'DB', "getActionModule: #{ amId }"
+  @db.get "action-module:#{ amId }", cb
 
 ###
 Fetch all action modules and hand them to the callback(err, obj) function.
@@ -250,57 +250,58 @@ exports.getActionModules = ( cb ) ->
 ###
 Store user-specific action module parameters .
 
-@public storeActionParams( *userId, moduleId, data* )
+@public storeActionParams( *userId, amId, data* )
 @param {String} userId
-@param {String} moduleId
+@param {String} amId
 @param {String} data
 ###
-exports.storeActionParams = ( userId, moduleId, data ) =>
-  log.print 'DB', 'storeActionParams: ' + moduleId + ':' + userId
-  @db.set 'action-params:' + moduleId + ':' + userId, hash(data),
-    replyHandler 'storing action params ' + moduleId + ':' + userId
+exports.storeActionParams = ( userId, amId, data ) =>
+  log.print 'DB', "storeActionParams: #{ amId }:#{ userId }"
+  @db.set "action-params:#{ amId }:#{ userId }", hash(data),
+    replyHandler "storing action params #{ amId }:#{ userId }"
 
 ###
 Query the DB for user-specific action module parameters,
 and pass it to the callback(err, obj) function.
 
-@public getActionParams( *userId, moduleId, cb* )
+@public getActionParams( *userId, amId, cb* )
 @param {String} userId
-@param {String} moduleId
+@param {String} amId
 @param {function} cb
 ###
-exports.getActionParams = ( userId, moduleId, cb ) =>
-  log.print 'DB', 'getActionParams: ' + moduleId + ':' + userId
-  @db.get 'action-params:' + moduleId + ':' + userId, ( err, data ) ->
+exports.getActionParams = ( userId, amId, cb ) =>
+  log.print 'DB', "getActionParams: #{ amId }:#{ userId }"
+  @db.get "action-params:#{ amId }:#{ userId }", ( err, data ) ->
     cb err, decrypt data
 
 
 ###
 ## Event Modules
+#TODO rename event modules to event puller or something like that
 ###
 
 ###
 Store a string representation of an event module in the DB.
 
-@public storeEventModule( *id, data* )
-@param {String} id
+@public storeEventModule( *emId, data* )
+@param {String} emId
 @param {String} data
 ###
-exports.storeEventModule = ( id, data ) =>
-  log.print 'DB', 'storeEventModule: ' + id
-  @db.sadd 'event-modules', id, replyHandler 'storing event module key ' + id
-  @db.set 'event-module:' + id, data, replyHandler 'storing event module ' + id
+exports.storeEventModule = ( emId, data ) =>
+  log.print 'DB', "storeEventModule: #{ emId }"
+  @db.sadd 'event-modules', emId, replyHandler "storing event module key #{ emId }"
+  @db.set 'event-module:#{ emId }', data, replyHandler "storing event module #{ emId }"
 
 ###
 Query the DB for an event module and pass it to the callback(err, obj) function.
 
-@public getEventModule( *id, cb* )
-@param {String} id 
+@public getEventModule( *emId, cb* )
+@param {String} emId 
 @param {function} cb
 ###
-exports.getEventModule = ( id, cb ) =>
-  log.print 'DB', 'getEventModule: ' + id
-  @db.get 'event-module:' + id, cb
+exports.getEventModule = ( emId, cb ) =>
+  log.print 'DB', "getEventModule: #{ emId }"
+  @db.get "event-module:#{ emId }", cb
 
 ###
 Fetch all event modules and pass them to the callback(err, obj) function.
@@ -314,29 +315,29 @@ exports.getEventModules = ( cb ) ->
 ###
 Store a string representation of user-specific parameters for an event module.
 
-@public storeEventParams( *userId, moduleId, data* )
+@public storeEventParams( *userId, emId, data* )
 @param {String} userId
-@param {String} moduleId
+@param {String} emId
 @param {Object} data
 ###
 # TODO is used, remove unused ones
-exports.storeEventParams = ( userId, moduleId, data ) =>
-  log.print 'DB', 'storeEventParams: ' + moduleId + ':' + userId
+exports.storeEventParams = ( userId, emId, data ) =>
+  log.print 'DB', "storeEventParams: #{ emId }:#{ userId }"
   # TODO encryption based on user specific key?
-  @db.set 'event-params:' + moduleId + ':' + userId, encrypt(data),
-    replyHandler 'storing event auth ' + moduleId + ':' + userId
+  @db.set "event-params:#{ emId }:#{ userId }", encrypt(data),
+    replyHandler "storing event auth #{ emId }:#{ userId }"
   
 ###
 Query the DB for an action module authentication token, associated with a user.
 
-@public getEventAuth( *userId, moduleId, data* )
+@public getEventAuth( *userId, emId, data* )
 @param {String} userId
-@param {String} moduleId
+@param {String} emId
 @param {function} cb
 ###
-exports.getEventAuth = ( userId, moduleId, cb ) =>
-  log.print 'DB', 'getEventAuth: ' + moduleId + ':' + userId
-  @db.get 'event-auth:' + moduleId + ':' + userId, ( err, data ) ->
+exports.getEventAuth = ( userId, emId, cb ) =>
+  log.print 'DB', "getEventAuth: #{ emId }:#{ userId }"
+  @db.get "event-auth:#{ emId }:#{ userId }", ( err, data ) ->
     cb err, decrypt data
 
 
@@ -353,22 +354,22 @@ Store a string representation of a rule in the DB.
 @param {String} data
 ###
 exports.storeRule = ( ruleId, userId, data ) =>
-  log.print 'DB', 'storeRule: ' + ruleId
-  @db.sadd 'rules', ruleId + ':' + user, replyHandler 'storing rule key "' + ruleId + ':' + user + '"'
-  @db.sadd 'user-set:' + user + ':rules', ruleId, replyHandler 'storing rule key to "user:' + user + ':rules"'
-  @db.sadd 'rule-set:' + ruleId + ':users', user, replyHandler 'storing user key to "rule:' + ruleId + ':users"'
-  @db.set 'rule:' + ruleId + ':' + user, data, replyHandler 'storing rule "' + ruleId + ':' + user + '"'
+  log.print 'DB', "storeRule: #{ ruleId }"
+  @db.sadd 'rules', "#{ ruleId }:#{ userId }", replyHandler "storing rule key \"#{ ruleId }:#{ userId }\""
+  @db.sadd "user-set:#{ userId }:rules", ruleId, replyHandler "storing rule key to \"user:#{ userId }:rules\""
+  @db.sadd "rule-set:#{ ruleId }:users", user, replyHandler "storing user key to \"rule:#{ ruleId }:users\""
+  @db.set "rule:#{ ruleId }:#{ userId }", data, replyHandler "storing rule \"#{ ruleId }:#{ userId }\""
 
 ###
 Query the DB for a rule and pass it to the callback(err, obj) function.
 
-@public getRule( *id, cb* )
-@param {String} id
+@public getRule( *ruleId, cb* )
+@param {String} ruleId
 @param {function} cb
 ###
-exports.getRule = ( id, cb ) =>
-  log.print 'DB', 'getRule: ' + id
-  @db.get 'rule:' + id, cb
+exports.getRule = ( ruleId, cb ) =>
+  log.print 'DB', "getRule: #{ ruleId }"
+  @db.get "rule:#{ ruleId }", cb
 
 ###
 Fetch all rules from the database and pass them to the callback function.  
@@ -389,36 +390,36 @@ Store a user object (needs to be a flat structure).
 exports.storeUser = ( objUser ) =>
   #TODO Only store user if not already existing, or at least only then add a private key
   #for his encryption. we would want to have one private key per user, right?  
-  log.print 'DB', 'storeUser: ' + objUser.username
+  log.print 'DB', "storeUser: #{ objUser.username }"
   if objUser and objUser.username and objUser.password
-    @db.sadd 'users', objUser.username, replyHandler 'storing user key ' + objUser.username
+    @db.sadd 'users', objUser.username, replyHandler "storing user key #{ objUser.username }"
     objUser.password = hash objUser.password
-    @db.hmset 'user:' + objUser.username, objUser, replyHandler 'storing user properties ' + objUser.username
+    @db.hmset "user:#{ objUser.username }", objUser, replyHandler "storing user properties #{ objUser.username }"
   else
     log.error 'DB', new Error 'username or password was missing'
 
 ###
 Associate a role with a user.
 
-@public storeUserRole( *username, role* )
-@param {String} username
+@public storeUserRole( *userId, role* )
+@param {String} userId
 @param {String} role
 ###
-exports.storeUserRole = ( userId, roleId ) =>
-  log.print 'DB', 'storeUserRole: ' + username + ':' + role
-  @db.sadd 'roles', role, replyHandler 'adding role ' + role + ' to role index set'
-  @db.sadd 'user:' + userId + ':roles', role, replyHandler 'adding role ' + role + ' to user ' + username
-  @db.sadd 'role:' + roleId + ':users', username, replyHandler 'adding user ' + username + ' to role ' + role
+exports.storeUserRole = ( userId, role ) =>
+  log.print 'DB', "storeUserRole: #{ userId }:#{ role }"
+  @db.sadd 'roles', role, replyHandler "adding role #{ role } to role index set"
+  @db.sadd "user:#{ userId }:roles", role, replyHandler "adding role #{ role } to user #{ userId }"
+  @db.sadd "role:#{ role }:users", userId, replyHandler "adding user #{ userId } to role #{ role }"
 
 ###
 Fetch all roles of a user and pass them to the callback(err, obj)
 
-@public getUserRoles( *username* )
-@param {String} username
+@public getUserRoles( *userId* )
+@param {String} userId
 ###
-exports.getUserRoles = ( username ) =>
-  log.print 'DB', 'getUserRole: ' + username
-  @db.get 'user-roles:' + username, cb
+exports.getUserRoles = ( userId ) =>
+  log.print 'DB', "getUserRole: #{ userId }"
+  @db.get "user-roles:#{ userId }", cb
   
 ###
 Fetch all users of a role and pass them to the callback(err, obj)
@@ -427,8 +428,8 @@ Fetch all users of a role and pass them to the callback(err, obj)
 @param {String} role
 ###
 exports.getRoleUsers = ( role ) =>
-  log.print 'DB', 'getRoleUsers: ' + role
-  @db.get 'role-users:' + role, cb
+  log.print 'DB', "getRoleUsers: #{ role }"
+  @db.get "role-users:#{ role }", cb
 
 ###
 Checks the credentials and on success returns the user object to the
@@ -436,27 +437,27 @@ callback(err, obj) function. The password has to be hashed (SHA-3-512)
 beforehand by the instance closest to the user that enters the password,
 because we only store hashes of passwords for safety reasons.
 
-@public loginUser( *username, password, cb* )
-@param {String} username
+@public loginUser( *userId, password, cb* )
+@param {String} userId
 @param {String} password
 @param {function} cb
 ###
 #TODO verify and test whole function
-exports.loginUser = ( username, password, cb ) =>
-  log.print 'DB', 'User "' + username + '" tries to log in'
+exports.loginUser = ( userId, password, cb ) =>
+  log.print 'DB', "User \"#{ userId }\" tries to log in"
   fCheck = ( pw ) ->
     ( err, obj ) ->
       if err 
         cb err
       else if obj and obj.password
         if pw == obj.password
-          log.print 'DB', 'User "' + obj.username + '" logged in!' 
+          log.print 'DB', "User \"#{ obj.username }\" logged in!" 
           cb null, obj
         else
           cb new Error 'Wrong credentials!'
       else
         cb new Error 'User not found!'
-  @db.hgetall 'user:' + username, fCheck password
+  @db.hgetall "user:#{ userId }", fCheck password
 
 #TODO implement functions required for user sessions and the rule activation
 

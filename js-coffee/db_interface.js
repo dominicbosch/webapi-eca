@@ -103,10 +103,10 @@ DB Interface
   replyHandler = function(action) {
     return function(err, reply) {
       if (err) {
-        err.addInfo = 'during "' + action + '"';
+        err.addInfo = "during \"" + action + "\"";
         return log.error('DB', err);
       } else {
-        return log.print('DB', action + ': ' + reply);
+        return log.print('DB', "" + action + ": " + reply);
       }
     };
   };
@@ -114,15 +114,15 @@ DB Interface
   /*
   Push an event into the event queue.
   
-  @public pushEvent( *event* )
-  @param {Object} event
+  @public pushEvent( *oEvent* )
+  @param {Object} oEvent
   */
 
 
-  exports.pushEvent = function(event) {
-    if (event) {
-      log.print('DB', 'Event pushed into the queue: ' + event.eventid);
-      return _this.db.rpush('event_queue', JSON.stringify(event));
+  exports.pushEvent = function(oEvent) {
+    if (oEvent) {
+      log.print('DB', "Event pushed into the queue: " + oEvent.eventid);
+      return _this.db.rpush('event_queue', JSON.stringify(oEvent));
     } else {
       return log.error('DB', 'Why would you give me an empty event...');
     }
@@ -244,11 +244,11 @@ DB Interface
 
 
   getSetRecords = function(set, fSingle, cb) {
-    log.print('DB', 'Fetching set records: ' + set);
+    log.print('DB', "Fetching set records: " + set);
     return _this.db.smembers(set, function(err, arrReply) {
       var fCallback, objReplies, reply, semaphore, _i, _len, _results;
       if (err) {
-        err.addInfo = 'fetching ' + set;
+        err.addInfo = "fetching " + set;
         return log.error('DB', err);
       } else if (arrReply.length === 0) {
         return cb();
@@ -257,17 +257,17 @@ DB Interface
         objReplies = {};
         setTimeout(function() {
           if (semaphore > 0) {
-            return cb(new Error('Timeout fetching ' + set));
+            return cb(new Error("Timeout fetching " + set));
           }
         }, 2000);
         fCallback = function(prop) {
           return function(err, data) {
             --semaphore;
             if (err) {
-              err.addInfo = 'fetching single element: ' + prop;
+              err.addInfo = "fetching single element: " + prop;
               log.error('DB', err);
             } else if (!data) {
-              log.error('DB', new Error('Empty key in DB: ' + prop));
+              log.error('DB', new Error("Empty key in DB: " + prop));
             } else {
               objReplies[prop] = data;
             }
@@ -288,36 +288,37 @@ DB Interface
 
   /*
   ## Action Modules
+  #TODO Rename Action Modules into something like Action Caller
   */
 
 
   /*
   Store a string representation of an action module in the DB.
   
-  @public storeActionModule ( *id, data* )
-  @param {String} id
+  @public storeActionModule ( *amId, data* )
+  @param {String} amId
   @param {String} data
   */
 
 
-  exports.storeActionModule = function(id, data) {
-    log.print('DB', 'storeActionModule: ' + id);
-    _this.db.sadd('action-modules', id, replyHandler('storing action module key ' + id));
-    return _this.db.set('action-module:' + id, data, replyHandler('storing action module ' + id));
+  exports.storeActionModule = function(amId, data) {
+    log.print('DB', "storeActionModule: " + amId);
+    _this.db.sadd('action-modules', amId, replyHandler("storing action module key " + amId));
+    return _this.db.set("action-module:" + amId, data, replyHandler("storing action module " + amId));
   };
 
   /*
   Query the DB for an action module and pass it to the callback(err, obj) function.
   
-  @public getActionModule( *id, cb* )
-  @param {String} id
+  @public getActionModule( *amId, cb* )
+  @param {String} amId
   @param {function} cb
   */
 
 
-  exports.getActionModule = function(id, cb) {
-    log.print('DB', 'getActionModule: ' + id);
-    return _this.db.get('action-module:' + id, cb);
+  exports.getActionModule = function(amId, cb) {
+    log.print('DB', "getActionModule: " + amId);
+    return _this.db.get("action-module:" + amId, cb);
   };
 
   /*
@@ -335,68 +336,69 @@ DB Interface
   /*
   Store user-specific action module parameters .
   
-  @public storeActionParams( *userId, moduleId, data* )
+  @public storeActionParams( *userId, amId, data* )
   @param {String} userId
-  @param {String} moduleId
+  @param {String} amId
   @param {String} data
   */
 
 
-  exports.storeActionParams = function(userId, moduleId, data) {
-    log.print('DB', 'storeActionParams: ' + moduleId + ':' + userId);
-    return _this.db.set('action-params:' + moduleId + ':' + userId, hash(data), replyHandler('storing action params ' + moduleId + ':' + userId));
+  exports.storeActionParams = function(userId, amId, data) {
+    log.print('DB', "storeActionParams: " + amId + ":" + userId);
+    return _this.db.set("action-params:" + amId + ":" + userId, hash(data), replyHandler("storing action params " + amId + ":" + userId));
   };
 
   /*
   Query the DB for user-specific action module parameters,
   and pass it to the callback(err, obj) function.
   
-  @public getActionParams( *userId, moduleId, cb* )
+  @public getActionParams( *userId, amId, cb* )
   @param {String} userId
-  @param {String} moduleId
+  @param {String} amId
   @param {function} cb
   */
 
 
-  exports.getActionParams = function(userId, moduleId, cb) {
-    log.print('DB', 'getActionParams: ' + moduleId + ':' + userId);
-    return _this.db.get('action-params:' + moduleId + ':' + userId, function(err, data) {
+  exports.getActionParams = function(userId, amId, cb) {
+    log.print('DB', "getActionParams: " + amId + ":" + userId);
+    return _this.db.get("action-params:" + amId + ":" + userId, function(err, data) {
       return cb(err, decrypt(data));
     });
   };
 
   /*
   ## Event Modules
+  #TODO rename event modules to event puller or something like that
   */
 
 
   /*
   Store a string representation of an event module in the DB.
   
-  @public storeEventModule( *id, data* )
-  @param {String} id
+  @public storeEventModule( *emId, data* )
+  @param {String} emId
   @param {String} data
   */
 
 
-  exports.storeEventModule = function(id, data) {
-    log.print('DB', 'storeEventModule: ' + id);
-    _this.db.sadd('event-modules', id, replyHandler('storing event module key ' + id));
-    return _this.db.set('event-module:' + id, data, replyHandler('storing event module ' + id));
+  exports.storeEventModule = function(emId, data) {
+    log.print('DB', "storeEventModule: " + emId);
+    _this.db.sadd('event-modules', emId, replyHandler("storing event module key " + emId));
+    return _this.db.set('event-module:#{ emId }', data, replyHandler("storing event module " + emId));
   };
 
   /*
   Query the DB for an event module and pass it to the callback(err, obj) function.
   
-  @public getEventModule( *id, cb* )
-  @param {String} id 
+  @public getEventModule( *emId, cb* )
+  @param {String} emId 
   @param {function} cb
   */
 
 
-  exports.getEventModule = function(id, cb) {
-    log.print('DB', 'getEventModule: ' + id);
-    return _this.db.get('event-module:' + id, cb);
+  exports.getEventModule = function(emId, cb) {
+    log.print('DB', "getEventModule: " + emId);
+    return _this.db.get("event-module:" + emId, cb);
   };
 
   /*
@@ -414,31 +416,31 @@ DB Interface
   /*
   Store a string representation of user-specific parameters for an event module.
   
-  @public storeEventParams( *userId, moduleId, data* )
+  @public storeEventParams( *userId, emId, data* )
   @param {String} userId
-  @param {String} moduleId
+  @param {String} emId
   @param {Object} data
   */
 
 
-  exports.storeEventParams = function(userId, moduleId, data) {
-    log.print('DB', 'storeEventParams: ' + moduleId + ':' + userId);
-    return _this.db.set('event-params:' + moduleId + ':' + userId, encrypt(data), replyHandler('storing event auth ' + moduleId + ':' + userId));
+  exports.storeEventParams = function(userId, emId, data) {
+    log.print('DB', "storeEventParams: " + emId + ":" + userId);
+    return _this.db.set("event-params:" + emId + ":" + userId, encrypt(data), replyHandler("storing event auth " + emId + ":" + userId));
   };
 
   /*
   Query the DB for an action module authentication token, associated with a user.
   
-  @public getEventAuth( *userId, moduleId, data* )
+  @public getEventAuth( *userId, emId, data* )
   @param {String} userId
-  @param {String} moduleId
+  @param {String} emId
   @param {function} cb
   */
 
 
-  exports.getEventAuth = function(userId, moduleId, cb) {
-    log.print('DB', 'getEventAuth: ' + moduleId + ':' + userId);
-    return _this.db.get('event-auth:' + moduleId + ':' + userId, function(err, data) {
+  exports.getEventAuth = function(userId, emId, cb) {
+    log.print('DB', "getEventAuth: " + emId + ":" + userId);
+    return _this.db.get("event-auth:" + emId + ":" + userId, function(err, data) {
       return cb(err, decrypt(data));
     });
   };
@@ -459,25 +461,25 @@ DB Interface
 
 
   exports.storeRule = function(ruleId, userId, data) {
-    log.print('DB', 'storeRule: ' + ruleId);
-    _this.db.sadd('rules', ruleId + ':' + user, replyHandler('storing rule key "' + ruleId + ':' + user + '"'));
-    _this.db.sadd('user-set:' + user + ':rules', ruleId, replyHandler('storing rule key to "user:' + user + ':rules"'));
-    _this.db.sadd('rule-set:' + ruleId + ':users', user, replyHandler('storing user key to "rule:' + ruleId + ':users"'));
-    return _this.db.set('rule:' + ruleId + ':' + user, data, replyHandler('storing rule "' + ruleId + ':' + user + '"'));
+    log.print('DB', "storeRule: " + ruleId);
+    _this.db.sadd('rules', "" + ruleId + ":" + userId, replyHandler("storing rule key \"" + ruleId + ":" + userId + "\""));
+    _this.db.sadd("user-set:" + userId + ":rules", ruleId, replyHandler("storing rule key to \"user:" + userId + ":rules\""));
+    _this.db.sadd("rule-set:" + ruleId + ":users", user, replyHandler("storing user key to \"rule:" + ruleId + ":users\""));
+    return _this.db.set("rule:" + ruleId + ":" + userId, data, replyHandler("storing rule \"" + ruleId + ":" + userId + "\""));
   };
 
   /*
   Query the DB for a rule and pass it to the callback(err, obj) function.
   
-  @public getRule( *id, cb* )
-  @param {String} id
+  @public getRule( *ruleId, cb* )
+  @param {String} ruleId
   @param {function} cb
   */
 
 
-  exports.getRule = function(id, cb) {
-    log.print('DB', 'getRule: ' + id);
-    return _this.db.get('rule:' + id, cb);
+  exports.getRule = function(ruleId, cb) {
+    log.print('DB', "getRule: " + ruleId);
+    return _this.db.get("rule:" + ruleId, cb);
   };
 
   /*
@@ -502,11 +504,11 @@ DB Interface
 
 
   exports.storeUser = function(objUser) {
-    log.print('DB', 'storeUser: ' + objUser.username);
+    log.print('DB', "storeUser: " + objUser.username);
     if (objUser && objUser.username && objUser.password) {
-      _this.db.sadd('users', objUser.username, replyHandler('storing user key ' + objUser.username));
+      _this.db.sadd('users', objUser.username, replyHandler("storing user key " + objUser.username));
       objUser.password = hash(objUser.password);
-      return _this.db.hmset('user:' + objUser.username, objUser, replyHandler('storing user properties ' + objUser.username));
+      return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties " + objUser.username));
     } else {
       return log.error('DB', new Error('username or password was missing'));
     }
@@ -515,30 +517,30 @@ DB Interface
   /*
   Associate a role with a user.
   
-  @public storeUserRole( *username, role* )
-  @param {String} username
+  @public storeUserRole( *userId, role* )
+  @param {String} userId
   @param {String} role
   */
 
 
-  exports.storeUserRole = function(userId, roleId) {
-    log.print('DB', 'storeUserRole: ' + username + ':' + role);
-    _this.db.sadd('roles', role, replyHandler('adding role ' + role + ' to role index set'));
-    _this.db.sadd('user:' + userId + ':roles', role, replyHandler('adding role ' + role + ' to user ' + username));
-    return _this.db.sadd('role:' + roleId + ':users', username, replyHandler('adding user ' + username + ' to role ' + role));
+  exports.storeUserRole = function(userId, role) {
+    log.print('DB', "storeUserRole: " + userId + ":" + role);
+    _this.db.sadd('roles', role, replyHandler("adding role " + role + " to role index set"));
+    _this.db.sadd("user:" + userId + ":roles", role, replyHandler("adding role " + role + " to user " + userId));
+    return _this.db.sadd("role:" + role + ":users", userId, replyHandler("adding user " + userId + " to role " + role));
   };
 
   /*
   Fetch all roles of a user and pass them to the callback(err, obj)
   
-  @public getUserRoles( *username* )
-  @param {String} username
+  @public getUserRoles( *userId* )
+  @param {String} userId
   */
 
 
-  exports.getUserRoles = function(username) {
-    log.print('DB', 'getUserRole: ' + username);
-    return _this.db.get('user-roles:' + username, cb);
+  exports.getUserRoles = function(userId) {
+    log.print('DB', "getUserRole: " + userId);
+    return _this.db.get("user-roles:" + userId, cb);
   };
 
   /*
@@ -550,8 +552,8 @@ DB Interface
 
 
   exports.getRoleUsers = function(role) {
-    log.print('DB', 'getRoleUsers: ' + role);
-    return _this.db.get('role-users:' + role, cb);
+    log.print('DB', "getRoleUsers: " + role);
+    return _this.db.get("role-users:" + role, cb);
   };
 
   /*
@@ -560,23 +562,23 @@ DB Interface
   beforehand by the instance closest to the user that enters the password,
   because we only store hashes of passwords for safety reasons.
   
-  @public loginUser( *username, password, cb* )
-  @param {String} username
+  @public loginUser( *userId, password, cb* )
+  @param {String} userId
   @param {String} password
   @param {function} cb
   */
 
 
-  exports.loginUser = function(username, password, cb) {
+  exports.loginUser = function(userId, password, cb) {
     var fCheck;
-    log.print('DB', 'User "' + username + '" tries to log in');
+    log.print('DB', "User \"" + userId + "\" tries to log in");
     fCheck = function(pw) {
       return function(err, obj) {
         if (err) {
           return cb(err);
         } else if (obj && obj.password) {
           if (pw === obj.password) {
-            log.print('DB', 'User "' + obj.username + '" logged in!');
+            log.print('DB', "User \"" + obj.username + "\" logged in!");
             return cb(null, obj);
           } else {
             return cb(new Error('Wrong credentials!'));
@@ -586,7 +588,7 @@ DB Interface
         }
       };
     };
-    return _this.db.hgetall('user:' + username, fCheck(password));
+    return _this.db.hgetall("user:" + userId, fCheck(password));
   };
 
   /*

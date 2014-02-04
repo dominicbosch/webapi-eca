@@ -29,7 +29,7 @@ exports = module.exports = ( args ) ->
   if typeof args.configPath is 'string'
     loadConfigFile args.configPath
   else
-    loadConfigFile path.join('config', 'config.json')
+    loadConfigFile path.join 'config', 'config.json'
   module.exports
 
 ###
@@ -47,11 +47,11 @@ loadConfigFile = ( configPath ) =>
                   @config.crypto_key and @config.session_secret
       log.print 'CF', 'config file loaded successfully'
     else
-      log.error 'CF', new Error("""Missing property in config file, requires:
+      log.error 'CF', new Error """Missing property in config file, requires:
        - http_port
        - db_port
        - crypto_key
-       - session_secret""")
+       - session_secret"""
   catch e
     e.addInfo = 'no config ready'
     log.error 'CF', e
