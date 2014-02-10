@@ -29,6 +29,14 @@ textarea {
   cursor: pointer;
 }
 
+#info {
+  padding-left: 10px;
+  padding-top: 30px;
+  font-family: Tahoma, sans-serif;
+  font-size: 0.75em;
+  color: #F33;
+}
+
 #menubar div:hover {
 	background-color: #AAA;
 }

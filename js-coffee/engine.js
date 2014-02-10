@@ -29,34 +29,34 @@ exports = module.exports = function(args) {
  */
 exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
   db = db_link;
-  if(ml && db) db.getActionModules(function(err, obj) {
-    if(err) log.error('EN', 'retrieving Action Modules from DB!');
-    else {
-      if(!obj) {
-        log.print('EN', 'No Action Modules found in DB!');
-        loadRulesFromDB();
-      } else {
-        var m;
-        for(var el in obj) {
-          log.print('EN', 'Loading Action Module from DB: ' + el);
-          try{
-            m = ml.requireFromString(obj[el], el);
-            db.getActionModuleAuth(el, function(mod) {
-              return function(err, obj) {
-                if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-              };
-            }(m));
-            listActionModules[el] = m;
-          } catch(e) {
-            e.addInfo = 'error in action module "' + el + '"';
-            log.error('EN', e);
-          }
-        }
-        loadRulesFromDB();
-      }
-    }
-  });
-  else log.severe('EN', new Error('Module Loader or DB not defined!'));
+  // if(ml && db) db.getActionModules(function(err, obj) {
+  //   if(err) log.error('EN', 'retrieving Action Modules from DB!');
+  //   else {
+  //     if(!obj) {
+  //       log.print('EN', 'No Action Modules found in DB!');
+  //       loadRulesFromDB();
+  //     } else {
+  //       var m;
+  //       for(var el in obj) {
+  //         log.print('EN', 'Loading Action Module from DB: ' + el);
+  //         try{
+  //           m = ml.requireFromString(obj[el], el);
+  //           db.getActionModuleAuth(el, function(mod) {
+  //             return function(err, obj) {
+  //               if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
+  //             };
+  //           }(m));
+  //           listActionModules[el] = m;
+  //         } catch(e) {
+  //           e.addInfo = 'error in action module "' + el + '"';
+  //           log.error('EN', e);
+  //         }
+  //       }
+  //       loadRulesFromDB();
+  //     }
+  //   }
+  // });
+  // else log.severe('EN', new Error('Module Loader or DB not defined!'));
 };
 
 function loadRulesFromDB() {

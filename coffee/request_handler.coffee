@@ -161,6 +161,16 @@ getHandlerFileAsString = ( name ) ->
   fs.readFileSync getHandlerPath( name ), 'utf8'
   
 ###
+Fetches an include file.
+
+@private getIncludeFileAsString( *name* )
+@param {String} name
+###
+getIncludeFileAsString = ( name ) ->
+  pth = path.resolve __dirname, '..', 'webpages', 'handlers', 'includes', name + '.html'
+  fs.readFileSync pth, 'utf8'
+  
+###
 Renders a page depending on the user session and returns it.
 
 @private renderPage( *name, sess* )
@@ -169,8 +179,8 @@ Renders a page depending on the user session and returns it.
 ###
 renderPage = ( name, sess, msg ) ->
   template = getHandlerFileAsString name
-  menubar = getHandlerFileAsString 'part_menubar'
-  requires = getHandlerFileAsString 'part_requires'
+  menubar = getIncludeFileAsString 'menubar'
+  requires = getIncludeFileAsString 'requires'
   view =
     user: sess.user,
     head_requires: requires,
@@ -190,10 +200,14 @@ objects.*
 @param {String} pagename
 ###
 sendLoginOrPage = ( pagename, req, resp ) ->
-  if req.session and req.session.user
-    resp.send renderPage pagename, req.session
-  else
-    resp.sendfile getHandlerPath 'login'
+  if !req.session
+    req.session = {}
+  if !req.session.user
+    pagename = 'login'
+    # resp.send renderPage pagename, req.session
+  # else
+    # resp.sendfile getHandlerPath 'login'
+  resp.send renderPage pagename, req.session
 
 ###
 Present the module forge to the user.

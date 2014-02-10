@@ -8,7 +8,7 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   log = require('./logging');
@@ -190,6 +190,20 @@ Request Handler
   };
 
   /*
+  Fetches an include file.
+  
+  @private getIncludeFileAsString( *name* )
+  @param {String} name
+  */
+
+
+  getIncludeFileAsString = function(name) {
+    var pth;
+    pth = path.resolve(__dirname, '..', 'webpages', 'handlers', 'includes', name + '.html');
+    return fs.readFileSync(pth, 'utf8');
+  };
+
+  /*
   Renders a page depending on the user session and returns it.
   
   @private renderPage( *name, sess* )
@@ -201,8 +215,8 @@ Request Handler
   renderPage = function(name, sess, msg) {
     var menubar, requires, template, view;
     template = getHandlerFileAsString(name);
-    menubar = getHandlerFileAsString('part_menubar');
-    requires = getHandlerFileAsString('part_requires');
+    menubar = getIncludeFileAsString('menubar');
+    requires = getIncludeFileAsString('requires');
     view = {
       user: sess.user,
       head_requires: requires,
@@ -226,11 +240,13 @@ Request Handler
 
 
   sendLoginOrPage = function(pagename, req, resp) {
-    if (req.session && req.session.user) {
-      return resp.send(renderPage(pagename, req.session));
-    } else {
-      return resp.sendfile(getHandlerPath('login'));
+    if (!req.session) {
+      req.session = {};
     }
+    if (!req.session.user) {
+      pagename = 'login';
+    }
+    return resp.send(renderPage(pagename, req.session));
   };
 
   /*

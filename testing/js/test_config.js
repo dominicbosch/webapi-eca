@@ -31,7 +31,7 @@
   exports.testDifferentConfigFile = function(test) {
     test.expect(1);
     _this.conf({
-      configPath: 'testing/jsonWrongConfig.json'
+      configPath: path.join('testing', 'files', 'jsonWrongConfig.json')
     });
     test.ok(_this.conf.isReady(), 'Different path not loaded!');
     return test.done();

@@ -4,25 +4,26 @@
 DB Interface
 ============
 > Handles the connection to the database and provides functionalities for
-> event/action modules, rules and the encrypted storing of authentication tokens.
+> event pollers, action invokers, rules and the encrypted storing of authentication tokens.
 > General functionality as a wrapper for the module holds initialization,
 > encryption/decryption, the retrieval of modules and shut down.
 > 
 > The general structure for linked data is that the key is stored in a set.
 > By fetching all set entries we can then fetch all elements, which is
 > automated in this function.
-> For example modules of the same group, e.g. action modules are registered in an
+> For example, modules of the same group, e.g. action invokers are registered in an
 > unordered set in the database, from where they can be retrieved again. For example
-> a new action module has its ID (e.g 'probinder') first registered in the set
-> 'action_modules' and then stored in the db with the key 'action\_module\_' + ID
-> (e.g. action\_module\_probinder). 
+> a new action invoker has its ID (e.g 'probinder') first registered in the set
+> 'action-invokers' and then stored in the db with the key 'action-invoker:' + ID
+> (e.g. action-invoker:probinder). 
 >
 */
 
 
 (function() {
-  var crypto, decrypt, encrypt, exports, getSetRecords, hash, log, redis, replyHandler,
-    _this = this;
+  var IndexedModules, crypto, decrypt, encrypt, exports, getSetRecords, hash, log, redis, replyHandler,
+    _this = this,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   log = require('./logging');
 
@@ -54,10 +55,12 @@ DB Interface
       _this.db = redis.createClient(config.getDBPort(), 'localhost', {
         connect_timeout: 2000
       });
-      return _this.db.on('error', function(err) {
+      _this.db.on('error', function(err) {
         err.addInfo = 'message from DB';
         return log.error('DB', err);
       });
+      _this.ep = new IndexedModules('event-poller', _this.db);
+      return _this.ai = new IndexedModules('action-invoker', _this.db);
     } else {
       return log.error('DB', 'Initialization failed because of missing config file!');
     }
@@ -103,7 +106,7 @@ DB Interface
   replyHandler = function(action) {
     return function(err, reply) {
       if (err) {
-        err.addInfo = "during \"" + action + "\"";
+        err.addInfo = "during '" + action + "'";
         return log.error('DB', err);
       } else {
         return log.print('DB', "" + action + ": " + reply);
@@ -121,7 +124,7 @@ DB Interface
 
   exports.pushEvent = function(oEvent) {
     if (oEvent) {
-      log.print('DB', "Event pushed into the queue: " + oEvent.eventid);
+      log.print('DB', "Event pushed into the queue: '" + oEvent.eventid + "'");
       return _this.db.rpush('event_queue', JSON.stringify(oEvent));
     } else {
       return log.error('DB', 'Why would you give me an empty event...');
@@ -129,7 +132,7 @@ DB Interface
   };
 
   /*
-  Pop an event from the event queue and pass it to the callback(err, obj) function.
+  Pop an event from the event queue and pass it to cb(err, obj).
   
   @public popEvent( *cb* )
   @param {function} cb
@@ -191,14 +194,12 @@ DB Interface
 
 
   encrypt = function(plainText) {
-    var enciph, err, et;
+    var err;
     if (plainText == null) {
       return null;
     }
     try {
-      enciph = crypto.createCipher('aes-256-cbc', _this.crypto_key);
-      et = enciph.update(plainText, 'utf8', 'base64');
-      return et + enciph.final('base64');
+      return crypto.AES.encrypt(plainText, _this.crypto_key);
     } catch (_error) {
       err = _error;
       err.addInfo = 'during encryption';
@@ -216,14 +217,13 @@ DB Interface
 
 
   decrypt = function(crypticText) {
-    var deciph, dt, err;
+    var dec, err;
     if (crypticText == null) {
       return null;
     }
     try {
-      deciph = crypto.createDecipher('aes-256-cbc', _this.crypto_key);
-      dt = deciph.update(crypticText, 'base64', 'utf8');
-      return dt + deciph.final('utf8');
+      dec = crypto.AES.decrypt(crypticText, _this.crypto_key);
+      return dec.toString(crypto.enc.Utf8);
     } catch (_error) {
       err = _error;
       err.addInfo = 'during decryption';
@@ -233,23 +233,26 @@ DB Interface
   };
 
   /*
-  Fetches all linked data set keys from a linking set, fetches the single data objects
-  via the provided function and returns the results to the callback(err, obj) function.
+  Fetches all linked data set keys from a linking set, fetches the single
+  data objects via the provided function and returns the results to cb(err, obj).
   
   @private getSetRecords( *set, fSingle, cb* )
   @param {String} set the set name how it is stored in the DB
-  @param {function} fSingle a function to retrieve a single data element per set entry
-  @param {function} cb the callback(err, obj) function that receives all the retrieved data or an error
+  @param {function} fSingle a function to retrieve a single data element
+        per set entry
+  @param {function} cb the callback(err, obj) function that receives all
+        the retrieved data or an error
   */
 
 
   getSetRecords = function(set, fSingle, cb) {
-    log.print('DB', "Fetching set records: " + set);
+    log.print('DB', "Fetching set records: '" + set + "'");
     return _this.db.smembers(set, function(err, arrReply) {
       var fCallback, objReplies, reply, semaphore, _i, _len, _results;
       if (err) {
-        err.addInfo = "fetching " + set;
-        return log.error('DB', err);
+        err.addInfo = "fetching '" + set + "'";
+        log.error('DB', err);
+        return cb(err);
       } else if (arrReply.length === 0) {
         return cb();
       } else {
@@ -257,17 +260,17 @@ DB Interface
         objReplies = {};
         setTimeout(function() {
           if (semaphore > 0) {
-            return cb(new Error("Timeout fetching " + set));
+            return cb(new Error("Timeout fetching '" + set + "'"));
           }
         }, 2000);
         fCallback = function(prop) {
           return function(err, data) {
             --semaphore;
             if (err) {
-              err.addInfo = "fetching single element: " + prop;
+              err.addInfo = "fetching single element: '" + prop + "'";
               log.error('DB', err);
             } else if (!data) {
-              log.error('DB', new Error("Empty key in DB: " + prop));
+              log.error('DB', new Error("Empty key in DB: '" + prop + "'"));
             } else {
               objReplies[prop] = data;
             }
@@ -286,192 +289,315 @@ DB Interface
     });
   };
 
+  IndexedModules = (function() {
+    function IndexedModules(setname, db) {
+      this.setname = setname;
+      this.db = db;
+      this.deleteParameters = __bind(this.deleteParameters, this);
+      this.getParametersIds = __bind(this.getParametersIds, this);
+      this.getParameters = __bind(this.getParameters, this);
+      this.storeParameters = __bind(this.storeParameters, this);
+      this.deleteModule = __bind(this.deleteModule, this);
+      this.getModules = __bind(this.getModules, this);
+      this.getModuleIds = __bind(this.getModuleIds, this);
+      this.getModule = __bind(this.getModule, this);
+      this.storeModule = __bind(this.storeModule, this);
+      log.print('DB', "Instantiated indexed modules for '" + this.setname + "'");
+    }
+
+    IndexedModules.prototype.storeModule = function(mId, data) {
+      log.print('DB', "storeModule(" + this.setname + "): " + mId);
+      this.db.sadd("" + this.setname + "s", mId, replyHandler("Storing '" + this.setname + "' key '" + mId + "'"));
+      return this.db.set("" + this.setname + ":" + mId, data, replyHandler("Storing '" + this.setname + ":" + mId + "'"));
+    };
+
+    IndexedModules.prototype.getModule = function(mId, cb) {
+      log.print('DB', "getModule('" + this.setname + "): " + mId + "'");
+      return this.db.get("" + this.setname + ":" + mId, cb);
+    };
+
+    IndexedModules.prototype.getModuleIds = function(cb) {
+      log.print('DB', "getModuleIds(" + this.setname + ")");
+      return this.db.smembers("" + this.setname + "s", cb);
+    };
+
+    IndexedModules.prototype.getModules = function(cb) {
+      log.print('DB', "getModules(" + this.setname + ")");
+      return getSetRecords("" + this.setname + "s", this.getModule, cb);
+    };
+
+    IndexedModules.prototype.deleteModule = function(mId) {
+      log.print('DB', "deleteModule(" + this.setname + "): " + mId);
+      this.db.srem("" + this.setname + "s", mId, replyHandler("Deleting '" + this.setname + "' key '" + mId + "'"));
+      return this.db.del("" + this.setname + ":" + mId, replyHandler("Deleting '" + this.setname + ":" + mId + "'"));
+    };
+
+    IndexedModules.prototype.storeParameters = function(mId, userId, data) {
+      log.print('DB', "storeParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Storing '" + this.setname + "' module parameters key '" + mId + "'"));
+      return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encrypt(data), replyHandler("Storing '" + this.setname + "' module parameters '" + mId + ":" + userId + "'"));
+    };
+
+    IndexedModules.prototype.getParameters = function(mId, userId, cb) {
+      log.print('DB', "getParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, function(err, data) {
+        return cb(err, decrypt(data));
+      });
+    };
+
+    IndexedModules.prototype.getParametersIds = function(cb) {
+      log.print('DB', "getParametersIds(" + this.setname + ")");
+      return this.db.smembers("" + this.setname + "-params", cb);
+    };
+
+    IndexedModules.prototype.deleteParameters = function(mId, userId) {
+      log.print('DB', "deleteParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params' key '" + mId + ":" + userId + "'"));
+      return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params:" + mId + ":" + userId + "'"));
+    };
+
+    return IndexedModules;
+
+  })();
+
   /*
-  ## Action Modules
-  #TODO Rename Action Modules into something like Action Caller
+  ## Action Invokers
   */
 
 
   /*
-  Store a string representation of an action module in the DB.
+  Store a string representation of an action invoker in the DB.
   
-  @public storeActionModule ( *amId, data* )
-  @param {String} amId
+  @public storeActionInvoker ( *aiId, data* )
+  @param {String} aiId
   @param {String} data
   */
 
 
-  exports.storeActionModule = function(amId, data) {
-    log.print('DB', "storeActionModule: " + amId);
-    _this.db.sadd('action-modules', amId, replyHandler("storing action module key " + amId));
-    return _this.db.set("action-module:" + amId, data, replyHandler("storing action module " + amId));
+  exports.storeActionInvoker = function(aiId, data) {
+    return _this.ai.storeModule(aiId, data);
   };
 
   /*
-  Query the DB for an action module and pass it to the callback(err, obj) function.
+  Query the DB for an action invoker and pass it to cb(err, obj).
   
-  @public getActionModule( *amId, cb* )
-  @param {String} amId
+  @public getActionInvoker( *aiId, cb* )
+  @param {String} aiId
   @param {function} cb
   */
 
 
-  exports.getActionModule = function(amId, cb) {
-    log.print('DB', "getActionModule: " + amId);
-    return _this.db.get("action-module:" + amId, cb);
-  };
-
-  exports.getSetMembers = function(setId, cb) {
-    return _this.db.smembers(setId, cb);
+  exports.getActionInvoker = function(aiId, cb) {
+    return _this.ai.getModule(aiId, cb);
   };
 
   /*
-  Fetch all action module IDs and hand them to the callback(err, obj) function.
+  Fetch all action invoker IDs and hand them to cb(err, obj).
   
-  @public getActionModuleIds( *cb* )
+  @public getActionInvokerIds( *cb* )
   @param {function} cb
   */
 
 
-  exports.getActionModuleIds = function(cb) {
-    return _this.db.smembers('action-modules', cb);
+  exports.getActionInvokerIds = function(cb) {
+    return _this.ai.getModuleIds(cb);
   };
 
   /*
-  Fetch all action modules and hand them to the callback(err, obj) function.
+  Fetch all action invokers and hand them to cb(err, obj).
   
-  @public getActionModules( *cb* )
+  @public getActionInvokers( *cb* )
   @param {function} cb
   */
 
 
-  exports.getActionModules = function(cb) {
-    return getSetRecords('action-modules', exports.getActionModule, cb);
+  exports.getActionInvokers = function(cb) {
+    return _this.ai.getModules(cb);
   };
 
   /*
-  Fetch all action modules and hand them to the callback(err, obj) function.
+  Fetch all action invokers and hand them to cb(err, obj).
   
-  @public getActionModules( *cb* )
+  @public getActionInvokers( *cb* )
   @param {function} cb
   */
 
 
-  exports.deleteActionModule = function(amId) {
-    _this.db.srem('action-modules', amId, replyHandler("deleting action module key " + amId));
-    return _this.db.del("action-module:" + amId, replyHandler("deleting action module " + amId));
+  exports.deleteActionInvoker = function(aiId) {
+    return _this.ai.deleteModule(aiId);
   };
 
   /*
-  Store user-specific action module parameters .
+  Store user-specific action invoker parameters .
   
-  @public storeActionParams( *userId, amId, data* )
+  @public storeActionParams( *userId, aiId, data* )
   @param {String} userId
-  @param {String} amId
+  @param {String} aiId
   @param {String} data
   */
 
 
-  exports.storeActionParams = function(userId, amId, data) {
-    log.print('DB', "storeActionParams: " + amId + ":" + userId);
-    return _this.db.set("action-params:" + amId + ":" + userId, hash(data), replyHandler("storing action params " + amId + ":" + userId));
+  exports.storeActionParams = function(aiId, userId, data) {
+    return _this.ai.storeParameters(aiId, userId, data);
   };
 
   /*
   Query the DB for user-specific action module parameters,
-  and pass it to the callback(err, obj) function.
+  and pass it to cb(err, obj).
   
-  @public getActionParams( *userId, amId, cb* )
+  @public getActionParams( *userId, aiId, cb* )
   @param {String} userId
-  @param {String} amId
+  @param {String} aiId
   @param {function} cb
   */
 
 
-  exports.getActionParams = function(userId, amId, cb) {
-    log.print('DB', "getActionParams: " + amId + ":" + userId);
-    return _this.db.get("action-params:" + amId + ":" + userId, function(err, data) {
-      return cb(err, decrypt(data));
-    });
+  exports.getActionParams = function(aiId, userId, cb) {
+    return _this.ai.getParameters(aiId, userId, cb);
   };
 
   /*
-  ## Event Modules
-  #TODO rename event modules to event puller or something like that
+  Fetch all action params IDs and hand them to cb(err, obj).
+  
+  @public getActionParamsIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getActionParamsIds = function(cb) {
+    return _this.ai.getParametersIds(cb);
+  };
+
+  /*
+  Fetch all action modules and hand them to cb(err, obj).
+  
+  @public deleteActionParams( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.deleteActionParams = function(aiId, userId) {
+    return _this.ai.deleteParameters(aiId, userId);
+  };
+
+  /*
+  ## Event Pollers
   */
 
 
   /*
-  Store a string representation of an event module in the DB.
+  Store a string representation of an event poller in the DB.
   
-  @public storeEventModule( *emId, data* )
-  @param {String} emId
+  @public storeEventPoller ( *epId, data* )
+  @param {String} epId
   @param {String} data
   */
 
 
-  exports.storeEventModule = function(emId, data) {
-    log.print('DB', "storeEventModule: " + emId);
-    _this.db.sadd('event-modules', emId, replyHandler("storing event module key " + emId));
-    return _this.db.set('event-module:#{ emId }', data, replyHandler("storing event module " + emId));
+  exports.storeEventPoller = function(epId, data) {
+    return _this.ep.storeModule(epId, data);
   };
 
   /*
-  Query the DB for an event module and pass it to the callback(err, obj) function.
+  Query the DB for an event poller and pass it to cb(err, obj).
   
-  @public getEventModule( *emId, cb* )
-  @param {String} emId 
+  @public getEventPoller( *epId, cb* )
+  @param {String} epId
   @param {function} cb
   */
 
 
-  exports.getEventModule = function(emId, cb) {
-    log.print('DB', "getEventModule: " + emId);
-    return _this.db.get("event-module:" + emId, cb);
+  exports.getEventPoller = function(epId, cb) {
+    return _this.ep.getModule(epId, cb);
   };
 
   /*
-  Fetch all event modules and pass them to the callback(err, obj) function.
+  Fetch all event poller IDs and hand them to cb(err, obj).
   
-  @public getEventModules( *cb* )
+  @public getEventPollerIds( *cb* )
   @param {function} cb
   */
 
 
-  exports.getEventModules = function(cb) {
-    return getSetRecords('event-modules', exports.getEventModule, cb);
+  exports.getEventPollerIds = function(cb) {
+    return _this.ep.getModuleIds(cb);
   };
 
   /*
-  Store a string representation of user-specific parameters for an event module.
+  Fetch all event pollers and hand them to cb(err, obj).
   
-  @public storeEventParams( *userId, emId, data* )
+  @public getEventPollers( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getEventPollers = function(cb) {
+    return _this.ep.getModules(cb);
+  };
+
+  /*
+  Fetch all event pollers and hand them to cb(err, obj).
+  
+  @public getEventPollers( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.deleteEventPoller = function(epId) {
+    return _this.ep.deleteModule(epId);
+  };
+
+  /*
+  Store user-specific event poller parameters .
+  
+  @public storeEventParams( *userId, epId, data* )
   @param {String} userId
-  @param {String} emId
-  @param {Object} data
+  @param {String} epId
+  @param {String} data
   */
 
 
-  exports.storeEventParams = function(userId, emId, data) {
-    log.print('DB', "storeEventParams: " + emId + ":" + userId);
-    return _this.db.set("event-params:" + emId + ":" + userId, encrypt(data), replyHandler("storing event auth " + emId + ":" + userId));
+  exports.storeEventParams = function(epId, userId, data) {
+    return _this.ep.storeParameters(epId, userId, data);
   };
 
   /*
-  Query the DB for an action module authentication token, associated with a user.
+  Query the DB for user-specific event module parameters,
+  and pass it to cb(err, obj).
   
-  @public getEventAuth( *userId, emId, data* )
+  @public getEventParams( *userId, epId, cb* )
   @param {String} userId
-  @param {String} emId
+  @param {String} epId
   @param {function} cb
   */
 
 
-  exports.getEventAuth = function(userId, emId, cb) {
-    log.print('DB', "getEventAuth: " + emId + ":" + userId);
-    return _this.db.get("event-auth:" + emId + ":" + userId, function(err, data) {
-      return cb(err, decrypt(data));
-    });
+  exports.getEventParams = function(epId, userId, cb) {
+    return _this.ep.getParameters(epId, userId, cb);
+  };
+
+  /*
+  Fetch all event params IDs and hand them to cb(err, obj).
+  
+  @public getEventParamsIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getEventParamsIds = function(cb) {
+    return _this.ep.getParametersIds(cb);
+  };
+
+  /*
+  Fetch all event modules and hand them to cb(err, obj).
+  
+  @public deleteEventParams( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.deleteEventParams = function(epId, userId) {
+    return _this.ep.deleteParameters(epId, userId);
   };
 
   /*
@@ -480,25 +606,7 @@ DB Interface
 
 
   /*
-  Store a string representation of a rule in the DB.
-  
-  @public storeRule( *ruleId, userId, data* )
-  @param {String} ruleId
-  @param {String} userId
-  @param {String} data
-  */
-
-
-  exports.storeRule = function(ruleId, userId, data) {
-    log.print('DB', "storeRule: " + ruleId);
-    _this.db.sadd('rules', "" + ruleId + ":" + userId, replyHandler("storing rule key \"" + ruleId + ":" + userId + "\""));
-    _this.db.sadd("user-set:" + userId + ":rules", ruleId, replyHandler("storing rule key to \"user:" + userId + ":rules\""));
-    _this.db.sadd("rule-set:" + ruleId + ":users", user, replyHandler("storing user key to \"rule:" + ruleId + ":users\""));
-    return _this.db.set("rule:" + ruleId + ":" + userId, data, replyHandler("storing rule \"" + ruleId + ":" + userId + "\""));
-  };
-
-  /*
-  Query the DB for a rule and pass it to the callback(err, obj) function.
+  Query the DB for a rule and pass it to cb(err, obj).
   
   @public getRule( *ruleId, cb* )
   @param {String} ruleId
@@ -507,12 +615,12 @@ DB Interface
 
 
   exports.getRule = function(ruleId, cb) {
-    log.print('DB', "getRule: " + ruleId);
+    log.print('DB', "getRule: '" + ruleId + "'");
     return _this.db.get("rule:" + ruleId, cb);
   };
 
   /*
-  Fetch all rules from the database and pass them to the callback function.  
+  Fetch all rules and pass them to cb(err, obj).  
   
   @public getRules( *cb* )
   @param {function} cb
@@ -525,6 +633,262 @@ DB Interface
   };
 
   /*
+  Fetch all rule IDs and hand it to cb(err, obj).
+  
+  @public getRuleIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getRuleIds = function(cb) {
+    log.print('DB', 'Fetching all Rule IDs');
+    return _this.db.smembers('rules', cb);
+  };
+
+  /*
+  Store a string representation of a rule in the DB.
+  
+  @public storeRule( *ruleId, data* )
+  @param {String} ruleId
+  @param {String} data
+  */
+
+
+  exports.storeRule = function(ruleId, data) {
+    log.print('DB', "storeRule: '" + ruleId + "'");
+    _this.db.sadd('rules', "" + ruleId, replyHandler("storing rule key '" + ruleId + "'"));
+    return _this.db.set("rule:" + ruleId, data, replyHandler("storing rule '" + ruleId + "'"));
+  };
+
+  /*
+  Delete a string representation of a rule.
+  
+  @public deleteRule( *ruleId, userId* )
+  @param {String} ruleId
+  @param {String} userId
+  */
+
+
+  exports.deleteRule = function(ruleId) {
+    log.print('DB', "deleteRule: '" + ruleId + "'");
+    _this.db.srem("rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "'"));
+    _this.db.del("rule:" + ruleId, replyHandler("Deleting rule '" + ruleId + "'"));
+    _this.db.smembers("rule:" + ruleId + ":users", function(err, obj) {
+      var delLinkedUserRule, id, _i, _len, _results;
+      delLinkedUserRule = function(userId) {
+        return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "'' in linked user '" + userId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delLinkedUserRule(id));
+      }
+      return _results;
+    });
+    _this.db.del("rule:" + ruleId + ":users", replyHandler("Deleting rule '" + ruleId + "' users"));
+    _this.db.smembers("rule:" + ruleId + ":active-users", function(err, obj) {
+      var delActiveUserRule, id, _i, _len, _results;
+      delActiveUserRule = function(userId) {
+        return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "' in active user '" + userId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delActiveUserRule(id));
+      }
+      return _results;
+    });
+    return _this.db.del("rule:" + ruleId + ":active-users", replyHandler("Deleting rule '" + ruleId + "' active users"));
+  };
+
+  /*
+  Associate a rule to a user.
+  
+  @public linkRule( *ruleId, userId* )
+  @param {String} ruleId
+  @param {String} userId
+  */
+
+
+  exports.linkRule = function(ruleId, userId) {
+    log.print('DB', "linkRule: '" + ruleId + "' for user '" + userId + "'");
+    _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("storing user '" + userId + "' for rule key '" + ruleId + "'"));
+    return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("storing rule key '" + ruleId + "' for user '" + userId + "'"));
+  };
+
+  /*
+  Get rules linked to a user and hand it to cb(err, obj).
+  
+  @public getUserLinkRule( *userId, cb* )
+  @param {String} userId
+  @param {function} cb
+  */
+
+
+  exports.getUserLinkedRules = function(userId, cb) {
+    log.print('DB', "getUserLinkedRules: for user '" + userId + "'");
+    return _this.db.smembers("user:" + userId + ":rules", cb);
+  };
+
+  /*
+  Get users linked to a rule and hand it to cb(err, obj).
+  
+  @public getRuleLinkedUsers( *ruleId, cb* )
+  @param {String} ruleId
+  @param {function} cb
+  */
+
+
+  exports.getRuleLinkedUsers = function(ruleId, cb) {
+    log.print('DB', "getRuleLinkedUsers: for rule '" + ruleId + "'");
+    return _this.db.smembers("rule:" + ruleId + ":users", cb);
+  };
+
+  /*
+  Delete an association of a rule to a user.
+  
+  @public unlinkRule( *ruleId, userId* )
+  @param {String} ruleId
+  @param {String} userId
+  */
+
+
+  exports.unlinkRule = function(ruleId, userId) {
+    log.print('DB', "unlinkRule: '" + ruleId + ":" + userId + "'");
+    _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("removing user '" + userId + "' for rule key '" + ruleId + "'"));
+    return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("removing rule key '" + ruleId + "' for user '" + userId + "'"));
+  };
+
+  /*
+  Activate a rule.
+  
+  @public activateRule( *ruleId, userId* )
+  @param {String} ruleId
+  @param {String} userId
+  */
+
+
+  exports.activateRule = function(ruleId, userId) {
+    log.print('DB', "activateRule: '" + ruleId + "' for '" + userId + "'");
+    _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("storing activated user '" + userId + "' in rule '" + ruleId + "'"));
+    return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("storing activated rule '" + ruleId + "' in user '" + userId + "'"));
+  };
+
+  /*
+  Get rules activated for a user and hand it to cb(err, obj).
+  
+  @public getUserLinkRule( *userId, cb* )
+  @param {String} userId
+  @param {function} cb
+  */
+
+
+  exports.getUserActivatedRules = function(userId, cb) {
+    log.print('DB', "getUserActivatedRules: for user '" + userId + "'");
+    return _this.db.smembers("user:" + userId + ":active-rules", cb);
+  };
+
+  /*
+  Get users activated for a rule and hand it to cb(err, obj).
+  
+  @public getRuleActivatedUsers ( *ruleId, cb* )
+  @param {String} ruleId
+  @param {function} cb
+  */
+
+
+  exports.getRuleActivatedUsers = function(ruleId, cb) {
+    log.print('DB', "getRuleLinkedUsers: for rule '" + ruleId + "'");
+    return _this.db.smembers("rule:" + ruleId + ":active-users", cb);
+  };
+
+  /*
+  Deactivate a rule.
+  
+  @public deactivateRule( *ruleId, userId* )
+  @param {String} ruleId
+  @param {String} userId
+  */
+
+
+  exports.deactivateRule = function(ruleId, userId) {
+    log.print('DB', "deactivateRule: '" + ruleId + "' for '" + userId + "'");
+    _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("removing activated user '" + userId + "' in rule '" + ruleId + "'"));
+    return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("removing activated rule '" + ruleId + "' in user '" + userId + "'"));
+  };
+
+  /*
+  Fetch all active ruleIds and pass them to cb(err, obj).
+  
+  @public getAllActivatedRuleIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getAllActivatedRuleIdsPerUser = function(cb) {
+    log.print('DB', "Fetching all active rules");
+    return _this.db.smembers('users', function(err, obj) {
+      var fFetchActiveUserRules, result, semaphore, user, _i, _len, _results;
+      result = {};
+      console.log('checking length');
+      if (obj.length === 0) {
+        console.log('length cehcked is 0');
+        return cb(null, result);
+      } else {
+        console.log('length cehcked');
+        semaphore = obj.length;
+        fFetchActiveUserRules = function(userId) {
+          return _this.db.smembers("user:" + user + ":active-rules", function(err, obj) {
+            console.log(obj);
+            console.log(obj.length);
+            if (obj.length === 0) {
+              console.log('is 0');
+            } else {
+              result[userId] = obj;
+            }
+            if (--semaphore === 0) {
+              return cb(null, result);
+            }
+          });
+        };
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          user = obj[_i];
+          _results.push(fFetchActiveUserRules(user));
+        }
+        return _results;
+      }
+    });
+  };
+
+  /*
+  Fetch all active rules and pass them to cb(err, obj).
+  
+  @public getAllActivatedRules( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getAllActivatedRules = function(cb) {
+    var fCb;
+    log.print('DB', "Fetching all active rules");
+    fCb = function(err, obj) {
+      console.log('fetched something');
+      console.log(err);
+      return console.log(obj);
+    };
+    return _this.db.smembers('users', function(err, obj) {
+      var user, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        user = obj[_i];
+        _results.push(getSetRecords("user:" + user + ":active-rules", exports.getRule, fCb));
+      }
+      return _results;
+    });
+  };
+
+  /*
   Store a user object (needs to be a flat structure).
   
   @public storeUser( *objUser* )
@@ -533,11 +897,11 @@ DB Interface
 
 
   exports.storeUser = function(objUser) {
-    log.print('DB', "storeUser: " + objUser.username);
+    log.print('DB', "storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
-      _this.db.sadd('users', objUser.username, replyHandler("storing user key " + objUser.username));
+      _this.db.sadd('users', objUser.username, replyHandler("storing user key '" + objUser.username + "'"));
       objUser.password = hash(objUser.password);
-      return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties " + objUser.username));
+      return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties '" + objUser.username + "'"));
     } else {
       return log.error('DB', new Error('username or password was missing'));
     }
@@ -553,14 +917,14 @@ DB Interface
 
 
   exports.storeUserRole = function(userId, role) {
-    log.print('DB', "storeUserRole: " + userId + ":" + role);
-    _this.db.sadd('roles', role, replyHandler("adding role " + role + " to role index set"));
-    _this.db.sadd("user:" + userId + ":roles", role, replyHandler("adding role " + role + " to user " + userId));
-    return _this.db.sadd("role:" + role + ":users", userId, replyHandler("adding user " + userId + " to role " + role));
+    log.print('DB', "storeUserRole: '" + userId + ":" + role + "'");
+    _this.db.sadd('roles', role, replyHandler("adding role '" + role + "' to role index set"));
+    _this.db.sadd("user:" + userId + ":roles", role, replyHandler("adding role '" + role + "' to user '" + userId + "'"));
+    return _this.db.sadd("role:" + role + ":users", userId, replyHandler("adding user '" + userId + "' to role '" + role + "'"));
   };
 
   /*
-  Fetch all roles of a user and pass them to the callback(err, obj)
+  Fetch all roles of a user and pass them to cb(err, obj).
   
   @public getUserRoles( *userId* )
   @param {String} userId
@@ -568,12 +932,12 @@ DB Interface
 
 
   exports.getUserRoles = function(userId) {
-    log.print('DB', "getUserRole: " + userId);
+    log.print('DB', "getUserRole: '" + userId + "'");
     return _this.db.get("user-roles:" + userId, cb);
   };
 
   /*
-  Fetch all users of a role and pass them to the callback(err, obj)
+  Fetch all users of a role and pass them to cb(err, obj).
   
   @public getUserRoles( *role* )
   @param {String} role
@@ -581,7 +945,7 @@ DB Interface
 
 
   exports.getRoleUsers = function(role) {
-    log.print('DB', "getRoleUsers: " + role);
+    log.print('DB', "getRoleUsers: '" + role + "'");
     return _this.db.get("role-users:" + role, cb);
   };
 
@@ -600,14 +964,14 @@ DB Interface
 
   exports.loginUser = function(userId, password, cb) {
     var fCheck;
-    log.print('DB', "User \"" + userId + "\" tries to log in");
+    log.print('DB', "User '" + userId + "' tries to log in");
     fCheck = function(pw) {
       return function(err, obj) {
         if (err) {
           return cb(err);
         } else if (obj && obj.password) {
           if (pw === obj.password) {
-            log.print('DB', "User \"" + obj.username + "\" logged in!");
+            log.print('DB', "User '" + obj.username + "' logged in!");
             return cb(null, obj);
           } else {
             return cb(new Error('Wrong credentials!'));
@@ -618,6 +982,46 @@ DB Interface
       };
     };
     return _this.db.hgetall("user:" + userId, fCheck(password));
+  };
+
+  /*
+  Deletes a user and all his associated linked and active rules.
+  
+  @public deleteUser( *userId* )
+  @param {String} userId
+  */
+
+
+  exports.deleteUser = function(userId) {
+    log.print('DB', "deleteUser: '" + userId + "'");
+    _this.db.srem("users", userId, replyHandler("Deleting user key '" + userId + "'"));
+    _this.db.del("user:" + userId, replyHandler("Deleting user '" + userId + "'"));
+    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
+      var delLinkedRuleUser, id, _i, _len, _results;
+      delLinkedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in linked rule '" + ruleId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delLinkedRuleUser(id));
+      }
+      return _results;
+    });
+    _this.db.del("user:" + userId + ":rules", replyHandler("Deleting user '" + userId + "' rules"));
+    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
+      var delActivatedRuleUser, id, _i, _len, _results;
+      delActivatedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("Deleting user key '" + userId + "' in active rule '" + ruleId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delActivatedRuleUser(id));
+      }
+      return _results;
+    });
+    return _this.db.del("user:" + userId + ":active-rules", replyHandler("Deleting user '" + userId + "' rules"));
   };
 
   /*

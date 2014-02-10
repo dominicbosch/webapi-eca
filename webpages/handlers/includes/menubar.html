@@ -4,17 +4,17 @@
   <div id="menubar_event">invoke events</div>
   <div id="menubar_logout">logout</div>
   <script>
-    $('#menubar_modules').click(function() {
+    $( '#menubar_modules' ).click( function() {
       window.location.href = 'forge_modules';
     });
-    $('#menubar_rules').click(function() {
+    $( '#menubar_rules' ).click( function() {
       window.location.href = 'forge_rules';
     });
-    $('#menubar_event').click(function() {
+    $( '#menubar_event' ).click( function() {
       window.location.href = 'invoke_event';
     });
-    $('#menubar_logout').click(function() {
-      $.post('/logout').done(function() {
+    $( '#menubar_logout' ).click( function() {
+      $.post( '/logout' ).done( function() {
         window.location.href = document.URL;
       });
     });
