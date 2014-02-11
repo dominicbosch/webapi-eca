@@ -676,7 +676,7 @@ DB Interface
     _this.db.smembers("rule:" + ruleId + ":users", function(err, obj) {
       var delLinkedUserRule, id, _i, _len, _results;
       delLinkedUserRule = function(userId) {
-        return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "'' in linked user '" + userId + "'"));
+        return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "' in linked user '" + userId + "'"));
       };
       _results = [];
       for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -830,20 +830,13 @@ DB Interface
     return _this.db.smembers('users', function(err, obj) {
       var fFetchActiveUserRules, result, semaphore, user, _i, _len, _results;
       result = {};
-      console.log('checking length');
       if (obj.length === 0) {
-        console.log('length cehcked is 0');
         return cb(null, result);
       } else {
-        console.log('length cehcked');
         semaphore = obj.length;
         fFetchActiveUserRules = function(userId) {
           return _this.db.smembers("user:" + user + ":active-rules", function(err, obj) {
-            console.log(obj);
-            console.log(obj.length);
-            if (obj.length === 0) {
-              console.log('is 0');
-            } else {
+            if (obj.length > 0) {
               result[userId] = obj;
             }
             if (--semaphore === 0) {
@@ -862,34 +855,13 @@ DB Interface
   };
 
   /*
-  Fetch all active rules and pass them to cb(err, obj).
-  
-  @public getAllActivatedRules( *cb* )
-  @param {function} cb
+  ## Users
   */
 
 
-  exports.getAllActivatedRules = function(cb) {
-    var fCb;
-    log.print('DB', "Fetching all active rules");
-    fCb = function(err, obj) {
-      console.log('fetched something');
-      console.log(err);
-      return console.log(obj);
-    };
-    return _this.db.smembers('users', function(err, obj) {
-      var user, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = obj.length; _i < _len; _i++) {
-        user = obj[_i];
-        _results.push(getSetRecords("user:" + user + ":active-rules", exports.getRule, fCb));
-      }
-      return _results;
-    });
-  };
-
   /*
   Store a user object (needs to be a flat structure).
+  The password should be hashed before it is passed to this function.
   
   @public storeUser( *objUser* )
   @param {Object} objUser
@@ -900,11 +872,91 @@ DB Interface
     log.print('DB', "storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler("storing user key '" + objUser.username + "'"));
-      objUser.password = hash(objUser.password);
+      objUser.password = objUser.password;
       return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties '" + objUser.username + "'"));
     } else {
       return log.error('DB', new Error('username or password was missing'));
     }
+  };
+
+  /*
+  Fetch all user IDs and pass them to cb(err, obj).
+  
+  @public getUserIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getUserIds = function(cb) {
+    log.print('DB', "getUserIds");
+    return _this.db.smembers("users", cb);
+  };
+
+  /*
+  Fetch a user by id and pass it to cb(err, obj).
+  
+  @public getUser( *userId, cb* )
+  @param {String} userId
+  @param {function} cb
+  */
+
+
+  exports.getUser = function(userId, cb) {
+    log.print('DB', "getUser: '" + userId + "'");
+    return _this.db.hgetall("user:" + userId, cb);
+  };
+
+  /*
+  Deletes a user and all his associated linked and active rules.
+  
+  @public deleteUser( *userId* )
+  @param {String} userId
+  */
+
+
+  exports.deleteUser = function(userId) {
+    log.print('DB', "deleteUser: '" + userId + "'");
+    _this.db.srem("users", userId, replyHandler("Deleting user key '" + userId + "'"));
+    _this.db.del("user:" + userId, replyHandler("Deleting user '" + userId + "'"));
+    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
+      var delLinkedRuleUser, id, _i, _len, _results;
+      delLinkedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in linked rule '" + ruleId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delLinkedRuleUser(id));
+      }
+      return _results;
+    });
+    _this.db.del("user:" + userId + ":rules", replyHandler("Deleting user '" + userId + "' rules"));
+    _this.db.smembers("user:" + userId + ":active-rules", function(err, obj) {
+      var delActivatedRuleUser, id, _i, _len, _results;
+      delActivatedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("Deleting user key '" + userId + "' in active rule '" + ruleId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delActivatedRuleUser(id));
+      }
+      return _results;
+    });
+    _this.db.del("user:" + userId + ":active-rules", replyHandler("Deleting user '" + userId + "' rules"));
+    _this.db.smembers("user:" + userId + ":roles", function(err, obj) {
+      var delActivatedRoleUser, id, _i, _len, _results;
+      delActivatedRoleUser = function(roleId) {
+        return _this.db.srem("role:" + roleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in role '" + roleId + "'"));
+      };
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delActivatedRoleUser(id));
+      }
+      return _results;
+    });
+    return _this.db.del("user:" + userId + ":roles", replyHandler("Deleting user '" + userId + "' roles"));
   };
 
   /*
@@ -982,46 +1034,6 @@ DB Interface
       };
     };
     return _this.db.hgetall("user:" + userId, fCheck(password));
-  };
-
-  /*
-  Deletes a user and all his associated linked and active rules.
-  
-  @public deleteUser( *userId* )
-  @param {String} userId
-  */
-
-
-  exports.deleteUser = function(userId) {
-    log.print('DB', "deleteUser: '" + userId + "'");
-    _this.db.srem("users", userId, replyHandler("Deleting user key '" + userId + "'"));
-    _this.db.del("user:" + userId, replyHandler("Deleting user '" + userId + "'"));
-    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
-      var delLinkedRuleUser, id, _i, _len, _results;
-      delLinkedRuleUser = function(ruleId) {
-        return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in linked rule '" + ruleId + "'"));
-      };
-      _results = [];
-      for (_i = 0, _len = obj.length; _i < _len; _i++) {
-        id = obj[_i];
-        _results.push(delLinkedRuleUser(id));
-      }
-      return _results;
-    });
-    _this.db.del("user:" + userId + ":rules", replyHandler("Deleting user '" + userId + "' rules"));
-    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
-      var delActivatedRuleUser, id, _i, _len, _results;
-      delActivatedRuleUser = function(ruleId) {
-        return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("Deleting user key '" + userId + "' in active rule '" + ruleId + "'"));
-      };
-      _results = [];
-      for (_i = 0, _len = obj.length; _i < _len; _i++) {
-        id = obj[_i];
-        _results.push(delActivatedRuleUser(id));
-      }
-      return _results;
-    });
-    return _this.db.del("user:" + userId + ":active-rules", replyHandler("Deleting user '" + userId + "' rules"));
   };
 
   /*

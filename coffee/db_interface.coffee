@@ -534,7 +534,7 @@ exports.deleteRule = ( ruleId ) =>
   @db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
     delLinkedUserRule = ( userId ) =>
       @db.srem "user:#{ userId }:rules", ruleId,
-        replyHandler "Deleting rule key '#{ ruleId }'' in linked user '#{ userId }'"
+        replyHandler "Deleting rule key '#{ ruleId }' in linked user '#{ userId }'"
     delLinkedUserRule( id ) for id in obj
   @db.del "rule:#{ ruleId }:users", replyHandler "Deleting rule '#{ ruleId }' users"
 
@@ -656,43 +656,26 @@ exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
   log.print 'DB', "Fetching all active rules"
   @db.smembers 'users', ( err, obj ) =>
     result = {}
-    console.log 'checking length'
     if obj.length is 0
-      console.log 'length cehcked is 0'
       cb null, result
     else
-      console.log 'length cehcked'
       semaphore = obj.length
       fFetchActiveUserRules = ( userId ) =>
         @db.smembers "user:#{ user }:active-rules", ( err, obj ) =>
-          console.log obj
-          console.log obj.length
-          if obj.length is 0
-            console.log 'is 0'
-          else
+          if obj.length > 0
             result[userId] = obj
           if --semaphore is 0
             cb null, result
       fFetchActiveUserRules(user) for user in obj
 
-  
-###
-Fetch all active rules and pass them to cb(err, obj).
 
-@public getAllActivatedRules( *cb* )
-@param {function} cb
 ###
-exports.getAllActivatedRules = ( cb ) =>
-  log.print 'DB', "Fetching all active rules"
-  fCb = ( err, obj ) ->
-    console.log 'fetched something'
-    console.log err
-    console.log obj
-  @db.smembers 'users', ( err, obj ) =>
-    getSetRecords "user:#{ user }:active-rules", exports.getRule, fCb for user in obj
+## Users
+###
 
 ###
 Store a user object (needs to be a flat structure).
+The password should be hashed before it is passed to this function.
 
 @public storeUser( *objUser* )
 @param {Object} objUser
@@ -704,11 +687,70 @@ exports.storeUser = ( objUser ) =>
   if objUser and objUser.username and objUser.password
     @db.sadd 'users', objUser.username,
       replyHandler "storing user key '#{ objUser.username }'"
-    objUser.password = hash objUser.password
+    objUser.password = objUser.password
     @db.hmset "user:#{ objUser.username }", objUser,
       replyHandler "storing user properties '#{ objUser.username }'"
   else
     log.error 'DB', new Error 'username or password was missing'
+
+###
+Fetch all user IDs and pass them to cb(err, obj).
+
+@public getUserIds( *cb* )
+@param {function} cb
+###
+exports.getUserIds = ( cb ) =>
+  log.print 'DB', "getUserIds"
+  @db.smembers "users", cb
+  
+###
+Fetch a user by id and pass it to cb(err, obj).
+
+@public getUser( *userId, cb* )
+@param {String} userId
+@param {function} cb
+###
+exports.getUser = ( userId, cb ) =>
+  log.print 'DB', "getUser: '#{ userId }'"
+  @db.hgetall "user:#{ userId }", cb
+  
+###
+Deletes a user and all his associated linked and active rules.
+
+@public deleteUser( *userId* )
+@param {String} userId
+###
+exports.deleteUser = ( userId ) =>
+  log.print 'DB', "deleteUser: '#{ userId }'"
+  @db.srem "users", userId, replyHandler "Deleting user key '#{ userId }'"
+  @db.del "user:#{ userId }", replyHandler "Deleting user '#{ userId }'"
+
+  # We also need to delete all linked rules
+  @db.smembers "user:#{ userId }:rules", ( err, obj ) =>
+    delLinkedRuleUser = ( ruleId ) =>
+      @db.srem "rule:#{ ruleId }:users", userId,
+        replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
+    delLinkedRuleUser( id ) for id in obj
+  @db.del "user:#{ userId }:rules",
+    replyHandler "Deleting user '#{ userId }' rules"
+
+  # We also need to delete all active rules
+  @db.smembers "user:#{ userId }:active-rules", ( err, obj ) =>
+    delActivatedRuleUser = ( ruleId ) =>
+      @db.srem "rule:#{ ruleId }:active-users", userId,
+        replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
+    delActivatedRuleUser( id ) for id in obj
+  @db.del "user:#{ userId }:active-rules",
+    replyHandler "Deleting user '#{ userId }' rules"
+
+  # We also need to delete all associated roles
+  @db.smembers "user:#{ userId }:roles", ( err, obj ) =>
+    delActivatedRoleUser = ( roleId ) =>
+      @db.srem "role:#{ roleId }:users", userId,
+        replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
+    delActivatedRoleUser( id ) for id in obj
+  @db.del "user:#{ userId }:roles",
+    replyHandler "Deleting user '#{ userId }' roles"
 
 ###
 Associate a role with a user.
@@ -772,35 +814,6 @@ exports.loginUser = ( userId, password, cb ) =>
       else
         cb new Error 'User not found!'
   @db.hgetall "user:#{ userId }", fCheck password
-
-###
-Deletes a user and all his associated linked and active rules.
-
-@public deleteUser( *userId* )
-@param {String} userId
-###
-exports.deleteUser = ( userId ) =>
-  log.print 'DB', "deleteUser: '#{ userId }'"
-  @db.srem "users", userId, replyHandler "Deleting user key '#{ userId }'"
-  @db.del "user:#{ userId }", replyHandler "Deleting user '#{ userId }'"
-
-  # We also need to delete all linked rules
-  @db.smembers "user:#{ userId }:rules", ( err, obj ) =>
-    delLinkedRuleUser = ( ruleId ) =>
-      @db.srem "rule:#{ ruleId }:users", userId,
-        replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
-    delLinkedRuleUser( id ) for id in obj
-  @db.del "user:#{ userId }:rules",
-    replyHandler "Deleting user '#{ userId }' rules"
-
-  # We also need to delete all active rules
-  @db.smembers "user:#{ userId }:rules", ( err, obj ) =>
-    delActivatedRuleUser = ( ruleId ) =>
-      @db.srem "rule:#{ ruleId }:active-users", userId,
-        replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
-    delActivatedRuleUser( id ) for id in obj
-  @db.del "user:#{ userId }:active-rules", replyHandler "Deleting user '#{ userId }' rules"
-
 
 #TODO implement functions required for user sessions?
 

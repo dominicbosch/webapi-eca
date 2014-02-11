@@ -3,8 +3,16 @@ exports.setUp = ( cb ) =>
 	@db = require '../js-coffee/db_interface'
 	@db logType: 2
 	cb()
+	
+exports.tearDown = ( cb ) =>
+	@db.shutDown()
+	cb()
 
-exports.availability =
+
+###
+# Test AVAILABILITY
+###
+exports.Availability =
 	testRequire: ( test ) =>
 		test.expect 1
 
@@ -48,7 +56,11 @@ exports.availability =
 			test.strictEqual obj, null, 'There was an event in the queue!?'
 			test.done()
 
-exports.events =
+
+###
+# Test EVENT QUEUE
+###
+exports.EventQueue =
 	setUp: ( cb ) =>
 		@evt1 = 
 			eventid: '1'
@@ -120,7 +132,11 @@ exports.events =
 				'Wrong event in queue!'
 			forkEnds()
 
-exports.action_invoker =
+
+###
+# Test ACTION INVOKER
+###
+exports.ActionInvoker =
 	testCreateAndRead: ( test ) =>
 		test.expect 3
 
@@ -220,7 +236,10 @@ exports.action_invoker =
 			@db.getActionInvoker action2name, fCheckInvoker action2name, action2
 
 
-exports.action_invoker_params =
+###
+# Test ACTION INVOKER PARAMS
+###
+exports.ActionInvokerParams =
 	testCreateAndRead: ( test ) =>
 		test.expect 2
 
@@ -284,7 +303,10 @@ exports.action_invoker_params =
 				test.done()
 
 
-exports.event_poller =
+###
+# Test EVENT POLLER
+###
+exports.EventPoller =
 	testCreateAndRead: ( test ) =>
 		test.expect 3
 
@@ -384,7 +406,10 @@ exports.event_poller =
 			@db.getEventPoller event2name, fCheckPoller event2name, event2
 
 
-exports.event_poller_params =
+###
+# Test EVENT POLLER PARAMS
+###
+exports.EventPollerParams =
 	testCreateAndRead: ( test ) =>
 		test.expect 2
 
@@ -448,9 +473,12 @@ exports.event_poller_params =
 				test.done()
 
 
-exports.rules =
+###
+# Test RULES
+###
+exports.Rules =
 	setUp: ( cb ) =>
-		@db logType: 1
+		# @db logType: 1
 		@userId = 'tester-1'
 		@ruleId = 'test-rule_1'
 		@rule = 
@@ -562,7 +590,7 @@ exports.rules =
 				test.done()
 
 	testActivate: ( test ) =>
-		test.expect 3
+		test.expect 4
 
 		usr =
 			username: "tester-1"
@@ -583,10 +611,14 @@ exports.rules =
 
 				# Ensure the rule is showing up in all active rules
 				@db.getAllActivatedRuleIdsPerUser ( err, obj ) =>
-					test.ok obj[@userId],
-						"User not found in activated set"
-					test.ok @ruleId in obj[@userId],
-						"Rule #{ @ruleId } not in activated rules set"
+					test.notStrictEqual obj[@userId], undefined,
+						"User #{ @userId } not in activated rules set"
+					if obj[@userId]
+						test.ok @ruleId in obj[@userId],
+							"Rule #{ @ruleId } not in activated rules set"
+					else
+						test.ok true,
+							"Dummy so we meet the expected num of tests"
 					test.done()
 
 	testDeactivate: ( test ) =>
@@ -608,8 +640,12 @@ exports.rules =
 
 				# Ensure the rule is showing up in all active rules
 				@db.getAllActivatedRuleIdsPerUser ( err, obj ) =>
-					test.ok @ruleId not in obj[@userId],
-						"Rule #{ @ruleId } still in activated rules set"
+					if obj[@userId]
+						test.ok @ruleId not in obj[@userId],
+							"Rule #{ @ruleId } still in activated rules set"
+					else
+						test.ok true,
+							"We are fine since there are no entries for this user anymore"
 					test.done()
 
 	testUnlinkAndDeactivateAfterDeletion: ( test ) =>
@@ -641,13 +677,123 @@ exports.rules =
 		setTimeout fWaitForDeletion, 100
 
 
-# exports.users = 
-# 	test: ( test ) =>
-# 		test.expect 0
-# 		test.done()
-# TODO on delete, remove all rules for the user if he's deleted
+###
+# Test USER
+###
+exports.User = 
+	setUp: ( cb ) =>
+		@db logType: 1
+		@oUser =
+			username: "tester-1"
+			password: "password"
+		cb()
+	tearDown: ( cb ) =>
+		@db.deleteUser @oUser.username
+		cb()
+
+	testCreateInvalid: ( test ) =>
+		test.expect 4
+		
+		oUserInvOne =
+			username: "tester-1-invalid"
+		oUserInvTwo =
+			password: "password"
+
+		# try to store invalid users, ensure they weren't 
+		@db.storeUser oUserInvOne
+		@db.storeUser oUserInvTwo
+
+		@db.getUser oUserInvOne.username, ( err, obj ) =>
+			test.strictEqual obj, null,
+				'User One was stored!?'
+
+			@db.getUser oUserInvTwo.username, ( err, obj ) =>
+				test.strictEqual obj, null,
+					'User Two was stored!?'
+
+				@db.getUserIds ( err, obj ) =>
+					test.ok oUserInvOne.username not in obj,
+						'User key was stored!?'
+					test.ok oUserInvTwo.username not in obj,
+						'User key was stored!?'
+					test.done()
+
+	testDelete: ( test ) =>
+		test.expect 2
+
+		# Store the user
+		@db.storeUser @oUser
+
+		@db.getUser @oUser.username, ( err, obj ) =>
+			test.deepEqual obj, @oUser,
+				"User #{ @oUser.username } is not what we expect!"
+
+			@db.getUserIds ( err, obj ) =>
+				test.ok @oUser.username in obj,
+					'User key was not stored!?'
+				test.done()
+
+	testUpdate: ( test ) =>
+		test.expect 2
+
+		oUserOne =
+			username: "tester-1-update"
+			password: "password"
+
+		# Store the user
+		@db.storeUser oUserOne
+		oUserOne.password = "password-update"
+		@db.storeUser oUserOne
+
+		@db.getUser oUserOne.username, ( err, obj ) =>
+			test.deepEqual obj, oUserOne,
+				"User #{ @oUser.username } is not what we expect!"
+
+			@db.getUserIds ( err, obj ) =>
+				test.ok oUserOne.username in obj,
+					'User key was not stored!?'
+				@db.deleteUser oUserOne.username
+				test.done()
+
+	testDelete: ( test ) =>
+		test.expect 2
+
+		# Wait until the user and his rules and roles are stored
+		fWaitForPersistence = () =>
+			@db.deleteUser @oUser.username
+			setTimeout fWaitForDeletion, 200
+
+		# Wait until the user and his rules and roles are deleted
+		fWaitForDeletion = () =>
+			@db.getUserIds ( err, obj ) =>
+				test.ok @oUser.username not in obj,
+					'User key still in set!'
+
+				@db.getUser @oUser.username, ( err, obj ) =>
+					test.strictEqual obj, null,
+						'User key still exists!'
+					test.done()
+
+		# Store the user and make some links
+		@db.storeUser @oUser
+		@db.linkRule 'rule-1', @oUser.username
+		@db.linkRule 'rule-2', @oUser.username
+		@db.linkRule 'rule-3', @oUser.username
+		@db.activateRule 'rule-1', @oUser.username
+		@db.storeUserRole @oUser.username, 'tester'
+		setTimeout fWaitForPersistence, 100
 
 
-exports.tearDown = ( cb ) =>
-	@db.shutDown()
-	cb()
+###
+# Test ROLES
+###
+# exports.Roles = 
+	# setUp: ( cb ) =>
+	# 	@db logType: 1
+	# 	@oUser =
+	# 		username: "tester-1"
+	# 		password: "password"
+	# 	cb()
+	# tearDown: ( cb ) =>
+	# 	@db.deleteUser @oUser.username
+	# 	cb()
