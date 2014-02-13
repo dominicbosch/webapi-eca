@@ -11,8 +11,8 @@ Request Handler
 # - [Logging](logging.html)
 log = require './logging'
 
-# - [DB Interface](db_interface.html)
-db = require './db_interface'
+# - [Persistence](persistence.html)
+db = require './persistence'
 
 # - [Module Manager](module_manager.html)
 mm = require './module_manager'

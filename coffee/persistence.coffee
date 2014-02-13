@@ -1,6 +1,6 @@
 ###
 
-DB Interface
+Persistence
 ============
 > Handles the connection to the database and provides functionalities for
 > event pollers, action invokers, rules and the encrypted storing of authentication tokens.
@@ -24,7 +24,8 @@ DB Interface
 # - [Logging](logging.html)
 log = require './logging'
 
-# - External Modules: [crypto-js](https://github.com/evanvosberg/crypto-js) and
+# - External Modules:
+#   [crypto-js](https://github.com/evanvosberg/crypto-js) and
 #   [redis](https://github.com/mranney/node_redis)
 crypto = require 'crypto-js'
 redis = require 'redis'
@@ -629,7 +630,7 @@ Get users activated for a rule and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRuleActivatedUsers = ( ruleId, cb ) =>
-  log.print 'DB', "getRuleLinkedUsers: for rule '#{ ruleId }'"
+  log.print 'DB', "getRuleActivatedUsers: for rule '#{ ruleId }'"
   @db.smembers "rule:#{ ruleId }:active-users", cb
 
 ###
@@ -745,12 +746,47 @@ exports.deleteUser = ( userId ) =>
 
   # We also need to delete all associated roles
   @db.smembers "user:#{ userId }:roles", ( err, obj ) =>
-    delActivatedRoleUser = ( roleId ) =>
+    delRoleUser = ( roleId ) =>
       @db.srem "role:#{ roleId }:users", userId,
         replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
-    delActivatedRoleUser( id ) for id in obj
+    delRoleUser( id ) for id in obj
   @db.del "user:#{ userId }:roles",
     replyHandler "Deleting user '#{ userId }' roles"
+
+###
+Checks the credentials and on success returns the user object to the
+callback(err, obj) function. The password has to be hashed (SHA-3-512)
+beforehand by the instance closest to the user that enters the password,
+because we only store hashes of passwords for security6 reasons.
+
+@public loginUser( *userId, password, cb* )
+@param {String} userId
+@param {String} password
+@param {function} cb
+###
+#TODO verify and test whole function
+exports.loginUser = ( userId, password, cb ) =>
+  log.print 'DB', "User '#{ userId }' tries to log in"
+  fCheck = ( pw ) ->
+    ( err, obj ) ->
+      if err 
+        cb err, null
+      else if obj and obj.password
+        if pw == obj.password
+          log.print 'DB', "User '#{ obj.username }' logged in!" 
+          cb null, obj
+        else
+          cb (new Error 'Wrong credentials!'), null
+      else
+        cb (new Error 'User not found!'), null
+  @db.hgetall "user:#{ userId }", fCheck password
+
+#TODO implement functions required for user sessions?
+
+
+###
+## User Roles
+###
 
 ###
 Associate a role with a user.
@@ -772,50 +808,37 @@ Fetch all roles of a user and pass them to cb(err, obj).
 
 @public getUserRoles( *userId* )
 @param {String} userId
+@param {function} cb
 ###
-exports.getUserRoles = ( userId ) =>
-  log.print 'DB', "getUserRole: '#{ userId }'"
-  @db.get "user-roles:#{ userId }", cb
+exports.getUserRoles = ( userId, cb ) =>
+  log.print 'DB', "getUserRoles: '#{ userId }'"
+  @db.smembers "user:#{ userId }:roles", cb
   
 ###
 Fetch all users of a role and pass them to cb(err, obj).
 
 @public getUserRoles( *role* )
 @param {String} role
-###
-exports.getRoleUsers = ( role ) =>
-  log.print 'DB', "getRoleUsers: '#{ role }'"
-  @db.get "role-users:#{ role }", cb
-
-###
-Checks the credentials and on success returns the user object to the
-callback(err, obj) function. The password has to be hashed (SHA-3-512)
-beforehand by the instance closest to the user that enters the password,
-because we only store hashes of passwords for safety reasons.
-
-@public loginUser( *userId, password, cb* )
-@param {String} userId
-@param {String} password
 @param {function} cb
 ###
-#TODO verify and test whole function
-exports.loginUser = ( userId, password, cb ) =>
-  log.print 'DB', "User '#{ userId }' tries to log in"
-  fCheck = ( pw ) ->
-    ( err, obj ) ->
-      if err 
-        cb err
-      else if obj and obj.password
-        if pw == obj.password
-          log.print 'DB', "User '#{ obj.username }' logged in!" 
-          cb null, obj
-        else
-          cb new Error 'Wrong credentials!'
-      else
-        cb new Error 'User not found!'
-  @db.hgetall "user:#{ userId }", fCheck password
+exports.getRoleUsers = ( role, cb ) =>
+  log.print 'DB', "getRoleUsers: '#{ role }'"
+  @db.smembers "role:#{ role }:users", cb
 
-#TODO implement functions required for user sessions?
+###
+Remove a role from a user.
+
+@public removeRoleFromUser( *role, userId* )
+@param {String} role
+@param {String} userId
+###
+exports.removeUserRole = ( userId, role ) =>
+  log.print 'DB', "removeRoleFromUser: role '#{ role }', user '#{ userId }'"
+  @db.srem "user:#{ userId }:roles", role,
+    replyHandler "Removing role '#{ role }' from user '#{ userId }'"
+  @db.srem "role:#{ role }:users", userId,
+    replyHandler "Removing user '#{ userId }' from role '#{ role }'"
+
 
 ###
 Shuts down the db link.

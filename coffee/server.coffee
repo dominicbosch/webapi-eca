@@ -29,8 +29,8 @@ log = require './logging'
 # - [Configuration](config.html)
 conf = require './config'
 
-# - [DB Interface](db_interface.html)
-db = require './db_interface'
+# - [Persistence](persistence.html)
+db = require './persistence'
 
 # - [Engine](engine.html)
 engine = require './engine'
@@ -98,7 +98,7 @@ init = ->
       
       # > Distribute handlers between modules to link the application.
       log.print 'RS', 'Passing handlers to engine'
-      engine.addDBLinkAndLoadActionsAndRules db
+      engine.addPersistence db
       log.print 'RS', 'Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
       http_listener.addHandlers shutDown

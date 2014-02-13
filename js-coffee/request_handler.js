@@ -13,7 +13,7 @@ Request Handler
 
   log = require('./logging');
 
-  db = require('./db_interface');
+  db = require('./persistence');
 
   mm = require('./module_manager');
 

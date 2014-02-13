@@ -30,7 +30,7 @@ TODO how about we allow spawning child processes with servers based on address?
 
   conf = require('./config');
 
-  db = require('./db_interface');
+  db = require('./persistence');
 
   engine = require('./engine');
 
@@ -105,7 +105,7 @@ TODO how about we allow spawning child processes with servers based on address?
         log.print('RS', 'Initialzing http listener');
         http_listener(args);
         log.print('RS', 'Passing handlers to engine');
-        engine.addDBLinkAndLoadActionsAndRules(db);
+        engine.addPersistence(db);
         log.print('RS', 'Passing handlers to http listener');
         return http_listener.addHandlers(shutDown);
       }

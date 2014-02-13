@@ -27,7 +27,7 @@ exports = module.exports = function(args) {
  * @param {String} db_port the db port
  * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
  */
-exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
+exports.addPersistence = function(db_link) {
   db = db_link;
   // if(ml && db) db.getActionModules(function(err, obj) {
   //   if(err) log.error('EN', 'retrieving Action Modules from DB!');
