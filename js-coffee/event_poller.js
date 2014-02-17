@@ -2,14 +2,13 @@
 
 'use strict';
 
-var fs = require('fs'),
-    path = require('path'),
-    log = require('./logging'),
+var logger = require('./new_logging'),
     listMessageActions = {},
     listAdminCommands = {},
     listEventModules = {},
     listPoll = {},  //TODO this will change in the future because it could have
                     //several parameterized (user-specific) instances of each event module 
+    log,
     isRunning = true,
     eId = 0,
     db, ml;
@@ -18,13 +17,26 @@ var fs = require('fs'),
 
 
 function init() {
-  if(process.argv.length > 2) log({ logType: parseInt(process.argv[2]) || 0 });
-  var args = { logType: log.getLogType() };
-  (ml = require('./module_loader'))(args);
-  (db = require('./db_interface'))(args);
+  if(process.argv.length < 7){
+    console.error('Not all arguments have been passed!');
+    process.exit();
+  }
+
+  var logconf = {}
+  logconf['mode'] = process.argv[2]
+  logconf['io-level'] = process.argv[3]
+  logconf['file-level'] = process.argv[4]
+  logconf['file-path'] = process.argv[5]
+  logconf['nolog'] = process.argv[6]
+
+  log = logger(logconf);
+  var args = { logger: log };
+  (ml = require('./module_manager'))(args);
+  (db = require('./persistence'))(args);
   initAdminCommands();
   initMessageActions();
   pollLoop();
+  log.info('Event Poller instantiated');
 };
 
 
@@ -128,11 +140,13 @@ function checkRemotes() {
               err.additionalInfo = 'module: ' + p;
               log.error('EP', err);
             } else {
-              process.send({
-                event: p,
-                eventid: 'polled_' + eId++,
-                payload: obj
-              });
+              // FIXME this needs to be pushed into the db not passed to the process!
+              console.error('eventpoller needs to push event into db queue')
+              // process.send({
+              //   event: p,
+              //   eventid: 'polled_' + eId++,
+              //   payload: obj
+              // });
             }
           };
         })(prop)

@@ -5,26 +5,15 @@ Server
 
 >This is the main module that is used to run the whole server:
 >
->     node server [log_type http_port]
+>     node server [opt]
 >
->Valid `log_type`'s are:
->
->- `0`: standard I/O output (default)
->- `1`: log file (server.log)
->- `2`: silent
->
->`http_port` can be set to use another port, than defined in the 
->[config](config.html) file, to listen to, e.g. used by the test suite.
->
->
-
-TODO how about we allow spawning child processes with servers based on address?
+> See below in the optimist CLI preparation for allowed optional parameters
 ###
 
 # **Requires:**
 
 # - [Logging](logging.html)
-log = require './logging'
+logger = require './new_logging'
 
 # - [Configuration](config.html)
 conf = require './config'
@@ -38,9 +27,54 @@ engine = require './engine'
 # - [HTTP Listener](http_listener.html)
 http_listener = require './http_listener'
 
-args = {}
+# - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
+# [path](http://nodejs.org/api/path.html)
+# and [child_process](http://nodejs.org/api/child_process.html)
+fs = require 'fs'
+path = require 'path'
+cp = require 'child_process'
+
+# - External Module: [optimist](https://github.com/substack/node-optimist)
+optimist = require 'optimist'
+
 procCmds = {}
 
+###
+Let's prepare the optimist CLI
+###
+usage = 'This runs your webapi-based ECA engine'
+opt =
+  'h':
+    alias : 'help',
+    describe: 'Display this'
+  'c':
+    alias : 'config-path',
+    describe: 'Specify a path to a custom configuration file, other than "config/config.json"'
+  'w':
+    alias : 'http-port',
+    describe: 'Specify a HTTP port for the web server'
+  'd':
+    alias : 'db-port',
+    describe: 'Specify a port for the redis DB'
+  'm':
+    alias : 'log-mode',
+    describe: 'Specify a log mode: [development|productive]'
+  'i':
+    alias : 'log-io-level',
+    describe: 'Specify the log level for the I/O'
+  'f':
+    alias : 'log-file-level',
+    describe: 'Specify the log level for the log file'
+  'p':
+    alias : 'log-file-path',
+    describe: 'Specify the path to the log file within the "logs" folder'
+  'n':
+    alias : 'nolog',
+    describe: 'Set this if no output shall be generated'
+argv = optimist.usage( usage ).options( opt ).argv
+if argv.help
+  console.log optimist.help()
+  process.exit()
 
 ###
 Error handling of the express port listener requires special attention,
@@ -50,7 +84,7 @@ the port is already in use.
 process.on 'uncaughtException', ( err ) ->
   switch err.errno
     when 'EADDRINUSE'
-      err.addInfo = 'http_port already in use, shutting down!'
+      err.addInfo = 'http-port already in use, shutting down!'
       log.error 'RS', err
       shutDown()
     # else log.error 'RS', err
@@ -61,50 +95,63 @@ This function is invoked right after the module is loaded and starts the server.
 @private init()
 ###
 init = ->
-  log.print 'RS', 'STARTING SERVER'
-  conf args
+  conf argv.c
   # > Check whether the config file is ready, which is required to start the server.
   if !conf.isReady()
-    log.error 'RS', 'Config file not ready!'
+    console.error 'FAIL: Config file not ready! Shutting down...'
     process.exit()
-    
-  # > Fetch the `log_type` argument and post a log about which log type is used.
-  if process.argv.length > 2
-    args.logType = parseInt(process.argv[2]) || 0
-    switch args.logType
-      when 0 then log.print 'RS', 'Log type set to standard I/O output'
-      when 1 then log.print 'RS', 'Log type set to file output'
-      when 2 then log.print 'RS', 'Log type set to silent'
-      else log.print 'RS', 'Unknown log type, using standard I/O'
-    log args
-  else
-    log.print 'RS', 'No log method argument provided, using standard I/O'
-    
-  # > Fetch the `http_port` argument
-  if process.argv.length > 3 then args.http_port = parseInt process.argv[3]
-  else log.print 'RS', 'No HTTP port passed, using standard port from config file'
+
+  logconf = conf.getLogConf()
+  if argv.m
+    logconf[ 'mode' ] = argv.m
+  if argv.i
+    logconf[ 'io-level' ] = argv.i
+  if argv.f
+    logconf[ 'file-level' ] = argv.f
+  if argv.p
+    logconf[ 'file-path' ] = argv.p
+  if argv.n
+    logconf[ 'nolog' ] = argv.n
+  try
+    fs.unlinkSync path.resolve __dirname, '..', 'logs', logconf[ 'file-path' ]
+  log = logger logconf
+  log.info 'RS | STARTING SERVER'
+
+  args =
+    logger: log
+    logconf: logconf
+  # > Fetch the `http-port` argument
+  args[ 'http-port' ] = parseInt argv.w || conf.getHttpPort()
   
-  log.print 'RS', 'Initialzing DB'
+  log.info 'RS | Initialzing DB'
   db args
   # > We only proceed with the initialization if the DB is ready
   db.isConnected ( err, result ) ->
     if !err
     
       # > Initialize all required modules with the args object.
-      log.print 'RS', 'Initialzing engine'
+      log.info 'RS | Initialzing engine'
       engine args
-      log.print 'RS', 'Initialzing http listener'
+      log.info 'RS | Initialzing http listener'
       http_listener args
       
       # > Distribute handlers between modules to link the application.
-      log.print 'RS', 'Passing handlers to engine'
+      log.info 'RS | Passing handlers to engine'
       engine.addPersistence db
-      log.print 'RS', 'Passing handlers to http listener'
+      log.info 'RS | Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
-      http_listener.addHandlers shutDown
-      #log.print 'RS', 'Passing handlers to module manager'
+      http_listener.addShutdownHandler shutDown
       #TODO loadAction and addRule will be removed
       #mm.addHandlers db, engine.loadActionModule, engine.addRule
+      log.info 'RS | For e child process for the event poller'
+      cliArgs = [
+        args.logconf['mode']
+        args.logconf['io-level']
+        args.logconf['file-level']
+        args.logconf['file-path']
+        args.logconf['nolog']
+      ]
+      poller = cp.fork path.resolve( __dirname, 'event_poller' ), cliArgs
 
 ###
 Shuts down the server.
@@ -112,7 +159,7 @@ Shuts down the server.
 @private shutDown()
 ### 
 shutDown = ->
-  log.print 'RS', 'Received shut down command!'
+  log.warn 'RS | Received shut down command!'
   engine?.shutDown()
   http_listener?.shutDown()
 

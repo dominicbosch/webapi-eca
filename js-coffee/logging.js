@@ -11,6 +11,7 @@
  */
  //TODO dynamic log file names (especially to track unit test logs)
 var fs = require('fs'),
+    wst = require('winston'),
     logTypes = [ flushToConsole, flushToFile, null],
     logFile = require('path').resolve(__dirname, '..', 'server.log'),
     logType = 0;
@@ -20,6 +21,8 @@ exports = module.exports = function(args) {
   if(args.logType) logType = parseInt(args.logType) || 0;
   if(logType == 1) fs.truncateSync(logFile, 0);
   if(logType > logTypes.length - 1) logType = 0;
+  // winston.add(winston.transports.File, { filename: 'somefile.log' });
+  // winston.remove(winston.transports.Console);
   return module.exports;
 };
 

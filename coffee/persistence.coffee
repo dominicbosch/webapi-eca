@@ -55,7 +55,7 @@ exports = module.exports = ( args ) =>
     @ai = new IndexedModules( 'action-invoker', @db )
   else
     log.error 'DB', 'Initialization failed because of missing config file!'
-
+  
 ###
 Checks whether the db is connected and passes either an error on failure after
 ten attempts within five seconds, or nothing on success to the callback(err).
@@ -845,4 +845,4 @@ Shuts down the db link.
 
 @public shutDown()
 ###
-exports.shutDown = => @db.quit()
+exports.shutDown = () => @db.quit()

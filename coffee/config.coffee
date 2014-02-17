@@ -7,26 +7,26 @@ Configuration
 ###
 
 # **Requires:**
-
-# - [Logging](logging.html)
-log = require './logging'
-
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
 #   [path](http://nodejs.org/api/path.html)
 fs = require 'fs'
 path = require 'path'
 
 ###
-##Module call
+Module call
+-----------
 
-Calling the module as a function will make it look for the `configPath` property in the
-args object and then try to load a config file from that relative path.
+Calling the module as a function will act as a constructor and load the config file.
+It is possible to hand an args object with the properties nolog (true if no outputs shall
+be generated) and configPath for a custom configuration file path.
+
 @param {Object} args
 ###
-exports = module.exports = ( args ) -> 
+exports = module.exports = ( args ) =>
   args = args ? {}
-  log args
-  if typeof args.configPath is 'string'
+  if args.nolog
+    @nolog = true
+  if args.configPath
     loadConfigFile args.configPath
   else
     loadConfigFile path.join 'config', 'config.json'
@@ -41,20 +41,25 @@ Reads the config file synchronously from the file system and try to parse it.
 ###
 loadConfigFile = ( configPath ) =>
   @config = null
+  confProperties = [
+    'log'
+    'http-port'
+    'db-port'
+    'crypto-key'
+  ]
+  #TODO Try to get rid of crypto key
   try
     @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
-    if @config and @config.http_port and @config.db_port and
-                  @config.crypto_key and @config.session_secret
-      log.print 'CF', 'config file loaded successfully'
-    else
-      log.error 'CF', new Error """Missing property in config file, requires:
-       - http_port
-       - db_port
-       - crypto_key
-       - session_secret"""
+    isReady = true
+    for prop in confProperties
+      if !@config[prop]
+        isReady = false
+    if not isReady and not @nolog
+      console.error """Missing property in config file, requires: 
+         - #{ confProperties.join "\n -" }"""
   catch e
-    e.addInfo = 'no config ready'
-    log.error 'CF', e
+    if not @nolog
+      console.error "Failed loading config file: #{ e.message }"
   
 
 ###
@@ -77,25 +82,25 @@ exports.isReady = => @config?
 
 @public getHttpPort()
 ###
-exports.getHttpPort = -> fetchProp 'http_port'
+exports.getHttpPort = -> fetchProp 'http-port'
 
 ###
 ***Returns*** the DB port*
 
 @public getDBPort()
 ###
-exports.getDBPort = -> fetchProp 'db_port'
+exports.getDBPort = -> fetchProp 'db-port'
+
+###
+***Returns*** the log conf object
+
+@public getLogConf()
+###
+exports.getLogConf = -> fetchProp 'log'
 
 ###
 ***Returns*** the crypto key
 
 @public getCryptoKey()
 ###
-exports.getCryptoKey = -> fetchProp 'crypto_key'
-
-###
-***Returns*** the session secret
-
-@public getSessionSecret()
-###
-exports.getSessionSecret = -> fetchProp 'session_secret'
+exports.getCryptoKey = -> fetchProp 'crypto-key'

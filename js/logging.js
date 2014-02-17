@@ -9,7 +9,9 @@
  * - 1 file
  * - 2 silent
  */
+ //TODO dynamic log file names (especially to track unit test logs)
 var fs = require('fs'),
+    wst = require('winston'),
     logTypes = [ flushToConsole, flushToFile, null],
     logFile = require('path').resolve(__dirname, '..', 'server.log'),
     logType = 0;
@@ -19,6 +21,8 @@ exports = module.exports = function(args) {
   if(args.logType) logType = parseInt(args.logType) || 0;
   if(logType == 1) fs.truncateSync(logFile, 0);
   if(logType > logTypes.length - 1) logType = 0;
+  // winston.add(winston.transports.File, { filename: 'somefile.log' });
+  // winston.remove(winston.transports.Console);
   return module.exports;
 };
 
@@ -29,8 +33,10 @@ function flush(err, msg) {
 }
 
 function flushToConsole(err, msg) {
-  if(err) console.error(msg);
+  if(err) console.error("\033[31m" + msg + "\033[0m");
   else console.log(msg);
+  // if(err) console.error(msg);
+  // else console.log(msg);
 }
 
 function flushToFile(err, msg) {
@@ -63,13 +69,13 @@ function printError(module, err, isSevere) {
     // if(module) flush(true, ts + module + ' | ERROR AND BAD HANDLING: ' + err + '\n' + e.stack);
     // else flush(true, ts + '!N/A! | ERROR, BAD HANDLING AND NO MODULE NAME: ' + err + '\n' + e.stack);
   // } else if(err) {
-  if(err.addInfo) ai = ' (' + err.addInfo + ')';
-  if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
-  if(module) {
-    var msg = ts + module + ' | ERROR'+ai+': ' + err.message;
-    if(isSevere) msg += '\n' + err.stack;
-    flush(true, msg);
-  } else flush(true, ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
+    if(err.addInfo) ai = ' (' + err.addInfo + ')';
+    if(!err.message) err.message = 'UNKNOWN REASON!\n' + err.stack;
+    if(module) {
+      var msg = ts + module + ' | ERROR'+ai+': ' + err.message;
+      if(isSevere) msg += '\n' + err.stack;
+      flush(true, msg);
+    } else flush(true, ts + '!N/A! | ERROR AND NO MODULE NAME'+ai+': ' + err.message + '\n' + err.stack);
   // } else {
     // var e = new Error('Unexpected error');
     // flush(true, e.message + ': \n' + e.stack);
@@ -92,4 +98,10 @@ exports.error = function(module, err) {
  */
 exports.severe = function(module, err) {
   printError(module, err, true);
+};
+
+exports.obj = function (varname, obj) {
+  var arrS = (new Error).stack.split('\n');
+  console.log('Dumping object "' + varname + '"' + arrS[2]);
+  console.log(obj);
 };

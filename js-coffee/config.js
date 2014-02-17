@@ -8,28 +8,31 @@ Configuration
 
 
 (function() {
-  var exports, fetchProp, fs, loadConfigFile, log, path,
+  var exports, fetchProp, fs, loadConfigFile, path,
     _this = this;
-
-  log = require('./logging');
 
   fs = require('fs');
 
   path = require('path');
 
   /*
-  ##Module call
+  Module call
+  -----------
   
-  Calling the module as a function will make it look for the `configPath` property in the
-  args object and then try to load a config file from that relative path.
+  Calling the module as a function will act as a constructor and load the config file.
+  It is possible to hand an args object with the properties nolog (true if no outputs shall
+  be generated) and configPath for a custom configuration file path.
+  
   @param {Object} args
   */
 
 
   exports = module.exports = function(args) {
     args = args != null ? args : {};
-    log(args);
-    if (typeof args.configPath === 'string') {
+    if (args.nolog) {
+      _this.nolog = true;
+    }
+    if (args.configPath) {
       loadConfigFile(args.configPath);
     } else {
       loadConfigFile(path.join('config', 'config.json'));
@@ -47,19 +50,26 @@ Configuration
 
 
   loadConfigFile = function(configPath) {
-    var e;
+    var confProperties, e, isReady, prop, _i, _len;
     _this.config = null;
+    confProperties = ['log', 'http-port', 'db-port', 'crypto-key'];
     try {
       _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', configPath)));
-      if (_this.config && _this.config.http_port && _this.config.db_port && _this.config.crypto_key && _this.config.session_secret) {
-        return log.print('CF', 'config file loaded successfully');
-      } else {
-        return log.error('CF', new Error("Missing property in config file, requires:\n- http_port\n- db_port\n- crypto_key\n- session_secret"));
+      isReady = true;
+      for (_i = 0, _len = confProperties.length; _i < _len; _i++) {
+        prop = confProperties[_i];
+        if (!_this.config[prop]) {
+          isReady = false;
+        }
+      }
+      if (!isReady && !_this.nolog) {
+        return console.error("Missing property in config file, requires: \n- " + (confProperties.join("\n -")));
       }
     } catch (_error) {
       e = _error;
-      e.addInfo = 'no config ready';
-      return log.error('CF', e);
+      if (!_this.nolog) {
+        return console.error("Failed loading config file: " + e.message);
+      }
     }
   };
 
@@ -95,7 +105,7 @@ Configuration
 
 
   exports.getHttpPort = function() {
-    return fetchProp('http_port');
+    return fetchProp('http-port');
   };
 
   /*
@@ -106,7 +116,18 @@ Configuration
 
 
   exports.getDBPort = function() {
-    return fetchProp('db_port');
+    return fetchProp('db-port');
+  };
+
+  /*
+  ***Returns*** the log conf object
+  
+  @public getLogConf()
+  */
+
+
+  exports.getLogConf = function() {
+    return fetchProp('log');
   };
 
   /*
@@ -117,18 +138,7 @@ Configuration
 
 
   exports.getCryptoKey = function() {
-    return fetchProp('crypto_key');
-  };
-
-  /*
-  ***Returns*** the session secret
-  
-  @public getSessionSecret()
-  */
-
-
-  exports.getSessionSecret = function() {
-    return fetchProp('session_secret');
+    return fetchProp('crypto-key');
   };
 
 }).call(this);

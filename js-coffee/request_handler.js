@@ -8,7 +8,7 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objUserCmds, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   log = require('./logging');
@@ -26,14 +26,6 @@ Request Handler
   mustache = require('mustache');
 
   crypto = require('crypto-js');
-
-  objAdminCmds = {
-    'loadrules': mm.loadRulesFromFS,
-    'loadaction': mm.loadActionModuleFromFS,
-    'loadactions': mm.loadActionModulesFromFS,
-    'loadevent': mm.loadEventModuleFromFS,
-    'loadevents': mm.loadEventModulesFromFS
-  };
 
   objUserCmds = {
     'store_action': mm.storeActionModule,
@@ -59,17 +51,16 @@ Request Handler
   };
 
   /*
-  This allows the parent to add handlers. The event handler will receive
-  the events that were received. The shutdown function will be called if the
-  admin command shutdown is issued.
+  This allows the parent to add the shutdown handler.
+  The shutdown function will be called if the admin command shutdown is issued.
   
-  @public addHandlers( *fShutdown* )
+  @public addShutdownHandler( *fShutdown* )
   @param {function} fShutdown
   */
 
 
-  exports.addHandlers = function(fShutdown) {
-    return objAdminCmds.shutdown = function(args, answerHandler) {
+  exports.addShutdownHandler = function(fShutdown) {
+    return _this.objAdminCmds.shutdown = function(args, answerHandler) {
       answerHandler.answerSuccess('Shutting down... BYE!');
       return setTimeout(fShutdown, 500);
     };
@@ -344,13 +335,13 @@ Request Handler
 
 
   exports.handleAdmin = function(req, resp) {
-    var q, _name;
+    var q, _base, _name;
     if (req.session && req.session.user) {
       if (req.session.user.isAdmin === "true") {
         q = req.query;
         log.print('RH', 'Received admin request: ' + req.originalUrl);
         if (q.cmd) {
-          return typeof objAdminCmds[_name = q.cmd] === "function" ? objAdminCmds[_name](q, answerHandler(req, resp, true)) : void 0;
+          return typeof (_base = _this.objAdminCmds)[_name = q.cmd] === "function" ? _base[_name](q, answerHandler(req, resp, true)) : void 0;
         } else {
           return resp.send(404, 'Command unknown!');
         }

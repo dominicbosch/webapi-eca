@@ -12,12 +12,11 @@
 var fs = require('fs'),
     path = require('path'),
     log = require('./logging'),
-    ml, db, funcLoadAction, funcLoadRule;
+    db, funcLoadAction, funcLoadRule;
 
 exports = module.exports = function(args) {
   args = args || {};
   log(args);
-  ml = require('./module_loader')(args);
   return module.exports;
 };
 
@@ -25,12 +24,82 @@ exports.addDBLink = function(db_link) {
   db = db_link;
 };
 
+exports.requireFromString = function(src, name, dir) {
+  if(!dir) dir = __dirname;
+  var id = path.resolve(dir, name, name + '.vm');
+  var vm = require('vm'),
+    // FIXME not log but debug module is required to provide information to the user
+    sandbox = {
+      id: id, // use this to gather kill info
+      needle: require('needle'), //https://github.com/tomas/needle
+      log: log,
+      exports: {}
+    };
+  //TODO child_process to run module!
+  // Define max runtime per loop as 10 seconds, after that the child will be killed
+  // it can still be active after that if there was a timing function or a callback used...
+  // kill the child each time? how to determine whether there's still a token in the module?
+  try {
+    var mod = vm.runInNewContext(src, sandbox, id);
+    
+  } catch (err) {
+    log.error('ML', 'Error running module in sandbox: ' + err.message);
+  }
+  return sandbox.exports;
+};
+
+exports.loadModule = function(directory, name, callback) {
+  try {
+    fs.readFile(path.resolve(__dirname, '..', directory, name, name + '.js'), 'utf8', function (err, data) {
+      if (err) {
+        log.error('LM', 'Loading module file!');
+        return;
+      }
+      var mod = exports.requireFromString(data, name, directory);
+      if(mod && fs.existsSync(path.resolve(__dirname, '..', directory, name, 'credentials.json'))) {
+        fs.readFile(path.resolve(__dirname, '..', directory, name, 'credentials.json'), 'utf8', function (err, auth) {
+          if (err) {
+            log.error('LM', 'Loading credentials file for "' + name + '"!');
+            callback(name, data, mod, null);
+            return;
+          }
+          if(mod.loadCredentials) mod.loadCredentials(JSON.parse(auth));
+          callback(name, data, mod, auth);
+        });
+      } else {
+        // Hand back the name, the string contents and the compiled module
+        callback(name, data, mod, null);
+      }
+    });
+  } catch(err) {
+    log.error('LM', 'Failed loading module "' + name + '"');
+  }
+};
+
+exports.loadModules = function(directory, callback) {
+  fs.readdir(path.resolve(__dirname, '..', directory), function (err, list) {
+    if (err) {
+      log.error('LM', 'loading modules directory: ' + err);
+      return;
+    }
+    log.print('LM', 'Loading ' + list.length + ' modules from "' + directory + '"');
+    list.forEach(function (file) {
+      fs.stat(path.resolve(__dirname, '..', directory, file), function (err, stat) {
+        if (stat && stat.isDirectory()) {
+          exports.loadModule(directory, file, callback);
+        }
+      });
+    });
+  });
+};
+ 
+
 exports.storeEventModule = function (objUser, obj, answHandler) {
   try {
     // TODO in the future we might want to link the modules close to the user
     // and allow for e.g. private modules
     // we need a child process to run this code and kill it after invocation
-    var m = ml.requireFromString(obj.data, obj.id);
+    var m = exports.requireFromString(obj.data, obj.id);
     obj.methods = Object.keys(m);
     answHandler.answerSuccess('Thank you for the event module!');
     db.storeEventModule(obj.id, obj);
@@ -48,7 +117,7 @@ exports.getAllEventModules = function ( objUser, obj, answHandler ) {
 };
 
 exports.storeActionModule = function (objUser, obj, answHandler) {
-  var m = ml.requireFromString(obj.data, obj.id);
+  var m = exports.requireFromString(obj.data, obj.id);
   obj.methods = Object.keys(m);
   answHandler.answerSuccess('Thank you for the action module!');
   db.storeActionModule(obj.id, obj);
@@ -111,100 +180,3 @@ exports.storeRule = function (objUser, obj, answHandler) {
   }
 
 };
-
-// FIXME REMOVE
-/*
- * Legacy file system loaders
- */
-
-
-/*
- * Load Rules from fs
- * ------------------
- */
-exports.loadRulesFromFS = function(args, answHandler) {
-  if(!args) args = {};
-  if(!args.name) args.name = 'rules';
-  if(!funcLoadRule) log.error('ML', 'no rule loader function available');
-  else {
-    fs.readFile(path.resolve(__dirname, '..', 'rules', args.name + '.json'), 'utf8', function (err, data) {
-      if (err) {
-        log.error('ML', 'Loading rules file: ' + args.name + '.json');
-        return;
-      }
-      try {
-        var arr = JSON.parse(data), txt = '';
-        log.print('ML', 'Loading ' + arr.length + ' rules:');
-        for(var i = 0; i < arr.length; i++) {
-          txt += arr[i].id + ', ';
-          db.storeRule(arr[i].id, 'james-t', JSON.stringify(arr[i]));
-          // funcLoadRule(arr[i]);
-        }
-        answHandler.answerSuccess('Yep, loaded rules: ' + txt);
-      } catch (e) {
-        log.error('ML', 'rules file was corrupt! (' + args.name + '.json)');
-      }
-    });
-  }
-};
-
-/*
- * Load Action Modules from fs
- * ---------------------------
- */
-
-/**
- * 
- * @param {Object} name
- * @param {Object} data
- * @param {Object} mod
- * @param {String} [auth] The string representation of the auth json
- */
-function loadActionCallback(name, data, mod, auth) {
-  db.storeActionModule(name, data); // store module in db
-  // funcLoadAction(name, mod); // hand back compiled module
-  if(auth) db.storeActionModuleAuth(name, auth);
-}
-
-exports.loadActionModuleFromFS = function (args, answHandler) {
-  if(ml) {
-    if(args && args.name) {
-  		answHandler.answerSuccess('Loading action module ' + args.name + '...');
-      ml.loadModule('mod_actions', args.name, loadActionCallback);
-    } else log.error('MM', 'Action Module name not provided!');
-  }
-};
-
-exports.loadActionModulesFromFS = function(args, answHandler) {
-  if(ml) {
-  	answHandler.answerSuccess('Loading action modules...');
-    ml.loadModules('mod_actions', loadActionCallback);
-  }
-};
-
-/*
- * Load Event Modules from fs
- * --------------------------
- */
-
-function loadEventCallback(name, data, mod, auth) {
-  if(db) {
-    db.storeEventModule(name, data); // store module in db
-    if(auth) db.storeEventModuleAuth(name, auth);
-  }
-}
-
-exports.loadEventModuleFromFS = function(args, answHandler) {
-  if(ml) {
-    if(args && args.name) {
-      answHandler.answerSuccess('Loading event module ' + args.name + '...');
-      ml.loadModule('mod_events', args.name, loadEventCallback);
-    } else log.error('MM', 'Event Module name not provided!');
-  }
-};
-
-exports.loadEventModulesFromFS = function(args, answHandler) {
-  answHandler.answerSuccess('Loading event moules...');
-    ml.loadModules('mod_actions', loadEventCallback);
-};
-

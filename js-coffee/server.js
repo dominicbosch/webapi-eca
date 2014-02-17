@@ -6,27 +6,16 @@ Server
 
 >This is the main module that is used to run the whole server:
 >
->     node server [log_type http_port]
+>     node server [opt]
 >
->Valid `log_type`'s are:
->
->- `0`: standard I/O output (default)
->- `1`: log file (server.log)
->- `2`: silent
->
->`http_port` can be set to use another port, than defined in the 
->[config](config.html) file, to listen to, e.g. used by the test suite.
->
->
-
-TODO how about we allow spawning child processes with servers based on address?
+> See below in the optimist CLI preparation for allowed optional parameters
 */
 
 
 (function() {
-  var args, conf, db, engine, http_listener, init, log, procCmds, shutDown;
+  var argv, conf, cp, db, engine, fs, http_listener, init, logger, opt, optimist, path, procCmds, shutDown, usage;
 
-  log = require('./logging');
+  logger = require('./new_logging');
 
   conf = require('./config');
 
@@ -36,9 +25,68 @@ TODO how about we allow spawning child processes with servers based on address?
 
   http_listener = require('./http_listener');
 
-  args = {};
+  fs = require('fs');
+
+  path = require('path');
+
+  cp = require('child_process');
+
+  optimist = require('optimist');
 
   procCmds = {};
+
+  /*
+  Let's prepare the optimist CLI
+  */
+
+
+  usage = 'This runs your webapi-based ECA engine';
+
+  opt = {
+    'h': {
+      alias: 'help',
+      describe: 'Display this'
+    },
+    'c': {
+      alias: 'config-path',
+      describe: 'Specify a path to a custom configuration file, other than "config/config.json"'
+    },
+    'w': {
+      alias: 'http-port',
+      describe: 'Specify a HTTP port for the web server'
+    },
+    'd': {
+      alias: 'db-port',
+      describe: 'Specify a port for the redis DB'
+    },
+    'm': {
+      alias: 'log-mode',
+      describe: 'Specify a log mode: [development|productive]'
+    },
+    'i': {
+      alias: 'log-io-level',
+      describe: 'Specify the log level for the I/O'
+    },
+    'f': {
+      alias: 'log-file-level',
+      describe: 'Specify the log level for the log file'
+    },
+    'p': {
+      alias: 'log-file-path',
+      describe: 'Specify the path to the log file within the "logs" folder'
+    },
+    'n': {
+      alias: 'nolog',
+      describe: 'Set this if no output shall be generated'
+    }
+  };
+
+  argv = optimist.usage(usage).options(opt).argv;
+
+  if (argv.help) {
+    console.log(optimist.help());
+    process.exit();
+  }
 
   /*
   Error handling of the express port listener requires special attention,
@@ -50,7 +98,7 @@ TODO how about we allow spawning child processes with servers based on address?
   process.on('uncaughtException', function(err) {
     switch (err.errno) {
       case 'EADDRINUSE':
-        err.addInfo = 'http_port already in use, shutting down!';
+        err.addInfo = 'http-port already in use, shutting down!';
         log.error('RS', err);
         return shutDown();
       default:
@@ -66,48 +114,54 @@ TODO how about we allow spawning child processes with servers based on address?
 
 
   init = function() {
-    log.print('RS', 'STARTING SERVER');
-    conf(args);
+    var args, log, logconf;
+    conf(argv.c);
     if (!conf.isReady()) {
-      log.error('RS', 'Config file not ready!');
+      console.error('FAIL: Config file not ready! Shutting down...');
       process.exit();
     }
-    if (process.argv.length > 2) {
-      args.logType = parseInt(process.argv[2]) || 0;
-      switch (args.logType) {
-        case 0:
-          log.print('RS', 'Log type set to standard I/O output');
-          break;
-        case 1:
-          log.print('RS', 'Log type set to file output');
-          break;
-        case 2:
-          log.print('RS', 'Log type set to silent');
-          break;
-        default:
-          log.print('RS', 'Unknown log type, using standard I/O');
-      }
-      log(args);
-    } else {
-      log.print('RS', 'No log method argument provided, using standard I/O');
+    logconf = conf.getLogConf();
+    if (argv.m) {
+      logconf['mode'] = argv.m;
     }
-    if (process.argv.length > 3) {
-      args.http_port = parseInt(process.argv[3]);
-    } else {
-      log.print('RS', 'No HTTP port passed, using standard port from config file');
+    if (argv.i) {
+      logconf['io-level'] = argv.i;
     }
-    log.print('RS', 'Initialzing DB');
+    if (argv.f) {
+      logconf['file-level'] = argv.f;
+    }
+    if (argv.p) {
+      logconf['file-path'] = argv.p;
+    }
+    if (argv.n) {
+      logconf['nolog'] = argv.n;
+    }
+    try {
+      fs.unlinkSync(path.resolve(__dirname, '..', 'logs', logconf['file-path']));
+    } catch (_error) {}
+    log = logger(logconf);
+    log.info('RS | STARTING SERVER');
+    args = {
+      logger: log,
+      logconf: logconf
+    };
+    args['http-port'] = parseInt(argv.w || conf.getHttpPort());
+    log.info('RS | Initialzing DB');
     db(args);
     return db.isConnected(function(err, result) {
+      var cliArgs, poller;
       if (!err) {
-        log.print('RS', 'Initialzing engine');
+        log.info('RS | Initialzing engine');
         engine(args);
-        log.print('RS', 'Initialzing http listener');
+        log.info('RS | Initialzing http listener');
         http_listener(args);
-        log.print('RS', 'Passing handlers to engine');
+        log.info('RS | Passing handlers to engine');
         engine.addPersistence(db);
-        log.print('RS', 'Passing handlers to http listener');
-        return http_listener.addHandlers(shutDown);
+        log.info('RS | Passing handlers to http listener');
+        http_listener.addShutdownHandler(shutDown);
+        log.info('RS | For e child process for the event poller');
+        cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
+        return poller = cp.fork(path.resolve(__dirname, 'event_poller'), cliArgs);
       }
     });
   };
@@ -120,7 +174,7 @@ TODO how about we allow spawning child processes with servers based on address?
 
 
   shutDown = function() {
-    log.print('RS', 'Received shut down command!');
+    log.warn('RS | Received shut down command!');
     if (engine != null) {
       engine.shutDown();
     }

@@ -15,6 +15,7 @@ log = require './logging'
 
 # - [Config](config.html)
 config = require './config'
+# TODO remove config
 
 # - [User Handler](user_handler.html)
 requestHandler = require './request_handler'
@@ -53,10 +54,14 @@ Adds the shutdown handler to the admin commands.
 @public addHandlers( *fShutDown* )
 ###
 exports.addHandlers = ( fShutDown ) ->
-  requestHandler.addHandlers fShutDown
+  requestHandler.addShutdownHandler fShutDown
   # Add cookie support for session handling.
   app.use express.cookieParser()
-  app.use express.session { secret: config.getSessionSecret() }
+  #TODO This needs to be fixed!
+  sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
+  app.use express.session { secret: sess_sec }
+  # app.use express.session { secret: config.getSessionSecret() }
+
   #At the moment there's no redis session backbone (didn't work straight away)
   log.print 'HL', 'no session backbone'
 

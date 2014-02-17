@@ -28,14 +28,6 @@ qs = require 'querystring'
 #   [crypto-js](https://github.com/evanvosberg/crypto-js)
 mustache = require 'mustache'
 crypto = require 'crypto-js'
-
-# Prepare the admin command handlers which are invoked via HTTP requests.
-objAdminCmds =
-  'loadrules': mm.loadRulesFromFS
-  'loadaction': mm.loadActionModuleFromFS
-  'loadactions':  mm.loadActionModulesFromFS
-  'loadevent': mm.loadEventModuleFromFS
-  'loadevents': mm.loadEventModulesFromFS
   
 # Prepare the user command handlers which are invoked via HTTP requests.
 objUserCmds =
@@ -57,15 +49,14 @@ exports = module.exports = ( args ) ->
   module.exports
 
 ###
-This allows the parent to add handlers. The event handler will receive
-the events that were received. The shutdown function will be called if the
-admin command shutdown is issued.
+This allows the parent to add the shutdown handler.
+The shutdown function will be called if the admin command shutdown is issued.
 
-@public addHandlers( *fShutdown* )
+@public addShutdownHandler( *fShutdown* )
 @param {function} fShutdown
 ###
-exports.addHandlers = ( fShutdown ) =>
-  objAdminCmds.shutdown = ( args, answerHandler ) ->
+exports.addShutdownHandler = ( fShutdown ) =>
+  @objAdminCmds.shutdown = ( args, answerHandler ) ->
     answerHandler.answerSuccess 'Shutting down... BYE!'
     setTimeout fShutdown, 500
 
@@ -284,13 +275,13 @@ objects.*
 
 @public handleAdmin( *req, resp* )
 ###
-exports.handleAdmin = ( req, resp ) ->
+exports.handleAdmin = ( req, resp ) =>
   if req.session and req.session.user
     if req.session.user.isAdmin is "true"
       q = req.query
       log.print 'RH', 'Received admin request: ' + req.originalUrl
       if q.cmd 
-        objAdminCmds[q.cmd]? q, answerHandler req, resp, true
+        @objAdminCmds[q.cmd]? q, answerHandler req, resp, true
       else
         resp.send 404, 'Command unknown!'
     else

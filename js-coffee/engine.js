@@ -1,23 +1,18 @@
 'use strict';
 
 var path = require('path'),
-    cp = require('child_process'),
     log = require('./logging'),
-    qEvents = new (require('./queue')).Queue(), //TODO export queue into redis
+   // qEvents = new (require('./queue')).Queue(), //TODO export queue into redis
     regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
     listRules = {},
     listActionModules = {},
     isRunning = true,
     ml, poller, db;
 
-exports = module.exports = function(args) {
+exports = module.exports = function( args ) {
   args = args || {};
   log(args);
   ml = require('./module_loader')(args);
-  poller = cp.fork(path.resolve(__dirname, 'eventpoller'), [log.getLogType()]);
-  poller.on('message', function(evt) {
-    exports.pushEvent(evt);
-  });
   return module.exports;
 };
 

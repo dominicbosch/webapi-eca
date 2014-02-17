@@ -1,6 +1,7 @@
 
 exports.setUp = ( cb ) =>
-  @db = require '../js-coffee/persistence'
+  @path = require 'path'
+  @db = require @path.join '..', 'js-coffee', 'persistence'
   @db logType: 2
   cb()
   
@@ -38,7 +39,7 @@ exports.Availability =
   testWrongConfig: ( test ) =>
     test.expect 1
 
-    @db { configPath: 'testing/jsonWrongConfig.json' }
+    @db { configPath: @path.join 'testing', 'jsonWrongConfig.json' }
     @db.isConnected ( err ) ->
       test.ok err, 'Still connected!?'
       test.done()

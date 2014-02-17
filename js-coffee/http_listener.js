@@ -54,11 +54,12 @@ HTTP Listener
 
 
   exports.addHandlers = function(fShutDown) {
-    var e, http_port;
-    requestHandler.addHandlers(fShutDown);
+    var e, http_port, sess_sec;
+    requestHandler.addShutdownHandler(fShutDown);
     app.use(express.cookieParser());
+    sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
     app.use(express.session({
-      secret: config.getSessionSecret()
+      secret: sess_sec
     }));
     log.print('HL', 'no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
