@@ -13,7 +13,7 @@ Server
 # **Requires:**
 
 # - [Logging](logging.html)
-logger = require './new_logging'
+logger = require './new-logging'
 
 # - [Configuration](config.html)
 conf = require './config'
@@ -24,8 +24,8 @@ db = require './persistence'
 # - [Engine](engine.html)
 engine = require './engine'
 
-# - [HTTP Listener](http_listener.html)
-http_listener = require './http_listener'
+# - [HTTP Listener](http-listener.html)
+http = require './http-listener'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 # [path](http://nodejs.org/api/path.html)
@@ -133,14 +133,14 @@ init = ->
       log.info 'RS | Initialzing engine'
       engine args
       log.info 'RS | Initialzing http listener'
-      http_listener args
+      http args
       
       # > Distribute handlers between modules to link the application.
       log.info 'RS | Passing handlers to engine'
       engine.addPersistence db
       log.info 'RS | Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
-      http_listener.addShutdownHandler shutDown
+      http.addShutdownHandler shutDown
       #TODO loadAction and addRule will be removed
       #mm.addHandlers db, engine.loadActionModule, engine.addRule
       log.info 'RS | For e child process for the event poller'
@@ -151,7 +151,7 @@ init = ->
         args.logconf['file-path']
         args.logconf['nolog']
       ]
-      poller = cp.fork path.resolve( __dirname, 'event_poller' ), cliArgs
+      poller = cp.fork path.resolve( __dirname, 'event-poller' ), cliArgs
 
 ###
 Shuts down the server.
@@ -161,7 +161,7 @@ Shuts down the server.
 shutDown = ->
   log.warn 'RS | Received shut down command!'
   engine?.shutDown()
-  http_listener?.shutDown()
+  http?.shutDown()
 
 ###
 ## Process Commands

@@ -2,6 +2,5 @@
 *.log
 *credentials.json
 *node_modules
-doc
 .project
 .settings

@@ -8,14 +8,14 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objUserCmds, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   log = require('./logging');
 
   db = require('./persistence');
 
-  mm = require('./module_manager');
+  mm = require('./module-manager');
 
   fs = require('fs');
 
@@ -34,6 +34,8 @@ Request Handler
     'get_eventmodules': mm.getAllEventModules,
     'store_rule': mm.storeRule
   };
+
+  objAdminCmds = {};
 
   exports = module.exports = function(args) {
     var user, users, _i, _len;
@@ -60,7 +62,7 @@ Request Handler
 
 
   exports.addShutdownHandler = function(fShutdown) {
-    return _this.objAdminCmds.shutdown = function(args, answerHandler) {
+    return objAdminCmds.shutdown = function(args, answerHandler) {
       answerHandler.answerSuccess('Shutting down... BYE!');
       return setTimeout(fShutdown, 500);
     };

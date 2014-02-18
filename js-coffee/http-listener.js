@@ -3,20 +3,18 @@
 
 HTTP Listener
 =============
-> Receives the HTTP requests to the server at the port specified by the
-> [config](config.html) file. These requests (bound to a method) are then 
-> redirected to the appropriate handler which then takes care of the request.
+> Receives the HTTP requests to the server at the given port. The requests
+> (bound to a method) are then redirected to the appropriate handler which
+> takes care of the request.
 */
 
 
 (function() {
-  var app, config, exports, express, log, path, qs, requestHandler;
+  var app, exports, express, initRouting, log, path, qs, requestHandler;
 
   log = require('./logging');
 
-  config = require('./config');
-
-  requestHandler = require('./request_handler');
+  requestHandler = require('./request-handler');
 
   path = require('path');
 
@@ -29,9 +27,7 @@ HTTP Listener
   /*
   Module call
   -----------
-  Initializes the HTTP Listener and its child modules Logging,
-  Configuration and Request Handler, then tries to fetch the session
-  key from the configuration.
+  Initializes the HTTP listener and its request handler.
   
   @param {Object} args
   */
@@ -40,22 +36,21 @@ HTTP Listener
   exports = module.exports = function(args) {
     args = args != null ? args : {};
     log(args);
-    config(args);
     requestHandler(args);
+    initRouting(args['http-port']);
     return module.exports;
   };
 
   /*
-  Adds the shutdown handler to the admin commands.
+  Initializes the request routing and starts listening on the given port.
   
-  @param {function} fshutDown
-  @public addHandlers( *fShutDown* )
+  @param {int} port
+  @private initRouting( *fShutDown* )
   */
 
 
-  exports.addHandlers = function(fShutDown) {
-    var e, http_port, sess_sec;
-    requestHandler.addShutdownHandler(fShutDown);
+  initRouting = function(port) {
+    var e, sess_sec;
     app.use(express.cookieParser());
     sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
     app.use(express.session({
@@ -72,17 +67,24 @@ HTTP Listener
     app.post('/logout', requestHandler.handleLogout);
     app.post('/usercommand', requestHandler.handleUserCommand);
     try {
-      http_port = config.getHttpPort();
-      if (http_port) {
-        return app.listen(http_port);
-      } else {
-        return log.error('HL', new Error('No HTTP port found!? Nothing to listen on!...'));
-      }
+      return app.listen(port);
     } catch (_error) {
       e = _error;
       e.addInfo = 'opening port';
       return log.error(e);
     }
+  };
+
+  /*
+  Adds the shutdown handler to the admin commands.
+  
+  @param {function} fshutDown
+  @public addShutdownHandler( *fShutDown* )
+  */
+
+
+  exports.addShutdownHandler = function(fShutDown) {
+    return requestHandler.addShutdownHandler(fShutDown);
   };
 
   /*

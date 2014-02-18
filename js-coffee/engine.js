@@ -7,12 +7,12 @@ var path = require('path'),
     listRules = {},
     listActionModules = {},
     isRunning = true,
-    ml, poller, db;
+    mm, poller, db;
 
 exports = module.exports = function( args ) {
   args = args || {};
   log(args);
-  ml = require('./module_loader')(args);
+  mm = require('./module-manager')(args);
   return module.exports;
 };
 
@@ -24,7 +24,7 @@ exports = module.exports = function( args ) {
  */
 exports.addPersistence = function(db_link) {
   db = db_link;
-  // if(ml && db) db.getActionModules(function(err, obj) {
+  // if(mm && db) db.getActionModules(function(err, obj) {
   //   if(err) log.error('EN', 'retrieving Action Modules from DB!');
   //   else {
   //     if(!obj) {
@@ -35,7 +35,7 @@ exports.addPersistence = function(db_link) {
   //       for(var el in obj) {
   //         log.print('EN', 'Loading Action Module from DB: ' + el);
   //         try{
-  //           m = ml.requireFromString(obj[el], el);
+  //           m = mm.requireFromString(obj[el], el);
   //           db.getActionModuleAuth(el, function(mod) {
   //             return function(err, obj) {
   //               if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));

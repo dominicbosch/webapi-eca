@@ -14,8 +14,8 @@ log = require './logging'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
-# - [Module Manager](module_manager.html)
-mm = require './module_manager'
+# - [Module Manager](module-manager.html)
+mm = require './module-manager'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
@@ -37,6 +37,7 @@ objUserCmds =
   'get_eventmodules': mm.getAllEventModules
   'store_rule': mm.storeRule
 
+objAdminCmds = {}
 
 exports = module.exports = ( args ) -> 
   args = args ? {}
@@ -56,7 +57,7 @@ The shutdown function will be called if the admin command shutdown is issued.
 @param {function} fShutdown
 ###
 exports.addShutdownHandler = ( fShutdown ) =>
-  @objAdminCmds.shutdown = ( args, answerHandler ) ->
+  objAdminCmds.shutdown = ( args, answerHandler ) ->
     answerHandler.answerSuccess 'Shutting down... BYE!'
     setTimeout fShutdown, 500
 

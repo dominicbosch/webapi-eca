@@ -13,9 +13,9 @@ Server
 
 
 (function() {
-  var argv, conf, cp, db, engine, fs, http_listener, init, logger, opt, optimist, path, procCmds, shutDown, usage;
+  var argv, conf, cp, db, engine, fs, http, init, logger, opt, optimist, path, procCmds, shutDown, usage;
 
-  logger = require('./new_logging');
+  logger = require('./new-logging');
 
   conf = require('./config');
 
@@ -23,7 +23,7 @@ Server
 
   engine = require('./engine');
 
-  http_listener = require('./http_listener');
+  http = require('./http-listener');
 
   fs = require('fs');
 
@@ -154,14 +154,14 @@ Server
         log.info('RS | Initialzing engine');
         engine(args);
         log.info('RS | Initialzing http listener');
-        http_listener(args);
+        http(args);
         log.info('RS | Passing handlers to engine');
         engine.addPersistence(db);
         log.info('RS | Passing handlers to http listener');
-        http_listener.addShutdownHandler(shutDown);
+        http.addShutdownHandler(shutDown);
         log.info('RS | For e child process for the event poller');
         cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
-        return poller = cp.fork(path.resolve(__dirname, 'event_poller'), cliArgs);
+        return poller = cp.fork(path.resolve(__dirname, 'event-poller'), cliArgs);
       }
     });
   };
@@ -178,7 +178,7 @@ Server
     if (engine != null) {
       engine.shutDown();
     }
-    return http_listener != null ? http_listener.shutDown() : void 0;
+    return http != null ? http.shutDown() : void 0;
   };
 
   /*

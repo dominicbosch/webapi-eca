@@ -2,7 +2,7 @@
 
 'use strict';
 
-var logger = require('./new_logging'),
+var logger = require('./new-logging'),
     listMessageActions = {},
     listAdminCommands = {},
     listEventModules = {},
@@ -31,7 +31,7 @@ function init() {
 
   log = logger(logconf);
   var args = { logger: log };
-  (ml = require('./module_manager'))(args);
+  (ml = require('./module-manager'))(args);
   (db = require('./persistence'))(args);
   initAdminCommands();
   initMessageActions();

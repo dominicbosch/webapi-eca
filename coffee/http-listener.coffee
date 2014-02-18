@@ -2,9 +2,9 @@
 
 HTTP Listener
 =============
-> Receives the HTTP requests to the server at the port specified by the
-> [config](config.html) file. These requests (bound to a method) are then 
-> redirected to the appropriate handler which then takes care of the request.
+> Receives the HTTP requests to the server at the given port. The requests
+> (bound to a method) are then redirected to the appropriate handler which
+> takes care of the request.
 
 ###
 
@@ -13,12 +13,8 @@ HTTP Listener
 # - [Logging](logging.html)
 log = require './logging'
 
-# - [Config](config.html)
-config = require './config'
-# TODO remove config
-
-# - [User Handler](user_handler.html)
-requestHandler = require './request_handler'
+# - [Request Handler](request-handler.html)
+requestHandler = require './request-handler'
 
 # - Node.js Modules: [path](http://nodejs.org/api/path.html) and
 #   [querystring](http://nodejs.org/api/querystring.html)
@@ -34,33 +30,29 @@ app = express()
 ###
 Module call
 -----------
-Initializes the HTTP Listener and its child modules Logging,
-Configuration and Request Handler, then tries to fetch the session
-key from the configuration.
+Initializes the HTTP listener and its request handler.
 
 @param {Object} args
 ###
 exports = module.exports = ( args ) -> 
   args = args ? {}
   log args
-  config args
   requestHandler args
+  initRouting args[ 'http-port' ]
   module.exports
 
 ###
-Adds the shutdown handler to the admin commands.
+Initializes the request routing and starts listening on the given port.
 
-@param {function} fshutDown
-@public addHandlers( *fShutDown* )
+@param {int} port
+@private initRouting( *fShutDown* )
 ###
-exports.addHandlers = ( fShutDown ) ->
-  requestHandler.addShutdownHandler fShutDown
+initRouting = ( port ) ->
   # Add cookie support for session handling.
   app.use express.cookieParser()
-  #TODO This needs to be fixed!
+  #TODO The session secret appriach needs to be fixed!
   sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
   app.use express.session { secret: sess_sec }
-  # app.use express.session { secret: config.getSessionSecret() }
 
   #At the moment there's no redis session backbone (didn't work straight away)
   log.print 'HL', 'no session backbone'
@@ -91,14 +83,19 @@ exports.addHandlers = ( fShutDown ) ->
   # - **`POST` to _"/user"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
   try
-    http_port = config.getHttpPort()
-    if http_port
-      app.listen http_port # inbound event channel
-    else
-      log.error 'HL', new Error 'No HTTP port found!? Nothing to listen on!...'
+    app.listen port # inbound event channel
   catch e
     e.addInfo = 'opening port'
     log.error e
+
+###
+Adds the shutdown handler to the admin commands.
+
+@param {function} fshutDown
+@public addShutdownHandler( *fShutDown* )
+###
+exports.addShutdownHandler = ( fShutDown ) ->
+  requestHandler.addShutdownHandler fShutDown
 
 ###
 Shuts down the http listener.

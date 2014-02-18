@@ -6,7 +6,7 @@ exports.setUp = ( cb ) =>
   try
     @fs.unlinkSync @stdPath
   catch e
-  @log = require @path.join '..', 'js-coffee', 'new_logging'
+  @log = require @path.join '..', 'js-coffee', 'new-logging'
   cb()
   
 exports.tearDown = ( cb ) =>
