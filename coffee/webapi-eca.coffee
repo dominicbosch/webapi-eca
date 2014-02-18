@@ -1,19 +1,19 @@
 ###
 
-Server
-============
+WebAPI-ECA Engine
+=================
 
->This is the main module that is used to run the whole server:
+>This is the main module that is used to run the whole application:
 >
->     node server [opt]
+>     node webapi-eca [opt]
 >
-> See below in the optimist CLI preparation for allowed optional parameters
+> See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 ###
 
 # **Requires:**
 
 # - [Logging](logging.html)
-logger = require './new-logging'
+logger = require './logging'
 
 # - [Configuration](config.html)
 conf = require './config'
@@ -40,37 +40,48 @@ optimist = require 'optimist'
 procCmds = {}
 
 ###
-Let's prepare the optimist CLI
+Let's prepare the optimist CLI optional arguments `[opt]`:
 ###
 usage = 'This runs your webapi-based ECA engine'
 opt =
+#  `-h`, `--help`: Display the help
   'h':
     alias : 'help',
     describe: 'Display this'
+#  `-c`, `--config-path`: Specify a path to a custom configuration file, other than "config/config.json"
   'c':
     alias : 'config-path',
     describe: 'Specify a path to a custom configuration file, other than "config/config.json"'
+#  `-w`, `--http-port`: Specify a HTTP port for the web server 
   'w':
     alias : 'http-port',
     describe: 'Specify a HTTP port for the web server'
+#  `-d`, `--db-port`: Specify a port for the redis DB
   'd':
     alias : 'db-port',
     describe: 'Specify a port for the redis DB'
+#  `-m`, `--log-mode`: Specify a log mode: [development|productive]
   'm':
     alias : 'log-mode',
     describe: 'Specify a log mode: [development|productive]'
+#  `-i`, `--log-io-level`: Specify the log level for the I/O
   'i':
     alias : 'log-io-level',
     describe: 'Specify the log level for the I/O'
+#  `-f`, `--log-file-level`: Specify the log level for the log file
   'f':
     alias : 'log-file-level',
     describe: 'Specify the log level for the log file'
+#  `-p`, `--log-file-path`: Specify the path to the log file within the "logs" folder
   'p':
     alias : 'log-file-path',
     describe: 'Specify the path to the log file within the "logs" folder'
+#  `-n`, `--nolog`: Set this if no output shall be generated
   'n':
     alias : 'nolog',
     describe: 'Set this if no output shall be generated'
+
+# now fetch the CLI arguments and exit if the help has been called.
 argv = optimist.usage( usage ).options( opt ).argv
 if argv.help
   console.log optimist.help()

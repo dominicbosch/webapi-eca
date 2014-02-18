@@ -1,12 +1,16 @@
 
 exports.setUp = ( cb ) =>
   @path = require 'path'
+  logger = require @path.join '..', 'js-coffee', 'logging'
+  @log = logger.getLogger
+    nolog: true
   @db = require @path.join '..', 'js-coffee', 'persistence'
-  @db logType: 2
+  @db 
+    logger: @log
   cb()
   
 exports.tearDown = ( cb ) =>
-  @db.shutDown()
+  @db?.shutDown()
   cb()
 
 
@@ -31,6 +35,7 @@ exports.Availability =
     test.expect 1
 
     @db 
+      logger: @log
       configPath: 'nonexistingconf.file'
     @db.isConnected ( err ) ->
       test.ok err, 'Still connected!?'
@@ -39,7 +44,9 @@ exports.Availability =
   testWrongConfig: ( test ) =>
     test.expect 1
 
-    @db { configPath: @path.join 'testing', 'jsonWrongConfig.json' }
+    @db 
+      logger: @log
+      configPath: @path.join 'testing', 'jsonWrongConfig.json'
     @db.isConnected ( err ) ->
       test.ok err, 'Still connected!?'
       test.done()
@@ -836,7 +843,8 @@ exports.User =
 ###
 exports.Roles = 
   setUp: ( cb ) =>
-    @db logType: 1
+    @db
+      logger: @log
     @oUser =
       username: "tester-1"
       password: "password"

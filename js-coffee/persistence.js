@@ -21,11 +21,9 @@ Persistence
 
 
 (function() {
-  var IndexedModules, crypto, decrypt, encrypt, exports, getSetRecords, hash, log, redis, replyHandler,
+  var IndexedModules, crypto, decrypt, encrypt, exports, getSetRecords, hash, redis, replyHandler,
     _this = this,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  log = require('./logging');
 
   crypto = require('crypto-js');
 
@@ -43,8 +41,7 @@ Persistence
 
   exports = module.exports = function(args) {
     var config, _ref;
-    args = args != null ? args : {};
-    log(args);
+    _this.log = args.logger;
     config = require('./config');
     config(args);
     if ((_ref = _this.db) != null) {
@@ -57,12 +54,12 @@ Persistence
       });
       _this.db.on('error', function(err) {
         err.addInfo = 'message from DB';
-        return log.error('DB', err);
+        return _this.log.error('DB', err);
       });
-      _this.ep = new IndexedModules('event-poller', _this.db);
-      return _this.ai = new IndexedModules('action-invoker', _this.db);
+      _this.ep = new IndexedModules('event-poller', _this.db, _this.log);
+      return _this.ai = new IndexedModules('action-invoker', _this.db, _this.log);
     } else {
-      return log.error('DB', 'Initialization failed because of missing config file!');
+      return _this.log.error('DB', 'Initialization failed because of missing config file!');
     }
   };
 
@@ -83,7 +80,7 @@ Persistence
       numAttempts = 0;
       fCheckConnection = function() {
         if (_this.db.connected) {
-          log.print('DB', 'Successfully connected to DB!');
+          _this.log.info('DB', 'Successfully connected to DB!');
           return cb();
         } else if (numAttempts++ < 10) {
           return setTimeout(fCheckConnection, 100);
@@ -107,9 +104,9 @@ Persistence
     return function(err, reply) {
       if (err) {
         err.addInfo = "during '" + action + "'";
-        return log.error('DB', err);
+        return _this.log.error('DB', err);
       } else {
-        return log.print('DB', "" + action + ": " + reply);
+        return _this.log.info('DB', "" + action + ": " + reply);
       }
     };
   };
@@ -124,10 +121,10 @@ Persistence
 
   exports.pushEvent = function(oEvent) {
     if (oEvent) {
-      log.print('DB', "Event pushed into the queue: '" + oEvent.eventid + "'");
+      _this.log.info('DB', "Event pushed into the queue: '" + oEvent.eventid + "'");
       return _this.db.rpush('event_queue', JSON.stringify(oEvent));
     } else {
-      return log.error('DB', 'Why would you give me an empty event...');
+      return _this.log.error('DB', 'Why would you give me an empty event...');
     }
   };
 
@@ -180,7 +177,7 @@ Persistence
     } catch (_error) {
       err = _error;
       err.addInfo = 'during hashing';
-      log.error('DB', err);
+      _this.log.error('DB', err);
       return null;
     }
   };
@@ -203,7 +200,7 @@ Persistence
     } catch (_error) {
       err = _error;
       err.addInfo = 'during encryption';
-      log.error('DB', err);
+      _this.log.error('DB', err);
       return null;
     }
   };
@@ -227,7 +224,7 @@ Persistence
     } catch (_error) {
       err = _error;
       err.addInfo = 'during decryption';
-      log.error('DB', err);
+      _this.log.error('DB', err);
       return null;
     }
   };
@@ -246,12 +243,12 @@ Persistence
 
 
   getSetRecords = function(set, fSingle, cb) {
-    log.print('DB', "Fetching set records: '" + set + "'");
+    _this.log.info('DB', "Fetching set records: '" + set + "'");
     return _this.db.smembers(set, function(err, arrReply) {
       var fCallback, objReplies, reply, semaphore, _i, _len, _results;
       if (err) {
         err.addInfo = "fetching '" + set + "'";
-        log.error('DB', err);
+        _this.log.error('DB', err);
         return cb(err);
       } else if (arrReply.length === 0) {
         return cb();
@@ -268,9 +265,9 @@ Persistence
             --semaphore;
             if (err) {
               err.addInfo = "fetching single element: '" + prop + "'";
-              log.error('DB', err);
+              _this.log.error('DB', err);
             } else if (!data) {
-              log.error('DB', new Error("Empty key in DB: '" + prop + "'"));
+              _this.log.error('DB', new Error("Empty key in DB: '" + prop + "'"));
             } else {
               objReplies[prop] = data;
             }
@@ -290,9 +287,10 @@ Persistence
   };
 
   IndexedModules = (function() {
-    function IndexedModules(setname, db) {
+    function IndexedModules(setname, db, log) {
       this.setname = setname;
       this.db = db;
+      this.log = log;
       this.deleteParameters = __bind(this.deleteParameters, this);
       this.getParametersIds = __bind(this.getParametersIds, this);
       this.getParameters = __bind(this.getParameters, this);
@@ -302,56 +300,56 @@ Persistence
       this.getModuleIds = __bind(this.getModuleIds, this);
       this.getModule = __bind(this.getModule, this);
       this.storeModule = __bind(this.storeModule, this);
-      log.print('DB', "Instantiated indexed modules for '" + this.setname + "'");
+      this.log.info('DB', "Instantiated indexed modules for '" + this.setname + "'");
     }
 
     IndexedModules.prototype.storeModule = function(mId, data) {
-      log.print('DB', "storeModule(" + this.setname + "): " + mId);
+      this.log.info('DB', "storeModule(" + this.setname + "): " + mId);
       this.db.sadd("" + this.setname + "s", mId, replyHandler("Storing '" + this.setname + "' key '" + mId + "'"));
       return this.db.set("" + this.setname + ":" + mId, data, replyHandler("Storing '" + this.setname + ":" + mId + "'"));
     };
 
     IndexedModules.prototype.getModule = function(mId, cb) {
-      log.print('DB', "getModule('" + this.setname + "): " + mId + "'");
+      this.log.info('DB', "getModule('" + this.setname + "): " + mId + "'");
       return this.db.get("" + this.setname + ":" + mId, cb);
     };
 
     IndexedModules.prototype.getModuleIds = function(cb) {
-      log.print('DB', "getModuleIds(" + this.setname + ")");
+      this.log.info('DB', "getModuleIds(" + this.setname + ")");
       return this.db.smembers("" + this.setname + "s", cb);
     };
 
     IndexedModules.prototype.getModules = function(cb) {
-      log.print('DB', "getModules(" + this.setname + ")");
+      this.log.info('DB', "getModules(" + this.setname + ")");
       return getSetRecords("" + this.setname + "s", this.getModule, cb);
     };
 
     IndexedModules.prototype.deleteModule = function(mId) {
-      log.print('DB', "deleteModule(" + this.setname + "): " + mId);
+      this.log.info('DB', "deleteModule(" + this.setname + "): " + mId);
       this.db.srem("" + this.setname + "s", mId, replyHandler("Deleting '" + this.setname + "' key '" + mId + "'"));
       return this.db.del("" + this.setname + ":" + mId, replyHandler("Deleting '" + this.setname + ":" + mId + "'"));
     };
 
     IndexedModules.prototype.storeParameters = function(mId, userId, data) {
-      log.print('DB', "storeParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      this.log.info('DB', "storeParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Storing '" + this.setname + "' module parameters key '" + mId + "'"));
       return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encrypt(data), replyHandler("Storing '" + this.setname + "' module parameters '" + mId + ":" + userId + "'"));
     };
 
     IndexedModules.prototype.getParameters = function(mId, userId, cb) {
-      log.print('DB', "getParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      this.log.info('DB', "getParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, function(err, data) {
         return cb(err, decrypt(data));
       });
     };
 
     IndexedModules.prototype.getParametersIds = function(cb) {
-      log.print('DB', "getParametersIds(" + this.setname + ")");
+      this.log.info('DB', "getParametersIds(" + this.setname + ")");
       return this.db.smembers("" + this.setname + "-params", cb);
     };
 
     IndexedModules.prototype.deleteParameters = function(mId, userId) {
-      log.print('DB', "deleteParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+      this.log.info('DB', "deleteParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params' key '" + mId + ":" + userId + "'"));
       return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params:" + mId + ":" + userId + "'"));
     };
@@ -615,7 +613,7 @@ Persistence
 
 
   exports.getRule = function(ruleId, cb) {
-    log.print('DB', "getRule: '" + ruleId + "'");
+    _this.log.info('DB', "getRule: '" + ruleId + "'");
     return _this.db.get("rule:" + ruleId, cb);
   };
 
@@ -628,7 +626,7 @@ Persistence
 
 
   exports.getRules = function(cb) {
-    log.print('DB', 'Fetching all Rules');
+    _this.log.info('DB', 'Fetching all Rules');
     return getSetRecords('rules', exports.getRule, cb);
   };
 
@@ -641,7 +639,7 @@ Persistence
 
 
   exports.getRuleIds = function(cb) {
-    log.print('DB', 'Fetching all Rule IDs');
+    _this.log.info('DB', 'Fetching all Rule IDs');
     return _this.db.smembers('rules', cb);
   };
 
@@ -655,7 +653,7 @@ Persistence
 
 
   exports.storeRule = function(ruleId, data) {
-    log.print('DB', "storeRule: '" + ruleId + "'");
+    _this.log.info('DB', "storeRule: '" + ruleId + "'");
     _this.db.sadd('rules', "" + ruleId, replyHandler("storing rule key '" + ruleId + "'"));
     return _this.db.set("rule:" + ruleId, data, replyHandler("storing rule '" + ruleId + "'"));
   };
@@ -670,7 +668,7 @@ Persistence
 
 
   exports.deleteRule = function(ruleId) {
-    log.print('DB', "deleteRule: '" + ruleId + "'");
+    _this.log.info('DB', "deleteRule: '" + ruleId + "'");
     _this.db.srem("rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "'"));
     _this.db.del("rule:" + ruleId, replyHandler("Deleting rule '" + ruleId + "'"));
     _this.db.smembers("rule:" + ruleId + ":users", function(err, obj) {
@@ -711,7 +709,7 @@ Persistence
 
 
   exports.linkRule = function(ruleId, userId) {
-    log.print('DB', "linkRule: '" + ruleId + "' for user '" + userId + "'");
+    _this.log.info('DB', "linkRule: '" + ruleId + "' for user '" + userId + "'");
     _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("storing user '" + userId + "' for rule key '" + ruleId + "'"));
     return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("storing rule key '" + ruleId + "' for user '" + userId + "'"));
   };
@@ -726,7 +724,7 @@ Persistence
 
 
   exports.getUserLinkedRules = function(userId, cb) {
-    log.print('DB', "getUserLinkedRules: for user '" + userId + "'");
+    _this.log.info('DB', "getUserLinkedRules: for user '" + userId + "'");
     return _this.db.smembers("user:" + userId + ":rules", cb);
   };
 
@@ -740,7 +738,7 @@ Persistence
 
 
   exports.getRuleLinkedUsers = function(ruleId, cb) {
-    log.print('DB', "getRuleLinkedUsers: for rule '" + ruleId + "'");
+    _this.log.info('DB', "getRuleLinkedUsers: for rule '" + ruleId + "'");
     return _this.db.smembers("rule:" + ruleId + ":users", cb);
   };
 
@@ -754,7 +752,7 @@ Persistence
 
 
   exports.unlinkRule = function(ruleId, userId) {
-    log.print('DB', "unlinkRule: '" + ruleId + ":" + userId + "'");
+    _this.log.info('DB', "unlinkRule: '" + ruleId + ":" + userId + "'");
     _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("removing user '" + userId + "' for rule key '" + ruleId + "'"));
     return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("removing rule key '" + ruleId + "' for user '" + userId + "'"));
   };
@@ -769,7 +767,7 @@ Persistence
 
 
   exports.activateRule = function(ruleId, userId) {
-    log.print('DB', "activateRule: '" + ruleId + "' for '" + userId + "'");
+    _this.log.info('DB', "activateRule: '" + ruleId + "' for '" + userId + "'");
     _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("storing activated user '" + userId + "' in rule '" + ruleId + "'"));
     return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("storing activated rule '" + ruleId + "' in user '" + userId + "'"));
   };
@@ -784,7 +782,7 @@ Persistence
 
 
   exports.getUserActivatedRules = function(userId, cb) {
-    log.print('DB', "getUserActivatedRules: for user '" + userId + "'");
+    _this.log.info('DB', "getUserActivatedRules: for user '" + userId + "'");
     return _this.db.smembers("user:" + userId + ":active-rules", cb);
   };
 
@@ -798,7 +796,7 @@ Persistence
 
 
   exports.getRuleActivatedUsers = function(ruleId, cb) {
-    log.print('DB', "getRuleActivatedUsers: for rule '" + ruleId + "'");
+    _this.log.info('DB', "getRuleActivatedUsers: for rule '" + ruleId + "'");
     return _this.db.smembers("rule:" + ruleId + ":active-users", cb);
   };
 
@@ -812,7 +810,7 @@ Persistence
 
 
   exports.deactivateRule = function(ruleId, userId) {
-    log.print('DB', "deactivateRule: '" + ruleId + "' for '" + userId + "'");
+    _this.log.info('DB', "deactivateRule: '" + ruleId + "' for '" + userId + "'");
     _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("removing activated user '" + userId + "' in rule '" + ruleId + "'"));
     return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("removing activated rule '" + ruleId + "' in user '" + userId + "'"));
   };
@@ -826,7 +824,7 @@ Persistence
 
 
   exports.getAllActivatedRuleIdsPerUser = function(cb) {
-    log.print('DB', "Fetching all active rules");
+    _this.log.info('DB', "Fetching all active rules");
     return _this.db.smembers('users', function(err, obj) {
       var fFetchActiveUserRules, result, semaphore, user, _i, _len, _results;
       result = {};
@@ -869,13 +867,13 @@ Persistence
 
 
   exports.storeUser = function(objUser) {
-    log.print('DB', "storeUser: '" + objUser.username + "'");
+    _this.log.info('DB', "storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler("storing user key '" + objUser.username + "'"));
       objUser.password = objUser.password;
       return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties '" + objUser.username + "'"));
     } else {
-      return log.error('DB', new Error('username or password was missing'));
+      return _this.log.error('DB', new Error('username or password was missing'));
     }
   };
 
@@ -888,7 +886,7 @@ Persistence
 
 
   exports.getUserIds = function(cb) {
-    log.print('DB', "getUserIds");
+    _this.log.info('DB', "getUserIds");
     return _this.db.smembers("users", cb);
   };
 
@@ -902,7 +900,7 @@ Persistence
 
 
   exports.getUser = function(userId, cb) {
-    log.print('DB', "getUser: '" + userId + "'");
+    _this.log.info('DB', "getUser: '" + userId + "'");
     return _this.db.hgetall("user:" + userId, cb);
   };
 
@@ -915,7 +913,7 @@ Persistence
 
 
   exports.deleteUser = function(userId) {
-    log.print('DB', "deleteUser: '" + userId + "'");
+    _this.log.info('DB', "deleteUser: '" + userId + "'");
     _this.db.srem("users", userId, replyHandler("Deleting user key '" + userId + "'"));
     _this.db.del("user:" + userId, replyHandler("Deleting user '" + userId + "'"));
     _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
@@ -974,14 +972,14 @@ Persistence
 
   exports.loginUser = function(userId, password, cb) {
     var fCheck;
-    log.print('DB', "User '" + userId + "' tries to log in");
+    _this.log.info('DB', "User '" + userId + "' tries to log in");
     fCheck = function(pw) {
       return function(err, obj) {
         if (err) {
           return cb(err, null);
         } else if (obj && obj.password) {
           if (pw === obj.password) {
-            log.print('DB', "User '" + obj.username + "' logged in!");
+            _this.log.info('DB', "User '" + obj.username + "' logged in!");
             return cb(null, obj);
           } else {
             return cb(new Error('Wrong credentials!'), null);
@@ -1009,7 +1007,7 @@ Persistence
 
 
   exports.storeUserRole = function(userId, role) {
-    log.print('DB', "storeUserRole: '" + userId + ":" + role + "'");
+    _this.log.info('DB', "storeUserRole: '" + userId + ":" + role + "'");
     _this.db.sadd('roles', role, replyHandler("adding role '" + role + "' to role index set"));
     _this.db.sadd("user:" + userId + ":roles", role, replyHandler("adding role '" + role + "' to user '" + userId + "'"));
     return _this.db.sadd("role:" + role + ":users", userId, replyHandler("adding user '" + userId + "' to role '" + role + "'"));
@@ -1025,7 +1023,7 @@ Persistence
 
 
   exports.getUserRoles = function(userId, cb) {
-    log.print('DB', "getUserRoles: '" + userId + "'");
+    _this.log.info('DB', "getUserRoles: '" + userId + "'");
     return _this.db.smembers("user:" + userId + ":roles", cb);
   };
 
@@ -1039,7 +1037,7 @@ Persistence
 
 
   exports.getRoleUsers = function(role, cb) {
-    log.print('DB', "getRoleUsers: '" + role + "'");
+    _this.log.info('DB', "getRoleUsers: '" + role + "'");
     return _this.db.smembers("role:" + role + ":users", cb);
   };
 
@@ -1053,7 +1051,7 @@ Persistence
 
 
   exports.removeUserRole = function(userId, role) {
-    log.print('DB', "removeRoleFromUser: role '" + role + "', user '" + userId + "'");
+    _this.log.info('DB', "removeRoleFromUser: role '" + role + "', user '" + userId + "'");
     _this.db.srem("user:" + userId + ":roles", role, replyHandler("Removing role '" + role + "' from user '" + userId + "'"));
     return _this.db.srem("role:" + role + ":users", userId, replyHandler("Removing user '" + userId + "' from role '" + role + "'"));
   };
@@ -1066,7 +1064,8 @@ Persistence
 
 
   exports.shutDown = function() {
-    return _this.db.quit();
+    var _ref;
+    return (_ref = _this.db) != null ? _ref.quit() : void 0;
   };
 
 }).call(this);

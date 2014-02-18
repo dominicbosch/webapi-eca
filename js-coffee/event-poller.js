@@ -2,7 +2,7 @@
 
 'use strict';
 
-var logger = require('./new-logging'),
+var logger = require('./logging'),
     listMessageActions = {},
     listAdminCommands = {},
     listEventModules = {},

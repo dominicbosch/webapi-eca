@@ -1,68 +1,99 @@
+path = require 'path'
+fs = require 'fs'
+
+getLog = ( strPath, cb ) ->
+  fWait = =>
+    # cb fs.readFileSync path, 'utf-8'
+    str = fs.readFileSync path.resolve( strPath ), 'utf-8'
+    arrStr = str.split "\n"
+    fConvertRow = ( row ) ->
+      try
+        JSON.parse row
+    arrStr[i] = fConvertRow row for row, i in arrStr
+    cb arrStr.slice 0, arrStr.length - 1
+  setTimeout fWait, 100
 
 exports.setUp = ( cb ) =>
-  @fs = require 'fs'
-  @path = require 'path'
-  @stdPath = @path.resolve __dirname, '..', 'logs', 'server.log'
+  @stdPath = path.resolve __dirname, '..', 'logs', 'server.log'
   try
-    @fs.unlinkSync @stdPath
-  catch e
-  @log = require @path.join '..', 'js-coffee', 'new-logging'
+    fs.unlinkSync @stdPath
+  @logger = require path.join '..', 'js-coffee', 'logging'
   cb()
   
-exports.tearDown = ( cb ) =>
-  cb()
+# exports.tearDown = ( cb ) =>
+#   cb()
 
-exports.testInitIO = ( test ) =>
+exports.testCreate = ( test ) =>
+  test.expect 2
+  arrLogs = [
+    'TL | testInitIO - info'
+    'TL | testInitIO - warn'
+    'TL | testInitIO - error'
+  ]
+  args = {}
+  args[ 'io-level' ] = 'error'
+  log = @logger.getLogger args
+  log.info arrLogs[0]
+  log.warn arrLogs[1]
+  log.error arrLogs[2]
+  test.ok fs.existsSync( @stdPath ), 'Log file does not exist!'
+  getLog @stdPath, ( arr ) ->
+    allCorrect = true
+    for o,i  in arr
+      if o.msg is not arrLogs[i]
+        allCorrect = false
+    test.ok allCorrect, 'Log file does not contain the correct entries!'
+    test.done()
+
+exports.testNoLog = ( test ) =>
   test.expect 1
-  conf = 
-    logType: 0
-  @log.configure conf
-  @log.info 'TL', 'testInitIO - info'
-  @log.warn 'TL', 'testInitIO - warn'
-  @log.error 'TL', 'testInitIO - error'
-  test.ok !@fs.existsSync @stdPath
-  test.done()
 
-exports.testInitFile = ( test ) =>
-  test.expect 1
-
-  conf = 
-    logType: 1
-  @log.configure conf
-  @log.info 'UT', 'test 1'
+  log = @logger.getLogger
+    nolog: true
+  log.info 'TL | test 1'
 
   fWait = () => 
-    @log.info 'UT', 'test 2'
-    test.ok @fs.existsSync @stdPath
+    test.ok !fs.existsSync( @stdPath ), 'Log file does still exist!'
     test.done()
 
   setTimeout fWait, 100
 
-# exports.testInitSilent = ( test ) =>
-#   test.expect 1
+exports.testCustomPath = ( test ) =>
+  test.expect 2
 
-#   conf = 
-#     logType: 2
-#   @log.configure conf
-#   @log.info 'test 3'
+  strInfo = 'TL | custom path test 1'
+  strPath = 'testing/files/test.log'
+  args = {}
+  args[ 'file-path' ] = strPath
+  args[ 'io-level' ] = 'error'
 
-#   test.ok true, 'yay'
-#   test.done()
+  log = @logger.getLogger args
+  log.info strInfo
 
-# exports.testInitPath = ( test ) =>
-#   test.expect 1
+  fWait = () => 
+    test.ok fs.existsSync( strPath ), 'Custom log file does not exist!'
+    getLog strPath, ( arr ) ->
+      test.ok arr[0].msg is strInfo, 'Custom log file not correct!'
+      try
+        fs.unlinkSync strPath
+      test.done()
 
-#   conf = 
-#     logType: 1
-#     logPath: 'testing/log-initPath.log'
-#   @log.configure conf
-#   @log.info 'test 3'
+  setTimeout fWait, 100
 
-#   test.ok true, 'yay'
-#   test.done()
+exports.testWrongPath = ( test ) =>
+  test.expect 1
 
-# exports.testPrint = ( test ) =>
-#   test.expect 1
-#   test.ok true, 'yay'
-#   @log.info 'test 3'
-#   test.done()
+  strInfo = 'TL | custom path test 1'
+  strPath = 'strange/path/to/test.log'
+  args = {}
+  args[ 'file-path' ] = strPath
+  args[ 'io-level' ] = 'error'
+  log = @logger.getLogger args
+  log.info strInfo
+
+  fWait = () =>
+    test.ok !fs.existsSync( path.resolve ( strPath ) ), 'Custom log file does exist!?'
+    test.done()
+
+  setTimeout fWait, 1000
+    

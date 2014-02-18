@@ -1,9 +1,12 @@
 path = require 'path'
 
 exports.setUp = ( cb ) =>
+  logger = require path.join '..', 'js-coffee', 'logging'
+  log = logger.getLogger
+    nolog: true
   @conf = require path.join '..', 'js-coffee', 'config'
   @conf
-    nolog: true
+    logger: log
   cb()
 
 exports.testRequire = ( test ) =>

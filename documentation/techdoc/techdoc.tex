@@ -1,4 +1,7 @@
 \documentclass{article}
+\usepackage{cite}
+\usepackage{courier}
+\usepackage[toc,page]{appendix}
 
 \newcommand*{\createTitlePage}{\begingroup
 \centering
@@ -23,29 +26,6 @@
 
 \clearpage\createTitlePage
 \thispagestyle{empty}
-% \title{\huge WebAPI-ECA Engine\vspace*{15 mm}}
-% \subtitle{Master Thesis Report}
-% %\date{}
-% %\author{Dominic Bosch \\ Departement Mathematics and Computer Science \\ University of Basel}
-% \author{
-% Technical Documentation\\
-% \date{\today}
-% \vspace*{50 mm}\\
-% \fontsize{10}{9}\selectfont
-% Dominic Bosch\\
-% \fontsize{10}{9}\selectfont
-% Departement Mathematics and Computer Science\\
-% \fontsize{10}{9}\selectfont
-% University of Basel
-% }
-% \maketitle
-
-% \renewcommand{\abstractname}{}
-% \begin{abstract}
-% %\textbf{Abstract.}
-% This docuemnt describes the technical features of the WebAPI-ECA engine reference implementation.
-% \end{abstract}
-
 
 \newpage
 \tableofcontents
@@ -56,5 +36,97 @@
 \subsection{section}
 \subsubsection{subsection}
 t.b.d.
+Introduction
+%Documentation can be found on localhost:[http_port]/doc/
+
+% TODO
+% Key files within the application. This may include files created by the development team, databases accessed during the program's operation, and third-party utility programs.
+% Functions and subroutines. This includes an explanation of what each function or subroutine does, including its range of input values and output values.
+% Program variables and constants, and how they're used in the application.
+% The overall program structure. For a disc-based application, this may mean describing the program's individual modules and libraries, while for a Web application, this may mean describing which pages use which files.
+
+\section{Prerequisites}
+Redis or write own DB Interface
+
+Node.js
+
+\section{Installation}
+Crossplatform
+
+\section{Configuration}
+
+\section{Application Architecture}
+The application is started through the webapi-eca module, which loads other modules such as the logging module, the configuration file handler, the persistence interface, the listener to HTTP requests and finally the ECA engine.
+% TODO Architecture picture goes here!
+
+\subsection{Modules}
+\subsubsection{Webapi-ECA}
+starting point
+reads cli arguments
+Initializes:
+config
+engine
+persistence
+http listener
+logging
+forks the event poller and sends him information about new rules so he can fetch the appropriate event poller modules.
+
+\subsubsection{Persistence}
+The persistence module is an interface to a persistent storage.
+It stores the events in a queue, action invoker modules, event poller modules, rules, users and roles.
+Event Queue
+\texttt{event\_queue} (List): The event queue for all incoming events to be processed by the engine.
+Action Invokers
+\texttt{action-invokers} (Set of [aiId] keys): A set of all existing action invokers.
+\texttt{action-invoker:[aiId]} (String): A stringified action invoker.
+\texttt{action-params} (Set of [aiId]:[userId] keys): All existing action invoker parameters associated with a user.
+\texttt{action-params:[aiId]:[userId]} (String): A stringified parameter object associated to an action invoker and a user.
+Event Pollers
+\texttt{event-pollers} (Set of [epId] keys): A set of all existing event pollers.
+\texttt{event-poller:[epId]} (String): A stringified event poller.
+\texttt{event-params} (Set of [epId]:[userId] keys): All existing event poller parameters associated with a user.
+\texttt{event-params:[epId]:[userId]} (String): A stringified parameter object associated to an event poller and a user.
+Rules
+\texttt{rules} (Set of [ruleId] keys): A set of all existing rules.
+\texttt{rule:[ruleId]:users} (Set of [userId] keys): Associated users to a rule.
+\texttt{rule:[ruleId]} (String): Stringified rule object.
+\texttt{rule:[ruleId]:active-users} (Set of [userId] keys): Users that have this rule activated.
+Users
+\texttt{users} (Set of [userId] keys): A set of all existing users.
+\texttt{user:[userId]} (Hashmap): The flat user object.
+\texttt{user:[userId]:rules} (Set of [ruleId] keys): Associated rules to a user.
+\texttt{user:[userId]:active-rules} (Set of [ruleId] keys): Active rules.
+\texttt{user:[userId]:roles} (Set of [roleId] keys): All roles a certain user is associated with.
+Roles
+\texttt{roles} (Set of [roleId] keys): A set of all existing roles.
+\texttt{role:[roleId]:users} (Set of [userId] keys): All users associated to this role.
+
+\subsection{Views/Webpages}
+user interfaces
+login
+credentials entered in a login form are encrypted using a random key and only then sent to the server.
+we fetch the google crypto-js module in the browser from
+% \<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha3.js"></script>
+
+and the engine fetches the same but modularized code from the npm repository via the package manager. Now we have the same crypto-js code in both modules
+
+this also allows us to send privately stored modules and rules encrypted to the user, which will then see it decrypted after it arrived at the browser
+
+
+
+
+\bibliography{user-manual}
+\bibliographystyle{beast}
+
+\newpage
+\renewcommand*\appendixpagename{APPENDIX}
+\renewcommand*\appendixtocname{APPENDIX}
+\begin{appendices}
+ \section{Things}
+   \subsection{Important things}
+   % \subsubsection{ecaserver.js}
+ Some appendix content
+ 
+\end{appendices}
 
 \end{document}

@@ -1,4 +1,6 @@
 \documentclass{article}
+\usepackage{cite}
+\usepackage[toc,page]{appendix}
 
 \newcommand*{\createTitlePage}{\begingroup
 \centering
@@ -23,28 +25,6 @@
 
 \clearpage\createTitlePage
 \thispagestyle{empty}
-% \title{\huge WebAPI-ECA Engine\vspace*{15 mm}}
-% \subtitle{Master Thesis Report}
-% %\date{}
-% %\author{Dominic Bosch \\ Departement Mathematics and Computer Science \\ University of Basel}
-% \author{
-% Technical Documentation\\
-% \date{\today}
-% \vspace*{50 mm}\\
-% \fontsize{10}{9}\selectfont
-% Dominic Bosch\\
-% \fontsize{10}{9}\selectfont
-% Departement Mathematics and Computer Science\\
-% \fontsize{10}{9}\selectfont
-% University of Basel
-% }
-% \maketitle
-
-% \renewcommand{\abstractname}{}
-% \begin{abstract}
-% %\textbf{Abstract.}
-% This docuemnt describes the technical features of the WebAPI-ECA engine reference implementation.
-% \end{abstract}
 
 
 \newpage
@@ -56,5 +36,33 @@
 \subsection{section}
 \subsubsection{subsection}
 t.b.d.
+
+\section{Administrator}
+Start the server
+Event \& Action Module Management
+For All: CRUD, The view shows all existing modules per user and allows editing
+Rules
+For All: CRUD
+\section{User}
+Event \& Action Module Management
+Per User: CRUD \& Credentials
+Rule Management\cite{2005-Patranjan-TLE.pdf}
+Per User: CRUD
+
+
+
+\bibliography{user-manual}
+\bibliographystyle{beast}
+
+\newpage
+\renewcommand*\appendixpagename{APPENDIX}
+\renewcommand*\appendixtocname{APPENDIX}
+\begin{appendices}
+ \section{Things}
+   \subsection{Important things}
+   % \subsubsection{ecaserver.js}
+ Some appendix content
+ 
+\end{appendices}
 
 \end{document}

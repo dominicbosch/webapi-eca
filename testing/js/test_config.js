@@ -6,9 +6,14 @@
   path = require('path');
 
   exports.setUp = function(cb) {
+    var log, logger;
+    logger = require(path.join('..', 'js-coffee', 'logging'));
+    log = logger.getLogger({
+      nolog: true
+    });
     _this.conf = require(path.join('..', 'js-coffee', 'config'));
     _this.conf({
-      logType: 2
+      logger: log
     });
     return cb();
   };
@@ -20,17 +25,25 @@
   };
 
   exports.testParameters = function(test) {
-    test.expect(4);
+    var logconf, prop, reqProp, _i, _len;
+    reqProp = ['mode', 'io-level', 'file-level', 'file-path'];
+    test.expect(4 + reqProp.length);
     test.ok(_this.conf.getHttpPort(), 'HTTP port does not exist!');
     test.ok(_this.conf.getDBPort(), 'DB port does not exist!');
     test.ok(_this.conf.getCryptoKey(), 'Crypto key does not exist!');
-    test.ok(_this.conf.getSessionSecret(), 'Session Secret does not exist!');
+    logconf = _this.conf.getLogConf();
+    test.ok(logconf, 'Log config does not exist!');
+    for (_i = 0, _len = reqProp.length; _i < _len; _i++) {
+      prop = reqProp[_i];
+      test.ok(logconf[prop], "Log conf property " + prop + " does not exist!");
+    }
     return test.done();
   };
 
   exports.testDifferentConfigFile = function(test) {
     test.expect(1);
     _this.conf({
+      nolog: true,
       configPath: path.join('testing', 'files', 'jsonWrongConfig.json')
     });
     test.ok(_this.conf.isReady(), 'Different path not loaded!');
@@ -40,6 +53,7 @@
   exports.testNoConfigFile = function(test) {
     test.expect(1);
     _this.conf({
+      nolog: true,
       configPath: 'wrongpath.file'
     });
     test.strictEqual(_this.conf.isReady(), false, 'Wrong path still loaded!');
