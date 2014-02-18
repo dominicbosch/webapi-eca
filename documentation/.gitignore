@@ -1,0 +1,4 @@
+*/*
+!compileTEX
+!*.tex
+!*.bib

@@ -1,0 +1,8 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+latex user-manual
+bibtex user-manual
+latex user-manual
+latex user-manual
+pdflatex user-manual
