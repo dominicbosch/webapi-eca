@@ -10,9 +10,8 @@ HTTP Listener
 
 
 (function() {
-  var app, exports, express, initRouting, log, path, qs, requestHandler;
-
-  log = require('./logging');
+  var app, exports, express, initRouting, path, qs, requestHandler,
+    _this = this;
 
   requestHandler = require('./request-handler');
 
@@ -34,8 +33,7 @@ HTTP Listener
 
 
   exports = module.exports = function(args) {
-    args = args != null ? args : {};
-    log(args);
+    _this.log = args.logger;
     requestHandler(args);
     initRouting(args['http-port']);
     return module.exports;
@@ -56,7 +54,7 @@ HTTP Listener
     app.use(express.session({
       secret: sess_sec
     }));
-    log.print('HL', 'no session backbone');
+    _this.log.info('HL | no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
     app.get('/admin', requestHandler.handleAdmin);
     app.get('/forge_modules', requestHandler.handleForgeModules);
@@ -67,11 +65,10 @@ HTTP Listener
     app.post('/logout', requestHandler.handleLogout);
     app.post('/usercommand', requestHandler.handleUserCommand);
     try {
-      return app.listen(port);
+      return _this.server = app.listen(port);
     } catch (_error) {
       e = _error;
-      e.addInfo = 'opening port';
-      return log.error(e);
+      return _this.log.error(e, 'HL | Unable to listen...');
     }
   };
 
@@ -95,8 +92,10 @@ HTTP Listener
 
 
   exports.shutDown = function() {
-    log.print('HL', 'Shutting down HTTP listener');
-    return process.exit();
+    _this.log.warn('HL | Shutting down HTTP listener');
+    console.log('apppp');
+    console.log(app);
+    return _this.server.close();
   };
 
 }).call(this);

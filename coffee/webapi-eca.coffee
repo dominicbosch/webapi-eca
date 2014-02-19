@@ -10,7 +10,7 @@ WebAPI-ECA Engine
 > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 ###
 
-# **Requires:**
+# **Loads Modules:**
 
 # - [Logging](logging.html)
 logger = require './logging'
@@ -92,20 +92,19 @@ Error handling of the express port listener requires special attention,
 thus we have to catch the process error, which is issued if
 the port is already in use.
 ###
-process.on 'uncaughtException', ( err ) ->
+process.on 'uncaughtException', ( err ) =>
   switch err.errno
     when 'EADDRINUSE'
-      err.addInfo = 'http-port already in use, shutting down!'
-      log.error 'RS', err
+      @log.error err, 'RS | http-port already in use, shutting down!'
       shutDown()
-    # else log.error 'RS', err
+    # else @log.error 'RS', err
     else throw err
 ###
 This function is invoked right after the module is loaded and starts the server.
 
 @private init()
 ###
-init = ->
+init = =>
   conf argv.c
   # > Check whether the config file is ready, which is required to start the server.
   if !conf.isReady()
@@ -125,36 +124,39 @@ init = ->
     logconf[ 'nolog' ] = argv.n
   try
     fs.unlinkSync path.resolve __dirname, '..', 'logs', logconf[ 'file-path' ]
-  log = logger logconf
-  log.info 'RS | STARTING SERVER'
+  @log = logger.getLogger logconf
+  @log.info 'RS | STARTING SERVER'
 
   args =
-    logger: log
+    logger: @log
     logconf: logconf
   # > Fetch the `http-port` argument
   args[ 'http-port' ] = parseInt argv.w || conf.getHttpPort()
+  args[ 'db-port' ] = parseInt argv.w || conf.getDbPort()
   
-  log.info 'RS | Initialzing DB'
+  @log.info 'RS | Initialzing DB'
   db args
   # > We only proceed with the initialization if the DB is ready
-  db.isConnected ( err, result ) ->
-    if !err
-    
+  db.isConnected ( err, result ) =>
+    if err
+      shutDown()
+
+    else
       # > Initialize all required modules with the args object.
-      log.info 'RS | Initialzing engine'
+      @log.info 'RS | Initialzing engine'
       engine args
-      log.info 'RS | Initialzing http listener'
+      @log.info 'RS | Initialzing http listener'
       http args
       
       # > Distribute handlers between modules to link the application.
-      log.info 'RS | Passing handlers to engine'
+      @log.info 'RS | Passing handlers to engine'
       engine.addPersistence db
-      log.info 'RS | Passing handlers to http listener'
+      @log.info 'RS | Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
       http.addShutdownHandler shutDown
       #TODO loadAction and addRule will be removed
       #mm.addHandlers db, engine.loadActionModule, engine.addRule
-      log.info 'RS | For e child process for the event poller'
+      @log.info 'RS | Forking child process for the event poller'
       cliArgs = [
         args.logconf['mode']
         args.logconf['io-level']
@@ -169,10 +171,11 @@ Shuts down the server.
 
 @private shutDown()
 ### 
-shutDown = ->
-  log.warn 'RS | Received shut down command!'
+shutDown = =>
+  @log.warn 'RS | Received shut down command!'
   engine?.shutDown()
   http?.shutDown()
+  process.exit()
 
 ###
 ## Process Commands
@@ -181,6 +184,9 @@ When the server is run as a child process, this function handles messages
 from the parent process (e.g. the testing suite)
 ###
 process.on 'message', ( cmd ) -> procCmds[cmd]?()
+
+process.on 'SIGINT', shutDown
+process.on 'SIGTERM', shutDown
 
 # The die command redirects to the shutDown function.
 procCmds.die = shutDown

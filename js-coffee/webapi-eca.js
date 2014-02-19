@@ -13,7 +13,8 @@ WebAPI-ECA Engine
 
 
 (function() {
-  var argv, conf, cp, db, engine, fs, http, init, logger, opt, optimist, path, procCmds, shutDown, usage;
+  var argv, conf, cp, db, engine, fs, http, init, logger, opt, optimist, path, procCmds, shutDown, usage,
+    _this = this;
 
   logger = require('./logging');
 
@@ -98,8 +99,7 @@ WebAPI-ECA Engine
   process.on('uncaughtException', function(err) {
     switch (err.errno) {
       case 'EADDRINUSE':
-        err.addInfo = 'http-port already in use, shutting down!';
-        log.error('RS', err);
+        _this.log.error(err, 'RS | http-port already in use, shutting down!');
         return shutDown();
       default:
         throw err;
@@ -114,7 +114,7 @@ WebAPI-ECA Engine
 
 
   init = function() {
-    var args, log, logconf;
+    var args, logconf;
     conf(argv.c);
     if (!conf.isReady()) {
       console.error('FAIL: Config file not ready! Shutting down...');
@@ -139,27 +139,30 @@ WebAPI-ECA Engine
     try {
       fs.unlinkSync(path.resolve(__dirname, '..', 'logs', logconf['file-path']));
     } catch (_error) {}
-    log = logger(logconf);
-    log.info('RS | STARTING SERVER');
+    _this.log = logger.getLogger(logconf);
+    _this.log.info('RS | STARTING SERVER');
     args = {
-      logger: log,
+      logger: _this.log,
       logconf: logconf
     };
     args['http-port'] = parseInt(argv.w || conf.getHttpPort());
-    log.info('RS | Initialzing DB');
+    args['db-port'] = parseInt(argv.w || conf.getDbPort());
+    _this.log.info('RS | Initialzing DB');
     db(args);
     return db.isConnected(function(err, result) {
       var cliArgs, poller;
-      if (!err) {
-        log.info('RS | Initialzing engine');
+      if (err) {
+        return shutDown();
+      } else {
+        _this.log.info('RS | Initialzing engine');
         engine(args);
-        log.info('RS | Initialzing http listener');
+        _this.log.info('RS | Initialzing http listener');
         http(args);
-        log.info('RS | Passing handlers to engine');
+        _this.log.info('RS | Passing handlers to engine');
         engine.addPersistence(db);
-        log.info('RS | Passing handlers to http listener');
+        _this.log.info('RS | Passing handlers to http listener');
         http.addShutdownHandler(shutDown);
-        log.info('RS | For e child process for the event poller');
+        _this.log.info('RS | Forking child process for the event poller');
         cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
         return poller = cp.fork(path.resolve(__dirname, 'event-poller'), cliArgs);
       }
@@ -174,11 +177,14 @@ WebAPI-ECA Engine
 
 
   shutDown = function() {
-    log.warn('RS | Received shut down command!');
+    _this.log.warn('RS | Received shut down command!');
     if (engine != null) {
       engine.shutDown();
     }
-    return http != null ? http.shutDown() : void 0;
+    if (http != null) {
+      http.shutDown();
+    }
+    return process.exit();
   };
 
   /*
@@ -192,6 +198,10 @@ WebAPI-ECA Engine
   process.on('message', function(cmd) {
     return typeof procCmds[cmd] === "function" ? procCmds[cmd]() : void 0;
   });
+
+  process.on('SIGINT', shutDown);
+
+  process.on('SIGTERM', shutDown);
 
   procCmds.die = shutDown;
 

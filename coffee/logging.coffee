@@ -9,7 +9,7 @@
 
 # `node myapp.js | bunyan`
 
-# **Requires:**
+# **Loads Modules:**
 
 # - Node.js Module: [fs](http://nodejs.org/api/fs.html) and [path](http://nodejs.org/api/path.html)
 fs = require 'fs'

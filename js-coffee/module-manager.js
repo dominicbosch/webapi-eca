@@ -11,12 +11,12 @@
 
 var fs = require('fs'),
     path = require('path'),
-    log = require('./logging'),
+    log,
     db, funcLoadAction, funcLoadRule;
 
 exports = module.exports = function(args) {
   args = args || {};
-  log(args);
+  log = args.logger;
   return module.exports;
 };
 
@@ -82,7 +82,7 @@ exports.loadModules = function(directory, callback) {
       log.error('LM', 'loading modules directory: ' + err);
       return;
     }
-    log.print('LM', 'Loading ' + list.length + ' modules from "' + directory + '"');
+    log.info('LM', 'Loading ' + list.length + ' modules from "' + directory + '"');
     list.forEach(function (file) {
       fs.stat(path.resolve(__dirname, '..', directory, file), function (err, stat) {
         if (stat && stat.isDirectory()) {

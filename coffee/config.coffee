@@ -6,7 +6,8 @@ Configuration
 
 ###
 
-# **Requires:**
+# **Loads Modules:**
+
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
 #   [path](http://nodejs.org/api/path.html)
 fs = require 'fs'
@@ -45,7 +46,6 @@ loadConfigFile = ( configPath ) =>
     'log'
     'http-port'
     'db-port'
-    'crypto-key'
   ]
   #TODO Try to get rid of crypto key
   try
@@ -89,7 +89,7 @@ exports.getHttpPort = -> fetchProp 'http-port'
 
 @public getDBPort()
 ###
-exports.getDBPort = -> fetchProp 'db-port'
+exports.getDbPort = -> fetchProp 'db-port'
 
 ###
 ***Returns*** the log conf object

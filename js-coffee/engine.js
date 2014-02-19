@@ -1,17 +1,15 @@
 'use strict';
 
 var path = require('path'),
-    log = require('./logging'),
    // qEvents = new (require('./queue')).Queue(), //TODO export queue into redis
     regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
     listRules = {},
     listActionModules = {},
     isRunning = true,
-    mm, poller, db;
+    mm, poller, db, log;
 
 exports = module.exports = function( args ) {
-  args = args || {};
-  log(args);
+  log = args.logger;
   mm = require('./module-manager')(args);
   return module.exports;
 };
@@ -28,12 +26,12 @@ exports.addPersistence = function(db_link) {
   //   if(err) log.error('EN', 'retrieving Action Modules from DB!');
   //   else {
   //     if(!obj) {
-  //       log.print('EN', 'No Action Modules found in DB!');
+  //       log.info('EN', 'No Action Modules found in DB!');
   //       loadRulesFromDB();
   //     } else {
   //       var m;
   //       for(var el in obj) {
-  //         log.print('EN', 'Loading Action Module from DB: ' + el);
+  //         log.info('EN', 'Loading Action Module from DB: ' + el);
   //         try{
   //           m = mm.requireFromString(obj[el], el);
   //           db.getActionModuleAuth(el, function(mod) {
@@ -75,7 +73,7 @@ exports.loadActionModule = function(name, objModule) {
   // TODO only load module once, load user specific parameters per user
   // when rule is activated by user. invoked action then uses user specific
   // parameters
-  log.print('EN', 'Action module "' + name + '" loaded');
+  log.info('EN', 'Action module "' + name + '" loaded');
   listActionModules[name] = objModule;
 };
 
@@ -89,17 +87,17 @@ exports.getActionModule = function(name) {
  */
 exports.addRule = function(objRule) {
   //TODO validate rule
-  log.print('EN', 'Loading Rule');
-  log.print('EN', objRule);
-  log.print('EN', 'Loading Rule: ' + objRule.id);
-  if(listRules[objRule.id]) log.print('EN', 'Replacing rule: ' + objRule.id);
+  log.info('EN', 'Loading Rule');
+  log.info('EN', objRule);
+  log.info('EN', 'Loading Rule: ' + objRule.id);
+  if(listRules[objRule.id]) log.info('EN', 'Replacing rule: ' + objRule.id);
   listRules[objRule.id] = objRule;
 
   // Notify poller about eventual candidate
   try {
     poller.send('event|'+objRule.event);
   } catch (err) {
-    log.print('EN', 'Unable to inform poller about new active rule!');
+    log.info('EN', 'Unable to inform poller about new active rule!');
   }
 };
 
@@ -119,7 +117,7 @@ function pollQueue() {
  * @param {Object} evt The event object
  */
 function processEvent(evt) {
-  log.print('EN', 'processing event: ' + evt.event + '(' + evt.eventid + ')');
+  log.info('EN', 'processing event: ' + evt.event + '(' + evt.eventid + ')');
   var actions = checkEvent(evt);
   for(var i = 0; i < actions.length; i++) {
     invokeAction(evt, actions[i]);
@@ -137,7 +135,7 @@ function checkEvent(evt) {
     //TODO this needs to get depth safe, not only data but eventually also
     // on one level above (eventid and other meta)
     if(listRules[rn].event === evt.event && validConditions(evt.payload, listRules[rn])) {
-      log.print('EN', 'Rule "' + rn + '" fired');
+      log.info('EN', 'Rule "' + rn + '" fired');
       actions = actions.concat(listRules[rn].actions);
     }
   }
@@ -181,7 +179,7 @@ function invokeAction(evt, action) {
       log.error('EN', 'during action execution: ' + err);
     }
   }
-  else log.print('EN', 'No api interface found for: ' + action.module);
+  else log.info('EN', 'No api interface found for: ' + action.module);
 }
 
 /**
@@ -229,7 +227,7 @@ function preprocessActionArguments(evt, act, res) {
 }
 
 exports.shutDown = function() {
-  log.print('EN', 'Shutting down Poller and DB Link');
+  log.info('EN', 'Shutting down Poller and DB Link');
   isRunning = false;
   if(poller) poller.send('cmd|shutdown');
   if(db) db.shutDown();

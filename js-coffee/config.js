@@ -52,7 +52,7 @@ Configuration
   loadConfigFile = function(configPath) {
     var confProperties, e, isReady, prop, _i, _len;
     _this.config = null;
-    confProperties = ['log', 'http-port', 'db-port', 'crypto-key'];
+    confProperties = ['log', 'http-port', 'db-port'];
     try {
       _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', configPath)));
       isReady = true;
@@ -115,7 +115,7 @@ Configuration
   */
 
 
-  exports.getDBPort = function() {
+  exports.getDbPort = function() {
     return fetchProp('db-port');
   };
 

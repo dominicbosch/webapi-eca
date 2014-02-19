@@ -21,10 +21,9 @@ exports.testParameters = ( test ) =>
     'file-level'
     'file-path'
   ]
-  test.expect 4 + reqProp.length
+  test.expect 3 + reqProp.length
   test.ok @conf.getHttpPort(), 'HTTP port does not exist!'
-  test.ok @conf.getDBPort(), 'DB port does not exist!'
-  test.ok @conf.getCryptoKey(), 'Crypto key does not exist!'
+  test.ok @conf.getDbPort(), 'DB port does not exist!'
   logconf = @conf.getLogConf()
   test.ok logconf, 'Log config does not exist!'
   for prop in reqProp

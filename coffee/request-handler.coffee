@@ -2,14 +2,14 @@
 
 Request Handler
 ============
-> TODO Add documentation
+> The request handler (surprisingly) handles requests made through HTTP to
+> the [HTTP Listener](http-listener.html). It will handle user requests for
+> pages as well as POST requests such as user login, module storing, event
+> invocation and also admin commands.
 
 ###
 
-# **Requires:**
-
-# - [Logging](logging.html)
-log = require './logging'
+# **Loads Modules:**
 
 # - [Persistence](persistence.html)
 db = require './persistence'
@@ -40,8 +40,7 @@ objUserCmds =
 objAdminCmds = {}
 
 exports = module.exports = ( args ) -> 
-  args = args ? {}
-  log args
+  log = args.logger
   db args
   mm args
   mm.addDBLink db
@@ -105,7 +104,7 @@ exports.handleLogin = ( req, resp ) ->
       db.loginUser obj.username, obj.password, ( err, usr ) ->
         if(err)
           # Tapping on fingers, at least in log...
-          log.print 'RH', "AUTH-UH-OH (#{obj.username}): " + err.message
+          log.warn err, "RH | AUTH-UH-OH (#{obj.username})"
         else
           # no error, so we can associate the user object from the DB to the session
           req.session.user = usr
@@ -280,7 +279,7 @@ exports.handleAdmin = ( req, resp ) =>
   if req.session and req.session.user
     if req.session.user.isAdmin is "true"
       q = req.query
-      log.print 'RH', 'Received admin request: ' + req.originalUrl
+      log.info 'RH | Received admin request: ' + req.originalUrl
       if q.cmd 
         @objAdminCmds[q.cmd]? q, answerHandler req, resp, true
       else

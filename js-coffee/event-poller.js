@@ -29,7 +29,7 @@ function init() {
   logconf['file-path'] = process.argv[5]
   logconf['nolog'] = process.argv[6]
 
-  log = logger(logconf);
+  log = logger.getLogger(logconf);
   var args = { logger: log };
   (ml = require('./module-manager'))(args);
   (db = require('./persistence'))(args);
@@ -39,6 +39,12 @@ function init() {
   log.info('Event Poller instantiated');
 };
 
+function shutDown() {
+  log.info('EP', 'Shutting down DB Link');
+  isRunning = false;
+  if(db) db.shutDown();
+  process.exit();
+}
 
 function loadEventModule(el, cb) {
   if(db && ml) db.getEventModule(el, function(err, obj) {
@@ -47,7 +53,7 @@ function loadEventModule(el, cb) {
       else log.error('EP', 'Retrieving Event Module ' + el + ' from DB!');
     }
     else {
-      // log.print('EP', 'Loading Event Module: ' + el);
+      // log.info('EP', 'Loading Event Module: ' + el);
       try {
         var m = ml.requireFromString(obj, el);
         db.getEventModuleAuth(el, function(mod) {
@@ -71,13 +77,13 @@ function fetchPollFunctionFromModule(mod, func) {
     if(mod) mod = mod[func[i]];
   }
   if(mod) {
-    log.print('EP', 'Found active event module "' + func.join('->') + '", adding it to polling list');
+    log.info('EP', 'Found active event module "' + func.join('->') + '", adding it to polling list');
     //FIXME change this to [module][prop] = module; because like this identical properties get overwritten
     // also add some on a per user basis information because this should go into a user context for the users
     // that sat up this rule!
     listPoll[func.join('->')] = mod;
   } else {
-    log.print('EP', 'No property "' + func.join('->') + '" found');
+    log.info('EP', 'No property "' + func.join('->') + '" found');
   }
 }
 
@@ -88,11 +94,11 @@ function initMessageActions() {
       if(listEventModules[arrModule[0]]) {
         fetchPollFunctionFromModule(listEventModules[arrModule[0]], arrModule);
       } else {
-        log.print('EP', 'Event Module ' + arrModule[0] + ' needs to be loaded, doing it now...');
+        log.info('EP', 'Event Module ' + arrModule[0] + ' needs to be loaded, doing it now...');
         loadEventModule(arrModule[0], function(err, obj) {
           if(err || !obj) log.error('EP', 'Event Module "' + arrModule[0] + '" not found: ' + err);
           else {
-            log.print('EP', 'Event Module ' + arrModule[0] + ' found and loaded');
+            log.info('EP', 'Event Module ' + arrModule[0] + ' found and loaded');
             fetchPollFunctionFromModule(obj, arrModule);
           }
         });
@@ -115,14 +121,13 @@ function initMessageActions() {
       if(func) func(arrProps);
     }
   });
+
+  // very important so the process doesnt linger on when the paren process is killed  
+  process.on('disconnect', shutDown);
 }
 
 function initAdminCommands() {
-  listAdminCommands['shutdown'] = function(args) {
-    log.print('EP', 'Shutting down DB Link');
-    isRunning = false;
-    if(db) db.shutDown();
-  };
+  listAdminCommands['shutdown'] = shutDown
 }
 
 function checkRemotes() {

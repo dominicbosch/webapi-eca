@@ -3,15 +3,16 @@
 
 Request Handler
 ============
-> TODO Add documentation
+> The request handler (surprisingly) handles requests made through HTTP to
+> the [HTTP Listener](http-listener.html). It will handle user requests for
+> pages as well as POST requests such as user login, module storing, event
+> invocation and also admin commands.
 */
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, log, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
     _this = this;
-
-  log = require('./logging');
 
   db = require('./persistence');
 
@@ -38,9 +39,8 @@ Request Handler
   objAdminCmds = {};
 
   exports = module.exports = function(args) {
-    var user, users, _i, _len;
-    args = args != null ? args : {};
-    log(args);
+    var log, user, users, _i, _len;
+    log = args.logger;
     db(args);
     mm(args);
     mm.addDBLink(db);
@@ -122,7 +122,7 @@ Request Handler
         obj = qs.parse(body);
         return db.loginUser(obj.username, obj.password, function(err, usr) {
           if (err) {
-            log.print('RH', ("AUTH-UH-OH (" + obj.username + "): ") + err.message);
+            log.warn(err, "RH | AUTH-UH-OH (" + obj.username + ")");
           } else {
             req.session.user = usr;
           }
@@ -341,7 +341,7 @@ Request Handler
     if (req.session && req.session.user) {
       if (req.session.user.isAdmin === "true") {
         q = req.query;
-        log.print('RH', 'Received admin request: ' + req.originalUrl);
+        log.info('RH | Received admin request: ' + req.originalUrl);
         if (q.cmd) {
           return typeof (_base = _this.objAdminCmds)[_name = q.cmd] === "function" ? _base[_name](q, answerHandler(req, resp, true)) : void 0;
         } else {

@@ -5,8 +5,10 @@ exports.setUp = ( cb ) =>
   @log = logger.getLogger
     nolog: true
   @db = require @path.join '..', 'js-coffee', 'persistence'
-  @db 
+  opts =
     logger: @log
+  opts[ 'db-port' ] = 6379
+  @db opts
   cb()
   
 exports.tearDown = ( cb ) =>
@@ -31,22 +33,14 @@ exports.Availability =
       test.ifError err, 'Connection failed!'
       test.done()
 
-  testNoConfig: ( test ) =>
+  # We cannot test for no db-port, since node-redis then assumes standard port
+  testWrongDbPort: ( test ) =>
     test.expect 1
 
-    @db 
+    opts =
       logger: @log
-      configPath: 'nonexistingconf.file'
-    @db.isConnected ( err ) ->
-      test.ok err, 'Still connected!?'
-      test.done()
-
-  testWrongConfig: ( test ) =>
-    test.expect 1
-
-    @db 
-      logger: @log
-      configPath: @path.join 'testing', 'jsonWrongConfig.json'
+    opts[ 'db-port' ] = 63214
+    @db opts
     @db.isConnected ( err ) ->
       test.ok err, 'Still connected!?'
       test.done()

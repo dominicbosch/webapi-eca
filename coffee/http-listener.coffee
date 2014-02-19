@@ -8,10 +8,7 @@ HTTP Listener
 
 ###
 
-# **Requires:**
-
-# - [Logging](logging.html)
-log = require './logging'
+# **Loads Modules:**
 
 # - [Request Handler](request-handler.html)
 requestHandler = require './request-handler'
@@ -25,7 +22,8 @@ qs = require 'querystring'
 express = require 'express'
 app = express()
 
-#RedisStore = require('connect-redis')(express), # TODO use RedisStore for persistent sessions
+#TODO use RedisStore for persistent sessions
+#RedisStore = require('connect-redis')(express),
 
 ###
 Module call
@@ -34,9 +32,8 @@ Initializes the HTTP listener and its request handler.
 
 @param {Object} args
 ###
-exports = module.exports = ( args ) -> 
-  args = args ? {}
-  log args
+exports = module.exports = ( args ) =>
+  @log = args.logger
   requestHandler args
   initRouting args[ 'http-port' ]
   module.exports
@@ -47,15 +44,15 @@ Initializes the request routing and starts listening on the given port.
 @param {int} port
 @private initRouting( *fShutDown* )
 ###
-initRouting = ( port ) ->
+initRouting = ( port ) =>
   # Add cookie support for session handling.
   app.use express.cookieParser()
-  #TODO The session secret appriach needs to be fixed!
+  #TODO The session secret approach needs to be fixed!
   sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
   app.use express.session { secret: sess_sec }
 
   #At the moment there's no redis session backbone (didn't work straight away)
-  log.print 'HL', 'no session backbone'
+  @log.info 'HL | no session backbone'
 
   # **Accepted requests to paths:**
 
@@ -83,10 +80,9 @@ initRouting = ( port ) ->
   # - **`POST` to _"/user"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
   try
-    app.listen port # inbound event channel
+    @server = app.listen port # inbound event channel
   catch e
-    e.addInfo = 'opening port'
-    log.error e
+    @log.error e, 'HL | Unable to listen...'
 
 ###
 Adds the shutdown handler to the admin commands.
@@ -102,7 +98,11 @@ Shuts down the http listener.
 
 @public shutDown()
 ###
-exports.shutDown = () ->
-  log.print 'HL', 'Shutting down HTTP listener'
-  process.exit() # This is a bit brute force...
+exports.shutDown = () =>
+  @log.warn 'HL | Shutting down HTTP listener'
+  console.log 'apppp'
+  console.log app
+  @server.close()
+  #TODO This is a bit brute force...
+  #process.exit()
 
