@@ -49,7 +49,10 @@ Persistence
       connect_timeout: 2000
     });
     _this.db.on('error', function(err) {
-      return _this.log.warn(err, 'message from DB');
+      if (err.message.indexOf('ECONNREFUSED' > -1)) {
+        _this.connRefused = true;
+        return _this.log.error(err, 'DB | Wrong port?');
+      }
     });
     _this.ep = new IndexedModules('event-poller', _this.db, _this.log);
     return _this.ai = new IndexedModules('action-invoker', _this.db, _this.log);
@@ -71,13 +74,17 @@ Persistence
     } else {
       numAttempts = 0;
       fCheckConnection = function() {
-        if (_this.db.connected) {
-          _this.log.info('DB | Successfully connected to DB!');
-          return cb();
-        } else if (numAttempts++ < 10) {
-          return setTimeout(fCheckConnection, 100);
+        if (_this.connRefused) {
+          return cb(new Error('DB | Connection refused! Wrong port?'));
         } else {
-          return cb(new Error('Connection to DB failed!'));
+          if (_this.db.connected) {
+            _this.log.info('DB | Successfully connected to DB!');
+            return cb();
+          } else if (numAttempts++ < 10) {
+            return setTimeout(fCheckConnection, 100);
+          } else {
+            return cb(new Error('DB | Connection to DB failed!'));
+          }
         }
       };
       return setTimeout(fCheckConnection, 100);

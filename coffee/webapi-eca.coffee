@@ -120,13 +120,14 @@ init = =>
     logconf: logconf
   # > Fetch the `http-port` argument
   args[ 'http-port' ] = parseInt argv.w || conf.getHttpPort()
-  args[ 'db-port' ] = parseInt argv.w || conf.getDbPort()
+  args[ 'db-port' ] = parseInt argv.d || conf.getDbPort()
   
   @log.info 'RS | Initialzing DB'
   db args
   # > We only proceed with the initialization if the DB is ready
-  db.isConnected ( err, result ) =>
+  db.isConnected ( err ) =>
     if err
+      @log.error 'RS | No DB connection, shutting down system!'
       shutDown()
 
     else
@@ -163,7 +164,7 @@ Shuts down the server.
 shutDown = =>
   @log.warn 'RS | Received shut down command!'
   engine?.shutDown()
-  http?.shutDown()
+  # We need to force stop express (in http-listener module)
   process.exit()
 
 ###

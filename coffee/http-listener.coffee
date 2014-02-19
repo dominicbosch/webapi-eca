@@ -80,16 +80,16 @@ initRouting = ( port ) =>
   # - **`POST` to _"/user"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
   try
-    @server = app.listen parseInt( port ) || 8125 # inbound event channel
+    server = app.listen parseInt( port ) || 8125 # inbound event channel
     ###
     Error handling of the express port listener requires special attention,
     thus we have to catch the error, which is issued if the port is already in use.
     ###
-    @server.on 'listening', () =>
-      addr = @server.address()
+    server.on 'listening', () =>
+      addr = server.address()
       if addr.port is not port
         @shutDownSystem()
-    @server.on 'error', ( err ) =>
+    server.on 'error', ( err ) =>
       if err.errno is 'EADDRINUSE'
         @log.error err, 'HL | http-port already in use, shutting down!'
         @shutDownSystem()
@@ -105,13 +105,16 @@ exports.addShutdownHandler = ( fShutDown ) =>
   @shutDownSystem = fShutDown
   requestHandler.addShutdownHandler fShutDown
 
-###
-Shuts down the http listener.
 
-@public shutDown()
-###
-exports.shutDown = () =>
-  @log.warn 'HL | Shutting down HTTP listener'
-  try
-    @server.close()
+# There's no way to gracefully stop express from running, thus the main
+# module needs to call process.exit() at the very end of its existance... thanks
+# ###
+# Shuts down the http listener.
+
+# @public shutDown()
+# ###
+# exports.shutDown = () =>
+#   @log?.warn 'HL | Shutting down HTTP listener'
+#   # Yeah I know the discussion... let's assume the system runs forever
+#   process.exit()
 

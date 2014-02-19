@@ -16,9 +16,9 @@ exports.tearDown = ( cb ) =>
   cb()
 
 
-###
-# Test AVAILABILITY
-###
+# ###
+# # Test AVAILABILITY
+# ###
 exports.Availability =
   testRequire: ( test ) =>
     test.expect 1
@@ -39,7 +39,7 @@ exports.Availability =
 
     opts =
       logger: @log
-    opts[ 'db-port' ] = 63214
+    opts[ 'db-port' ] = 13410
     @db opts
     @db.isConnected ( err ) ->
       test.ok err, 'Still connected!?'

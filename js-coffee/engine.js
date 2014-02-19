@@ -227,7 +227,7 @@ function preprocessActionArguments(evt, act, res) {
 }
 
 exports.shutDown = function() {
-  log.info('EN', 'Shutting down Poller and DB Link');
+  if(log) log.info('EN', 'Shutting down Poller and DB Link');
   isRunning = false;
   if(poller) poller.send('cmd|shutdown');
   if(db) db.shutDown();

@@ -41,8 +41,12 @@ exports = module.exports = ( args ) =>
   @crypto_key = "}f6y1y}B{.an$}2c$Yl.$mSnF\\HX149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw;:DPV;4gy:qf]Zq{\"6sgK{,}^\"!]O;qBM3G?]h_`Psw=b6bVXKXry7*"
   @db = redis.createClient args[ 'db-port' ],
     'localhost', { connect_timeout: 2000 }
+  # Eventually we try to connect to the wrong port, redis will emit an error that we
+  # need to catch and take into account when answering the isConnected function call
   @db.on 'error', ( err ) =>
-    @log.warn err, 'message from DB'
+    if err.message.indexOf 'ECONNREFUSED' > -1
+      @connRefused = true
+      @log.error err, 'DB | Wrong port?'
   @ep = new IndexedModules( 'event-poller', @db, @log  )
   @ai = new IndexedModules( 'action-invoker', @db, @log )
   
@@ -54,17 +58,21 @@ ten attempts within five seconds, or nothing on success to the callback(err).
 @param {function} cb
 ###
 exports.isConnected = ( cb ) =>
-  if @db.connected then cb()
+  if @db.connected
+    cb()
   else
     numAttempts = 0
     fCheckConnection = =>
-      if @db.connected
-        @log.info 'DB | Successfully connected to DB!'
-        cb()
-      else if numAttempts++ < 10
-        setTimeout fCheckConnection, 100
+      if @connRefused
+        cb new Error 'DB | Connection refused! Wrong port?'
       else
-        cb new Error 'Connection to DB failed!'
+        if @db.connected
+          @log.info 'DB | Successfully connected to DB!'
+          cb()
+        else if numAttempts++ < 10
+          setTimeout fCheckConnection, 100
+        else
+          cb new Error 'DB | Connection to DB failed!'
     setTimeout fCheckConnection, 100
 
 ###

@@ -9,9 +9,8 @@ path = require 'path'
 #   @engine.send('die')
 #   cb()
 
-# # TODO wrong db-port or http-port will make the engine stop properly before starting
-# # goes hand in hand with wrong config file
-# # http command shutdown does it properly, as well as sending the process the die command
+# TODO test http shutdown command
+# TODO test wrong/invalid config file
 
 exports.testShutDown = ( test ) =>
   test.expect 1
@@ -100,5 +99,24 @@ exports.testHttpPortInvalid = ( test ) =>
       test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'
       test.done()
 
+  setTimeout fWaitForDeath, 1000
+
+exports.testDbPortInvalid = ( test ) =>
+  test.expect 1
+  
+  isRunning = true
+  pth = path.resolve 'js-coffee', 'webapi-eca'
+  engine = cp.fork pth, ['-n', '-d', '10'] # [ '-i' , 'warn' ]
+  engine.on 'exit', ( code, signal ) ->
+    test.ok true, 'Engine stopped'
+    isRunning = false
+    test.done()
+
+  # Garbage collect eventually still running process
+  fWaitForDeath = () =>
+    engine.kill()
+    if isRunning
+      test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'
+      test.done()
 
   setTimeout fWaitForDeath, 1000

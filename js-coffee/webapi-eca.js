@@ -129,12 +129,13 @@ WebAPI-ECA Engine
       logconf: logconf
     };
     args['http-port'] = parseInt(argv.w || conf.getHttpPort());
-    args['db-port'] = parseInt(argv.w || conf.getDbPort());
+    args['db-port'] = parseInt(argv.d || conf.getDbPort());
     _this.log.info('RS | Initialzing DB');
     db(args);
-    return db.isConnected(function(err, result) {
+    return db.isConnected(function(err) {
       var cliArgs, poller;
       if (err) {
+        _this.log.error('RS | No DB connection, shutting down system!');
         return shutDown();
       } else {
         _this.log.info('RS | Initialzing engine');
@@ -163,9 +164,6 @@ WebAPI-ECA Engine
     _this.log.warn('RS | Received shut down command!');
     if (engine != null) {
       engine.shutDown();
-    }
-    if (http != null) {
-      http.shutDown();
     }
     return process.exit();
   };
