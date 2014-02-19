@@ -80,9 +80,20 @@ initRouting = ( port ) =>
   # - **`POST` to _"/user"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
   try
-    @server = app.listen port # inbound event channel
-  catch e
-    @log.error e, 'HL | Unable to listen...'
+    @server = app.listen parseInt( port ) || 8125 # inbound event channel
+    ###
+    Error handling of the express port listener requires special attention,
+    thus we have to catch the error, which is issued if the port is already in use.
+    ###
+    @server.on 'listening', () =>
+      addr = @server.address()
+      if addr.port is not port
+        @shutDownSystem()
+    @server.on 'error', ( err ) =>
+      if err.errno is 'EADDRINUSE'
+        @log.error err, 'HL | http-port already in use, shutting down!'
+        @shutDownSystem()
+
 
 ###
 Adds the shutdown handler to the admin commands.
@@ -90,7 +101,8 @@ Adds the shutdown handler to the admin commands.
 @param {function} fshutDown
 @public addShutdownHandler( *fShutDown* )
 ###
-exports.addShutdownHandler = ( fShutDown ) ->
+exports.addShutdownHandler = ( fShutDown ) =>
+  @shutDownSystem = fShutDown
   requestHandler.addShutdownHandler fShutDown
 
 ###
@@ -100,9 +112,6 @@ Shuts down the http listener.
 ###
 exports.shutDown = () =>
   @log.warn 'HL | Shutting down HTTP listener'
-  console.log 'apppp'
-  console.log app
-  @server.close()
-  #TODO This is a bit brute force...
-  #process.exit()
+  try
+    @server.close()
 

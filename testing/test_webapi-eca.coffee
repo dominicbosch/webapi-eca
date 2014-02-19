@@ -32,7 +32,7 @@ exports.testShutDown = ( test ) =>
   # Garbage collect eventually still running process
   fWaitForDeath = () ->
     if isRunning
-      test.ok false, 'Engine didn\'t shut down!'
+      test.ok false, '"testShutDown" Engine didn\'t shut down!'
       engine.kill()
       test.done()
 
@@ -50,7 +50,7 @@ exports.testKill = ( test ) =>
     
   # Garbage collect eventually still running process
   fWaitForDeath = () ->
-    test.ok engine.killed, 'Engine didn\'t shut down!'
+    test.ok engine.killed, '"testKill" Engine didn\'t shut down!'
     test.done()
 
   setTimeout fWaitForStartup, 1000
@@ -69,12 +69,12 @@ exports.testHttpPortAlreadyUsed = ( test ) =>
       isRunning = false
       test.done()
   
-    setTimeout fWaitForDeath, 3000
+    setTimeout fWaitForDeath, 1000
   
   # Garbage collect eventually still running process
   fWaitForDeath = () =>
     if isRunning
-      test.ok false, 'Engine didn\'t shut down!'
+      test.ok false, '"testHttpPortAlreadyUsed" Engine didn\'t shut down!'
       test.done()
 
     @engine_one.kill()
@@ -87,7 +87,7 @@ exports.testHttpPortInvalid = ( test ) =>
   
   isRunning = true
   pth = path.resolve 'js-coffee', 'webapi-eca'
-  engine = cp.fork pth, ['-n', '-w', '-1'] # [ '-i' , 'warn' ]
+  engine = cp.fork pth, ['-n', '-w', '0'] # [ '-i' , 'warn' ]
   engine.on 'exit', ( code, signal ) ->
     test.ok true, 'Engine stopped'
     isRunning = false
@@ -95,10 +95,10 @@ exports.testHttpPortInvalid = ( test ) =>
 
   # Garbage collect eventually still running process
   fWaitForDeath = () =>
+    engine.kill()
     if isRunning
-      test.ok false, 'Engine didn\'t shut down!'
+      test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'
       test.done()
 
-    engine.kill()
 
   setTimeout fWaitForDeath, 1000

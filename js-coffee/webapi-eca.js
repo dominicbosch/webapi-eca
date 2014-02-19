@@ -90,23 +90,6 @@ WebAPI-ECA Engine
   }
 
   /*
-  Error handling of the express port listener requires special attention,
-  thus we have to catch the process error, which is issued if
-  the port is already in use.
-  */
-
-
-  process.on('uncaughtException', function(err) {
-    switch (err.errno) {
-      case 'EADDRINUSE':
-        _this.log.error(err, 'RS | http-port already in use, shutting down!');
-        return shutDown();
-      default:
-        throw err;
-    }
-  });
-
-  /*
   This function is invoked right after the module is loaded and starts the server.
   
   @private init()
@@ -157,11 +140,11 @@ WebAPI-ECA Engine
         _this.log.info('RS | Initialzing engine');
         engine(args);
         _this.log.info('RS | Initialzing http listener');
+        http.addShutdownHandler(shutDown);
         http(args);
         _this.log.info('RS | Passing handlers to engine');
         engine.addPersistence(db);
         _this.log.info('RS | Passing handlers to http listener');
-        http.addShutdownHandler(shutDown);
         _this.log.info('RS | Forking child process for the event poller');
         cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
         return poller = cp.fork(path.resolve(__dirname, 'event-poller'), cliArgs);

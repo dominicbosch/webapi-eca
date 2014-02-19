@@ -48,7 +48,7 @@ HTTP Listener
 
 
   initRouting = function(port) {
-    var e, sess_sec;
+    var sess_sec;
     app.use(express.cookieParser());
     sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
     app.use(express.session({
@@ -65,11 +65,26 @@ HTTP Listener
     app.post('/logout', requestHandler.handleLogout);
     app.post('/usercommand', requestHandler.handleUserCommand);
     try {
-      return _this.server = app.listen(port);
-    } catch (_error) {
-      e = _error;
-      return _this.log.error(e, 'HL | Unable to listen...');
-    }
+      _this.server = app.listen(parseInt(port) || 8125);
+      /*
+      Error handling of the express port listener requires special attention,
+      thus we have to catch the error, which is issued if the port is already in use.
+      */
+
+      _this.server.on('listening', function() {
+        var addr;
+        addr = _this.server.address();
+        if (addr.port === !port) {
+          return _this.shutDownSystem();
+        }
+      });
+      return _this.server.on('error', function(err) {
+        if (err.errno === 'EADDRINUSE') {
+          _this.log.error(err, 'HL | http-port already in use, shutting down!');
+          return _this.shutDownSystem();
+        }
+      });
+    } catch (_error) {}
   };
 
   /*
@@ -81,6 +96,7 @@ HTTP Listener
 
 
   exports.addShutdownHandler = function(fShutDown) {
+    _this.shutDownSystem = fShutDown;
     return requestHandler.addShutdownHandler(fShutDown);
   };
 
@@ -93,9 +109,9 @@ HTTP Listener
 
   exports.shutDown = function() {
     _this.log.warn('HL | Shutting down HTTP listener');
-    console.log('apppp');
-    console.log(app);
-    return _this.server.close();
+    try {
+      return _this.server.close();
+    } catch (_error) {}
   };
 
 }).call(this);

@@ -88,18 +88,6 @@ if argv.help
   process.exit()
 
 ###
-Error handling of the express port listener requires special attention,
-thus we have to catch the process error, which is issued if
-the port is already in use.
-###
-process.on 'uncaughtException', ( err ) =>
-  switch err.errno
-    when 'EADDRINUSE'
-      @log.error err, 'RS | http-port already in use, shutting down!'
-      shutDown()
-    # else @log.error 'RS', err
-    else throw err
-###
 This function is invoked right after the module is loaded and starts the server.
 
 @private init()
@@ -146,6 +134,8 @@ init = =>
       @log.info 'RS | Initialzing engine'
       engine args
       @log.info 'RS | Initialzing http listener'
+      # We give the HTTP listener the ability to shutdown the whole system
+      http.addShutdownHandler shutDown
       http args
       
       # > Distribute handlers between modules to link the application.
@@ -153,7 +143,6 @@ init = =>
       engine.addPersistence db
       @log.info 'RS | Passing handlers to http listener'
       #TODO engine pushEvent needs to go into redis queue
-      http.addShutdownHandler shutDown
       #TODO loadAction and addRule will be removed
       #mm.addHandlers db, engine.loadActionModule, engine.addRule
       @log.info 'RS | Forking child process for the event poller'
