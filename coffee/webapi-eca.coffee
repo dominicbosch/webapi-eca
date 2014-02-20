@@ -80,6 +80,12 @@ opt =
   'n':
     alias : 'nolog',
     describe: 'Set this if no output shall be generated'
+#  `-n`, `--nolog`: Set this if no output shall be generated
+  'u':
+    alias : 'unit-test-flag',
+    describe: """Set this if you are running the unit tests. This will cause the
+              system to not call process.exit() at the end of the shutDown routine
+              in order to get rid of the express server that would keep running"""
 
 # now fetch the CLI arguments and exit if the help has been called.
 argv = optimist.usage( usage ).options( opt ).argv
@@ -99,6 +105,7 @@ init = =>
     console.error 'FAIL: Config file not ready! Shutting down...'
     process.exit()
 
+  @isUnitTest = argv.u || false
   logconf = conf.getLogConf()
   if argv.m
     logconf[ 'mode' ] = argv.m
@@ -161,10 +168,11 @@ Shuts down the server.
 
 @private shutDown()
 ### 
-shutDown = =>
+shutDown = () =>
   @log.warn 'RS | Received shut down command!'
   engine?.shutDown()
-  # We need to force stop express (in http-listener module)
+  # We need to call process.exit() since the express server in the http-listener
+  # can't be stopped gracefully. Why would you stop this system anyways!?? 
   process.exit()
 
 ###

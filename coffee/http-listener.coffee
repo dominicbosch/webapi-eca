@@ -79,20 +79,26 @@ initRouting = ( port ) =>
   app.post '/logout', requestHandler.handleLogout
   # - **`POST` to _"/user"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
-  try
-    server = app.listen parseInt( port ) || 8125 # inbound event channel
+
+  server = app.listen parseInt( port ) || 8111 # inbound event channel
+
+  server.on 'listening', () =>
+    addr = server.address()
+    if addr.port isnt port
+      @shutDownSystem()
+  server.on 'error', ( err ) =>
     ###
     Error handling of the express port listener requires special attention,
     thus we have to catch the error, which is issued if the port is already in use.
     ###
-    server.on 'listening', () =>
-      addr = server.address()
-      if addr.port is not port
-        @shutDownSystem()
-    server.on 'error', ( err ) =>
-      if err.errno is 'EADDRINUSE'
+    switch err.errno
+      when 'EADDRINUSE'
         @log.error err, 'HL | http-port already in use, shutting down!'
-        @shutDownSystem()
+      when 'EACCES'
+        @log.error err, 'HL | http-port not accessible, shutting down!'
+      else
+        @log.error err, 'HL | Error in server, shutting down!'
+    @shutDownSystem()
 
 
 ###
@@ -106,15 +112,16 @@ exports.addShutdownHandler = ( fShutDown ) =>
   requestHandler.addShutdownHandler fShutDown
 
 
-# There's no way to gracefully stop express from running, thus the main
-# module needs to call process.exit() at the very end of its existance... thanks
 # ###
 # Shuts down the http listener.
-
+# There's no way to gracefully stop express from running, thus we
+# call process.exit() at the very end of our existance.
+# ... but process.exit cancels the unit tests ...
+# thus we do it in the main module and use a cli flag for the unit tests 
 # @public shutDown()
 # ###
 # exports.shutDown = () =>
 #   @log?.warn 'HL | Shutting down HTTP listener'
-#   # Yeah I know the discussion... let's assume the system runs forever
+#   console.log 'exiting...'
 #   process.exit()
 

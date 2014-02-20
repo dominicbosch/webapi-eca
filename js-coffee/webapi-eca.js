@@ -79,6 +79,10 @@ WebAPI-ECA Engine
     'n': {
       alias: 'nolog',
       describe: 'Set this if no output shall be generated'
+    },
+    'u': {
+      alias: 'unit-test-flag',
+      describe: "Set this if you are running the unit tests. This will cause the\nsystem to not call process.exit() at the end of the shutDown routine\nin order to get rid of the express server that would keep running"
     }
   };
 
@@ -103,6 +107,7 @@ WebAPI-ECA Engine
       console.error('FAIL: Config file not ready! Shutting down...');
       process.exit();
     }
+    _this.isUnitTest = argv.u || false;
     logconf = conf.getLogConf();
     if (argv.m) {
       logconf['mode'] = argv.m;

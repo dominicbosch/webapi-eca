@@ -64,27 +64,32 @@ HTTP Listener
     app.post('/login', requestHandler.handleLogin);
     app.post('/logout', requestHandler.handleLogout);
     app.post('/usercommand', requestHandler.handleUserCommand);
-    try {
-      server = app.listen(parseInt(port) || 8125);
+    server = app.listen(parseInt(port) || 8111);
+    server.on('listening', function() {
+      var addr;
+      addr = server.address();
+      if (addr.port !== port) {
+        return _this.shutDownSystem();
+      }
+    });
+    return server.on('error', function(err) {
       /*
       Error handling of the express port listener requires special attention,
       thus we have to catch the error, which is issued if the port is already in use.
       */
 
-      server.on('listening', function() {
-        var addr;
-        addr = server.address();
-        if (addr.port === !port) {
-          return _this.shutDownSystem();
-        }
-      });
-      return server.on('error', function(err) {
-        if (err.errno === 'EADDRINUSE') {
+      switch (err.errno) {
+        case 'EADDRINUSE':
           _this.log.error(err, 'HL | http-port already in use, shutting down!');
-          return _this.shutDownSystem();
-        }
-      });
-    } catch (_error) {}
+          break;
+        case 'EACCES':
+          _this.log.error(err, 'HL | http-port not accessible, shutting down!');
+          break;
+        default:
+          _this.log.error(err, 'HL | Error in server, shutting down!');
+      }
+      return _this.shutDownSystem();
+    });
   };
 
   /*

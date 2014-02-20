@@ -22,8 +22,7 @@
     emptylog = {
       info: function() {},
       warn: function() {},
-      error: function() {},
-      getLog: function() {}
+      error: function() {}
     };
     args = args != null ? args : {};
     if (args.nolog) {

@@ -81,7 +81,12 @@ exports.testCustomPath = ( test ) =>
   setTimeout fWait, 100
 
 exports.testWrongPath = ( test ) =>
-  test.expect 1
+  empty = [
+    'info'
+    'warn'
+    'error'
+  ]
+  test.expect empty.length
 
   strInfo = 'TL | custom path test 1'
   strPath = 'strange/path/to/test.log'
@@ -89,11 +94,7 @@ exports.testWrongPath = ( test ) =>
   args[ 'file-path' ] = strPath
   args[ 'io-level' ] = 'error'
   log = @logger.getLogger args
-  log.info strInfo
+  test.ok prop in empty, "#{ prop } shouldn't be here" for prop of log
+  test.done()
 
-  fWait = () =>
-    test.ok !fs.existsSync( path.resolve ( strPath ) ), 'Custom log file does exist!?'
-    test.done()
-
-  setTimeout fWait, 1000
     
