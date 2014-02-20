@@ -26,9 +26,12 @@ Returns a bunyan logger according to the given arguments.
 ###
 exports.getLogger = ( args ) =>
   emptylog =
+    trace: () ->
+    debug: () ->
     info: () ->
     warn: () ->
     error: () ->
+    fatal: () ->
   # `args` holds the configuration settings for the logging, see either CLI arguments
   # in [webapi-eca](webapi-eca.html) or the configuration parameters in [config](config.html).
   args = args ? {}

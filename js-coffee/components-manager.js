@@ -7,22 +7,35 @@
 > then compiled into node modules and rules
  */
 
-'use strict';
 
+// # **Loads Modules:**
+
+// # - [Persistence](persistence.html)
 var fs = require('fs'),
     path = require('path'),
-    log,
-    db, funcLoadAction, funcLoadRule;
+    db = require('./persistence'),
+    events = require('events'),
+    log, ee,
+    eventHandlers = [],
+    funcLoadAction, funcLoadRule;
 
 exports = module.exports = function(args) {
   args = args || {};
+  ee = new events.EventEmitter();
   log = args.logger;
+  db(args);
   return module.exports;
 };
 
-exports.addDBLink = function(db_link) {
-  db = db_link;
-};
+exports.addListener = function( evt, eh ) {
+  ee.addListener( evt, eh );
+  //TODO as soon as an event handler is added it needs to receive the full list of existing and activated rules
+}
+
+exports.processRequest = function( user, obj, cb ) {
+  console.log('module manager needs to process request: ');
+  console.log(obj.command);
+}
 
 exports.requireFromString = function(src, name, dir) {
   if(!dir) dir = __dirname;
@@ -174,6 +187,10 @@ exports.storeRule = function (objUser, obj, answHandler) {
     }
     db.getEventModule(objRule.event.split('->')[0], cbEventModule(lst));
     db.storeRule(objRule.id, objUser.username, obj.data);
+    ee.emit('newRule', objRule);
+    // for( var i = 0; i < eventHandlers.length; i++ ) {
+    //   eventHandlers[i]( objRule );
+    // }
   } catch(err) {
     answHandler.answerError(err.message);
     log.error('MM', err);

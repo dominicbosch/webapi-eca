@@ -20,9 +20,12 @@
   exports.getLogger = function(args) {
     var e, emptylog, opt;
     emptylog = {
+      trace: function() {},
+      debug: function() {},
       info: function() {},
       warn: function() {},
-      error: function() {}
+      error: function() {},
+      fatal: function() {}
     };
     args = args != null ? args : {};
     if (args.nolog) {

@@ -34,6 +34,7 @@ HTTP Listener
 
   exports = module.exports = function(args) {
     _this.log = args.logger;
+    _this.shutDownSystem = args['shutdown-function'];
     requestHandler(args);
     initRouting(args['http-port']);
     return module.exports;
@@ -90,19 +91,6 @@ HTTP Listener
       }
       return _this.shutDownSystem();
     });
-  };
-
-  /*
-  Adds the shutdown handler to the admin commands.
-  
-  @param {function} fshutDown
-  @public addShutdownHandler( *fShutDown* )
-  */
-
-
-  exports.addShutdownHandler = function(fShutDown) {
-    _this.shutDownSystem = fShutDown;
-    return requestHandler.addShutdownHandler(fShutDown);
   };
 
 }).call(this);

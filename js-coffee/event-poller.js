@@ -31,7 +31,7 @@ function init() {
 
   log = logger.getLogger(logconf);
   var args = { logger: log };
-  (ml = require('./module-manager'))(args);
+  (ml = require('./components-manager'))(args);
   (db = require('./persistence'))(args);
   initAdminCommands();
   initMessageActions();
@@ -113,13 +113,15 @@ function initMessageActions() {
     if(typeof(func) === 'function') func(args);
   };
   
-  process.on('message', function(strProps) {
-    var arrProps = strProps.split('|');
-    if(arrProps.length < 2) log.error('EP', 'too few parameter in message!');
-    else {
-      var func = listMessageActions[arrProps[0]];
-      if(func) func(arrProps);
-    }
+  process.on('message', function( obj ) {
+    console.log( 'message: ');
+    console.log (obj);
+    // var arrProps = obj .split('|');
+    // if(arrProps.length < 2) log.error('EP', 'too few parameter in message!');
+    // else {
+    //   var func = listMessageActions[arrProps[0]];
+    //   if(func) func(arrProps);
+    // }
   });
 
   // very important so the process doesnt linger on when the paren process is killed  

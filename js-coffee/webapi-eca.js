@@ -13,7 +13,7 @@ WebAPI-ECA Engine
 
 
 (function() {
-  var argv, conf, cp, db, engine, fs, http, init, logger, opt, optimist, path, procCmds, shutDown, usage,
+  var argv, cm, conf, cp, db, engine, fs, http, init, logger, nameEP, opt, optimist, path, procCmds, shutDown, usage,
     _this = this;
 
   logger = require('./logging');
@@ -22,9 +22,13 @@ WebAPI-ECA Engine
 
   db = require('./persistence');
 
+  cm = require('./components-manager');
+
   engine = require('./engine');
 
   http = require('./http-listener');
+
+  nameEP = 'event-poller';
 
   fs = require('fs');
 
@@ -79,10 +83,6 @@ WebAPI-ECA Engine
     'n': {
       alias: 'nolog',
       describe: 'Set this if no output shall be generated'
-    },
-    'u': {
-      alias: 'unit-test-flag',
-      describe: "Set this if you are running the unit tests. This will cause the\nsystem to not call process.exit() at the end of the shutDown routine\nin order to get rid of the express server that would keep running"
     }
   };
 
@@ -107,7 +107,6 @@ WebAPI-ECA Engine
       console.error('FAIL: Config file not ready! Shutting down...');
       process.exit();
     }
-    _this.isUnitTest = argv.u || false;
     logconf = conf.getLogConf();
     if (argv.m) {
       logconf['mode'] = argv.m;
@@ -145,15 +144,21 @@ WebAPI-ECA Engine
       } else {
         _this.log.info('RS | Initialzing engine');
         engine(args);
-        _this.log.info('RS | Initialzing http listener');
-        http.addShutdownHandler(shutDown);
-        http(args);
-        _this.log.info('RS | Passing handlers to engine');
-        engine.addPersistence(db);
-        _this.log.info('RS | Passing handlers to http listener');
-        _this.log.info('RS | Forking child process for the event poller');
+        _this.log.info('RS | Forking a child process for the event poller');
         cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
-        return poller = cp.fork(path.resolve(__dirname, 'event-poller'), cliArgs);
+        poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
+        _this.log.info('RS | Initialzing module manager');
+        cm(args);
+        cm.addListener('newRule', function(evt) {
+          return poller.send(evt);
+        });
+        cm.addListener('newRule', function(evt) {
+          return engine.internalEvent(evt);
+        });
+        _this.log.info('RS | Initialzing http listener');
+        args['request-service'] = cm.processRequest;
+        args['shutdown-function'] = shutDown;
+        return http(args);
       }
     });
   };

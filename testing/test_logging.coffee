@@ -82,9 +82,12 @@ exports.testCustomPath = ( test ) =>
 
 exports.testWrongPath = ( test ) =>
   empty = [
+    'trace'
+    'debug'
     'info'
     'warn'
     'error'
+    'fatal'
   ]
   test.expect empty.length
 

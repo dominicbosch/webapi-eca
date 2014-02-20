@@ -11,12 +11,10 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, mm, mustache, objAdminCmds, objUserCmds, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, mustache, path, qs, renderPage, sendLoginOrPage,
     _this = this;
 
   db = require('./persistence');
-
-  mm = require('./module-manager');
 
   fs = require('fs');
 
@@ -28,44 +26,23 @@ Request Handler
 
   crypto = require('crypto-js');
 
-  objUserCmds = {
-    'store_action': mm.storeActionModule,
-    'get_actionmodules': mm.getAllActionModules,
-    'store_event': mm.storeEventModule,
-    'get_eventmodules': mm.getAllEventModules,
-    'store_rule': mm.storeRule
-  };
-
-  objAdminCmds = {};
-
   exports = module.exports = function(args) {
     var log, user, users, _i, _len;
     log = args.logger;
+    _this.userRequestHandler = args['request-service'];
+    _this.objAdminCmds = {
+      shutdown: function(args, answerHandler) {
+        answerHandler.answerSuccess('Shutting down... BYE!');
+        return setTimeout(args['shutdown-function'], 500);
+      }
+    };
     db(args);
-    mm(args);
-    mm.addDBLink(db);
     users = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'users.json')));
     for (_i = 0, _len = users.length; _i < _len; _i++) {
       user = users[_i];
       db.storeUser(user);
     }
     return module.exports;
-  };
-
-  /*
-  This allows the parent to add the shutdown handler.
-  The shutdown function will be called if the admin command shutdown is issued.
-  
-  @public addShutdownHandler( *fShutdown* )
-  @param {function} fShutdown
-  */
-
-
-  exports.addShutdownHandler = function(fShutdown) {
-    return objAdminCmds.shutdown = function(args, answerHandler) {
-      answerHandler.answerSuccess('Shutting down... BYE!');
-      return setTimeout(fShutdown, 500);
-    };
   };
 
   /*
@@ -315,11 +292,15 @@ Request Handler
         var obj;
         obj = qs.parse(body);
         console.log(obj);
-        if (typeof objUserCmds[obj.command] === 'function') {
-          return objUserCmds[obj.command](req.session.user, obj, answerHandler(req, resp));
-        } else {
-          return resp.send(404, 'Command unknown!');
-        }
+        return this.userRequestHandler(req.session.user, obj, function(err, obj) {
+          console.log('user request handler sent answer!');
+          console.log(obj);
+          if (!err) {
+            return resp.send('yay!');
+          } else {
+            return resp.send(404, 'Command unknown!');
+          }
+        });
       });
     }
   };

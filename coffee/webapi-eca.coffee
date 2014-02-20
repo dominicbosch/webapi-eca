@@ -21,11 +21,17 @@ conf = require './config'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
+# - [ECA Components Manager](components-manager.html)
+cm = require './components-manager'
+
 # - [Engine](engine.html)
 engine = require './engine'
 
 # - [HTTP Listener](http-listener.html)
 http = require './http-listener'
+
+# - [Event Poller](event-poller.html) *(will be forked into a child process)*
+nameEP = 'event-poller'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 # [path](http://nodejs.org/api/path.html)
@@ -80,12 +86,6 @@ opt =
   'n':
     alias : 'nolog',
     describe: 'Set this if no output shall be generated'
-#  `-n`, `--nolog`: Set this if no output shall be generated
-  'u':
-    alias : 'unit-test-flag',
-    describe: """Set this if you are running the unit tests. This will cause the
-              system to not call process.exit() at the end of the shutDown routine
-              in order to get rid of the express server that would keep running"""
 
 # now fetch the CLI arguments and exit if the help has been called.
 argv = optimist.usage( usage ).options( opt ).argv
@@ -105,7 +105,6 @@ init = =>
     console.error 'FAIL: Config file not ready! Shutting down...'
     process.exit()
 
-  @isUnitTest = argv.u || false
   logconf = conf.getLogConf()
   if argv.m
     logconf[ 'mode' ] = argv.m
@@ -132,6 +131,8 @@ init = =>
   @log.info 'RS | Initialzing DB'
   db args
   # > We only proceed with the initialization if the DB is ready
+  #TODO eventually we shouldn't let each module load its own persistence
+  #module, but hand this one through them via the args...
   db.isConnected ( err ) =>
     if err
       @log.error 'RS | No DB connection, shutting down system!'
@@ -141,19 +142,9 @@ init = =>
       # > Initialize all required modules with the args object.
       @log.info 'RS | Initialzing engine'
       engine args
-      @log.info 'RS | Initialzing http listener'
-      # We give the HTTP listener the ability to shutdown the whole system
-      http.addShutdownHandler shutDown
-      http args
       
-      # > Distribute handlers between modules to link the application.
-      @log.info 'RS | Passing handlers to engine'
-      engine.addPersistence db
-      @log.info 'RS | Passing handlers to http listener'
-      #TODO engine pushEvent needs to go into redis queue
-      #TODO loadAction and addRule will be removed
-      #mm.addHandlers db, engine.loadActionModule, engine.addRule
-      @log.info 'RS | Forking child process for the event poller'
+      # Start the event poller. The module manager will emit events for it
+      @log.info 'RS | Forking a child process for the event poller'
       cliArgs = [
         args.logconf['mode']
         args.logconf['io-level']
@@ -161,8 +152,25 @@ init = =>
         args.logconf['file-path']
         args.logconf['nolog']
       ]
-      poller = cp.fork path.resolve( __dirname, 'event-poller' ), cliArgs
+      poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs
 
+      # after the engine and the event poller have been initialized we can
+      # initialize the module manager and register event listener functions
+      # from engine and event poller
+      @log.info 'RS | Initialzing module manager'
+      cm args
+      cm.addListener 'newRule', ( evt ) ->
+        poller.send evt
+      cm.addListener 'newRule', ( evt ) ->
+        engine.internalEvent evt
+      
+      @log.info 'RS | Initialzing http listener'
+      # The request handler passes certain requests to the module manager
+      args[ 'request-service' ] = cm.processRequest
+      # We give the HTTP listener the ability to shutdown the whole system
+      args[ 'shutdown-function' ] = shutDown
+      http args
+      
 ###
 Shuts down the server.
 
@@ -170,6 +178,7 @@ Shuts down the server.
 ### 
 shutDown = () =>
   @log.warn 'RS | Received shut down command!'
+  # db?.shutDown()
   engine?.shutDown()
   # We need to call process.exit() since the express server in the http-listener
   # can't be stopped gracefully. Why would you stop this system anyways!?? 

@@ -14,9 +14,6 @@ Request Handler
 # - [Persistence](persistence.html)
 db = require './persistence'
 
-# - [Module Manager](module-manager.html)
-mm = require './module-manager'
-
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
 #   [querystring](http://nodejs.org/api/querystring.html)
@@ -30,35 +27,18 @@ mustache = require 'mustache'
 crypto = require 'crypto-js'
   
 # Prepare the user command handlers which are invoked via HTTP requests.
-objUserCmds =
-  'store_action': mm.storeActionModule
-  'get_actionmodules': mm.getAllActionModules
-  'store_event': mm.storeEventModule
-  'get_eventmodules': mm.getAllEventModules
-  'store_rule': mm.storeRule
 
-objAdminCmds = {}
-
-exports = module.exports = ( args ) -> 
+exports = module.exports = ( args ) => 
   log = args.logger
+  @userRequestHandler = args[ 'request-service' ]
+  @objAdminCmds =
+    shutdown: ( args, answerHandler ) ->
+      answerHandler.answerSuccess 'Shutting down... BYE!'
+      setTimeout args[ 'shutdown-function' ], 500
   db args
-  mm args
-  mm.addDBLink db
   users = JSON.parse fs.readFileSync path.resolve __dirname, '..', 'config', 'users.json'
   db.storeUser user for user in users
   module.exports
-
-###
-This allows the parent to add the shutdown handler.
-The shutdown function will be called if the admin command shutdown is issued.
-
-@public addShutdownHandler( *fShutdown* )
-@param {function} fShutdown
-###
-exports.addShutdownHandler = ( fShutdown ) =>
-  objAdminCmds.shutdown = ( args, answerHandler ) ->
-    answerHandler.answerSuccess 'Shutting down... BYE!'
-    setTimeout fShutdown, 500
 
 
 ###
@@ -260,10 +240,13 @@ exports.handleUserCommand = ( req, resp ) ->
     req.on 'end', ->
       obj = qs.parse body
       console.log obj
-      if typeof objUserCmds[obj.command] is 'function'
-        objUserCmds[obj.command] req.session.user, obj, answerHandler req, resp
-      else
-        resp.send 404, 'Command unknown!'
+      @userRequestHandler req.session.user, obj, ( err, obj) ->
+        console.log 'user request handler sent answer!'
+        console.log obj
+        if !err
+          resp.send 'yay!'
+        else
+          resp.send 404, 'Command unknown!'
 
 ###
 Handles the admin command requests.

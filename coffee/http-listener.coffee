@@ -34,6 +34,7 @@ Initializes the HTTP listener and its request handler.
 ###
 exports = module.exports = ( args ) =>
   @log = args.logger
+  @shutDownSystem = args[ 'shutdown-function' ]
   requestHandler args
   initRouting args[ 'http-port' ]
   module.exports
@@ -99,17 +100,6 @@ initRouting = ( port ) =>
       else
         @log.error err, 'HL | Error in server, shutting down!'
     @shutDownSystem()
-
-
-###
-Adds the shutdown handler to the admin commands.
-
-@param {function} fshutDown
-@public addShutdownHandler( *fShutDown* )
-###
-exports.addShutdownHandler = ( fShutDown ) =>
-  @shutDownSystem = fShutDown
-  requestHandler.addShutdownHandler fShutDown
 
 
 # ###

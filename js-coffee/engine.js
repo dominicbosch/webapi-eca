@@ -10,10 +10,14 @@ var path = require('path'),
 
 exports = module.exports = function( args ) {
   log = args.logger;
-  mm = require('./module-manager')(args);
+  mm = require('./components-manager')(args);
   return module.exports;
 };
 
+exports.internalEvent = function( evt ) {
+  console.log('engine got internal event');
+  console.log(evt);
+}
 /*
  * Initialize the rules engine which initializes the module loader.
  * @param {Object} db_link the link to the db, see [db\_interface](db_interface.html)
