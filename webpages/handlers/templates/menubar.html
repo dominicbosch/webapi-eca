@@ -1,0 +1,26 @@
+<div id="menubar">
+  <div id="menubar_event">invoke events</div>
+  <div id="menubar_events">forge event poller</div>
+  <div id="menubar_actions">forge action invoker</div>
+  <div id="menubar_rules">forge rules</div>
+  <div id="menubar_logout">logout</div>
+  <script>
+    $( '#menubar_event' ).click( function() {
+      window.location.href = 'forge?page=forge_event';
+    });
+    $( '#menubar_events' ).click( function() {
+      window.location.href = 'forge?page=forge_event_poller';
+    });
+    $( '#menubar_actions' ).click( function() {
+      window.location.href = 'forge?page=forge_action_invoker';
+    });
+    $( '#menubar_rules' ).click( function() {
+      window.location.href = 'forge?page=forge_rule';
+    });
+    $( '#menubar_logout' ).click( function() {
+      $.post( '/logout' ).done( function() {
+        window.location.href = document.URL;
+      });
+    });
+  </script>
+</div>

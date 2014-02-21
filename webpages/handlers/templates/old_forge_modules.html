@@ -47,8 +47,8 @@ exports.myOwnEventFunction = function( callback ) {
 	    <div id="pagetitle">Hi {{user.username}}, forge your own modules!</div>
     	<p>
     		<select id="select_type">
-    			<option value="0">Action Module</option>
-    			<option value="1">Event Module</option>
+    			<option value="0">Action Invoker</option>
+    			<option value="1">Event Poller</option>
 				</select>
     	</p>
       <p>
@@ -102,7 +102,7 @@ exports.myOwnEventFunction = function( callback ) {
             else obj.command = 'store_event';
             $.post('/usercommand', obj)
             .done(function(data) {
-              alert(data);
+              console.log(data);
             })
             .fail(function(err) {
               console.error(err);

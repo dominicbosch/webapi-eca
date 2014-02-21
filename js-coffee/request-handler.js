@@ -11,7 +11,7 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, exports, fs, getHandlerFileAsString, getHandlerPath, getIncludeFileAsString, mustache, path, qs, renderPage, sendLoginOrPage,
+  var answerHandler, crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, qs, renderPage,
     _this = this;
 
   db = require('./persistence');
@@ -26,9 +26,11 @@ Request Handler
 
   crypto = require('crypto-js');
 
+  dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
+
   exports = module.exports = function(args) {
-    var log, user, users, _i, _len;
-    log = args.logger;
+    var user, users, _i, _len;
+    _this.log = args.logger;
     _this.userRequestHandler = args['request-service'];
     _this.objAdminCmds = {
       shutdown: function(args, answerHandler) {
@@ -77,6 +79,7 @@ Request Handler
   };
 
   /*
+  Associates the user object with the session if login is successful.
   
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
@@ -95,23 +98,19 @@ Request Handler
     });
     return req.on('end', function() {
       var obj;
-      if (!req.session || !req.session.user) {
-        obj = qs.parse(body);
-        return db.loginUser(obj.username, obj.password, function(err, usr) {
-          if (err) {
-            log.warn(err, "RH | AUTH-UH-OH (" + obj.username + ")");
-          } else {
-            req.session.user = usr;
-          }
-          if (req.session.user) {
-            return resp.send('OK!');
-          } else {
-            return resp.send(401, 'NO!');
-          }
-        });
-      } else {
-        return resp.send('Welcome ' + req.session.user.name + '!');
-      }
+      obj = qs.parse(body);
+      return db.loginUser(obj.username, obj.password, function(err, usr) {
+        if (err) {
+          _this.log.warn("RH | AUTH-UH-OH ( " + obj.username + " ): " + err.message);
+        } else {
+          req.session.user = usr;
+        }
+        if (req.session.user) {
+          return resp.send('OK!');
+        } else {
+          return resp.send(401, 'NO!');
+        }
+      });
     });
   };
 
@@ -144,127 +143,119 @@ Request Handler
 
 
   getHandlerPath = function(name) {
-    return path.resolve(__dirname, '..', 'webpages', 'handlers', name + '.html');
+    return path.join(dirHandlers, name + '.html');
   };
 
   /*
-  Resolves the path to a handler webpage and returns it as a string.
+  Fetches a template.
   
-  @private getHandlerFileAsString( *name* )
+  @private getTemplate( *name* )
   @param {String} name
   */
 
 
-  getHandlerFileAsString = function(name) {
-    return fs.readFileSync(getHandlerPath(name), 'utf8');
-  };
-
-  /*
-  Fetches an include file.
-  
-  @private getIncludeFileAsString( *name* )
-  @param {String} name
-  */
-
-
-  getIncludeFileAsString = function(name) {
+  getTemplate = function(name) {
     var pth;
-    pth = path.resolve(__dirname, '..', 'webpages', 'handlers', 'includes', name + '.html');
+    pth = path.join(dirHandlers, 'templates', name + '.html');
     return fs.readFileSync(pth, 'utf8');
   };
 
   /*
-  Renders a page depending on the user session and returns it.
+  Fetches a script.
   
-  @private renderPage( *name, sess* )
+  @private getScript( *name* )
+  @param {String} name
+  */
+
+
+  getScript = function(name) {
+    var pth;
+    pth = path.join(dirHandlers, 'js', name + '.js');
+    return fs.readFileSync(pth, 'utf8');
+  };
+
+  /*
+  Fetches remote scripts snippets.
+  
+  @private getRemoteScripts( *name* )
+  @param {String} name
+  */
+
+
+  getRemoteScripts = function(name) {
+    var pth;
+    pth = path.join(dirHandlers, 'remote-scripts', name + '.html');
+    return fs.readFileSync(pth, 'utf8');
+  };
+
+  /*
+  Renders a page, with helps of mustache, depending on the user session and returns it.
+  
+  @private renderPage( *name, sess, msg* )
   @param {String} name
   @param {Object} sess
+  @param {Object} msg
   */
 
 
-  renderPage = function(name, sess, msg) {
-    var menubar, requires, template, view;
-    template = getHandlerFileAsString(name);
-    menubar = getIncludeFileAsString('menubar');
-    requires = getIncludeFileAsString('requires');
-    view = {
-      user: sess.user,
-      head_requires: requires,
-      div_menubar: menubar,
+  renderPage = function(name, req, resp, msg) {
+    var code, content, data, err, menubar, pathSkel, remote_scripts, script, skeleton, view;
+    pathSkel = path.join(dirHandlers, 'skeleton.html');
+    skeleton = fs.readFileSync(pathSkel, 'utf8');
+    code = 200;
+    data = {
       message: msg
     };
-    return mustache.render(template, view);
+    try {
+      script = getScript(name);
+    } catch (_error) {}
+    try {
+      remote_scripts = getRemoteScripts(name);
+    } catch (_error) {}
+    try {
+      content = getTemplate(name);
+    } catch (_error) {
+      err = _error;
+      content = getTemplate('error');
+      script = getScript('error');
+      code = 404;
+      data = {
+        message: 'Invalid Page!'
+      };
+    }
+    content = mustache.render(content, data);
+    if (req.session.user) {
+      menubar = getTemplate('menubar');
+    }
+    view = {
+      user: req.session.user,
+      content: content,
+      script: script,
+      remote_scripts: remote_scripts,
+      menubar: menubar
+    };
+    return resp.send(code, mustache.render(skeleton, view));
   };
 
   /*
-  Sends the desired page or the login to the user.
+  Present the desired forge page to the user.
   
   *Requires
   the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
   and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
   objects.*
   
-  @public renderPageOrLogin( *req, resp, pagename* )
-  @param {String} pagename
+  @public handleForge( *req, resp* )
   */
 
 
-  sendLoginOrPage = function(pagename, req, resp) {
-    if (!req.session) {
-      req.session = {};
-    }
+  exports.handleForge = function(req, resp) {
+    var page;
+    page = req.query.page;
     if (!req.session.user) {
-      pagename = 'login';
+      page = 'login';
     }
-    return resp.send(renderPage(pagename, req.session));
-  };
-
-  /*
-  Present the module forge to the user.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
-  @public handleForgeModules( *req, resp* )
-  */
-
-
-  exports.handleForgeModules = function(req, resp) {
-    return sendLoginOrPage('forge_modules', req, resp);
-  };
-
-  /*
-  Present the rules forge to the user.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
-  @public handleForgeRules( *req, resp* )
-  */
-
-
-  exports.handleForgeRules = function(req, resp) {
-    return sendLoginOrPage('forge_rules', req, resp);
-  };
-
-  /*
-  Present the event invoke page to the user.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
-  @public handleInvokeEvent( *req, resp* )
-  */
-
-
-  exports.handleInvokeEvent = function(req, resp) {
-    return sendLoginOrPage('push_event', req, resp);
+    return renderPage(page, req, resp);
   };
 
   /*
@@ -291,18 +282,40 @@ Request Handler
       return req.on('end', function() {
         var obj;
         obj = qs.parse(body);
-        console.log(obj);
-        return this.userRequestHandler(req.session.user, obj, function(err, obj) {
-          console.log('user request handler sent answer!');
-          console.log(obj);
-          if (!err) {
-            return resp.send('yay!');
+        return _this.userRequestHandler(req.session.user, obj, function(err, obj) {
+          if (err) {
+            return resp.send(404, 'Rethink your request!');
           } else {
-            return resp.send(404, 'Command unknown!');
+            return resp.send(obj);
           }
         });
       });
     }
+  };
+
+  /*
+  Present the admin console to the user if he's allowed to see it.
+  
+  *Requires
+  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+  objects.*
+  
+  @public handleForge( *req, resp* )
+  */
+
+
+  exports.handleAdmin = function(req, resp) {
+    var msg, page;
+    if (!req.session.user) {
+      page = 'login';
+    } else if (req.session.user.isAdmin !== "true") {
+      page = 'login';
+      msg = 'You need to be admin!';
+    } else {
+      page = 'admin';
+    }
+    return renderPage(page, req, resp, msg);
   };
 
   /*
@@ -313,16 +326,16 @@ Request Handler
   and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
   objects.*
   
-  @public handleAdmin( *req, resp* )
+  @public handleAdminCommand( *req, resp* )
   */
 
 
-  exports.handleAdmin = function(req, resp) {
+  exports.handleAdminCommand = function(req, resp) {
     var q, _base, _name;
     if (req.session && req.session.user) {
       if (req.session.user.isAdmin === "true") {
         q = req.query;
-        log.info('RH | Received admin request: ' + req.originalUrl);
+        _this.log.info('RH | Received admin request: ' + req.originalUrl);
         if (q.cmd) {
           return typeof (_base = _this.objAdminCmds)[_name = q.cmd] === "function" ? _base[_name](q, answerHandler(req, resp, true)) : void 0;
         } else {

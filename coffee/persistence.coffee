@@ -756,7 +756,6 @@ because we only store hashes of passwords for security6 reasons.
 @param {String} password
 @param {function} cb
 ###
-#TODO verify and test whole function
 exports.loginUser = ( userId, password, cb ) =>
   @log.info "DB | User '#{ userId }' tries to log in"
   fCheck = ( pw ) =>

@@ -172,6 +172,9 @@ WebAPI-ECA Engine
 
   shutDown = function() {
     _this.log.warn('RS | Received shut down command!');
+    if (db != null) {
+      db.shutDown();
+    }
     if (engine != null) {
       engine.shutDown();
     }

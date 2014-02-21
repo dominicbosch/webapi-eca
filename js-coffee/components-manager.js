@@ -35,6 +35,11 @@ exports.addListener = function( evt, eh ) {
 exports.processRequest = function( user, obj, cb ) {
   console.log('module manager needs to process request: ');
   console.log(obj.command);
+  var answ = {
+    test: 'object',
+    should: 'work'
+  }
+  cb(null, answ);
 }
 
 exports.requireFromString = function(src, name, dir) {

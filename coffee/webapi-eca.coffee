@@ -178,7 +178,7 @@ Shuts down the server.
 ### 
 shutDown = () =>
   @log.warn 'RS | Received shut down command!'
-  # db?.shutDown()
+  db?.shutDown()
   engine?.shutDown()
   # We need to call process.exit() since the express server in the http-listener
   # can't be stopped gracefully. Why would you stop this system anyways!?? 

@@ -5,12 +5,22 @@ body {
   margin: 0px;
 }
 
-textarea {
-	font-family: Tahoma, sans-serif;
-  font-size: 0.9em;
-	-moz-tab-size: 2;
-  -o-tab-size: 2;
-  tab-size: 2;
+input[type=text] {
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+  outline: none;
+  padding: 3px 0px 3px 3px;
+  margin: 5px 1px 3px 0px;
+  border: 1px solid #DDDDDD;
+}
+ 
+input[type=text]:focus {
+  box-shadow: 0 0 5px rgba(81, 203, 238, 1);
+  padding: 3px 0px 3px 3px;
+  margin: 5px 1px 3px 0px;
+  border: 1px solid rgba(81, 203, 238, 1);
 }
 
 #menubar {
@@ -27,22 +37,28 @@ textarea {
   padding-left: 10px;
   padding-right: 10px;
   cursor: pointer;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+#menubar div:hover {
+  background-color: #AAA;
 }
 
 #info {
-  padding-left: 10px;
-  padding-top: 30px;
+  padding: 10px;
   font-family: Tahoma, sans-serif;
   font-size: 0.75em;
   color: #F33;
 }
 
-#menubar div:hover {
-	background-color: #AAA;
-}
-
 #mainbody {
-	padding: 5px;
+  padding-left: 50px;
+  padding-right: 50px;
 }
 
 #pagetitle {
@@ -50,23 +66,41 @@ textarea {
 	font-weight: bold;
 }
 
-#div_left {
+#editor_table {
+  width: 100%;
+}
+
+#editor_col {
+  width: 80%;
+}
+
+#editor {
   float: left;
+  position: relative !important;
+  border: 1px solid lightgray;
+  margin: auto;
+  height: 500px;
+  width: 100%;
 }
 
-#div_middle li {
-  font-size: 78%;
-  list-style-type: none;
+#params_col {
+  padding-top: 15px;
+  padding-left: 15px;
 }
 
-#div_right li {
-  font-size: 78%;
-  list-style-type: none;
+#tableParams td:first-child { 
+  width: 10px;
 }
-#editor { 
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+
+#tableParams input { 
+  width: 100px;
+  margin-left: 10px;
+}
+
+.error {
+  padding: 10px;
+  font-family: Tahoma, sans-serif;
+  font-size: 1em;
+  font-weight: bold;
+  color: #F33;
 }

@@ -61,14 +61,10 @@ initRouting = ( port ) =>
 
   # - **`GET` to _"/"_:** Static redirect to the _"webpages/public"_ directory
   app.use '/', express.static path.resolve __dirname, '..', 'webpages', 'public'
-  # - **`GET` to _"/admin"_:** Only admins can issue requests to this handler
+  # - **`GET` to _"/admin"_:** Displays the admin console if user is admin
   app.get '/admin', requestHandler.handleAdmin
-  # - **`GET` to _"/forge\_modules"_:** Webpage that lets the user create modules
-  app.get '/forge_modules', requestHandler.handleForgeModules
-  # - **`GET` to _"/forge\_rules"_:** Webpage that lets the user create rules
-  app.get '/forge_rules', requestHandler.handleForgeRules
-  # - **`GET` to _"/invoke\_event"_:** Webpage that lets the user invoke events
-  app.get '/invoke_event', requestHandler.handleInvokeEvent
+  # - **`GET` to _"/forge"_:** Displays different forge pages
+  app.get '/forge', requestHandler.handleForge
 
   # POST Requests
 
@@ -78,8 +74,10 @@ initRouting = ( port ) =>
   app.post '/login', requestHandler.handleLogin
   # - **`POST` to _"/logout"_:** User will be logged out
   app.post '/logout', requestHandler.handleLogout
-  # - **`POST` to _"/user"_:** User requests are possible for all users with an account
+  # - **`POST` to _"/usercommand"_:** User requests are possible for all users with an account
   app.post '/usercommand', requestHandler.handleUserCommand
+  # - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
+  app.post '/admincommand', requestHandler.handleAdminCommand
 
   server = app.listen parseInt( port ) || 8111 # inbound event channel
 

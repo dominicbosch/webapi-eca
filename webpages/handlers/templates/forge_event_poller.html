@@ -1,0 +1,40 @@
+
+<select id="editor_mode">
+	<option value="0">CoffeeScript</option>
+	<option value="1">JavaScript</option>
+</select>
+<table id="editor_table">
+	<tr>
+		<td id="editor_col" valign="top">
+<p>
+<div id="editor">
+#
+# EmailYak EVENT POLLER
+#
+url = 'https://api.emailyak.com/v1/' + credentials.key + '/json/get/new/email/'
+
+exports.newMail = ( pushEvent ) ->
+    needle.get url, ( err, resp, body ) ->
+        if not err and resp.statusCode is 200
+            mails = JSON.parse( body ).Emails
+            pushEvent mail for mail in mails
+        else
+            log.error 'Error in EmailYak EM newMail: ' + err.message
+
+</div>
+</p>
+<p>
+  <button id="but_submit">save</button>    
+</p>
+		</td>
+		<td id="params_col" valign="top">
+This event poller requires user-specific properties:
+<table id="tableParams">
+	<tr>
+		<td><img src="red_cross_small.png"></td>
+		<td><input type="text" /></td>
+	</tr>
+</table>
+		</td>
+	</tr>
+</table>

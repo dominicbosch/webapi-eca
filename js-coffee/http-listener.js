@@ -58,13 +58,12 @@ HTTP Listener
     _this.log.info('HL | no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
     app.get('/admin', requestHandler.handleAdmin);
-    app.get('/forge_modules', requestHandler.handleForgeModules);
-    app.get('/forge_rules', requestHandler.handleForgeRules);
-    app.get('/invoke_event', requestHandler.handleInvokeEvent);
+    app.get('/forge', requestHandler.handleForge);
     app.post('/event', requestHandler.handleEvent);
     app.post('/login', requestHandler.handleLogin);
     app.post('/logout', requestHandler.handleLogout);
     app.post('/usercommand', requestHandler.handleUserCommand);
+    app.post('/admincommand', requestHandler.handleAdminCommand);
     server = app.listen(parseInt(port) || 8111);
     server.on('listening', function() {
       var addr;
