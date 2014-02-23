@@ -10,18 +10,29 @@
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
+    $('#editor').css('height', '400px');
+    $('#editor').css('width', '600px');
     return $('#but_submit').click(function() {
       var data, err;
       try {
         data = JSON.parse(editor.getValue());
         return $.post('/event', data).done(function(data) {
-          return alert(data);
+          $('#info').text(data.message);
+          return $('#info').attr('class', 'success');
         }).fail(function(err) {
-          return alert('Posting of event failed: ' + err.responseText);
+          if (err.responseText === '') {
+            err.responseText = 'No Response from Server!';
+          }
+          $('#info').text('Error in upload: ' + err.responseText);
+          $('#info').attr('class', 'error');
+          if (err.status === 401) {
+            return window.location.href = 'forge?page=forge_event';
+          }
         });
       } catch (_error) {
         err = _error;
-        return alert('You have errors in your JSON object!');
+        $('#info').text('You have errors in your JSON object! ' + err);
+        return $('#info').attr('class', 'error');
       }
     });
   };

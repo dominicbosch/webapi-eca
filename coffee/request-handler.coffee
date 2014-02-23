@@ -36,9 +36,12 @@ exports = module.exports = ( args ) =>
 
   # Register the shutdown handler to the admin command. 
   @objAdminCmds =
-    shutdown: ( args, answerHandler ) ->
-      answerHandler.answerSuccess 'Shutting down... BYE!'
+    shutdown: ( obj, cb ) ->
+      data =
+        code: 200
+        message: 'Shutting down... BYE!'
       setTimeout args[ 'shutdown-function' ], 500
+      cb null, data
   db args
 
   # Load the standard users from the user config file
@@ -63,13 +66,22 @@ exports.handleEvent = ( req, resp ) ->
   req.on 'data', ( data ) ->
     body += data
   req.on 'end', ->
-    obj = qs.parse body
-    # If required event properties are present we process the event #
-    if obj and obj.event and obj.eventid
-      resp.send 'Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!'
-      db.pushEvent obj
+    if req.session and req.session.user
+      obj = qs.parse body
+      # If required event properties are present we process the event #
+      if obj and obj.event
+        timestamp = ( new Date ).toISOString()
+        rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
+        obj.eventid = "#{ obj.event }_#{ timestamp }_#{ rand }"
+        answ =
+          code: 200
+          message: "Thank you for the event: #{ obj.eventid }"
+        resp.send answ.code, answ
+        db.pushEvent obj
+      else
+        resp.send 400, 'Your event was missing important parameters!'
     else
-      resp.send 400, 'Your event was missing important parameters!'
+      resp.send 401, 'Please login!'
 
 
 ###
@@ -170,6 +182,7 @@ renderPage = ( name, req, resp, msg ) ->
   code = 200
   data =
     message: msg
+    user: req.session.user
 
   # Try to grab the script belonging to this page. But don't bother if it's not existing
   try
@@ -187,21 +200,22 @@ renderPage = ( name, req, resp, msg ) ->
     content = getTemplate 'error'
     script = getScript 'error'
     code = 404
-    data =
-      message: 'Invalid Page!'
-  
-  content = mustache.render content, data
+    data.message = 'Invalid Page!'
 
   if req.session.user
     menubar = getTemplate 'menubar'
 
-  view =
-    user: req.session.user,
-    content: content,
-    script: script,
-    remote_scripts: remote_scripts,
+  pageElements =
+    content: content
+    script: script
+    remote_scripts: remote_scripts
     menubar: menubar
-  resp.send code, mustache.render skeleton, view
+
+  # First we render the page by including all page elements into the skeleton
+  page = mustache.render skeleton, pageElements
+
+  # Then we complete the rendering by adding the data, and send the result to the user
+  resp.send code, mustache.render page, data
 
 ###
 Present the desired forge page to the user.
@@ -230,19 +244,17 @@ objects.*
 @public handleUser( *req, resp* )
 ###
 exports.handleUserCommand = ( req, resp ) =>
-  if not req.session or not req.session.user
-    resp.send 401, 'Login first!'
-  else
+  if req.session and req.session.user
     body = ''
     req.on 'data', ( data ) ->
       body += data
     req.on 'end', =>
       obj = qs.parse body
-      @userRequestHandler req.session.user, obj, ( err, obj ) ->
-        if err
-          resp.send 404, 'Rethink your request!'
-        else
-          resp.send obj
+      @userRequestHandler req.session.user, obj, ( obj ) ->
+        resp.send obj.code, obj
+  else
+    resp.send 401, 'Login first!'
+
 
 ###
 Present the admin console to the user if he's allowed to see it.
@@ -276,46 +288,20 @@ objects.*
 @public handleAdminCommand( *req, resp* )
 ###
 exports.handleAdminCommand = ( req, resp ) =>
-  if req.session and req.session.user
-    if req.session.user.isAdmin is "true"
-      q = req.query
-      @log.info 'RH | Received admin request: ' + req.originalUrl
-      if q.cmd 
-        @objAdminCmds[q.cmd]? q, answerHandler req, resp, true
+  if req.session and
+  req.session.user and
+  req.session.user.isAdmin is "true"
+    body = ''
+    req.on 'data', ( data ) ->
+      body += data
+    req.on 'end', =>
+      obj = qs.parse body
+      @log.info 'RH | Received admin request: ' + obj.command
+      if obj.command and @objAdminCmds[obj.command]
+        @objAdminCmds[obj.command] obj, ( err, obj ) ->
+          resp.send obj.code, obj
       else
         resp.send 404, 'Command unknown!'
-    else
-      resp.send renderPage 'unauthorized', req.session
   else
-    resp.sendfile getHandlerPath 'login'
-
-
-#TODO remove this ugly legacy blob
-answerHandler = (req, resp, ntbr) ->
-  request = req
-  response = resp
-  needsToBeRendered = ntbr
-  hasBeenAnswered = false
-  ret =
-    answerSuccess: (msg) ->
-      if not hasBeenAnswered
-        if needsToBeRendered
-          response.send renderPage 'command_answer', request.session, msg
-        else
-          response.send msg
-      hasBeenAnswered = true
-    ,
-    answerError: (msg) ->
-      if not hasBeenAnswered
-        if needsToBeRendered
-          response.send 400, renderPage 'error', request.session, msg
-        else
-          response.send 400, msg
-      hasBeenAnswered = true
-    ,
-    isAnswered: -> hasBeenAnswered
-  setTimeout(() ->
-    ret.answerError 'Strange... maybe try again?'
-  , 5000)
-  ret
-
+    resp.send 401, 'You need to be logged in as admin!'
+  

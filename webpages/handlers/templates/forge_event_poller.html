@@ -1,17 +1,20 @@
-
+Event Poller Name: <input id="input_id" type="text" />
 <select id="editor_mode">
 	<option value="0">CoffeeScript</option>
 	<option value="1">JavaScript</option>
-</select>
+</select> is public: <input type="checkbox" id="is_public" />
 <table id="editor_table">
 	<tr>
 		<td id="editor_col" valign="top">
-<p>
 <div id="editor">
 #
 # EmailYak EVENT POLLER
 #
-url = 'https://api.emailyak.com/v1/' + credentials.key + '/json/get/new/email/'
+# Requires user params:
+#  - apikey: The user's EmailYak API key
+#
+
+url = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'
 
 exports.newMail = ( pushEvent ) ->
     needle.get url, ( err, resp, body ) ->
@@ -22,14 +25,15 @@ exports.newMail = ( pushEvent ) ->
             log.error 'Error in EmailYak EM newMail: ' + err.message
 
 </div>
-</p>
-<p>
   <button id="but_submit">save</button>    
-</p>
 		</td>
 		<td id="params_col" valign="top">
 This event poller requires user-specific properties:
 <table id="tableParams">
+	<tr>
+		<td><img src="red_cross_small.png"></td>
+		<td><input type="text" value="apikey" /></td>
+	</tr>
 	<tr>
 		<td><img src="red_cross_small.png"></td>
 		<td><input type="text" /></td>

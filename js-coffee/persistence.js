@@ -49,7 +49,7 @@ Persistence
       connect_timeout: 2000
     });
     _this.db.on('error', function(err) {
-      if (err.message.indexOf('ECONNREFUSED' > -1)) {
+      if (err.message.indexOf('ECONNREFUSED') > -1) {
         _this.connRefused = true;
         return _this.log.error(err, 'DB | Wrong port?');
       }
@@ -284,14 +284,20 @@ Persistence
       this.setname = setname;
       this.db = db;
       this.log = log;
-      this.deleteParameters = __bind(this.deleteParameters, this);
-      this.getParametersIds = __bind(this.getParametersIds, this);
-      this.getParameters = __bind(this.getParameters, this);
-      this.storeParameters = __bind(this.storeParameters, this);
+      this.deleteUserParameters = __bind(this.deleteUserParameters, this);
+      this.getUserParametersIds = __bind(this.getUserParametersIds, this);
+      this.getUserParameters = __bind(this.getUserParameters, this);
+      this.storeUserParameters = __bind(this.storeUserParameters, this);
       this.deleteModule = __bind(this.deleteModule, this);
       this.getModules = __bind(this.getModules, this);
       this.getModuleIds = __bind(this.getModuleIds, this);
+      this.getAvailableModuleIds = __bind(this.getAvailableModuleIds, this);
+      this.getModuleParams = __bind(this.getModuleParams, this);
       this.getModule = __bind(this.getModule, this);
+      this.unpublish = __bind(this.unpublish, this);
+      this.publish = __bind(this.publish, this);
+      this.unlinkModule = __bind(this.unlinkModule, this);
+      this.linkModule = __bind(this.linkModule, this);
       this.storeModule = __bind(this.storeModule, this);
       this.log.info("DB | Instantiated indexed modules for '" + this.setname + "'");
     }
@@ -299,12 +305,44 @@ Persistence
     IndexedModules.prototype.storeModule = function(mId, data) {
       this.log.info("DB | storeModule(" + this.setname + "): " + mId);
       this.db.sadd("" + this.setname + "s", mId, replyHandler("Storing '" + this.setname + "' key '" + mId + "'"));
-      return this.db.set("" + this.setname + ":" + mId, data, replyHandler("Storing '" + this.setname + ":" + mId + "'"));
+      return this.db.hmset("" + this.setname + ":" + mId, data, replyHandler("Storing '" + this.setname + ":" + mId + "'"));
+    };
+
+    IndexedModules.prototype.linkModule = function(mId, userId) {
+      this.log.info("DB | linkModule(" + this.setname + "): " + mId + " to " + userId);
+      this.db.sadd("" + this.setname + ":" + mId + ":users", userId, replyHandler("Linking '" + this.setname + ":" + mId + ":users' " + userId));
+      return this.db.sadd("user:" + userId + ":" + this.setname + "s", mId, replyHandler("Linking 'user:" + userId + ":" + this.setname + "s' " + mId));
+    };
+
+    IndexedModules.prototype.unlinkModule = function(mId, userId) {
+      this.log.info("DB | unlinkModule(" + this.setname + "): " + mId + " to " + userId);
+      this.db.srem("" + this.setname + ":" + mId + ":users", userId, replyHandler("Unlinking '" + this.setname + ":" + mId + ":users' " + userId));
+      return this.db.srem("user:" + userId + ":" + this.setname + "s", mId, replyHandler("Unlinking 'user:" + userId + ":" + this.setname + "s' " + mId));
+    };
+
+    IndexedModules.prototype.publish = function(mId) {
+      this.log.info("DB | publish(" + this.setname + "): " + mId);
+      return this.db.sadd("public-" + this.setname + "s", mId, replyHandler("Publishing '" + this.setname + "' key '" + mId + "'"));
+    };
+
+    IndexedModules.prototype.unpublish = function(mId) {
+      this.log.info("DB | unpublish(" + this.setname + "): " + mId);
+      return this.db.srem("public-" + this.setname + "s", mId, replyHandler("Unpublishing '" + this.setname + "' key '" + mId + "'"));
     };
 
     IndexedModules.prototype.getModule = function(mId, cb) {
       this.log.info("DB | getModule('" + this.setname + "): " + mId + "'");
-      return this.db.get("" + this.setname + ":" + mId, cb);
+      return this.db.hgetall("" + this.setname + ":" + mId, cb);
+    };
+
+    IndexedModules.prototype.getModuleParams = function(mId, cb) {
+      this.log.info("DB | getModule('" + this.setname + "): " + mId + "'");
+      return this.db.hget("" + this.setname + ":" + mId, "params", cb);
+    };
+
+    IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
+      this.log.info("DB | getPublicModuleIds(" + this.setname + ")");
+      return this.db.sunion("public-" + this.setname + "s", "user:" + userId + ":" + this.setname + "s", cb);
     };
 
     IndexedModules.prototype.getModuleIds = function(cb) {
@@ -323,26 +361,26 @@ Persistence
       return this.db.del("" + this.setname + ":" + mId, replyHandler("Deleting '" + this.setname + ":" + mId + "'"));
     };
 
-    IndexedModules.prototype.storeParameters = function(mId, userId, data) {
-      this.log.info("DB | storeParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+    IndexedModules.prototype.storeUserParameters = function(mId, userId, data) {
+      this.log.info("DB | storeUserParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Storing '" + this.setname + "' module parameters key '" + mId + "'"));
       return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encrypt(data), replyHandler("Storing '" + this.setname + "' module parameters '" + mId + ":" + userId + "'"));
     };
 
-    IndexedModules.prototype.getParameters = function(mId, userId, cb) {
-      this.log.info("DB | getParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+    IndexedModules.prototype.getUserParameters = function(mId, userId, cb) {
+      this.log.info("DB | getUserParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, function(err, data) {
         return cb(err, decrypt(data));
       });
     };
 
-    IndexedModules.prototype.getParametersIds = function(cb) {
-      this.log.info("DB | getParametersIds(" + this.setname + ")");
+    IndexedModules.prototype.getUserParametersIds = function(cb) {
+      this.log.info("DB | getUserParametersIds(" + this.setname + ")");
       return this.db.smembers("" + this.setname + "-params", cb);
     };
 
-    IndexedModules.prototype.deleteParameters = function(mId, userId) {
-      this.log.info("DB | deleteParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
+    IndexedModules.prototype.deleteUserParameters = function(mId, userId) {
+      this.log.info("DB | deleteUserParameters(" + this.setname + "): '" + mId + ":" + userId + "'");
       this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params' key '" + mId + ":" + userId + "'"));
       return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("Deleting '" + this.setname + "-params:" + mId + ":" + userId + "'"));
     };
@@ -359,14 +397,40 @@ Persistence
   /*
   Store a string representation of an action invoker in the DB.
   
-  @public storeActionInvoker ( *aiId, data* )
+  @public storeActionInvoker ( *aiId, userId, data* )
   @param {String} aiId
+  @param {String} userId
   @param {String} data
   */
 
 
-  exports.storeActionInvoker = function(aiId, data) {
-    return _this.ai.storeModule(aiId, data);
+  exports.storeActionInvoker = function(aiId, userId, data) {
+    _this.ai.storeModule(aiId, data);
+    return _this.ai.linkModule(aiId, userId);
+  };
+
+  /*
+  Make an action invoker public.
+  
+  @public publishActionInvoker ( *aiId* )
+  @param {String} aiId
+  */
+
+
+  exports.publishActionInvoker = function(aiId) {
+    return _this.ai.publish(aiId);
+  };
+
+  /*
+  Make an action invoker private.
+  
+  @public unpublishActionInvoker ( *aiId* )
+  @param {String} aiId
+  */
+
+
+  exports.unpublishActionInvoker = function(aiId) {
+    return _this.ai.unpublish(aiId);
   };
 
   /*
@@ -383,6 +447,19 @@ Persistence
   };
 
   /*
+  Query the DB for action invoker required params and pass it to cb(err, obj).
+  
+  @public getActionInvokerEventPollerRequiredParams( *epId, cb* )
+  @param {String} epId
+  @param {function} cb
+  */
+
+
+  exports.getActionInvokerRequiredParams = function(epId, cb) {
+    return _this.ai.getModuleParams(epId, cb);
+  };
+
+  /*
   Fetch all action invoker IDs and hand them to cb(err, obj).
   
   @public getActionInvokerIds( *cb* )
@@ -392,6 +469,31 @@ Persistence
 
   exports.getActionInvokerIds = function(cb) {
     return _this.ai.getModuleIds(cb);
+  };
+
+  /*
+  Fetch all available actin invoker IDs for a user and
+  hand them to cb(err, obj).
+  
+  @public getAvailableActionInvokerIds( *userId, cb* )
+  @param {function} cb
+  */
+
+
+  exports.getAvailableActionInvokerIds = function(userId, cb) {
+    return _this.ai.getAvailableModuleIds(userId, cb);
+  };
+
+  /*
+  Fetch all public action invoker IDs and hand them to cb(err, obj).
+  
+  @public getPublicActionInvokerIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getPublicActionInvokerIds = function(cb) {
+    return _this.ai.getPublicModuleIds(cb);
   };
 
   /*
@@ -421,54 +523,54 @@ Persistence
   /*
   Store user-specific action invoker parameters .
   
-  @public storeActionParams( *userId, aiId, data* )
+  @public storeActionUserParams( *userId, aiId, data* )
   @param {String} userId
   @param {String} aiId
   @param {String} data
   */
 
 
-  exports.storeActionParams = function(aiId, userId, data) {
-    return _this.ai.storeParameters(aiId, userId, data);
+  exports.storeActionUserParams = function(aiId, userId, data) {
+    return _this.ai.storeUserParameters(aiId, userId, data);
   };
 
   /*
   Query the DB for user-specific action module parameters,
   and pass it to cb(err, obj).
   
-  @public getActionParams( *userId, aiId, cb* )
+  @public getActionUserParams( *userId, aiId, cb* )
   @param {String} userId
   @param {String} aiId
   @param {function} cb
   */
 
 
-  exports.getActionParams = function(aiId, userId, cb) {
-    return _this.ai.getParameters(aiId, userId, cb);
+  exports.getActionUserParams = function(aiId, userId, cb) {
+    return _this.ai.getUserParameters(aiId, userId, cb);
   };
 
   /*
   Fetch all action params IDs and hand them to cb(err, obj).
   
-  @public getActionParamsIds( *cb* )
+  @public getActionUserParamsIds( *cb* )
   @param {function} cb
   */
 
 
-  exports.getActionParamsIds = function(cb) {
-    return _this.ai.getParametersIds(cb);
+  exports.getActionUserParamsIds = function(cb) {
+    return _this.ai.getUserParametersIds(cb);
   };
 
   /*
   Fetch all action modules and hand them to cb(err, obj).
   
-  @public deleteActionParams( *cb* )
+  @public deleteActionUserParams( *cb* )
   @param {function} cb
   */
 
 
-  exports.deleteActionParams = function(aiId, userId) {
-    return _this.ai.deleteParameters(aiId, userId);
+  exports.deleteActionUserParams = function(aiId, userId) {
+    return _this.ai.deleteUserParameters(aiId, userId);
   };
 
   /*
@@ -479,14 +581,40 @@ Persistence
   /*
   Store a string representation of an event poller in the DB.
   
-  @public storeEventPoller ( *epId, data* )
+  @public storeEventPoller ( *epId, userId, data* )
   @param {String} epId
+  @param {String} userId
   @param {String} data
   */
 
 
-  exports.storeEventPoller = function(epId, data) {
-    return _this.ep.storeModule(epId, data);
+  exports.storeEventPoller = function(epId, userId, data) {
+    _this.ep.storeModule(epId, data);
+    return _this.ep.linkModule(epId, userId);
+  };
+
+  /*
+  Make an event poller public.
+  
+  @public publishEventPoller ( *epId* )
+  @param {String} epId
+  */
+
+
+  exports.publishEventPoller = function(epId) {
+    return _this.ep.publish(epId);
+  };
+
+  /*
+  Make an event poller private.
+  
+  @public unpublishEventPoller ( *epId* )
+  @param {String} epId
+  */
+
+
+  exports.unpublishEventPoller = function(epId) {
+    return _this.ep.unpublish(epId);
   };
 
   /*
@@ -503,6 +631,19 @@ Persistence
   };
 
   /*
+  Query the DB for event poller required params and pass it to cb(err, obj).
+  
+  @public getEventPollerRequiredParams( *epId, cb* )
+  @param {String} epId
+  @param {function} cb
+  */
+
+
+  exports.getEventPollerRequiredParams = function(epId, cb) {
+    return _this.ep.getModuleParams(epId, cb);
+  };
+
+  /*
   Fetch all event poller IDs and hand them to cb(err, obj).
   
   @public getEventPollerIds( *cb* )
@@ -512,6 +653,31 @@ Persistence
 
   exports.getEventPollerIds = function(cb) {
     return _this.ep.getModuleIds(cb);
+  };
+
+  /*
+  Fetch all available event poller IDs for a user and
+  hand them to cb(err, obj).
+  
+  @public getAvailableEventPollerIds( *userId, cb* )
+  @param {function} cb
+  */
+
+
+  exports.getAvailableEventPollerIds = function(userId, cb) {
+    return _this.ep.getAvailableModuleIds(userId, cb);
+  };
+
+  /*
+  Fetch all public event poller IDs and hand them to cb(err, obj).
+  
+  @public getPublicEventPollerIds( *cb* )
+  @param {function} cb
+  */
+
+
+  exports.getPublicEventPollerIds = function(cb) {
+    return _this.ep.getPublicModuleIds(cb);
   };
 
   /*
@@ -541,54 +707,54 @@ Persistence
   /*
   Store user-specific event poller parameters .
   
-  @public storeEventParams( *userId, epId, data* )
+  @public storeEventUserParams( *userId, epId, data* )
   @param {String} userId
   @param {String} epId
   @param {String} data
   */
 
 
-  exports.storeEventParams = function(epId, userId, data) {
-    return _this.ep.storeParameters(epId, userId, data);
+  exports.storeEventUserParams = function(epId, userId, data) {
+    return _this.ep.storeUserParameters(epId, userId, data);
   };
 
   /*
   Query the DB for user-specific event module parameters,
   and pass it to cb(err, obj).
   
-  @public getEventParams( *userId, epId, cb* )
+  @public getEventUserParams( *userId, epId, cb* )
   @param {String} userId
   @param {String} epId
   @param {function} cb
   */
 
 
-  exports.getEventParams = function(epId, userId, cb) {
-    return _this.ep.getParameters(epId, userId, cb);
+  exports.getEventUserParams = function(epId, userId, cb) {
+    return _this.ep.getUserParameters(epId, userId, cb);
   };
 
   /*
   Fetch all event params IDs and hand them to cb(err, obj).
   
-  @public getEventParamsIds( *cb* )
+  @public getEventUserParamsIds( *cb* )
   @param {function} cb
   */
 
 
-  exports.getEventParamsIds = function(cb) {
-    return _this.ep.getParametersIds(cb);
+  exports.getEventUserParamsIds = function(cb) {
+    return _this.ep.getUserParametersIds(cb);
   };
 
   /*
   Fetch all event modules and hand them to cb(err, obj).
   
-  @public deleteEventParams( *cb* )
+  @public deleteEventUserParams( *cb* )
   @param {function} cb
   */
 
 
-  exports.deleteEventParams = function(epId, userId) {
-    return _this.ep.deleteParameters(epId, userId);
+  exports.deleteEventUserParams = function(epId, userId) {
+    return _this.ep.deleteUserParameters(epId, userId);
   };
 
   /*

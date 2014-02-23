@@ -44,7 +44,7 @@ exports = module.exports = ( args ) =>
   # Eventually we try to connect to the wrong port, redis will emit an error that we
   # need to catch and take into account when answering the isConnected function call
   @db.on 'error', ( err ) =>
-    if err.message.indexOf 'ECONNREFUSED' > -1
+    if err.message.indexOf( 'ECONNREFUSED' ) > -1
       @connRefused = true
       @log.error err, 'DB | Wrong port?'
   @ep = new IndexedModules( 'event-poller', @db, @log  )
@@ -161,7 +161,7 @@ decrypt = ( crypticText ) =>
   if !crypticText? then return null;
   try
     dec = crypto.AES.decrypt crypticText, @crypto_key
-    dec.toString(crypto.enc.Utf8)
+    dec.toString crypto.enc.Utf8
   catch err
     @log.warn err, 'DB | during decryption'
     null
@@ -220,8 +220,9 @@ getSetRecords = ( set, fSingle, cb ) =>
       # Since we retrieved an array of keys, we now execute the fSingle function
       # on each of them, to retrieve the ata behind the key. Our fCallback function
       # is used to preprocess the answer to determine correct execution
-      fSingle reply, fCallback( reply ) for reply in arrReply
+      fSingle reply, fCallback reply for reply in arrReply
 
+# TODO remove specific functions and allow direct access to instances of this class
 class IndexedModules
   constructor: ( @setname, @db, @log ) ->
     @log.info "DB | Instantiated indexed modules for '#{ @setname }'"
@@ -230,12 +231,50 @@ class IndexedModules
     @log.info "DB | storeModule(#{ @setname }): #{ mId }"
     @db.sadd "#{ @setname }s", mId,
       replyHandler "Storing '#{ @setname }' key '#{ mId }'"
-    @db.set "#{ @setname }:#{ mId }", data,
+    @db.hmset "#{ @setname }:#{ mId }", data,
       replyHandler "Storing '#{ @setname }:#{ mId }'"
+
+  #TODO add testing
+  linkModule: ( mId, userId ) =>
+    @log.info "DB | linkModule(#{ @setname }): #{ mId } to #{ userId }"
+    @db.sadd "#{ @setname }:#{ mId }:users", userId,
+      replyHandler "Linking '#{ @setname }:#{ mId }:users' #{ userId }"
+    @db.sadd "user:#{ userId }:#{ @setname }s", mId,
+      replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
+
+  #TODO add testing
+  unlinkModule: ( mId, userId ) =>
+    @log.info "DB | unlinkModule(#{ @setname }): #{ mId } to #{ userId }"
+    @db.srem "#{ @setname }:#{ mId }:users", userId,
+      replyHandler "Unlinking '#{ @setname }:#{ mId }:users' #{ userId }"
+    @db.srem "user:#{ userId }:#{ @setname }s", mId,
+      replyHandler "Unlinking 'user:#{ userId }:#{ @setname }s' #{ mId }"
+
+  #TODO add testing
+  publish: ( mId ) =>
+    @log.info "DB | publish(#{ @setname }): #{ mId }"
+    @db.sadd "public-#{ @setname }s", mId,
+      replyHandler "Publishing '#{ @setname }' key '#{ mId }'"
+
+  #TODO add testing
+  unpublish: ( mId ) =>
+    @log.info "DB | unpublish(#{ @setname }): #{ mId }"
+    @db.srem "public-#{ @setname }s", mId,
+      replyHandler "Unpublishing '#{ @setname }' key '#{ mId }'"
 
   getModule: ( mId, cb ) =>
     @log.info "DB | getModule('#{ @setname }): #{ mId }'"
-    @db.get "#{ @setname }:#{ mId }", cb
+    @db.hgetall "#{ @setname }:#{ mId }", cb
+
+  #TODO add testing
+  getModuleParams: ( mId, cb ) =>
+    @log.info "DB | getModule('#{ @setname }): #{ mId }'"
+    @db.hget "#{ @setname }:#{ mId }", "params", cb
+
+  #TODO add testing
+  getAvailableModuleIds: ( userId, cb ) =>
+    @log.info "DB | getPublicModuleIds(#{ @setname })"
+    @db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 
   getModuleIds: ( cb ) =>
     @log.info "DB | getModuleIds(#{ @setname })"
@@ -251,25 +290,27 @@ class IndexedModules
       replyHandler "Deleting '#{ @setname }' key '#{ mId }'"
     @db.del "#{ @setname }:#{ mId }",
       replyHandler "Deleting '#{ @setname }:#{ mId }'"
+  #TODO remove published ids
+  #TODO remove from linked users
 
-  storeParameters: ( mId, userId, data ) =>
-    @log.info "DB | storeParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  storeUserParameters: ( mId, userId, data ) =>
+    @log.info "DB | storeUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
       replyHandler "Storing '#{ @setname }' module parameters key '#{ mId }'"
-    @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encrypt(data),
+    @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encrypt( data ),
       replyHandler "Storing '#{ @setname }' module parameters '#{ mId }:#{ userId }'"
 
-  getParameters: ( mId, userId, cb ) =>
-    @log.info "DB | getParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  getUserParameters: ( mId, userId, cb ) =>
+    @log.info "DB | getUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.get "#{ @setname }-params:#{ mId }:#{ userId }", ( err, data ) ->
       cb err, decrypt data
 
-  getParametersIds: ( cb ) =>
-    @log.info "DB | getParametersIds(#{ @setname })"
+  getUserParametersIds: ( cb ) =>
+    @log.info "DB | getUserParametersIds(#{ @setname })"
     @db.smembers "#{ @setname }-params", cb
 
-  deleteParameters: ( mId, userId ) =>
-    @log.info "DB | deleteParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  deleteUserParameters: ( mId, userId ) =>
+    @log.info "DB | deleteUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.srem "#{ @setname }-params", "#{ mId }:#{ userId }",
       replyHandler "Deleting '#{ @setname }-params' key '#{ mId }:#{ userId }'"
     @db.del "#{ @setname }-params:#{ mId }:#{ userId }",
@@ -283,12 +324,35 @@ class IndexedModules
 ###
 Store a string representation of an action invoker in the DB.
 
-@public storeActionInvoker ( *aiId, data* )
+@public storeActionInvoker ( *aiId, userId, data* )
 @param {String} aiId
+@param {String} userId
 @param {String} data
 ###
-exports.storeActionInvoker = ( aiId, data ) =>
-  @ai.storeModule( aiId, data )
+#TODO adapt testing
+exports.storeActionInvoker = ( aiId, userId, data ) =>
+  @ai.storeModule aiId, data
+  @ai.linkModule aiId, userId
+
+###
+Make an action invoker public.
+
+@public publishActionInvoker ( *aiId* )
+@param {String} aiId
+###
+
+exports.publishActionInvoker = ( aiId ) =>
+  @ai.publish aiId
+
+###
+Make an action invoker private.
+
+@public unpublishActionInvoker ( *aiId* )
+@param {String} aiId
+###
+
+exports.unpublishActionInvoker = ( aiId ) =>
+  @ai.unpublish aiId
 
 ###
 Query the DB for an action invoker and pass it to cb(err, obj).
@@ -301,6 +365,16 @@ exports.getActionInvoker = ( aiId, cb ) =>
   @ai.getModule aiId, cb
 
 ###
+Query the DB for action invoker required params and pass it to cb(err, obj).
+
+@public getActionInvokerEventPollerRequiredParams( *epId, cb* )
+@param {String} epId
+@param {function} cb
+###
+exports.getActionInvokerRequiredParams = ( epId, cb ) =>
+  @ai.getModuleParams epId, cb
+
+###
 Fetch all action invoker IDs and hand them to cb(err, obj).
 
 @public getActionInvokerIds( *cb* )
@@ -308,6 +382,25 @@ Fetch all action invoker IDs and hand them to cb(err, obj).
 ###
 exports.getActionInvokerIds = ( cb ) =>
   @ai.getModuleIds cb
+
+###
+Fetch all available actin invoker IDs for a user and
+hand them to cb(err, obj).
+
+@public getAvailableActionInvokerIds( *userId, cb* )
+@param {function} cb
+###
+exports.getAvailableActionInvokerIds = ( userId, cb ) =>
+  @ai.getAvailableModuleIds userId, cb
+
+###
+Fetch all public action invoker IDs and hand them to cb(err, obj).
+
+@public getPublicActionInvokerIds( *cb* )
+@param {function} cb
+###
+exports.getPublicActionInvokerIds = ( cb ) =>
+  @ai.getPublicModuleIds cb
 
 ###
 Fetch all action invokers and hand them to cb(err, obj).
@@ -330,43 +423,43 @@ exports.deleteActionInvoker = ( aiId ) =>
 ###
 Store user-specific action invoker parameters .
 
-@public storeActionParams( *userId, aiId, data* )
+@public storeActionUserParams( *userId, aiId, data* )
 @param {String} userId
 @param {String} aiId
 @param {String} data
 ###
-exports.storeActionParams = ( aiId, userId, data ) =>
-  @ai.storeParameters aiId, userId, data
+exports.storeActionUserParams = ( aiId, userId, data ) =>
+  @ai.storeUserParameters aiId, userId, data
 
 ###
 Query the DB for user-specific action module parameters,
 and pass it to cb(err, obj).
 
-@public getActionParams( *userId, aiId, cb* )
+@public getActionUserParams( *userId, aiId, cb* )
 @param {String} userId
 @param {String} aiId
 @param {function} cb
 ###
-exports.getActionParams = ( aiId, userId, cb ) =>
-  @ai.getParameters aiId, userId, cb
+exports.getActionUserParams = ( aiId, userId, cb ) =>
+  @ai.getUserParameters aiId, userId, cb
 
 ###
 Fetch all action params IDs and hand them to cb(err, obj).
 
-@public getActionParamsIds( *cb* )
+@public getActionUserParamsIds( *cb* )
 @param {function} cb
 ###
-exports.getActionParamsIds = ( cb ) =>
-  @ai.getParametersIds cb
+exports.getActionUserParamsIds = ( cb ) =>
+  @ai.getUserParametersIds cb
 
 ###
 Fetch all action modules and hand them to cb(err, obj).
 
-@public deleteActionParams( *cb* )
+@public deleteActionUserParams( *cb* )
 @param {function} cb
 ###
-exports.deleteActionParams = ( aiId, userId ) =>
-  @ai.deleteParameters aiId, userId
+exports.deleteActionUserParams = ( aiId, userId ) =>
+  @ai.deleteUserParameters aiId, userId
 
 
 ###
@@ -376,12 +469,35 @@ exports.deleteActionParams = ( aiId, userId ) =>
 ###
 Store a string representation of an event poller in the DB.
 
-@public storeEventPoller ( *epId, data* )
+@public storeEventPoller ( *epId, userId, data* )
 @param {String} epId
+@param {String} userId
 @param {String} data
 ###
-exports.storeEventPoller = ( epId, data ) =>
-  @ep.storeModule( epId, data )
+#TODO adapt testing
+exports.storeEventPoller = ( epId, userId,  data ) =>
+  @ep.storeModule epId, data 
+  @ep.linkModule epId, userId
+
+###
+Make an event poller public.
+
+@public publishEventPoller ( *epId* )
+@param {String} epId
+###
+
+exports.publishEventPoller = ( epId ) =>
+  @ep.publish epId
+
+###
+Make an event poller private.
+
+@public unpublishEventPoller ( *epId* )
+@param {String} epId
+###
+
+exports.unpublishEventPoller = ( epId ) =>
+  @ep.unpublish epId
 
 ###
 Query the DB for an event poller and pass it to cb(err, obj).
@@ -394,6 +510,16 @@ exports.getEventPoller = ( epId, cb ) =>
   @ep.getModule epId, cb
 
 ###
+Query the DB for event poller required params and pass it to cb(err, obj).
+
+@public getEventPollerRequiredParams( *epId, cb* )
+@param {String} epId
+@param {function} cb
+###
+exports.getEventPollerRequiredParams = ( epId, cb ) =>
+  @ep.getModuleParams epId, cb
+
+###
 Fetch all event poller IDs and hand them to cb(err, obj).
 
 @public getEventPollerIds( *cb* )
@@ -401,6 +527,25 @@ Fetch all event poller IDs and hand them to cb(err, obj).
 ###
 exports.getEventPollerIds = ( cb ) =>
   @ep.getModuleIds cb
+
+###
+Fetch all available event poller IDs for a user and
+hand them to cb(err, obj).
+
+@public getAvailableEventPollerIds( *userId, cb* )
+@param {function} cb
+###
+exports.getAvailableEventPollerIds = ( userId, cb ) =>
+  @ep.getAvailableModuleIds userId, cb
+
+###
+Fetch all public event poller IDs and hand them to cb(err, obj).
+
+@public getPublicEventPollerIds( *cb* )
+@param {function} cb
+###
+exports.getPublicEventPollerIds = ( cb ) =>
+  @ep.getPublicModuleIds cb
 
 ###
 Fetch all event pollers and hand them to cb(err, obj).
@@ -418,48 +563,51 @@ Fetch all event pollers and hand them to cb(err, obj).
 @param {function} cb
 ###
 exports.deleteEventPoller = ( epId ) =>
+  # TODO remove from public modules
+  # TODO remove parameters
+  # TODO also do this for action invokers
   @ep.deleteModule epId
 
 ###
 Store user-specific event poller parameters .
 
-@public storeEventParams( *userId, epId, data* )
+@public storeEventUserParams( *userId, epId, data* )
 @param {String} userId
 @param {String} epId
 @param {String} data
 ###
-exports.storeEventParams = ( epId, userId, data ) =>
-  @ep.storeParameters epId, userId, data
+exports.storeEventUserParams = ( epId, userId, data ) =>
+  @ep.storeUserParameters epId, userId, data
 
 ###
 Query the DB for user-specific event module parameters,
 and pass it to cb(err, obj).
 
-@public getEventParams( *userId, epId, cb* )
+@public getEventUserParams( *userId, epId, cb* )
 @param {String} userId
 @param {String} epId
 @param {function} cb
 ###
-exports.getEventParams = ( epId, userId, cb ) =>
-  @ep.getParameters epId, userId, cb
+exports.getEventUserParams = ( epId, userId, cb ) =>
+  @ep.getUserParameters epId, userId, cb
 
 ###
 Fetch all event params IDs and hand them to cb(err, obj).
 
-@public getEventParamsIds( *cb* )
+@public getEventUserParamsIds( *cb* )
 @param {function} cb
 ###
-exports.getEventParamsIds = ( cb ) =>
-  @ep.getParametersIds cb
+exports.getEventUserParamsIds = ( cb ) =>
+  @ep.getUserParametersIds cb
 
 ###
 Fetch all event modules and hand them to cb(err, obj).
 
-@public deleteEventParams( *cb* )
+@public deleteEventUserParams( *cb* )
 @param {function} cb
 ###
-exports.deleteEventParams = ( epId, userId ) =>
-  @ep.deleteParameters epId, userId
+exports.deleteEventUserParams = ( epId, userId ) =>
+  @ep.deleteUserParameters epId, userId
 
 
 ###
@@ -528,14 +676,14 @@ exports.deleteRule = ( ruleId ) =>
     delLinkedUserRule = ( userId ) =>
       @db.srem "user:#{ userId }:rules", ruleId,
         replyHandler "Deleting rule key '#{ ruleId }' in linked user '#{ userId }'"
-    delLinkedUserRule( id ) for id in obj
+    delLinkedUserRule id  for id in obj
   @db.del "rule:#{ ruleId }:users", replyHandler "Deleting rule '#{ ruleId }' users"
 
   @db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
     delActiveUserRule = ( userId ) =>
       @db.srem "user:#{ userId }:active-rules", ruleId,
         replyHandler "Deleting rule key '#{ ruleId }' in active user '#{ userId }'"
-    delActiveUserRule( id ) for id in obj
+    delActiveUserRule id  for id in obj
   @db.del "rule:#{ ruleId }:active-users",
     replyHandler "Deleting rule '#{ ruleId }' active users"
 
@@ -659,7 +807,7 @@ exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
             result[userId] = obj
           if --semaphore is 0
             cb null, result
-      fFetchActiveUserRules(user) for user in obj
+      fFetchActiveUserRules user for user in obj
 
 
 ###
@@ -723,7 +871,7 @@ exports.deleteUser = ( userId ) =>
     delLinkedRuleUser = ( ruleId ) =>
       @db.srem "rule:#{ ruleId }:users", userId,
         replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
-    delLinkedRuleUser( id ) for id in obj
+    delLinkedRuleUser id for id in obj
   @db.del "user:#{ userId }:rules",
     replyHandler "Deleting user '#{ userId }' rules"
 
@@ -732,7 +880,7 @@ exports.deleteUser = ( userId ) =>
     delActivatedRuleUser = ( ruleId ) =>
       @db.srem "rule:#{ ruleId }:active-users", userId,
         replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
-    delActivatedRuleUser( id ) for id in obj
+    delActivatedRuleUser id for id in obj
   @db.del "user:#{ userId }:active-rules",
     replyHandler "Deleting user '#{ userId }' rules"
 
@@ -741,7 +889,7 @@ exports.deleteUser = ( userId ) =>
     delRoleUser = ( roleId ) =>
       @db.srem "role:#{ roleId }:users", userId,
         replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
-    delRoleUser( id ) for id in obj
+    delRoleUser id for id in obj
   @db.del "user:#{ userId }:roles",
     replyHandler "Deleting user '#{ userId }' roles"
 

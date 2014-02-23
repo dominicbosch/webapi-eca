@@ -3,6 +3,7 @@ body {
   font-family: sans-serif, "Times New Roman", Georgia, Serif;
   font-size: 80%;
   margin: 0px;
+  background-color: #EEF;
 }
 
 input[type=text] {
@@ -25,7 +26,6 @@ input[type=text]:focus {
 
 #menubar {
 	font-size: 0.75em;
-	width: 100%;
 	padding: 2px;
 	height: 1em;
 	background-color: #DDD;
@@ -50,10 +50,21 @@ input[type=text]:focus {
 }
 
 #info {
-  padding: 10px;
+  padding-left: 20px;
+  line-height: 2em;
   font-family: Tahoma, sans-serif;
   font-size: 0.75em;
-  color: #F33;
+  font-weight: bold;
+}
+
+.success {
+  background-color: #CFC;
+  color: #050;
+}
+
+.error {
+  background-color: #FCC;
+  color: #800;
 }
 
 #mainbody {
@@ -64,6 +75,12 @@ input[type=text]:focus {
 #pagetitle {
 	font-size: 1.5em;
 	font-weight: bold;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+#editor_mode {
+  margin-right: 15px;
 }
 
 #editor_table {
@@ -71,7 +88,7 @@ input[type=text]:focus {
 }
 
 #editor_col {
-  width: 80%;
+  width: 70%;
 }
 
 #editor {
@@ -93,14 +110,7 @@ input[type=text]:focus {
 }
 
 #tableParams input { 
-  width: 100px;
+  width: 150px;
   margin-left: 10px;
 }
 
-.error {
-  padding: 10px;
-  font-family: Tahoma, sans-serif;
-  font-size: 1em;
-  font-weight: bold;
-  color: #F33;
-}

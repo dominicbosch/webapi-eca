@@ -1,26 +1,35 @@
 <div id="menubar">
-  <div id="menubar_event">invoke events</div>
-  <div id="menubar_events">forge event poller</div>
-  <div id="menubar_actions">forge action invoker</div>
-  <div id="menubar_rules">forge rules</div>
-  <div id="menubar_logout">logout</div>
   <script>
-    $( '#menubar_event' ).click( function() {
-      window.location.href = 'forge?page=forge_event';
-    });
-    $( '#menubar_events' ).click( function() {
-      window.location.href = 'forge?page=forge_event_poller';
-    });
-    $( '#menubar_actions' ).click( function() {
-      window.location.href = 'forge?page=forge_action_invoker';
-    });
-    $( '#menubar_rules' ).click( function() {
-      window.location.href = 'forge?page=forge_rule';
-    });
-    $( '#menubar_logout' ).click( function() {
-      $.post( '/logout' ).done( function() {
-        window.location.href = document.URL;
-      });
+    var menubar = $( '#menubar' );
+    
+    var fRedirect = function( url ) {
+      return function() {
+        window.location.href = url;
+      }
+    };
+    
+    var fCreateLink = function( text, fAction ) {
+      var link = $( '<div>' ).text( text );
+      link.click( fAction );
+      menubar.append(link);
+    };
+
+    fCreateLink( 'invoke event',
+      fRedirect( 'forge?page=forge_event' )
+    );
+    fCreateLink( 'forge event poller',
+      fRedirect( 'forge?page=forge_event_poller' )
+    );
+    fCreateLink( 'forge action invoker',
+      fRedirect( 'forge?page=forge_action_invoker' )
+    );
+    fCreateLink( 'forge rule',
+      fRedirect( 'forge?page=forge_rule' )
+    );
+    fCreateLink( 'admin', fRedirect( 'admin' ) );
+
+    fCreateLink( 'logout',  function() {
+      $.post( '/logout' ).done( fRedirect( document.URL ) );
     });
   </script>
 </div>

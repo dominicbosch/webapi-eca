@@ -11,7 +11,7 @@ Request Handler
 
 
 (function() {
-  var answerHandler, crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, qs, renderPage,
+  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, qs, renderPage,
     _this = this;
 
   db = require('./persistence');
@@ -33,9 +33,14 @@ Request Handler
     _this.log = args.logger;
     _this.userRequestHandler = args['request-service'];
     _this.objAdminCmds = {
-      shutdown: function(args, answerHandler) {
-        answerHandler.answerSuccess('Shutting down... BYE!');
-        return setTimeout(args['shutdown-function'], 500);
+      shutdown: function(obj, cb) {
+        var data;
+        data = {
+          code: 200,
+          message: 'Shutting down... BYE!'
+        };
+        setTimeout(args['shutdown-function'], 500);
+        return cb(null, data);
       }
     };
     db(args);
@@ -67,13 +72,24 @@ Request Handler
       return body += data;
     });
     return req.on('end', function() {
-      var obj;
-      obj = qs.parse(body);
-      if (obj && obj.event && obj.eventid) {
-        resp.send('Thank you for the event: ' + obj.event + ' (' + obj.eventid + ')!');
-        return db.pushEvent(obj);
+      var answ, obj, rand, timestamp;
+      if (req.session && req.session.user) {
+        obj = qs.parse(body);
+        if (obj && obj.event) {
+          timestamp = (new Date).toISOString();
+          rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+          obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;
+          answ = {
+            code: 200,
+            message: "Thank you for the event: " + obj.eventid
+          };
+          resp.send(answ.code, answ);
+          return db.pushEvent(obj);
+        } else {
+          return resp.send(400, 'Your event was missing important parameters!');
+        }
       } else {
-        return resp.send(400, 'Your event was missing important parameters!');
+        return resp.send(401, 'Please login!');
       }
     });
   };
@@ -199,12 +215,13 @@ Request Handler
 
 
   renderPage = function(name, req, resp, msg) {
-    var code, content, data, err, menubar, pathSkel, remote_scripts, script, skeleton, view;
+    var code, content, data, err, menubar, page, pageElements, pathSkel, remote_scripts, script, skeleton;
     pathSkel = path.join(dirHandlers, 'skeleton.html');
     skeleton = fs.readFileSync(pathSkel, 'utf8');
     code = 200;
     data = {
-      message: msg
+      message: msg,
+      user: req.session.user
     };
     try {
       script = getScript(name);
@@ -219,22 +236,19 @@ Request Handler
       content = getTemplate('error');
       script = getScript('error');
       code = 404;
-      data = {
-        message: 'Invalid Page!'
-      };
+      data.message = 'Invalid Page!';
     }
-    content = mustache.render(content, data);
     if (req.session.user) {
       menubar = getTemplate('menubar');
     }
-    view = {
-      user: req.session.user,
+    pageElements = {
       content: content,
       script: script,
       remote_scripts: remote_scripts,
       menubar: menubar
     };
-    return resp.send(code, mustache.render(skeleton, view));
+    page = mustache.render(skeleton, pageElements);
+    return resp.send(code, mustache.render(page, data));
   };
 
   /*
@@ -272,9 +286,7 @@ Request Handler
 
   exports.handleUserCommand = function(req, resp) {
     var body;
-    if (!req.session || !req.session.user) {
-      return resp.send(401, 'Login first!');
-    } else {
+    if (req.session && req.session.user) {
       body = '';
       req.on('data', function(data) {
         return body += data;
@@ -282,14 +294,12 @@ Request Handler
       return req.on('end', function() {
         var obj;
         obj = qs.parse(body);
-        return _this.userRequestHandler(req.session.user, obj, function(err, obj) {
-          if (err) {
-            return resp.send(404, 'Rethink your request!');
-          } else {
-            return resp.send(obj);
-          }
+        return _this.userRequestHandler(req.session.user, obj, function(obj) {
+          return resp.send(obj.code, obj);
         });
       });
+    } else {
+      return resp.send(401, 'Login first!');
     }
   };
 
@@ -331,59 +341,27 @@ Request Handler
 
 
   exports.handleAdminCommand = function(req, resp) {
-    var q, _base, _name;
-    if (req.session && req.session.user) {
-      if (req.session.user.isAdmin === "true") {
-        q = req.query;
-        _this.log.info('RH | Received admin request: ' + req.originalUrl);
-        if (q.cmd) {
-          return typeof (_base = _this.objAdminCmds)[_name = q.cmd] === "function" ? _base[_name](q, answerHandler(req, resp, true)) : void 0;
+    var body;
+    if (req.session && req.session.user && req.session.user.isAdmin === "true") {
+      body = '';
+      req.on('data', function(data) {
+        return body += data;
+      });
+      return req.on('end', function() {
+        var obj;
+        obj = qs.parse(body);
+        _this.log.info('RH | Received admin request: ' + obj.command);
+        if (obj.command && _this.objAdminCmds[obj.command]) {
+          return _this.objAdminCmds[obj.command](obj, function(err, obj) {
+            return resp.send(obj.code, obj);
+          });
         } else {
           return resp.send(404, 'Command unknown!');
         }
-      } else {
-        return resp.send(renderPage('unauthorized', req.session));
-      }
+      });
     } else {
-      return resp.sendfile(getHandlerPath('login'));
+      return resp.send(401, 'You need to be logged in as admin!');
     }
-  };
-
-  answerHandler = function(req, resp, ntbr) {
-    var hasBeenAnswered, needsToBeRendered, request, response, ret;
-    request = req;
-    response = resp;
-    needsToBeRendered = ntbr;
-    hasBeenAnswered = false;
-    ret = {
-      answerSuccess: function(msg) {
-        if (!hasBeenAnswered) {
-          if (needsToBeRendered) {
-            response.send(renderPage('command_answer', request.session, msg));
-          } else {
-            response.send(msg);
-          }
-        }
-        return hasBeenAnswered = true;
-      },
-      answerError: function(msg) {
-        if (!hasBeenAnswered) {
-          if (needsToBeRendered) {
-            response.send(400, renderPage('error', request.session, msg));
-          } else {
-            response.send(400, msg);
-          }
-        }
-        return hasBeenAnswered = true;
-      },
-      isAnswered: function() {
-        return hasBeenAnswered;
-      }
-    };
-    setTimeout(function() {
-      return ret.answerError('Strange... maybe try again?');
-    }, 5000);
-    return ret;
   };
 
 }).call(this);
