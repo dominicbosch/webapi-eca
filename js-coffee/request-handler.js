@@ -74,7 +74,7 @@ Request Handler
     return req.on('end', function() {
       var answ, obj, rand, timestamp;
       if (req.session && req.session.user) {
-        obj = qs.parse(body);
+        obj = JSON.parse(body);
         if (obj && obj.event) {
           timestamp = (new Date).toISOString();
           rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();

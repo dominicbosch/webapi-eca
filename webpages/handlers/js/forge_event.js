@@ -13,10 +13,11 @@
     $('#editor').css('height', '400px');
     $('#editor').css('width', '600px');
     return $('#but_submit').click(function() {
-      var data, err;
+      var err, val;
       try {
-        data = JSON.parse(editor.getValue());
-        return $.post('/event', data).done(function(data) {
+        val = editor.getValue();
+        JSON.parse(val);
+        return $.post('/event', val).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');
         }).fail(function(err) {

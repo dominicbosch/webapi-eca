@@ -159,10 +159,18 @@ init = =>
       # from engine and event poller
       @log.info 'RS | Initialzing module manager'
       cm args
+      cm.addListener 'init', ( evt ) ->
+        poller.send 
+          event: 'init'
+          data:evt
       cm.addListener 'newRule', ( evt ) ->
-        poller.send evt
+        poller.send 
+          event: 'newRule'
+          data:evt
+      cm.addListener 'init', ( evt ) ->
+        engine.internalEvent 'init', evt
       cm.addListener 'newRule', ( evt ) ->
-        engine.internalEvent evt
+        engine.internalEvent 'newRule', evt
       
       @log.info 'RS | Initialzing http listener'
       # The request handler passes certain requests to the module manager

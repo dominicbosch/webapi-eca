@@ -149,11 +149,23 @@ WebAPI-ECA Engine
         poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
         _this.log.info('RS | Initialzing module manager');
         cm(args);
-        cm.addListener('newRule', function(evt) {
-          return poller.send(evt);
+        cm.addListener('init', function(evt) {
+          return poller.send({
+            event: 'init',
+            data: evt
+          });
         });
         cm.addListener('newRule', function(evt) {
-          return engine.internalEvent(evt);
+          return poller.send({
+            event: 'newRule',
+            data: evt
+          });
+        });
+        cm.addListener('init', function(evt) {
+          return engine.internalEvent('init', evt);
+        });
+        cm.addListener('newRule', function(evt) {
+          return engine.internalEvent('newRule', evt);
         });
         _this.log.info('RS | Initialzing http listener');
         args['request-service'] = cm.processRequest;

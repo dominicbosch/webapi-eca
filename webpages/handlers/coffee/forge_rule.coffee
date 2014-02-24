@@ -127,10 +127,13 @@ fOnLoad = () ->
 
 
   $( '#but_submit' ).click () ->
-    arrEP = $( '#select_event option:selected' ).val().split ' -> '
     try
+      if $( '#select_event option:selected' ).length is 0
+          throw new Error 'Please create an Event Poller first!'
+
+      arrEP = $( '#select_event option:selected' ).val().split ' -> '
       if $( '#input_id' ).val() is ''
-        throw new Error 'Please enter a module name!'
+        throw new Error 'Please enter a rule name!'
 
       ep = {}
       $( "#event_poller_params tr" ).each () ->

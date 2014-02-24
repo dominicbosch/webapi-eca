@@ -41,7 +41,8 @@ exports.compileString = ( src, id, params, lang ) =>
   answ =
     code: 200
     message: 'Successfully compiled'
-  src = "'use strict;'\n" + src
+
+  # src = "'use strict;'\n" + src
   if lang is '0'
     try
       src = cs.compile src
@@ -49,13 +50,13 @@ exports.compileString = ( src, id, params, lang ) =>
       answ.code = 400
       answ.message = 'Compilation of CoffeeScript failed at line ' +
         err.location.first_line
-
   #FIXME not log but debug module is required to provide information to the user
   sandbox = 
     id: id
     params: params
     needle: needle
-    log: @log
+    log: console.log
+    # console: console #TODO remove!
     exports: {}
   #TODO child_process to run module!
   #Define max runtime per loop as 10 seconds, after that the child will be killed
@@ -64,8 +65,10 @@ exports.compileString = ( src, id, params, lang ) =>
   try
     vm.runInNewContext src, sandbox, id + '.vm'
   catch err
+    console.log err
     answ.code = 400
     answ.message = 'Loading Module failed: ' + err.message
   ret =
     answ: answ
     module: sandbox.exports
+  ret

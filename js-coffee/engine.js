@@ -1,109 +1,65 @@
 'use strict';
 
 var path = require('path'),
-   // qEvents = new (require('./queue')).Queue(), //TODO export queue into redis
     regex = /\$X\.[\w\.\[\]]*/g, // find properties of $X
     listRules = {},
     listActionModules = {},
     isRunning = true,
-    mm, poller, db, log;
+    dynmod = require('./dynamic-modules'),
+    db = require('./persistence'), log;
 
 exports = module.exports = function( args ) {
   log = args.logger;
-  mm = require('./components-manager')(args);
+  db( args);
+  dynmod(args);
+  pollQueue();
   return module.exports;
 };
 
-exports.internalEvent = function( evt ) {
-  console.log('engine got internal event');
-  console.log(evt);
-}
-/*
- * Initialize the rules engine which initializes the module loader.
- * @param {Object} db_link the link to the db, see [db\_interface](db_interface.html)
- * @param {String} db_port the db port
- * @param {String} crypto_key the key to be used for encryption on the db, max legnth 256
- */
-exports.addPersistence = function(db_link) {
-  db = db_link;
-  // if(mm && db) db.getActionModules(function(err, obj) {
-  //   if(err) log.error('EN', 'retrieving Action Modules from DB!');
-  //   else {
-  //     if(!obj) {
-  //       log.info('EN', 'No Action Modules found in DB!');
-  //       loadRulesFromDB();
-  //     } else {
-  //       var m;
-  //       for(var el in obj) {
-  //         log.info('EN', 'Loading Action Module from DB: ' + el);
-  //         try{
-  //           m = mm.requireFromString(obj[el], el);
-  //           db.getActionModuleAuth(el, function(mod) {
-  //             return function(err, obj) {
-  //               if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-  //             };
-  //           }(m));
-  //           listActionModules[el] = m;
-  //         } catch(e) {
-  //           e.addInfo = 'error in action module "' + el + '"';
-  //           log.error('EN', e);
-  //         }
-  //       }
-  //       loadRulesFromDB();
-  //     }
-  //   }
-  // });
-  // else log.severe('EN', new Error('Module Loader or DB not defined!'));
-};
+var updateActionModules = function() {
+  for ( var user in listRules ) {
+    if(!listActionModules[user]) listActionModules[user] = {};
+    for ( var rule in listRules[user] ) {
+      var actions = listRules[user][rule].actions;
+      for ( var i = 0; i < actions.length; i++ ){
+        var arrMod = actions[i].split(' -> ');
+        if ( !listActionModules[user][arrMod[0]] ){
+          db.getActionInvoker(arrMod[0], function( err, objAM ){
+            db.getActionUserParams(arrMod[0], user, function( err, objParams ) {
+              console.log (objAM);
 
-function loadRulesFromDB() {
-  if(db) db.getRules(function(err, obj) {
-    for(var el in obj){
-      if(obj[el]) exports.addRule(JSON.parse(obj[el]));
+              //FIXME am name is called 'actions'???
+              // if(objParams) { //TODO we don't need them for all modules
+                var answ = dynmod.compileString(objAM.code, objAM.actions + "_" + user, objParams, objAM.lang);
+                console.log('answ');
+                console.log(answ);
+                listActionModules[user][arrMod[0]] = answ.module;
+                console.log('loaded ' + user + ': ' + arrMod[0]);
+                console.log(listActionModules);
+              // }
+            });
+          });
+        }
+      }
     }
-      
-  });
-  //start to poll the event queue
-  pollQueue();
-}
-
-/**
- * Insert an action module into the list of available interfaces.
- * @param {Object} objModule the action module object
- */
-exports.loadActionModule = function(name, objModule) {
-  
-  //TODO not used yet, load action modules from db for each rule per user
-  // TODO only load module once, load user specific parameters per user
-  // when rule is activated by user. invoked action then uses user specific
-  // parameters
-  log.info('EN', 'Action module "' + name + '" loaded');
-  listActionModules[name] = objModule;
-};
-
-exports.getActionModule = function(name) {
-  return listActionModules[name];
-};
-
-/**
- * Add a rule into the working memory
- * @param {Object} objRule the rule object
- */
-exports.addRule = function(objRule) {
-  //TODO validate rule
-  log.info('EN', 'Loading Rule');
-  log.info('EN', objRule);
-  log.info('EN', 'Loading Rule: ' + objRule.id);
-  if(listRules[objRule.id]) log.info('EN', 'Replacing rule: ' + objRule.id);
-  listRules[objRule.id] = objRule;
-
-  // Notify poller about eventual candidate
-  try {
-    poller.send('event|'+objRule.event);
-  } catch (err) {
-    log.info('EN', 'Unable to inform poller about new active rule!');
   }
 };
+
+exports.internalEvent = function( evt, data ) {
+  try{
+    var obj = JSON.parse( data );
+    db.getRuleActivatedUsers(obj.id, function ( err, arrUsers ) {
+      for(var i = 0; i < arrUsers.length; i++) {
+        if( !listRules[arrUsers[i]]) listRules[arrUsers[i]] = {};
+        listRules[arrUsers[i]][obj.id] = obj;
+        updateActionModules();
+      }
+    });
+  } catch( err ) {
+    console.log( err );
+  }
+};
+
 
 function pollQueue() {
   if(isRunning) {
@@ -123,8 +79,10 @@ function pollQueue() {
 function processEvent(evt) {
   log.info('EN', 'processing event: ' + evt.event + '(' + evt.eventid + ')');
   var actions = checkEvent(evt);
-  for(var i = 0; i < actions.length; i++) {
-    invokeAction(evt, actions[i]);
+  for(var user in actions) {
+    for(var i = 0; i < actions[user].length; i++) {
+      invokeAction(evt, user, actions[user][i]);
+    }
   }
 }
 
@@ -134,25 +92,50 @@ function processEvent(evt) {
  * @param {Object} evt the event to check
  */
 function checkEvent(evt) {
-  var actions = [];
-  for(var rn in listRules) {
+  var actions = {};
+  for(var user in listRules) {
+    actions[user] = [];
+    for(var rule in listRules[user]) {
     //TODO this needs to get depth safe, not only data but eventually also
     // on one level above (eventid and other meta)
-    if(listRules[rn].event === evt.event && validConditions(evt.payload, listRules[rn])) {
-      log.info('EN', 'Rule "' + rn + '" fired');
-      actions = actions.concat(listRules[rn].actions);
+
+      if(listRules[user][rule].event === evt.event && validConditions(evt.payload, listRules[user][rule])) {
+        log.info('EN', 'Rule "' + rule + '" fired');
+        var arrAct = listRules[user][rule].actions;
+        for(var i = 0; i < arrAct.length; i++) {
+          if(actions[user].indexOf(arrAct[i]) === -1) actions[user].push(arrAct[i]);
+        }
+      }
     }
   }
   return actions;
 }
 
+// {
+//   "event": "emailyak -> newMail",
+//   "payload": {
+//     "TextBody": "hello"
+//   }
+// }
+  
+// exports.sendMail = ( args ) ->
+//   url = 'https://api.emailyak.com/v1/ps1g59ndfcwg10w/json/send/email/'
+
+//   data =
+//     FromAddress: 'tester@mscliveweb.simpleyak.com'
+//     ToAddress: 'dominic.bosch.db@gmail.com'
+//     TextBody: 'test'
+
+//   needle.post url, JSON.stringify( data ), {json: true}, ( err, resp, body ) ->
+//     log err
+//     log body
 /**
  * Checks whether all conditions of the rule are met by the event.
  * @param {Object} evt the event to check
  * @param {Object} rule the rule with its conditions
  */
 function validConditions(evt, rule) {
-  for(var property in rule.condition){
+  for(var property in rule.conditions){
     if(!evt[property] || evt[property] != rule.condition[property]) return false;
   }
   return true;
@@ -163,22 +146,27 @@ function validConditions(evt, rule) {
  * @param {Object} evt The event that invoked the action
  * @param {Object} action The action to be invoked
  */
-function invokeAction(evt, action) {
+function invokeAction( evt, user, action ) {
   var actionargs = {},
-      arrModule = action.module.split('->');
+      arrModule = action.split(' -> ');
+      //FIXME internal events, such as loopback ha sno arrow
       //TODO this requires change. the module property will be the identifier
       // in the actions object (or shall we allow several times the same action?)
   if(arrModule.length < 2) {
     log.error('EN', 'Invalid rule detected!');
     return;
   }
-  var srvc = listActionModules[arrModule[0]];
+  console.log('invoking action');
+  console.log(arrModule[0]);
+  console.log(listActionModules);
+  var srvc = listActionModules[user][arrModule[0]];
+  console.log(srvc);
   if(srvc && srvc[arrModule[1]]) {
     //FIXME preprocessing not only on data
     //FIXME no preprocessing at all, why don't we just pass the whole event to the action?'
-    preprocessActionArguments(evt.payload, action.arguments, actionargs);
+    // preprocessActionArguments(evt.payload, action.arguments, actionargs);
     try {
-      if(srvc[arrModule[1]]) srvc[arrModule[1]](actionargs);
+      if(srvc[arrModule[1]]) srvc[arrModule[1]](evt.payload);
     } catch(err) {
       log.error('EN', 'during action execution: ' + err);
     }
@@ -186,53 +174,52 @@ function invokeAction(evt, action) {
   else log.info('EN', 'No api interface found for: ' + action.module);
 }
 
-/**
- * Action properties may contain event properties which need to be resolved beforehand.
- * @param {Object} evt The event whose property values can be used in the rules action
- * @param {Object} act The rules action arguments
- * @param {Object} res The object to be used to enter the new properties
- */
-function preprocessActionArguments(evt, act, res) {
-  for(var prop in act) {
-    /*
-     * If the property is an object itself we go into recursion
-     */
-    if(typeof act[prop] === 'object') {
-      res[prop] = {};
-      preprocessActionArguments(evt, act[prop], res[prop]);
-    }
-    else {
-      var txt = act[prop];
-      var arr = txt.match(regex);
-      /*
-       * If rules action property holds event properties we resolve them and
-       * replace the original action property
-       */
-      // console.log(evt);
-      if(arr) {
-        for(var i = 0; i < arr.length; i++) {
-          /*
-           * The first three characters are '$X.', followed by the property
-           */
-          var actionProp = arr[i].substring(3).toLowerCase();
-          // console.log(actionProp);
-          for(var eprop in evt) {
-            // our rules language doesn't care about upper or lower case
-            if(eprop.toLowerCase() === actionProp) {
-              txt = txt.replace(arr[i], evt[eprop]);
-            }
-          }
-          txt = txt.replace(arr[i], '[property not available]');
-        }
-      }
-      res[prop] = txt;
-    }
-  }
-}
+// /**
+//  * Action properties may contain event properties which need to be resolved beforehand.
+//  * @param {Object} evt The event whose property values can be used in the rules action
+//  * @param {Object} act The rules action arguments
+//  * @param {Object} res The object to be used to enter the new properties
+//  */
+// function preprocessActionArguments(evt, act, res) {
+//   for(var prop in act) {
+//     /*
+//      * If the property is an object itself we go into recursion
+//      */
+//     if(typeof act[prop] === 'object') {
+//       res[prop] = {};
+//       preprocessActionArguments(evt, act[prop], res[prop]);
+//     }
+//     else {
+//       var txt = act[prop];
+//       var arr = txt.match(regex);
+      
+//        * If rules action property holds event properties we resolve them and
+//        * replace the original action property
+       
+//       // console.log(evt);
+//       if(arr) {
+//         for(var i = 0; i < arr.length; i++) {
+//           /*
+//            * The first three characters are '$X.', followed by the property
+//            */
+//           var actionProp = arr[i].substring(3).toLowerCase();
+//           // console.log(actionProp);
+//           for(var eprop in evt) {
+//             // our rules language doesn't care about upper or lower case
+//             if(eprop.toLowerCase() === actionProp) {
+//               txt = txt.replace(arr[i], evt[eprop]);
+//             }
+//           }
+//           txt = txt.replace(arr[i], '[property not available]');
+//         }
+//       }
+//       res[prop] = txt;
+//     }
+//   }
+// }
 
 exports.shutDown = function() {
   if(log) log.info('EN', 'Shutting down Poller and DB Link');
   isRunning = false;
-  if(poller) poller.send('cmd|shutdown');
   if(db) db.shutDown();
 };

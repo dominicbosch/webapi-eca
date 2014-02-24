@@ -51,7 +51,6 @@ Dynamic Modules
       code: 200,
       message: 'Successfully compiled'
     };
-    src = "'use strict;'\n" + src;
     if (lang === '0') {
       try {
         src = cs.compile(src);
@@ -65,20 +64,22 @@ Dynamic Modules
       id: id,
       params: params,
       needle: needle,
-      log: _this.log,
+      log: console.log,
       exports: {}
     };
     try {
       vm.runInNewContext(src, sandbox, id + '.vm');
     } catch (_error) {
       err = _error;
+      console.log(err);
       answ.code = 400;
       answ.message = 'Loading Module failed: ' + err.message;
     }
-    return ret = {
+    ret = {
       answ: answ,
       module: sandbox.exports
     };
+    return ret;
   };
 
 }).call(this);

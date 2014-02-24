@@ -43,7 +43,16 @@ Components Manager
   };
 
   exports.addListener = function(evt, eh) {
-    return _this.ee.addListener(evt, eh);
+    _this.ee.addListener(evt, eh);
+    return db.getRules(function(err, obj) {
+      var id, rule, _results;
+      _results = [];
+      for (id in obj) {
+        rule = obj[id];
+        _results.push(_this.ee.emit('init', rule));
+      }
+      return _results;
+    });
   };
 
   exports.processRequest = function(user, obj, cb) {
@@ -202,7 +211,6 @@ Components Manager
     },
     forge_rule: function(user, obj, cb) {
       obj.event = JSON.parse(obj.event);
-      console.log(obj);
       return db.getRule(obj.id, function(err, objRule) {
         var answ, id, modules, params, rule;
         if (objRule !== null) {
@@ -221,22 +229,16 @@ Components Manager
             conditions: JSON.parse(obj.conditions),
             actions: JSON.parse(obj.actions)
           };
-          console.log(rule);
-          modules = JSON.parse(obj.event.action_params);
-          console.log('store rule');
+          modules = JSON.parse(obj.action_params);
           db.storeRule(rule.id, JSON.stringify(rule));
-          console.log('link rule');
           db.linkRule(rule.id, user.username);
-          console.log('activate rule');
           db.activateRule(rule.id, user.username);
-          console.log('store event params');
           db.storeEventUserParams(obj.event.module, user.username, obj.event_params);
-          console.log('store action params');
           for (id in modules) {
             params = modules[id];
-            db.storeActionUserParams(id, user.username, params);
+            db.storeActionUserParams(id, user.username, JSON.stringify(params));
           }
-          _this.ee.emit('newRule', rule);
+          _this.ee.emit('newRule', JSON.stringify(rule));
         }
         return cb(answ);
       });

@@ -13,8 +13,9 @@ fOnLoad = () ->
   
   $( '#but_submit' ).click () ->
     try
-      data = JSON.parse editor.getValue()
-      $.post( '/event', data )
+      val = editor.getValue()
+      JSON.parse val # try to parse, throw an error if JSON not valid
+      $.post( '/event', val )
         .done ( data ) ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
