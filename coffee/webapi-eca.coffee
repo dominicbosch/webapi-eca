@@ -106,6 +106,7 @@ init = =>
     process.exit()
 
   logconf = conf.getLogConf()
+
   if argv.m
     logconf[ 'mode' ] = argv.m
   if argv.i
@@ -145,11 +146,17 @@ init = =>
       
       # Start the event poller. The module manager will emit events for it
       @log.info 'RS | Forking a child process for the event poller'
+      # Grab all required log config fields
       cliArgs = [
+        # the log mode: [development|productive]
         args.logconf['mode']
+        # the I/O log level, refer to logging.coffee for the different levels
         args.logconf['io-level']
+        # the file log level, refer to logging.coffee for the different levels
         args.logconf['file-level']
+        # the optional path to the log file
         args.logconf['file-path']
+        # whether a log file shall be written at all: null else
         args.logconf['nolog']
       ]
       poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs
