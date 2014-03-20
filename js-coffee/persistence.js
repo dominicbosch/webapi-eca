@@ -358,9 +358,23 @@ Persistence
     };
 
     IndexedModules.prototype.deleteModule = function(mId) {
+      var _this = this;
       this.log.info("DB | deleteModule(" + this.setname + "): " + mId);
       this.db.srem("" + this.setname + "s", mId, replyHandler("Deleting '" + this.setname + "' key '" + mId + "'"));
-      return this.db.del("" + this.setname + ":" + mId, replyHandler("Deleting '" + this.setname + ":" + mId + "'"));
+      this.db.del("" + this.setname + ":" + mId, replyHandler("Deleting '" + this.setname + ":" + mId + "'"));
+      return this.db.smembers("" + this.setname + ":" + mId + ":users", function(err, obj) {
+        var fRemLinks, user, _i, _len, _results;
+        fRemLinks = function(userId) {
+          _this.db.srem("" + _this.setname + ":" + mId + ":users", userId, replyHandler("Removing '" + _this.setname + ":" + mId + "' linked user '" + userId + "'"));
+          return _this.db.srem("user:" + userId + ":" + _this.setname + "s", mId, replyHandler("Removing 'user:" + userId + ":" + _this.setname + "s' linked module '" + mId + "'"));
+        };
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          user = obj[_i];
+          _results.push(fRemLinks(user));
+        }
+        return _results;
+      });
     };
 
     IndexedModules.prototype.storeUserParams = function(mId, userId, data) {

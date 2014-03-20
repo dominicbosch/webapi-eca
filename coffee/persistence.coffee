@@ -293,10 +293,21 @@ class IndexedModules
       replyHandler "Deleting '#{ @setname }' key '#{ mId }'"
     @db.del "#{ @setname }:#{ mId }",
       replyHandler "Deleting '#{ @setname }:#{ mId }'"
+    @db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
+      fRemLinks = ( userId ) =>
+        @db.srem "#{ @setname }:#{ mId }:users", userId, 
+          replyHandler "Removing '#{ @setname }:#{ mId }' linked user '#{ userId }'"
+        @db.srem "user:#{ userId }:#{ @setname }s", mId, 
+          replyHandler "Removing 'user:#{ userId }:#{ @setname }s' linked module '#{ mId }'"
+      fRemLinks user for user in obj    
   #TODO remove published ids
-  #TODO remove from linked users
   # TODO remove from public modules
   # TODO remove parameters
+    # @log.info "DB | linkModule(#{ @setname }): #{ mId } to #{ userId }"
+    # @db.sadd "#{ @setname }:#{ mId }:users", userId,
+    #   replyHandler "Linking '#{ @setname }:#{ mId }:users' #{ userId }"
+    # @db.sadd "user:#{ userId }:#{ @setname }s", mId,
+    #   replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
 
   storeUserParams: ( mId, userId, data ) =>
     @log.info "DB | storeUserParams(#{ @setname }): '#{ mId }:#{ userId }'"

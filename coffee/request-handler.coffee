@@ -246,10 +246,12 @@ objects.*
 exports.handleUserCommand = ( req, resp ) =>
   if req.session and req.session.user
     body = ''
+    #Append data to body while receiving fragments
     req.on 'data', ( data ) ->
       body += data
     req.on 'end', =>
       obj = qs.parse body
+      # Let the user request handler service answer the request
       @userRequestHandler req.session.user, obj, ( obj ) ->
         resp.send obj.code, obj
   else
