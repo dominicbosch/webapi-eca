@@ -33,7 +33,7 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
   //TODO only load rules on beginning, if rules require certain actions, load them in order to allow fast firing
   // if rules are set inactive, remove the action module from the memory
   db = db_link;
-  if(ml && db) db.getActionModules(function(err, obj) {
+  if(ml && db) db.actionInvokers.getModules(function(err, obj) {
     if(err) log.error('EN', 'retrieving Action Modules from DB!');
     else {
       if(!obj) {
@@ -44,11 +44,12 @@ exports.addDBLinkAndLoadActionsAndRules = function(db_link) {
           log.print('EN', 'Loading Action Module from DB: ' + el);
           try {
             m = ml.requireFromString(obj[el], el);
-            db.getActionModuleAuth(el, function(mod) {
-              return function(err, obj) {
-                if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
-              };
-            }(m));
+            // db.getActionModuleAuth(el, function(mod) {
+            //   return function(err, obj) {
+            //     if(obj && mod.loadCredentials) mod.loadCredentials(JSON.parse(obj));
+            //   };
+            // }(m));
+    //FIXME !!!
             listActionModules[el] = m;
           } catch(e) {
             e.addInfo = 'error in action module "' + el + '"';

@@ -47,7 +47,6 @@ loadConfigFile = ( configPath ) =>
     'http-port'
     'db-port'
   ]
-  #TODO Try to get rid of crypto key
   try
     @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
     @isReady = true
@@ -58,6 +57,7 @@ loadConfigFile = ( configPath ) =>
       console.error "Missing property in config file, requires:\n" +
          " - #{ confProperties.join "\n - " }"
   catch e
+    @isReady = false
     if not @nolog
       console.error "Failed loading config file: #{ e.message }"
   

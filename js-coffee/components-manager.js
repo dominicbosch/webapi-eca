@@ -73,7 +73,7 @@ Components Manager
       answ = {
         code: 200
       };
-      return db.getEventPoller(obj.id, function(err, mod) {
+      return db.eventPollers.getModule(obj.id, function(err, mod) {
         var cm, id, name, src, _ref;
         if (mod) {
           answ.code = 409;
@@ -91,14 +91,14 @@ Components Manager
             }
             _this.log.info("CM | Storing new eventpoller with events " + events);
             answ.message = "Event Poller module successfully stored! Found following event(s): " + events;
-            db.storeEventPoller(obj.id, user.username, {
+            db.eventPollers.storeModule(obj.id, user.username, {
               code: obj.data,
               lang: obj.lang,
               params: obj.params,
               events: events
             });
             if (obj["public"] === 'true') {
-              db.publishEventPoller(obj.id);
+              db.eventPollers.publish(obj.id);
             }
           }
         }
@@ -106,12 +106,12 @@ Components Manager
       });
     },
     get_event_pollers: function(user, obj, cb) {
-      return db.getAvailableEventPollerIds(user.username, function(err, obj) {
+      return db.eventPollers.getAvailableModuleIds(user.username, function(err, obj) {
         var fGetEvents, id, oRes, sem, _i, _len, _results;
         oRes = {};
         sem = obj.length;
         fGetEvents = function(id) {
-          return db.getEventPoller(id, function(err, obj) {
+          return db.eventPollers.getModule(id, function(err, obj) {
             oRes[id] = obj.events;
             if (--sem === 0) {
               return cb({
@@ -130,7 +130,7 @@ Components Manager
       });
     },
     get_event_poller_params: function(user, obj, cb) {
-      return db.getEventPollerRequiredParams(obj.id, function(err, obj) {
+      return db.eventPollers.getModuleParams(obj.id, function(err, obj) {
         return cb({
           code: 200,
           message: obj
@@ -138,12 +138,12 @@ Components Manager
       });
     },
     get_action_invokers: function(user, obj, cb) {
-      return db.getAvailableActionInvokerIds(user.username, function(err, obj) {
+      return db.actionInvokers.getAvailableModuleIds(user.username, function(err, obj) {
         var fGetActions, id, oRes, sem, _i, _len, _results;
         oRes = {};
         sem = obj.length;
         fGetActions = function(id) {
-          return db.getActionInvoker(id, function(err, obj) {
+          return db.actionInvokers.getModule(id, function(err, obj) {
             oRes[id] = obj.actions;
             if (--sem === 0) {
               return cb({
@@ -162,7 +162,7 @@ Components Manager
       });
     },
     get_action_invoker_params: function(user, obj, cb) {
-      return db.getActionInvokerRequiredParams(obj.id, function(err, obj) {
+      return db.actionInvokers.getModuleParams(obj.id, function(err, obj) {
         return cb({
           code: 200,
           message: obj
@@ -174,7 +174,7 @@ Components Manager
       answ = {
         code: 200
       };
-      return db.getActionInvoker(obj.id, function(err, mod) {
+      return db.actionInvokers.getModule(obj.id, function(err, mod) {
         var actions, cm, id, name, src, _ref;
         if (mod) {
           answ.code = 409;
@@ -192,14 +192,14 @@ Components Manager
             }
             _this.log.info("CM | Storing new eventpoller with actions " + actions);
             answ.message = "Action Invoker module successfully stored! Found following action(s): " + actions;
-            db.storeActionInvoker(obj.id, user.username, {
+            db.actionInvokers.storeModule(obj.id, user.username, {
               code: obj.data,
               lang: obj.lang,
               params: obj.params,
               actions: actions
             });
             if (obj["public"] === 'true') {
-              db.publishActionInvoker(obj.id);
+              db.actionInvokers.publish(obj.id);
             }
           }
         }
@@ -233,10 +233,10 @@ Components Manager
           db.storeRule(rule.id, JSON.stringify(rule));
           db.linkRule(rule.id, user.username);
           db.activateRule(rule.id, user.username);
-          db.storeEventUserParams(obj.event.module, user.username, obj.event_params);
+          db.eventPollers.storeUserParams(obj.event.module, user.username, obj.event_params);
           for (id in modules) {
             params = modules[id];
-            db.storeActionUserParams(id, user.username, JSON.stringify(params));
+            db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
           }
           _this.ee.emit('newRule', JSON.stringify(rule));
         }

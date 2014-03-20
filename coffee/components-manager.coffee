@@ -58,7 +58,7 @@ commandFunctions =
     answ = 
       code: 200
 
-    db.getEventPoller obj.id, ( err, mod ) =>
+    db.eventPollers.getModule obj.id, ( err, mod ) =>
       if mod
         answ.code = 409
         answ.message = 'Event Poller module name already existing: ' + obj.id
@@ -73,21 +73,21 @@ commandFunctions =
           @log.info "CM | Storing new eventpoller with events #{ events }"
           answ.message = 
             "Event Poller module successfully stored! Found following event(s): #{ events }"
-          db.storeEventPoller obj.id, user.username,
+          db.eventPollers.storeModule obj.id, user.username,
             code: obj.data
             lang: obj.lang
             params: obj.params
             events: events
           if obj.public is 'true'
-            db.publishEventPoller obj.id
+            db.eventPollers.publish obj.id
       cb answ
   
   get_event_pollers: ( user, obj, cb ) ->
-    db.getAvailableEventPollerIds user.username, ( err, obj ) ->
+    db.eventPollers.getAvailableModuleIds user.username, ( err, obj ) ->
       oRes = {}
       sem = obj.length
       fGetEvents = ( id ) ->
-        db.getEventPoller id, ( err, obj ) ->
+        db.eventPollers.getModule id, ( err, obj ) ->
           oRes[id] = obj.events
           if --sem is 0
             cb 
@@ -96,17 +96,17 @@ commandFunctions =
       fGetEvents id for id in obj
   
   get_event_poller_params: ( user, obj, cb ) ->
-    db.getEventPollerRequiredParams obj.id, ( err, obj ) ->
+    db.eventPollers.getModuleParams obj.id, ( err, obj ) ->
       cb
         code: 200
         message: obj
 
   get_action_invokers: ( user, obj, cb ) ->
-    db.getAvailableActionInvokerIds user.username, ( err, obj ) ->
+    db.actionInvokers.getAvailableModuleIds user.username, ( err, obj ) ->
       oRes = {}
       sem = obj.length
       fGetActions = ( id ) ->
-        db.getActionInvoker id, ( err, obj ) ->
+        db.actionInvokers.getModule id, ( err, obj ) ->
           oRes[id] = obj.actions
           if --sem is 0
             cb 
@@ -115,7 +115,7 @@ commandFunctions =
       fGetActions id for id in obj
 
   get_action_invoker_params: ( user, obj, cb ) ->
-    db.getActionInvokerRequiredParams obj.id, ( err, obj ) ->
+    db.actionInvokers.getModuleParams obj.id, ( err, obj ) ->
       cb
         code: 200
         message: obj
@@ -124,7 +124,7 @@ commandFunctions =
     answ = 
       code: 200
 
-    db.getActionInvoker obj.id, ( err, mod ) =>
+    db.actionInvokers.getModule obj.id, ( err, mod ) =>
       if mod
         answ.code = 409
         answ.message = 'Action Invoker module name already existing: ' + obj.id
@@ -139,13 +139,13 @@ commandFunctions =
           @log.info "CM | Storing new eventpoller with actions #{ actions }"
           answ.message = 
             "Action Invoker module successfully stored! Found following action(s): #{ actions }"
-          db.storeActionInvoker obj.id, user.username,
+          db.actionInvokers.storeModule obj.id, user.username,
             code: obj.data
             lang: obj.lang
             params: obj.params
             actions: actions
           if obj.public is 'true'
-            db.publishActionInvoker obj.id
+            db.actionInvokers.publish obj.id
       cb answ
 
   get_rules: ( user, obj, cb ) ->
@@ -172,7 +172,7 @@ commandFunctions =
         db.storeRule rule.id, JSON.stringify rule
         db.linkRule rule.id, user.username
         db.activateRule rule.id, user.username
-        db.storeEventUserParams obj.event.module, user.username, obj.event_params
-        db.storeActionUserParams id, user.username, JSON.stringify params for id, params of modules
+        db.eventPollers.storeUserParams obj.event.module, user.username, obj.event_params
+        db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of modules
         @ee.emit 'newRule', JSON.stringify rule
       cb answ

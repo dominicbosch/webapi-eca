@@ -67,6 +67,7 @@ Configuration
       }
     } catch (_error) {
       e = _error;
+      _this.isReady = false;
       if (!_this.nolog) {
         return console.error("Failed loading config file: " + e.message);
       }

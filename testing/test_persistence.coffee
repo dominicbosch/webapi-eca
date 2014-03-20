@@ -136,177 +136,8 @@ exports.EventQueue =
 
 
 ###
-# Test ACTION INVOKER
-###
-exports.ActionInvoker =
-  setUp: ( cb ) =>
-    @userId = 'tester1'
-    @action1id = 'test-action-invoker_1'
-    @action2id = 'test-action-invoker_2'
-    @action1 =
-      code: 'unit-test action invoker 1 content'
-      reqparams:'[param11,param12]'
-    @action2 =
-      code: 'unit-test action invoker 2 content'
-      reqparams:'[param21,param22]'
-    cb()
- 
-  tearDown: ( cb ) =>
-    @db.deleteActionInvoker @action1id
-    @db.deleteActionInvoker @action2id
-    cb()
-
-  testCreateAndRead: ( test ) =>
-    test.expect 3
-    # store an entry to start with 
-    @db.storeActionInvoker @action1id, @userId, @action1
-
-    # test that the ID shows up in the set
-    @db.getActionInvokerIds ( err , obj ) =>
-      test.ok @action1id in obj,
-        'Expected key not in action-invokers set'
-
-      # the retrieved object really is the one we expected
-      @db.getActionInvoker @action1id, ( err , obj ) =>
-        test.deepEqual obj, @action1,
-          'Retrieved Action Invoker is not what we expected'
-        
-        # Ensure the action invoker is in the list of all existing ones
-        @db.getActionInvokers ( err , obj ) =>
-          test.deepEqual @action1, obj[@action1id],
-            'Action Invoker ist not in result set'
-          test.done()
-          
-  testUpdate: ( test ) =>
-    test.expect 2
-
-    # store an entry to start with 
-    @db.storeActionInvoker @action1id, @userId, @action1
-    @db.storeActionInvoker @action1id, @userId, @action2
-
-    # the retrieved object really is the one we expected
-    @db.getActionInvoker @action1id, ( err , obj ) =>
-      test.deepEqual obj, @action2,
-        'Retrieved Action Invoker is not what we expected'
-        
-      # Ensure the action invoker is in the list of all existing ones
-      @db.getActionInvokers ( err , obj ) =>
-        test.deepEqual @action2, obj[@action1id],
-          'Action Invoker ist not in result set'
-        test.done()
-
-  testDelete: ( test ) =>
-    test.expect 2
-
-    # store an entry to start with 
-    @db.storeActionInvoker @action1id, @userId, @action1
-
-    # Ensure the action invoker has been deleted
-    @db.deleteActionInvoker @action1id
-    @db.getActionInvoker @action1id, ( err , obj ) =>
-      test.strictEqual obj, null,
-        'Action Invoker still exists'
-      
-      # Ensure the ID has been removed from the set
-      @db.getActionInvokerIds ( err , obj ) =>
-        test.ok @action1id not in obj,
-          'Action Invoker key still exists in set'
-        test.done()
-  
-
-  testFetchSeveral: ( test ) =>
-    test.expect 3
-
-    semaphore = 2
-
-    fCheckInvoker = ( modname, mod ) =>
-      myTest = test
-      forkEnds = () ->
-        myTest.done() if --semaphore is 0
-      ( err, obj ) =>
-        myTest.deepEqual mod, obj,
-          "Invoker #{ modname } does not equal the expected one"
-        forkEnds()
-
-    @db.storeActionInvoker @action1id, @userId, @action1
-    @db.storeActionInvoker @action2id, @userId, @action2
-    @db.getActionInvokerIds ( err, obj ) =>
-      test.ok @action1id in obj and @action2id in obj,
-        'Not all action invoker Ids in set'
-      @db.getActionInvoker @action1id, fCheckInvoker @action1id, @action1 
-      @db.getActionInvoker @action2id, fCheckInvoker @action2id, @action2
-
-
-###
-# Test ACTION INVOKER PARAMS
-###
-#TODO add tests for required parameters per module
-exports.ActionInvokerParams =
-  testCreateAndRead: ( test ) =>
-    test.expect 2
-
-    userId = 'tester1'
-    actionId = 'test-action-invoker_1'
-    params = 'shouldn\'t this be an object?'
-
-    # store an entry to start with 
-    @db.storeActionUserParams actionId, userId, params
-    
-    # test that the ID shows up in the set
-    @db.getActionUserParamsIds ( err, obj ) =>
-      test.ok actionId+':'+userId in obj,
-        'Expected key not in action-params set'
-      
-      # the retrieved object really is the one we expected
-      @db.getActionUserParams actionId, userId, ( err, obj ) =>
-        test.strictEqual obj, params,
-          'Retrieved action params is not what we expected'
-        @db.deleteActionUserParams actionId, userId
-        test.done()
-
-  testUpdate: ( test ) =>
-    test.expect 1
-
-    userId = 'tester1'
-    actionId = 'test-action-invoker_1'
-    params = 'shouldn\'t this be an object?'
-    paramsNew = 'shouldn\'t this be a new object?'
-
-    # store an entry to start with 
-    @db.storeActionUserParams actionId, userId, params
-    @db.storeActionUserParams actionId, userId, paramsNew
-
-    # the retrieved object really is the one we expected
-    @db.getActionUserParams actionId, userId, ( err, obj ) =>
-      test.strictEqual obj, paramsNew,
-        'Retrieved action params is not what we expected'
-      @db.deleteActionUserParams actionId, userId
-      test.done()
-
-  testDelete: ( test ) =>
-    test.expect 2
-
-    userId = 'tester1'
-    actionId = 'test-action-invoker_1'
-    params = 'shouldn\'t this be an object?'
-
-    # store an entry to start with and delte it right away
-    @db.storeActionUserParams actionId, userId, params
-    @db.deleteActionUserParams actionId, userId
-    
-    # Ensure the action params have been deleted
-    @db.getActionUserParams  actionId, userId, ( err, obj ) =>
-      test.strictEqual obj, null,
-        'Action params still exists'
-      # Ensure the ID has been removed from the set
-      @db.getActionUserParamsIds ( err, obj ) =>
-        test.ok actionId+':'+userId not in obj,
-          'Action Params key still exists in set'
-        test.done()
-
-
-###
-# Test EVENT POLLER
+# Test Indexed Module from persistence. Testing only Event Poller is sufficient
+# since Action Invoker uses the same class
 ###
 exports.EventPoller =
   setUp: ( cb ) =>
@@ -322,27 +153,26 @@ exports.EventPoller =
     cb()
  
   tearDown: ( cb ) =>
-    @db.deleteEventPoller @event1id
-    @db.deleteEventPoller @event2id
+    @db.eventPollers.deleteModule @event1id
+    @db.eventPollers.deleteModule @event2id
     cb()
 
   testCreateAndRead: ( test ) =>
     test.expect 3
-    # store an entry to start with 
-    @db.storeEventPoller @event1id, @userId, @event1
+    @db.eventPollers.storeModule @event1id, @userId, @event1
 
     # test that the ID shows up in the set
-    @db.getEventPollerIds ( err , obj ) =>
+    @db.eventPollers.getModuleIds ( err , obj ) =>
       test.ok @event1id in obj,
         'Expected key not in event-pollers set'
       
       # the retrieved object really is the one we expected
-      @db.getEventPoller @event1id, ( err , obj ) =>
+      @db.eventPollers.getModule @event1id, ( err , obj ) =>
         test.deepEqual obj, @event1,
           'Retrieved Event Poller is not what we expected'
         
         # Ensure the event poller is in the list of all existing ones
-        @db.getEventPollers ( err , obj ) =>
+        @db.eventPollers.getModules ( err , obj ) =>
           test.deepEqual @event1, obj[@event1id],
             'Event Poller ist not in result set'
           test.done()
@@ -351,16 +181,16 @@ exports.EventPoller =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeEventPoller @event1id, @userId, @event1
-    @db.storeEventPoller @event1id, @userId, @event2
+    @db.eventPollers.storeModule @event1id, @userId, @event1
+    @db.eventPollers.storeModule @event1id, @userId, @event2
 
     # the retrieved object really is the one we expected
-    @db.getEventPoller @event1id, ( err , obj ) =>
+    @db.eventPollers.getModule @event1id, ( err , obj ) =>
       test.deepEqual obj, @event2,
         'Retrieved Event Poller is not what we expected'
         
       # Ensure the event poller is in the list of all existing ones
-      @db.getEventPollers ( err , obj ) =>
+      @db.eventPollers.getModules ( err , obj ) =>
         test.deepEqual @event2, obj[@event1id],
           'Event Poller ist not in result set'
         test.done()
@@ -369,16 +199,16 @@ exports.EventPoller =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeEventPoller @event1id, @userId, @event1
+    @db.eventPollers.storeModule @event1id, @userId, @event1
 
     # Ensure the event poller has been deleted
-    @db.deleteEventPoller @event1id
-    @db.getEventPoller @event1id, ( err , obj ) =>
+    @db.eventPollers.deleteModule @event1id
+    @db.eventPollers.getModule @event1id, ( err , obj ) =>
       test.strictEqual obj, null,
         'Event Poller still exists'
       
       # Ensure the ID has been removed from the set
-      @db.getEventPollerIds ( err , obj ) =>
+      @db.eventPollers.getModuleIds ( err , obj ) =>
         test.ok @event1id not in obj,
           'Event Poller key still exists in set'
         test.done()
@@ -398,13 +228,13 @@ exports.EventPoller =
           "Invoker #{ modname } does not equal the expected one"
         forkEnds()
 
-    @db.storeEventPoller @event1id, @userId, @event1
-    @db.storeEventPoller @event2id, @userId, @event2
-    @db.getEventPollerIds ( err, obj ) =>
+    @db.eventPollers.storeModule @event1id, @userId, @event1
+    @db.eventPollers.storeModule @event2id, @userId, @event2
+    @db.eventPollers.getModuleIds ( err, obj ) =>
       test.ok @event1id in obj and @event2id in obj,
         'Not all event poller Ids in set'
-      @db.getEventPoller @event1id, fCheckInvoker @event1id, @event1 
-      @db.getEventPoller @event2id, fCheckInvoker @event2id, @event2
+      @db.eventPollers.getModule @event1id, fCheckInvoker @event1id, @event1 
+      @db.eventPollers.getModule @event2id, fCheckInvoker @event2id, @event2
 
 
 ###
@@ -419,18 +249,18 @@ exports.EventPollerParams =
     params = 'shouldn\'t this be an object?'
 
     # store an entry to start with 
-    @db.storeEventUserParams eventId, userId, params
+    @db.eventPollers.storeUserParams eventId, userId, params
     
     # test that the ID shows up in the set
-    @db.getEventUserParamsIds ( err, obj ) =>
+    @db.eventPollers.getUserParamsIds ( err, obj ) =>
       test.ok eventId+':'+userId in obj,
         'Expected key not in event-params set'
       
       # the retrieved object really is the one we expected
-      @db.getEventUserParams eventId, userId, ( err, obj ) =>
+      @db.eventPollers.getUserParams eventId, userId, ( err, obj ) =>
         test.strictEqual obj, params,
           'Retrieved event params is not what we expected'
-        @db.deleteEventUserParams eventId, userId
+        @db.eventPollers.deleteUserParams eventId, userId
         test.done()
 
   testUpdate: ( test ) =>
@@ -442,14 +272,14 @@ exports.EventPollerParams =
     paramsNew = 'shouldn\'t this be a new object?'
 
     # store an entry to start with 
-    @db.storeEventUserParams eventId, userId, params
-    @db.storeEventUserParams eventId, userId, paramsNew
+    @db.eventPollers.storeUserParams eventId, userId, params
+    @db.eventPollers.storeUserParams eventId, userId, paramsNew
 
     # the retrieved object really is the one we expected
-    @db.getEventUserParams eventId, userId, ( err, obj ) =>
+    @db.eventPollers.getUserParams eventId, userId, ( err, obj ) =>
       test.strictEqual obj, paramsNew,
         'Retrieved event params is not what we expected'
-      @db.deleteEventUserParams eventId, userId
+      @db.eventPollers.deleteUserParams eventId, userId
       test.done()
 
   testDelete: ( test ) =>
@@ -460,15 +290,15 @@ exports.EventPollerParams =
     params = 'shouldn\'t this be an object?'
 
     # store an entry to start with and delete it right away
-    @db.storeEventUserParams eventId, userId, params
-    @db.deleteEventUserParams eventId, userId
+    @db.eventPollers.storeUserParams eventId, userId, params
+    @db.eventPollers.deleteUserParams eventId, userId
     
     # Ensure the event params have been deleted
-    @db.getEventUserParams eventId, userId, ( err, obj ) =>
+    @db.eventPollers.getUserParams eventId, userId, ( err, obj ) =>
       test.strictEqual obj, null,
         'Event params still exists'
       # Ensure the ID has been removed from the set
-      @db.getEventUserParamsIds ( err, obj ) =>
+      @db.eventPollers.getUserParamsIds ( err, obj ) =>
         test.ok eventId+':'+userId not in obj,
           'Event Params key still exists in set'
         test.done()
@@ -878,3 +708,4 @@ exports.Roles =
           "User #{ @oUser.username } not stored in role tester!"
 
         test.done()
+    # store an entry to start with 

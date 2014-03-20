@@ -67,7 +67,7 @@ exports.handleEvent = ( req, resp ) ->
     body += data
   req.on 'end', ->
     if req.session and req.session.user
-      obj = JSON.parse body
+      obj = qs.parse body
       # If required event properties are present we process the event #
       if obj and obj.event
         timestamp = ( new Date ).toISOString()

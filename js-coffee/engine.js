@@ -24,8 +24,8 @@ var updateActionModules = function() {
       for ( var i = 0; i < actions.length; i++ ){
         var arrMod = actions[i].split(' -> ');
         if ( !listActionModules[user][arrMod[0]] ){
-          db.getActionInvoker(arrMod[0], function( err, objAM ){
-            db.getActionUserParams(arrMod[0], user, function( err, objParams ) {
+          db.actionInvokers.getModule(arrMod[0], function( err, objAM ){
+            db.actionInvokers.getUserParams(arrMod[0], user, function( err, objParams ) {
               console.log (objAM);
 
               //FIXME am name is called 'actions'???

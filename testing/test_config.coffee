@@ -33,8 +33,8 @@ exports.testParameters = ( test ) =>
 exports.testDifferentConfigFile = ( test ) =>
   test.expect 1
   @conf
-    nolog: true
-    configPath: path.join 'testing', 'files', 'jsonWrongConfig.json'
+    # nolog: true
+    configPath: path.join 'testing', 'files', 'jsonTestConfig.json'
   test.ok @conf.isReady(), 'Different path not loaded!'
   test.done()
 

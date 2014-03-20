@@ -47,8 +47,8 @@ exports = module.exports = ( args ) =>
     if err.message.indexOf( 'ECONNREFUSED' ) > -1
       @connRefused = true
       @log.error err, 'DB | Wrong port?'
-  @ep = new IndexedModules( 'event-poller', @db, @log  )
-  @ai = new IndexedModules( 'action-invoker', @db, @log )
+  exports.eventPollers = new IndexedModules( 'event-poller', @db, @log  )
+  exports.actionInvokers = new IndexedModules( 'action-invoker', @db, @log )
   
 ###
 Checks whether the db is connected and passes either an error on failure after
@@ -227,7 +227,7 @@ class IndexedModules
   constructor: ( @setname, @db, @log ) ->
     @log.info "DB | Instantiated indexed modules for '#{ @setname }'"
 
-  storeModule: ( mId, data ) =>
+  storeModule: ( mId, userId, data ) =>
     @log.info "DB | storeModule(#{ @setname }): #{ mId }"
     @db.sadd "#{ @setname }s", mId,
       replyHandler "Storing '#{ @setname }' key '#{ mId }'"
@@ -235,6 +235,7 @@ class IndexedModules
       replyHandler "Storing '#{ @setname }:#{ mId }'"
     @db.hmset "#{ @setname }:#{ mId }", 'reqparams', data['reqparams'],
       replyHandler "Storing '#{ @setname }:#{ mId }'"
+    @linkModule mId, userId
 
   #TODO add testing
   linkModule: ( mId, userId ) =>
@@ -294,322 +295,31 @@ class IndexedModules
       replyHandler "Deleting '#{ @setname }:#{ mId }'"
   #TODO remove published ids
   #TODO remove from linked users
+  # TODO remove from public modules
+  # TODO remove parameters
 
-  storeUserParameters: ( mId, userId, data ) =>
-    @log.info "DB | storeUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  storeUserParams: ( mId, userId, data ) =>
+    @log.info "DB | storeUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
       replyHandler "Storing '#{ @setname }' module parameters key '#{ mId }'"
     @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encrypt( data ),
       replyHandler "Storing '#{ @setname }' module parameters '#{ mId }:#{ userId }'"
 
-  getUserParameters: ( mId, userId, cb ) =>
-    @log.info "DB | getUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  getUserParams: ( mId, userId, cb ) =>
+    @log.info "DB | getUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.get "#{ @setname }-params:#{ mId }:#{ userId }", ( err, data ) ->
       cb err, decrypt data
 
-  getUserParametersIds: ( cb ) =>
-    @log.info "DB | getUserParametersIds(#{ @setname })"
+  getUserParamsIds: ( cb ) =>
+    @log.info "DB | getUserParamsIds(#{ @setname })"
     @db.smembers "#{ @setname }-params", cb
 
-  deleteUserParameters: ( mId, userId ) =>
-    @log.info "DB | deleteUserParameters(#{ @setname }): '#{ mId }:#{ userId }'"
+  deleteUserParams: ( mId, userId ) =>
+    @log.info "DB | deleteUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
     @db.srem "#{ @setname }-params", "#{ mId }:#{ userId }",
       replyHandler "Deleting '#{ @setname }-params' key '#{ mId }:#{ userId }'"
     @db.del "#{ @setname }-params:#{ mId }:#{ userId }",
       replyHandler "Deleting '#{ @setname }-params:#{ mId }:#{ userId }'"
-
-
-###
-## Action Invokers
-###
-
-###
-Store a string representation of an action invoker in the DB.
-
-@public storeActionInvoker ( *aiId, userId, data* )
-@param {String} aiId
-@param {String} userId
-@param {String} data
-###
-#TODO adapt testing
-exports.storeActionInvoker = ( aiId, userId, data ) =>
-  @ai.storeModule aiId, data
-  @ai.linkModule aiId, userId
-
-###
-Make an action invoker public.
-
-@public publishActionInvoker ( *aiId* )
-@param {String} aiId
-###
-
-exports.publishActionInvoker = ( aiId ) =>
-  @ai.publish aiId
-
-###
-Make an action invoker private.
-
-@public unpublishActionInvoker ( *aiId* )
-@param {String} aiId
-###
-
-exports.unpublishActionInvoker = ( aiId ) =>
-  @ai.unpublish aiId
-
-###
-Query the DB for an action invoker and pass it to cb(err, obj).
-
-@public getActionInvoker( *aiId, cb* )
-@param {String} aiId
-@param {function} cb
-###
-exports.getActionInvoker = ( aiId, cb ) =>
-  @ai.getModule aiId, cb
-
-###
-Query the DB for action invoker required params and pass it to cb(err, obj).
-
-@public getActionInvokerEventPollerRequiredParams( *epId, cb* )
-@param {String} epId
-@param {function} cb
-###
-exports.getActionInvokerRequiredParams = ( epId, cb ) =>
-  @ai.getModuleParams epId, cb
-
-###
-Fetch all action invoker IDs and hand them to cb(err, obj).
-
-@public getActionInvokerIds( *cb* )
-@param {function} cb
-###
-exports.getActionInvokerIds = ( cb ) =>
-  @ai.getModuleIds cb
-
-###
-Fetch all available actin invoker IDs for a user and
-hand them to cb(err, obj).
-
-@public getAvailableActionInvokerIds( *userId, cb* )
-@param {function} cb
-###
-exports.getAvailableActionInvokerIds = ( userId, cb ) =>
-  @ai.getAvailableModuleIds userId, cb
-
-###
-Fetch all public action invoker IDs and hand them to cb(err, obj).
-
-@public getPublicActionInvokerIds( *cb* )
-@param {function} cb
-###
-exports.getPublicActionInvokerIds = ( cb ) =>
-  @ai.getPublicModuleIds cb
-
-###
-Fetch all action invokers and hand them to cb(err, obj).
-
-@public getActionInvokers( *cb* )
-@param {function} cb
-###
-exports.getActionInvokers = ( cb ) =>
-  @ai.getModules cb
-
-###
-Fetch all action invokers and hand them to cb(err, obj).
-
-@public getActionInvokers( *cb* )
-@param {function} cb
-###
-exports.deleteActionInvoker = ( aiId ) =>
-  @ai.deleteModule aiId
-
-###
-Store user-specific action invoker parameters .
-
-@public storeActionUserParams( *userId, aiId, data* )
-@param {String} userId
-@param {String} aiId
-@param {String} data
-###
-exports.storeActionUserParams = ( aiId, userId, data ) =>
-  @ai.storeUserParameters aiId, userId, data
-
-###
-Query the DB for user-specific action module parameters,
-and pass it to cb(err, obj).
-
-@public getActionUserParams( *userId, aiId, cb* )
-@param {String} userId
-@param {String} aiId
-@param {function} cb
-###
-exports.getActionUserParams = ( aiId, userId, cb ) =>
-  @ai.getUserParameters aiId, userId, cb
-
-###
-Fetch all action params IDs and hand them to cb(err, obj).
-
-@public getActionUserParamsIds( *cb* )
-@param {function} cb
-###
-exports.getActionUserParamsIds = ( cb ) =>
-  @ai.getUserParametersIds cb
-
-###
-Fetch all action modules and hand them to cb(err, obj).
-
-@public deleteActionUserParams( *cb* )
-@param {function} cb
-###
-exports.deleteActionUserParams = ( aiId, userId ) =>
-  @ai.deleteUserParameters aiId, userId
-
-
-###
-## Event Pollers
-###
-
-###
-Store a string representation of an event poller in the DB.
-
-@public storeEventPoller ( *epId, userId, data* )
-@param {String} epId
-@param {String} userId
-@param {String} data
-###
-#TODO adapt testing
-exports.storeEventPoller = ( epId, userId,  data ) =>
-  @ep.storeModule epId, data 
-  @ep.linkModule epId, userId
-
-###
-Make an event poller public.
-
-@public publishEventPoller ( *epId* )
-@param {String} epId
-###
-
-exports.publishEventPoller = ( epId ) =>
-  @ep.publish epId
-
-###
-Make an event poller private.
-
-@public unpublishEventPoller ( *epId* )
-@param {String} epId
-###
-
-exports.unpublishEventPoller = ( epId ) =>
-  @ep.unpublish epId
-
-###
-Query the DB for an event poller and pass it to cb(err, obj).
-
-@public getEventPoller( *epId, cb* )
-@param {String} epId
-@param {function} cb
-###
-exports.getEventPoller = ( epId, cb ) =>
-  @ep.getModule epId, cb
-
-###
-Query the DB for event poller required params and pass it to cb(err, obj).
-
-@public getEventPollerRequiredParams( *epId, cb* )
-@param {String} epId
-@param {function} cb
-###
-exports.getEventPollerRequiredParams = ( epId, cb ) =>
-  @ep.getModuleParams epId, cb
-
-###
-Fetch all event poller IDs and hand them to cb(err, obj).
-
-@public getEventPollerIds( *cb* )
-@param {function} cb
-###
-exports.getEventPollerIds = ( cb ) =>
-  @ep.getModuleIds cb
-
-###
-Fetch all available event poller IDs for a user and
-hand them to cb(err, obj).
-
-@public getAvailableEventPollerIds( *userId, cb* )
-@param {function} cb
-###
-exports.getAvailableEventPollerIds = ( userId, cb ) =>
-  @ep.getAvailableModuleIds userId, cb
-
-###
-Fetch all public event poller IDs and hand them to cb(err, obj).
-
-@public getPublicEventPollerIds( *cb* )
-@param {function} cb
-###
-exports.getPublicEventPollerIds = ( cb ) =>
-  @ep.getPublicModuleIds cb
-
-###
-Fetch all event pollers and hand them to cb(err, obj).
-
-@public getEventPollers( *cb* )
-@param {function} cb
-###
-exports.getEventPollers = ( cb ) =>
-  @ep.getModules cb
-
-###
-Fetch all event pollers and hand them to cb(err, obj).
-
-@public getEventPollers( *cb* )
-@param {function} cb
-###
-exports.deleteEventPoller = ( epId ) =>
-  # TODO remove from public modules
-  # TODO remove parameters
-  # TODO also do this for action invokers
-  @ep.deleteModule epId
-
-###
-Store user-specific event poller parameters .
-
-@public storeEventUserParams( *userId, epId, data* )
-@param {String} userId
-@param {String} epId
-@param {String} data
-###
-exports.storeEventUserParams = ( epId, userId, data ) =>
-  @ep.storeUserParameters epId, userId, data
-
-###
-Query the DB for user-specific event module parameters,
-and pass it to cb(err, obj).
-
-@public getEventUserParams( *userId, epId, cb* )
-@param {String} userId
-@param {String} epId
-@param {function} cb
-###
-exports.getEventUserParams = ( epId, userId, cb ) =>
-  @ep.getUserParameters epId, userId, cb
-
-###
-Fetch all event params IDs and hand them to cb(err, obj).
-
-@public getEventUserParamsIds( *cb* )
-@param {function} cb
-###
-exports.getEventUserParamsIds = ( cb ) =>
-  @ep.getUserParametersIds cb
-
-###
-Fetch all event modules and hand them to cb(err, obj).
-
-@public deleteEventUserParams( *cb* )
-@param {function} cb
-###
-exports.deleteEventUserParams = ( epId, userId ) =>
-  @ep.deleteUserParameters epId, userId
 
 
 ###
