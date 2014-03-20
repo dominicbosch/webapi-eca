@@ -22,23 +22,23 @@ Action Invoker Name: <input id="input_id" type="text" />
 #  - context: The ProBinder context (the binder ID)
 # 
 exports.createBinderEntry = ( args ) ->
-  url = 'https://probinder.com/service/27/save'
+	url = 'https://probinder.com/service/27/save'
 
-  credentials =
-    username: params.username
-    password: params.password
+	credentials =
+		username: params.username
+		password: params.password
 
-  data =
-    companyId: args.company
-    context: args.context
-    text: args.content
+	data =
+		companyId: args.company
+		context: args.context
+		text: args.content
 
-  needle.post url, data, credentials, ( err, resp, body ) ->
-    if err
-      log err
-    if resp.statusCode isnt 200
-      log 'Request not successful:'
-      log body
+	needle.post url, data, credentials, ( err, resp, body ) ->
+		if err
+			log err
+		if resp.statusCode isnt 200
+			log 'Request not successful:'
+			log body
 </div>
   <button id="but_submit">save</button>
 		</td>

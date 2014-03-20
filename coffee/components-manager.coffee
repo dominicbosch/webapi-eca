@@ -13,7 +13,7 @@ Components Manager
 # - [Persistence](persistence.html)
 db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
-dynmod = require './dynamic-modules'
+dynmod = require './dynamic-modules' #TODO Rename to code-loader 
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [vm](http://nodejs.org/api/vm.html) and

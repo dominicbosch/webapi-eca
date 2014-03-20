@@ -113,9 +113,10 @@ function initMessageActions() {
     if(typeof(func) === 'function') func(args);
   };
   
-  process.on('message', function( obj ) {
-    // console.log( 'message: ');
-    // console.log (obj);
+  process.on('message', function( msg ) {
+    console.log( 'message: ');
+    console.log (msg);
+    console.log (JSON.parse(msg));
     // var arrProps = obj .split('|');
     // if(arrProps.length < 2) log.error('EP', 'too few parameter in message!');
     // else {
