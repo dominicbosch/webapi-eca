@@ -30,7 +30,7 @@ exports = module.exports = ( args ) =>
   if args.configPath
     loadConfigFile args.configPath
   else
-    loadConfigFile path.join 'config', 'config.json'
+    loadConfigFile path.join 'config', 'system.json'
   module.exports
 
 ###
