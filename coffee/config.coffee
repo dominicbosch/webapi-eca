@@ -50,13 +50,13 @@ loadConfigFile = ( configPath ) =>
   #TODO Try to get rid of crypto key
   try
     @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
-    isReady = true
+    @isReady = true
     for prop in confProperties
       if !@config[prop]
-        isReady = false
-    if not isReady and not @nolog
-      console.error """Missing property in config file, requires: 
-         - #{ confProperties.join "\n -" }"""
+        @isReady = false
+    if not @isReady and not @nolog
+      console.error "Missing property in config file, requires:\n" +
+         " - #{ confProperties.join "\n - " }"
   catch e
     if not @nolog
       console.error "Failed loading config file: #{ e.message }"
@@ -75,7 +75,7 @@ fetchProp = ( prop ) => @config?[prop]
 
 @public isReady()
 ###
-exports.isReady = => @config?
+exports.isReady = => @isReady
 
 ###
 ***Returns*** the HTTP port

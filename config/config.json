@@ -1,6 +1,9 @@
 {
-  "http_port": 8125,
-  "db_port": 6379,
-  "crypto_key": "[choose_a_safe_cypto_key(max_256_bit)]",
-  "session_secret": "[choose_a_safe_session_key]"
+  "http-port": 8125,
+  "db-port": 6379,
+  "log": {
+  	"mode": "development",
+  	"io-level": "info",
+  	"file-level": "info"
+  }
 }

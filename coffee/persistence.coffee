@@ -231,7 +231,9 @@ class IndexedModules
     @log.info "DB | storeModule(#{ @setname }): #{ mId }"
     @db.sadd "#{ @setname }s", mId,
       replyHandler "Storing '#{ @setname }' key '#{ mId }'"
-    @db.hmset "#{ @setname }:#{ mId }", data,
+    @db.hmset "#{ @setname }:#{ mId }", 'code', data['code'],
+      replyHandler "Storing '#{ @setname }:#{ mId }'"
+    @db.hmset "#{ @setname }:#{ mId }", 'reqparams', data['reqparams'],
       replyHandler "Storing '#{ @setname }:#{ mId }'"
 
   #TODO add testing

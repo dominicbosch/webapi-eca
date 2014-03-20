@@ -3,7 +3,7 @@ exports.setUp = ( cb ) =>
   @path = require 'path'
   logger = require @path.join '..', 'js-coffee', 'logging'
   @log = logger.getLogger
-    nolog: true
+   nolog: true
   @db = require @path.join '..', 'js-coffee', 'persistence'
   opts =
     logger: @log
@@ -140,6 +140,7 @@ exports.EventQueue =
 ###
 exports.ActionInvoker =
   setUp: ( cb ) =>
+    @userId = 'tester1'
     @action1id = 'test-action-invoker_1'
     @action2id = 'test-action-invoker_2'
     @action1 =
@@ -158,13 +159,13 @@ exports.ActionInvoker =
   testCreateAndRead: ( test ) =>
     test.expect 3
     # store an entry to start with 
-    @db.storeActionInvoker @action1id, @action1
+    @db.storeActionInvoker @action1id, @userId, @action1
 
     # test that the ID shows up in the set
     @db.getActionInvokerIds ( err , obj ) =>
       test.ok @action1id in obj,
         'Expected key not in action-invokers set'
-      
+
       # the retrieved object really is the one we expected
       @db.getActionInvoker @action1id, ( err , obj ) =>
         test.deepEqual obj, @action1,
@@ -180,8 +181,8 @@ exports.ActionInvoker =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeActionInvoker @action1id, @action1
-    @db.storeActionInvoker @action1id, @action2
+    @db.storeActionInvoker @action1id, @userId, @action1
+    @db.storeActionInvoker @action1id, @userId, @action2
 
     # the retrieved object really is the one we expected
     @db.getActionInvoker @action1id, ( err , obj ) =>
@@ -198,7 +199,7 @@ exports.ActionInvoker =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeActionInvoker @action1id, @action1
+    @db.storeActionInvoker @action1id, @userId, @action1
 
     # Ensure the action invoker has been deleted
     @db.deleteActionInvoker @action1id
@@ -227,8 +228,8 @@ exports.ActionInvoker =
           "Invoker #{ modname } does not equal the expected one"
         forkEnds()
 
-    @db.storeActionInvoker @action1id, @action1
-    @db.storeActionInvoker @action2id, @action2
+    @db.storeActionInvoker @action1id, @userId, @action1
+    @db.storeActionInvoker @action2id, @userId, @action2
     @db.getActionInvokerIds ( err, obj ) =>
       test.ok @action1id in obj and @action2id in obj,
         'Not all action invoker Ids in set'
@@ -309,6 +310,7 @@ exports.ActionInvokerParams =
 ###
 exports.EventPoller =
   setUp: ( cb ) =>
+    @userId = 'tester1'
     @event1id = 'test-event-poller_1'
     @event2id = 'test-event-poller_2'
     @event1 =
@@ -327,7 +329,7 @@ exports.EventPoller =
   testCreateAndRead: ( test ) =>
     test.expect 3
     # store an entry to start with 
-    @db.storeEventPoller @event1id, @event1
+    @db.storeEventPoller @event1id, @userId, @event1
 
     # test that the ID shows up in the set
     @db.getEventPollerIds ( err , obj ) =>
@@ -349,8 +351,8 @@ exports.EventPoller =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeEventPoller @event1id, @event1
-    @db.storeEventPoller @event1id, @event2
+    @db.storeEventPoller @event1id, @userId, @event1
+    @db.storeEventPoller @event1id, @userId, @event2
 
     # the retrieved object really is the one we expected
     @db.getEventPoller @event1id, ( err , obj ) =>
@@ -367,7 +369,7 @@ exports.EventPoller =
     test.expect 2
 
     # store an entry to start with 
-    @db.storeEventPoller @event1id, @event1
+    @db.storeEventPoller @event1id, @userId, @event1
 
     # Ensure the event poller has been deleted
     @db.deleteEventPoller @event1id
@@ -396,8 +398,8 @@ exports.EventPoller =
           "Invoker #{ modname } does not equal the expected one"
         forkEnds()
 
-    @db.storeEventPoller @event1id, @event1
-    @db.storeEventPoller @event2id, @event2
+    @db.storeEventPoller @event1id, @userId, @event1
+    @db.storeEventPoller @event2id, @userId, @event2
     @db.getEventPollerIds ( err, obj ) =>
       test.ok @event1id in obj and @event2id in obj,
         'Not all event poller Ids in set'
