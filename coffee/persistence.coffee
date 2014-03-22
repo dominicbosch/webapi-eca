@@ -46,6 +46,7 @@ exports = module.exports = ( args ) =>
   @db.on 'error', ( err ) =>
     if err.message.indexOf( 'ECONNREFUSED' ) > -1
       @connRefused = true
+
       @log.error err, 'DB | Wrong port?'
   exports.eventPollers = new IndexedModules( 'event-poller', @db, @log  )
   exports.actionInvokers = new IndexedModules( 'action-invoker', @db, @log )
@@ -225,81 +226,77 @@ getSetRecords = ( set, fSingle, cb ) =>
 # TODO remove specific functions and allow direct access to instances of this class
 class IndexedModules
   constructor: ( @setname, @db, @log ) ->
-    @log.info "DB | Instantiated indexed modules for '#{ @setname }'"
+    @log.info "DB | CALL: Instantiated indexed modules for '#{ @setname }'"
 
   storeModule: ( mId, userId, data ) =>
-    @log.info "DB | storeModule(#{ @setname }): #{ mId }"
+    @log.info "DB | CALL: #{ @setname }.storeModule( #{ mId }, #{ userId }, data )"
     @db.sadd "#{ @setname }s", mId,
-      replyHandler "Storing '#{ @setname }' key '#{ mId }'"
+      replyHandler "sadd '#{ mId }' to '#{ @setname }'"
     @db.hmset "#{ @setname }:#{ mId }", 'code', data['code'],
-      replyHandler "Storing '#{ @setname }:#{ mId }'"
+      replyHandler "hmset 'code' in hash '#{ @setname }:#{ mId }'"
     @db.hmset "#{ @setname }:#{ mId }", 'reqparams', data['reqparams'],
-      replyHandler "Storing '#{ @setname }:#{ mId }'"
+      replyHandler "hmset 'reqparams' in hash '#{ @setname }:#{ mId }'"
     @linkModule mId, userId
 
   #TODO add testing
   linkModule: ( mId, userId ) =>
-    @log.info "DB | linkModule(#{ @setname }): #{ mId } to #{ userId }"
+    @log.info "DB | CALL: #{ @setname }.linkModule( #{ mId }, #{ userId } )"
     @db.sadd "#{ @setname }:#{ mId }:users", userId,
-      replyHandler "Linking '#{ @setname }:#{ mId }:users' #{ userId }"
+      replyHandler "sadd #{ userId } to '#{ @setname }:#{ mId }:users'"
     @db.sadd "user:#{ userId }:#{ @setname }s", mId,
-      replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
+      replyHandler "sadd #{ mId } to 'user:#{ userId }:#{ @setname }s'"
 
   #TODO add testing
   unlinkModule: ( mId, userId ) =>
-    @log.info "DB | unlinkModule(#{ @setname }): #{ mId } to #{ userId }"
+    @log.info "DB | CALL: #{ @setname }.unlinkModule( #{ mId }, #{ userId } )"
     @db.srem "#{ @setname }:#{ mId }:users", userId,
-      replyHandler "Unlinking '#{ @setname }:#{ mId }:users' #{ userId }"
+      replyHandler "srem #{ userId } from '#{ @setname }:#{ mId }:users'"
     @db.srem "user:#{ userId }:#{ @setname }s", mId,
-      replyHandler "Unlinking 'user:#{ userId }:#{ @setname }s' #{ mId }"
+      replyHandler "srem #{ mId } from 'user:#{ userId }:#{ @setname }s'"
 
   #TODO add testing
   publish: ( mId ) =>
-    @log.info "DB | publish(#{ @setname }): #{ mId }"
+    @log.info "DB | CALL: #{ @setname }.publish( #{ mId } )"
     @db.sadd "public-#{ @setname }s", mId,
-      replyHandler "Publishing '#{ @setname }' key '#{ mId }'"
+      replyHandler "sadd '#{ mId }' to 'public-#{ @setname }s'"
 
   #TODO add testing
   unpublish: ( mId ) =>
-    @log.info "DB | unpublish(#{ @setname }): #{ mId }"
+    @log.info "DB | CALL: #{ @setname }.unpublish( #{ mId } )"
     @db.srem "public-#{ @setname }s", mId,
-      replyHandler "Unpublishing '#{ @setname }' key '#{ mId }'"
+      replyHandler "srem '#{ mId }' from 'public-#{ @setname }s'"
 
   getModule: ( mId, cb ) =>
-    @log.info "DB | getModule('#{ @setname }): #{ mId }'"
+    @log.info "DB | CALL: #{ @setname }.getModule( #{ mId } )"
     @db.hgetall "#{ @setname }:#{ mId }", cb
 
   #TODO add testing
   getModuleParams: ( mId, cb ) =>
-    @log.info "DB | getModule('#{ @setname }): #{ mId }'"
+    @log.info "DB | CALL: #{ @setname }.getModule( #{ mId } )"
     @db.hget "#{ @setname }:#{ mId }", "params", cb
 
   #TODO add testing
   getAvailableModuleIds: ( userId, cb ) =>
-    @log.info "DB | getPublicModuleIds(#{ @setname })"
+    @log.info "DB | CALL: #{ @setname }.getPublicModuleIds( #{ @suserId } )"
     @db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 
   getModuleIds: ( cb ) =>
-    @log.info "DB | getModuleIds(#{ @setname })"
+    @log.info "DB | CALL: #{ @setname }.getModuleIds()"
     @db.smembers "#{ @setname }s", cb
 
   getModules: ( cb ) =>
-    @log.info "DB | getModules(#{ @setname })"
+    @log.info "DB | CALL: #{ @setname }.getModules()"
     getSetRecords "#{ @setname }s", @getModule, cb
 
   deleteModule: ( mId ) =>
-    @log.info "DB | deleteModule(#{ @setname }): #{ mId }"
+    @log.info "DB | CALL: #{ @setname }.deleteModule( #{ mId } )"
     @db.srem "#{ @setname }s", mId,
-      replyHandler "Deleting '#{ @setname }' key '#{ mId }'"
+      replyHandler "srem '#{ mId }' from #{ @setname }s"
     @db.del "#{ @setname }:#{ mId }",
-      replyHandler "Deleting '#{ @setname }:#{ mId }'"
+      replyHandler "del of '#{ @setname }:#{ mId }'"
     @db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
-      fRemLinks = ( userId ) =>
-        @db.srem "#{ @setname }:#{ mId }:users", userId, 
-          replyHandler "Removing '#{ @setname }:#{ mId }' linked user '#{ userId }'"
-        @db.srem "user:#{ userId }:#{ @setname }s", mId, 
-          replyHandler "Removing 'user:#{ userId }:#{ @setname }s' linked module '#{ mId }'"
-      fRemLinks user for user in obj    
+      @unlinkModule mId, userId for userId in obj  
+  #TODO check whether this unlink always fails! problems with db disconnect during testing...  
   #TODO remove published ids
   # TODO remove from public modules
   # TODO remove parameters
@@ -310,27 +307,27 @@ class IndexedModules
     #   replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
 
   storeUserParams: ( mId, userId, data ) =>
-    @log.info "DB | storeUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
+    @log.info "DB | CALL: #{ @setname }.storeUserParams( #{ mId }, #{ userId }, data )"
     @db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
-      replyHandler "Storing '#{ @setname }' module parameters key '#{ mId }'"
+      replyHandler "sadd '#{ mId }:#{ userId }' to '#{ @setname }-params'"
     @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encrypt( data ),
-      replyHandler "Storing '#{ @setname }' module parameters '#{ mId }:#{ userId }'"
+      replyHandler "set user params in '#{ @setname }-params:#{ mId }:#{ userId }'"
 
   getUserParams: ( mId, userId, cb ) =>
-    @log.info "DB | getUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
+    @log.info "DB | CALL: #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
     @db.get "#{ @setname }-params:#{ mId }:#{ userId }", ( err, data ) ->
       cb err, decrypt data
 
   getUserParamsIds: ( cb ) =>
-    @log.info "DB | getUserParamsIds(#{ @setname })"
+    @log.info "DB | CALL: #{ @setname }.getUserParamsIds()"
     @db.smembers "#{ @setname }-params", cb
 
   deleteUserParams: ( mId, userId ) =>
-    @log.info "DB | deleteUserParams(#{ @setname }): '#{ mId }:#{ userId }'"
+    @log.info "DB | CALL: #{ @setname }.deleteUserParams(#{ mId }, #{ userId } )"
     @db.srem "#{ @setname }-params", "#{ mId }:#{ userId }",
-      replyHandler "Deleting '#{ @setname }-params' key '#{ mId }:#{ userId }'"
+      replyHandler "srem '#{ mId }:#{ userId }' from '#{ @setname }-params'"
     @db.del "#{ @setname }-params:#{ mId }:#{ userId }",
-      replyHandler "Deleting '#{ @setname }-params:#{ mId }:#{ userId }'"
+      replyHandler "del '#{ @setname }-params:#{ mId }:#{ userId }'"
 
 
 ###
@@ -376,6 +373,7 @@ Store a string representation of a rule in the DB.
 @param {String} data
 ###
 exports.storeRule = ( ruleId, data ) =>
+  console.log "ready: #{ @db.ready }, connected: #{ @db.connected }"
   @log.info "DB | storeRule: '#{ ruleId }'"
   @db.sadd 'rules', "#{ ruleId }",
     replyHandler "storing rule key '#{ ruleId }'"
@@ -586,35 +584,36 @@ Deletes a user and all his associated linked and active rules.
 ###
 exports.deleteUser = ( userId ) =>
   @log.info "DB | deleteUser: '#{ userId }'"
+  console.log "ready: #{ @db.ready }, connected: #{ @db.connected }"
   @db.srem "users", userId, replyHandler "Deleting user key '#{ userId }'"
   @db.del "user:#{ userId }", replyHandler "Deleting user '#{ userId }'"
 
-  # We also need to delete all linked rules
-  @db.smembers "user:#{ userId }:rules", ( err, obj ) =>
-    delLinkedRuleUser = ( ruleId ) =>
-      @db.srem "rule:#{ ruleId }:users", userId,
-        replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
-    delLinkedRuleUser id for id in obj
-  @db.del "user:#{ userId }:rules",
-    replyHandler "Deleting user '#{ userId }' rules"
+  # # We also need to delete all linked rules
+  # @db.smembers "user:#{ userId }:rules", ( err, obj ) =>
+  #   delLinkedRuleUser = ( ruleId ) =>
+  #     @db.srem "rule:#{ ruleId }:users", userId,
+  #       replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
+  #   delLinkedRuleUser id for id in obj
+  # @db.del "user:#{ userId }:rules",
+  #   replyHandler "Deleting user '#{ userId }' rules"
 
-  # We also need to delete all active rules
-  @db.smembers "user:#{ userId }:active-rules", ( err, obj ) =>
-    delActivatedRuleUser = ( ruleId ) =>
-      @db.srem "rule:#{ ruleId }:active-users", userId,
-        replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
-    delActivatedRuleUser id for id in obj
-  @db.del "user:#{ userId }:active-rules",
-    replyHandler "Deleting user '#{ userId }' rules"
+  # # We also need to delete all active rules
+  # @db.smembers "user:#{ userId }:active-rules", ( err, obj ) =>
+  #   delActivatedRuleUser = ( ruleId ) =>
+  #     @db.srem "rule:#{ ruleId }:active-users", userId,
+  #       replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
+  #   delActivatedRuleUser id for id in obj
+  # @db.del "user:#{ userId }:active-rules",
+  #   replyHandler "Deleting user '#{ userId }' rules"
 
-  # We also need to delete all associated roles
-  @db.smembers "user:#{ userId }:roles", ( err, obj ) =>
-    delRoleUser = ( roleId ) =>
-      @db.srem "role:#{ roleId }:users", userId,
-        replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
-    delRoleUser id for id in obj
-  @db.del "user:#{ userId }:roles",
-    replyHandler "Deleting user '#{ userId }' roles"
+  # # We also need to delete all associated roles
+  # @db.smembers "user:#{ userId }:roles", ( err, obj ) =>
+  #   delRoleUser = ( roleId ) =>
+  #     @db.srem "role:#{ roleId }:users", userId,
+  #       replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
+  #   delRoleUser id for id in obj
+  # @db.del "user:#{ userId }:roles",
+  #   replyHandler "Deleting user '#{ userId }' roles"
 
 ###
 Checks the credentials and on success returns the user object to the
@@ -684,8 +683,11 @@ Fetch all users of a role and pass them to cb(err, obj).
 @param {function} cb
 ###
 exports.getRoleUsers = ( role, cb ) =>
+  console.log role
+  console.log cb
   @log.info "DB | getRoleUsers: '#{ role }'"
   @db.smembers "role:#{ role }:users", cb
+  console.log 'command issued'
 
 ###
 Remove a role from a user.
