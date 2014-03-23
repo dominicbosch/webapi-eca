@@ -1,0 +1,57 @@
+{
+  "events": {
+    "evt1":{
+      "eventid": "test_1",
+      "event": "test_1"
+    },
+    "evt2":{
+      "eventid": "test_2",
+      "event": "test_2"
+    }
+  },
+  "eps": {
+    "ep1": {
+      "code": "unit-test event poller 1 content",
+      "reqparams": "[param11,param12]"
+    },
+    "ep2": {
+      "code": "unit-test event poller 2 content",
+      "reqparams": "[param21,param22]"
+    }
+  },
+  "rules": {
+    "ruleOne": {
+      "id": "ruleOne_id",
+      "event": "custom-test-1",
+      "conditions": {
+        "property": "yourValue"
+      },
+      "actions": []
+    },
+    "ruleTwo": {
+      "id": "ruleTwo_id",
+      "event": "custom-test-2",
+      "conditions": {
+        "property": "yourValue2"
+      },
+      "actions": []
+    }
+  },
+  "users": {
+    "userOne": {
+      "username": "tester-1",
+      "password": "password-1"
+    },
+    "userTwo": {
+      "username": "tester-2",
+      "password": "password-2"
+    },
+    "userAdmin": {
+      "username": "tester-admin",
+      "password": "password-admin",
+      "roles": [ "admin" ],
+      "isAdmin": true
+    }
+  }
+
+}

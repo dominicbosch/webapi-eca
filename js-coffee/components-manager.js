@@ -43,18 +43,33 @@ Components Manager
     };
   })(this);
 
+
+  /*
+  Add an event handler (eh) for a certain event (evt).
+  Current events are:
+  
+  - init: as soon as an event handler is added, the init events are emitted for all existing rules.
+  - newRule: If a new rule is activated, the newRule event is emitted
+  
+  @public addListener ( *evt, eh* )
+  @param {String} evt
+  @param {function} eh
+   */
+
   exports.addListener = (function(_this) {
     return function(evt, eh) {
       _this.ee.addListener(evt, eh);
-      return db.getRules(function(err, obj) {
-        var id, rule, _results;
-        _results = [];
-        for (id in obj) {
-          rule = obj[id];
-          _results.push(_this.ee.emit('init', rule));
-        }
-        return _results;
-      });
+      if (evt === 'init') {
+        return db.getRules(function(err, obj) {
+          var id, rule, _results;
+          _results = [];
+          for (id in obj) {
+            rule = obj[id];
+            _results.push(_this.ee.emit('init', rule));
+          }
+          return _results;
+        });
+      }
     };
   })(this);
 
@@ -220,35 +235,44 @@ Components Manager
     },
     forge_rule: (function(_this) {
       return function(user, obj, cb) {
-        obj.event = JSON.parse(obj.event);
+        console.log(obj);
         return db.getRule(obj.id, function(err, objRule) {
           var answ, id, modules, params, rule;
-          if (objRule !== null) {
-            answ = {
-              code: 409,
-              message: 'Rule name already existing!'
-            };
-          } else {
-            answ = {
-              code: 200,
-              message: 'Rule stored and activated!'
-            };
-            rule = {
-              id: obj.id,
-              event: "" + obj.event.module + " -> " + obj.event["function"],
-              conditions: JSON.parse(obj.conditions),
-              actions: JSON.parse(obj.actions)
-            };
-            modules = JSON.parse(obj.action_params);
-            db.storeRule(rule.id, JSON.stringify(rule));
-            db.linkRule(rule.id, user.username);
-            db.activateRule(rule.id, user.username);
-            db.eventPollers.storeUserParams(obj.event.module, user.username, obj.event_params);
-            for (id in modules) {
-              params = modules[id];
-              db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
+          try {
+            if (objRule !== null) {
+              answ = {
+                code: 409,
+                message: 'Rule name already existing!'
+              };
+            } else {
+              rule = {
+                id: obj.id,
+                event: "" + obj.event.module + " -> " + obj.event["function"],
+                conditions: obj.conditions,
+                actions: obj.actions
+              };
+              modules = JSON.parse(obj.action_params);
+              db.storeRule(rule.id, JSON.stringify(rule));
+              db.linkRule(rule.id, user.username);
+              db.activateRule(rule.id, user.username);
+              db.eventPollers.storeUserParams(obj.event.module, user.username, obj.event_params);
+              for (id in modules) {
+                params = modules[id];
+                db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
+              }
+              _this.ee.emit('newRule', JSON.stringify(rule));
+              answ = {
+                code: 400,
+                message: 'Rule stored and activated!'
+              };
             }
-            _this.ee.emit('newRule', JSON.stringify(rule));
+          } catch (_error) {
+            err = _error;
+            answ = {
+              code: 400,
+              message: 'bad bad request...'
+            };
+            console.log(err);
           }
           return cb(answ);
         });

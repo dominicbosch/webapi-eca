@@ -1,12 +1,26 @@
 http = require 'http'
+fs = require 'fs'
 path = require 'path'
 events = require 'events'
 cp = require 'child_process'
 qs = require 'querystring'
+
+try
+  data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
+  try
+    objects = JSON.parse data
+  catch err
+    console.log 'Error parsing standard objects file: ' + err.message
+catch err
+  console.log 'Error fetching standard objects file: ' + err.message
 logger = require path.join '..', 'js-coffee', 'logging'
 log = logger.getLogger
   nolog: true
-i = 0
+opts =
+  logger: log
+opts[ 'db-port' ] = 6379
+db = require path.join '..', 'js-coffee', 'persistence'
+db opts
 
 createRequest = ( query, origUrl ) ->
   req = new events.EventEmitter()
@@ -18,18 +32,13 @@ createRequest = ( query, origUrl ) ->
 createLoggedInRequest = ( query, origUrl ) ->
   req = createRequest query, origUrl
   req.session =
-    user:
-      username: 'unittester'
-      password: 'unittesterpw'
+    user: objects.users.userOne
   req
 
 createAdminRequest = ( query, origUrl ) ->
   req = createRequest()
   req.session =
-    user:
-      username: 'adminunittester'
-      password: 'adminunittesterpw'
-      isAdmin: true
+    user: objects.users.userAdmin
   req
 
 postRequestData = ( req, data ) ->
@@ -48,34 +57,20 @@ createResponse = ( cb ) ->
       cb code, msg
 
 exports.setUp = ( cb ) =>
-  @db = require path.join '..', 'js-coffee', 'persistence'
-  args = 
-    logger: log 
-  args[ 'db-port' ] = 6379
-  @db args
   @rh = require path.join '..', 'js-coffee', 'request-handler'
   cb()
 
 exports.tearDown = ( cb ) =>
-  @db.shutDown()
   cb()
 
 exports.session =
   setUp: ( cb ) =>
-    @user =
-      username: 'unittester'
-      password: 'unittesterpw'
-    @db = require path.join '..', 'js-coffee', 'persistence'
-    args = 
-      logger: log 
-    args[ 'db-port' ] = 6379
-    @db args
-    @db.storeUser @user
+    @oUsr = objects.users.userOne
+    db.storeUser @oUsr
     cb()
 
   tearDown: ( cb ) =>
-    @db.deleteUser @user.username
-    @db.shutDown()
+    db.deleteUser @oUsr.username
     cb()
 
   testLoginAndOut: ( test ) =>
@@ -94,13 +89,13 @@ exports.session =
 
       # Check Login
       test.strictEqual code, 200, 'Login failed'
-      test.deepEqual req.session.user, @user, 'Session user not what we expected'
+      test.deepEqual req.session.user, @oUsr, 'Session user not what we expected'
       req = createLoggedInRequest()
       resp = createResponse ( code, msg ) =>
 
         # Check Login again
         test.strictEqual code, 200, 'Login again did nothing different'
-        test.deepEqual req.session.user, @user, 'Session user not what we expected after relogin'
+        test.deepEqual req.session.user, @oUsr, 'Session user not what we expected after relogin'
         req = createRequest()
         resp = createResponse ( code, msg ) ->
 
@@ -110,10 +105,10 @@ exports.session =
           test.done()
         @rh.handleLogout req, resp # set the handler to listening
       @rh.handleLogin req, resp # set the handler to listening
-      postRequestData req, qs.stringify @user # emit the data post event
+      postRequestData req, qs.stringify @oUsr # emit the data post event
 
     @rh.handleLogin req, resp # set the handler to listening
-    postRequestData req, qs.stringify @user # emit the data post event
+    postRequestData req, qs.stringify @oUsr # emit the data post event
 
 
   testWrongLogin: ( test ) =>
@@ -133,19 +128,19 @@ exports.session =
       test.done()
 
     usr =
-      username: @user.username
+      username: @oUsr.username
       password: 'wrongpassword'
     @rh.handleLogin req, resp # set the handler to listening
     postRequestData req, qs.stringify usr # emit the data post event
 
 exports.events =
   setUp: ( cb ) =>
-    @db.purgeEventQueue()
+    db.purgeEventQueue()
     cb()
 
   testCorrectEvent: ( test ) =>
     test.expect 2
-
+    
     args =
       logger: log
     args[ 'request-service' ] = ( usr, obj, cb ) ->
@@ -165,7 +160,7 @@ exports.events =
         test.deepEqual obj, oEvt, 'Caught event is not what we expected'
         if --semaphore is 0
           test.done()
-      @db.popEvent fCb
+      db.popEvent fCb
 
     req = createLoggedInRequest()
     resp = createResponse ( code, msg ) ->
@@ -197,7 +192,7 @@ exports.events =
         test.deepEqual obj, null, 'We caught an event!?'
         if --semaphore is 0
           test.done()
-      @db.popEvent fCb
+      db.popEvent fCb
 
     req = createLoggedInRequest()
     resp = createResponse ( code, msg ) ->

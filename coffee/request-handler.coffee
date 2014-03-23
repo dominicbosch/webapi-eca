@@ -46,7 +46,10 @@ exports = module.exports = ( args ) =>
 
   # Load the standard users from the user config file
   users = JSON.parse fs.readFileSync path.resolve __dirname, '..', 'config', 'users.json'
-  db.storeUser user for user in users
+  fStoreUser = ( username, oUser ) ->
+    oUser.username = username
+    db.storeUser oUser
+  fStoreUser user, users[user] for user of users
   module.exports
 
 

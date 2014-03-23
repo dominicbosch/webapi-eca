@@ -19,7 +19,6 @@ exports.testParameters = ( test ) =>
     'mode'
     'io-level'
     'file-level'
-  #  'file-path'
   ]
   test.expect 3 + reqProp.length
   test.ok @conf.getHttpPort(), 'HTTP port does not exist!'

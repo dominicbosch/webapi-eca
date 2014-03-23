@@ -38,10 +38,24 @@ exports = module.exports = ( args ) =>
   dynmod args
   module.exports
 
+
+###
+Add an event handler (eh) for a certain event (evt).
+Current events are:
+
+- init: as soon as an event handler is added, the init events are emitted for all existing rules.
+- newRule: If a new rule is activated, the newRule event is emitted
+
+@public addListener ( *evt, eh* )
+@param {String} evt
+@param {function} eh
+###
+
 exports.addListener = ( evt, eh ) =>
   @ee.addListener evt, eh
-  db.getRules ( err, obj ) =>
-    @ee.emit 'init', rule for id, rule of obj
+  if evt is 'init'
+    db.getRules ( err, obj ) =>
+      @ee.emit 'init', rule for id, rule of obj
 
 
 # cb ( obj ) where obj should contain at least the HTTP response code and a message
@@ -151,28 +165,36 @@ commandFunctions =
   get_rules: ( user, obj, cb ) ->
     console.log 'CM | Implement get_rules'
 
+  # A rule needs to be in following format:
+  # 
   forge_rule: ( user, obj, cb ) =>
-    obj.event = JSON.parse obj.event
+    console.log obj
     db.getRule obj.id, ( err, objRule ) =>
-      if objRule isnt null
+      try
+        if objRule isnt null
+          answ =
+            code: 409
+            message: 'Rule name already existing!'
+        else
+          rule =
+            id: obj.id
+            # users: [ user.username ] # This should be fetched from the db in each listener
+            event: "#{ obj.event.module } -> #{ obj.event.function }"
+            conditions: obj.conditions
+            actions: obj.actions
+          modules = JSON.parse obj.action_params
+          db.storeRule rule.id, JSON.stringify rule
+          db.linkRule rule.id, user.username
+          db.activateRule rule.id, user.username
+          db.eventPollers.storeUserParams obj.event.module, user.username, obj.event_params
+          db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of modules
+          @ee.emit 'newRule', JSON.stringify rule
+          answ =
+            code: 400
+            message: 'Rule stored and activated!'
+      catch err
         answ =
-          code: 409
-          message: 'Rule name already existing!'
-      else
-        answ =
-          code: 200
-          message: 'Rule stored and activated!'
-        rule =
-          id: obj.id
-          # users: [ user.username ] # This should be fetched from the db in each listener
-          event: "#{ obj.event.module } -> #{ obj.event.function }"
-          conditions: JSON.parse obj.conditions
-          actions: JSON.parse obj.actions
-        modules = JSON.parse obj.action_params
-        db.storeRule rule.id, JSON.stringify rule
-        db.linkRule rule.id, user.username
-        db.activateRule rule.id, user.username
-        db.eventPollers.storeUserParams obj.event.module, user.username, obj.event_params
-        db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of modules
-        @ee.emit 'newRule', JSON.stringify rule
+          code: 400
+          message: 'bad bad request...'
+        console.log err
       cb answ

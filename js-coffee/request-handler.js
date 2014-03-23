@@ -29,7 +29,7 @@ Request Handler
 
   exports = module.exports = (function(_this) {
     return function(args) {
-      var user, users, _i, _len;
+      var fStoreUser, user, users;
       _this.log = args.logger;
       _this.userRequestHandler = args['request-service'];
       _this.objAdminCmds = {
@@ -45,9 +45,12 @@ Request Handler
       };
       db(args);
       users = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'users.json')));
-      for (_i = 0, _len = users.length; _i < _len; _i++) {
-        user = users[_i];
-        db.storeUser(user);
+      fStoreUser = function(username, oUser) {
+        oUser.username = username;
+        return db.storeUser(oUser);
+      };
+      for (user in users) {
+        fStoreUser(user, users[user]);
       }
       return module.exports;
     };
