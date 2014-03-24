@@ -104,22 +104,23 @@ Components Manager
             cm = dynmod.compileString(src, obj.id, {}, obj.lang);
             answ = cm.answ;
             if (answ.code === 200) {
-              events = [];
-              _ref = cm.module;
-              for (name in _ref) {
-                id = _ref[name];
-                events.push(name);
-              }
-              _this.log.info("CM | Storing new eventpoller with events " + events);
-              answ.message = "Event Poller module successfully stored! Found following event(s): " + events;
-              db.eventPollers.storeModule(obj.id, user.username, {
-                code: obj.data,
-                lang: obj.lang,
-                params: obj.params,
-                events: events
-              });
-              if (obj["public"] === 'true') {
-                db.eventPollers.publish(obj.id);
+              if (!obj.id || !obj.params) {
+                answ.code = 400;
+                answ.message = "Your request didn't contain all necessary fields! id and params required";
+              } else {
+                events = [];
+                _ref = cm.module;
+                for (name in _ref) {
+                  id = _ref[name];
+                  events.push(name);
+                }
+                _this.log.info("CM | Storing new eventpoller with events " + events);
+                answ.message = "Event Poller module successfully stored! Found following event(s): " + events;
+                obj.events = JSON.stringify(events);
+                db.eventPollers.storeModule(obj.id, user.username, obj);
+                if (obj["public"] === 'true') {
+                  db.eventPollers.publish(obj.id);
+                }
               }
             }
           }
@@ -207,22 +208,23 @@ Components Manager
             cm = dynmod.compileString(src, obj.id, {}, obj.lang);
             answ = cm.answ;
             if (answ.code === 200) {
-              actions = [];
-              _ref = cm.module;
-              for (name in _ref) {
-                id = _ref[name];
-                actions.push(name);
-              }
-              _this.log.info("CM | Storing new eventpoller with actions " + actions);
-              answ.message = "Action Invoker module successfully stored! Found following action(s): " + actions;
-              db.actionInvokers.storeModule(obj.id, user.username, {
-                code: obj.data,
-                lang: obj.lang,
-                params: obj.params,
-                actions: actions
-              });
-              if (obj["public"] === 'true') {
-                db.actionInvokers.publish(obj.id);
+              if (!obj.id || !obj.params) {
+                answ.code = 400;
+                answ.message = "Your request didn't contain all necessary fields! id and params required";
+              } else {
+                actions = [];
+                _ref = cm.module;
+                for (name in _ref) {
+                  id = _ref[name];
+                  actions.push(name);
+                }
+                _this.log.info("CM | Storing new eventpoller with actions " + actions);
+                answ.message = "Action Invoker module successfully stored! Found following action(s): " + actions;
+                obj.actions = JSON.stringify(actions);
+                db.actionInvokers.storeModule(obj.id, user.username, obj);
+                if (obj["public"] === 'true') {
+                  db.actionInvokers.publish(obj.id);
+                }
               }
             }
           }
@@ -235,36 +237,46 @@ Components Manager
     },
     forge_rule: (function(_this) {
       return function(user, obj, cb) {
-        console.log(obj);
-        return db.getRule(obj.id, function(err, objRule) {
-          var answ, id, modules, params, rule;
+        return db.getRule(obj.id, function(err, oExisting) {
+          var answ, arrParams, ep, id, params, rule, strRule;
           try {
-            if (objRule !== null) {
+            if (oExisting !== null) {
               answ = {
                 code: 409,
                 message: 'Rule name already existing!'
               };
             } else {
-              rule = {
-                id: obj.id,
-                event: "" + obj.event.module + " -> " + obj.event["function"],
-                conditions: obj.conditions,
-                actions: obj.actions
-              };
-              modules = JSON.parse(obj.action_params);
-              db.storeRule(rule.id, JSON.stringify(rule));
-              db.linkRule(rule.id, user.username);
-              db.activateRule(rule.id, user.username);
-              db.eventPollers.storeUserParams(obj.event.module, user.username, obj.event_params);
-              for (id in modules) {
-                params = modules[id];
-                db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
+              if (!obj.id || !obj.event || !obj.conditions || !obj.actions) {
+                answ = {
+                  code: 400,
+                  message: 'Missing properties in rule!'
+                };
+              } else {
+                ep = JSON.parse(obj.event);
+                rule = {
+                  id: obj.id,
+                  event: ep,
+                  conditions: JSON.parse(obj.conditions),
+                  actions: JSON.parse(obj.actions)
+                };
+                strRule = JSON.stringify(rule);
+                db.storeRule(rule.id, strRule);
+                db.linkRule(rule.id, user.username);
+                db.activateRule(rule.id, user.username);
+                if (obj.event_params) {
+                  db.eventPollers.storeUserParams(ep.module, user.username, obj.event_params);
+                }
+                arrParams = JSON.parse(obj.action_params);
+                for (id in arrParams) {
+                  params = arrParams[id];
+                  db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
+                }
+                _this.ee.emit('newRule', strRule);
+                answ = {
+                  code: 200,
+                  message: 'Rule stored and activated!'
+                };
               }
-              _this.ee.emit('newRule', JSON.stringify(rule));
-              answ = {
-                code: 400,
-                message: 'Rule stored and activated!'
-              };
             }
           } catch (_error) {
             err = _error;

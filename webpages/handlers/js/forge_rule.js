@@ -5,7 +5,7 @@
   fOnLoad = function() {
     var arrActionInvoker, fFetchActionParams, fFetchEventParams, obj;
     document.title = 'Rule Forge!';
-    $('#pagetitle').text('{{{user.username}}}, forge your custom rule!');
+    $('#pagetitle').text('{{{user.username}}}, forge your rule!');
     fFetchEventParams = function(name) {
       var arr, obj;
       arr = name.split(' -> ');
@@ -49,14 +49,26 @@
       command: 'get_event_pollers'
     };
     $.post('/usercommand', obj).done(function(data) {
-      var fAppendEvent, id, name, _ref;
-      fAppendEvent = function(id, name) {
-        return $('#select_event').append($('<option>').text(id + ' -> ' + name));
+      var events, fAppendEvents, id, _ref;
+      fAppendEvents = function(id, events) {
+        var arrNames, err, name, _i, _len, _results;
+        try {
+          arrNames = JSON.parse(events);
+          _results = [];
+          for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+            name = arrNames[_i];
+            _results.push($('#select_event').append($('<option>').text(id + ' -> ' + name)));
+          }
+          return _results;
+        } catch (_error) {
+          err = _error;
+          return console.error('ERROR: non-array received from server: ' + events);
+        }
       };
       _ref = data.message;
       for (id in _ref) {
-        name = _ref[id];
-        fAppendEvent(id, name);
+        events = _ref[id];
+        fAppendEvents(id, events);
       }
       return fFetchEventParams($('#select_event option:selected').text());
     }).fail(function(err) {
@@ -72,17 +84,27 @@
       command: 'get_action_invokers'
     };
     $.post('/usercommand', obj).done(function(data) {
-      var fAppendAction, i, id, name, _ref, _results;
+      var actions, fAppendActions, i, id, _ref, _results;
       i = 0;
-      fAppendAction = function(id, name) {
-        $('#select_actions').append($('<option>').attr('id', i++).text(id + ' -> ' + name));
-        return arrActionInvoker.push(id + ' -> ' + name);
+      fAppendActions = function(id, actions) {
+        var arrNames, err, name, _i, _len;
+        try {
+          arrNames = JSON.parse(actions);
+          for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+            name = arrNames[_i];
+            $('#select_actions').append($('<option>').attr('id', i++).text(id + ' -> ' + name));
+          }
+          return arrActionInvoker.push(id + ' -> ' + name);
+        } catch (_error) {
+          err = _error;
+          return console.error('ERROR: non-array received from server: ' + actions);
+        }
       };
       _ref = data.message;
       _results = [];
       for (id in _ref) {
-        name = _ref[id];
-        _results.push(fAppendAction(id, name));
+        actions = _ref[id];
+        _results.push(fAppendActions(id, actions));
       }
       return _results;
     }).fail(function(err) {
@@ -166,7 +188,6 @@
         if ($('#select_event option:selected').length === 0) {
           throw new Error('Please create an Event Poller first!');
         }
-        arrEP = $('#select_event option:selected').val().split(' -> ');
         if ($('#input_id').val() === '') {
           throw new Error('Please enter a rule name!');
         }
@@ -199,10 +220,18 @@
           });
           return ap[id] = params;
         });
-        acts = [];
+        acts = {};
         $('#selected_actions .title').each(function() {
-          return acts.push($(this).text());
+          var arrAct;
+          arrAct = $(this).text().split(' -> ');
+          if (!acts[arrAct[0]]) {
+            acts[arrAct[0]] = {
+              functions: []
+            };
+          }
+          return acts[arrAct[0]].functions.push(arrAct[1]);
         });
+        arrEP = $('#select_event option:selected').val().split(' -> ');
         obj = {
           command: 'forge_rule',
           id: $('#input_id').val(),

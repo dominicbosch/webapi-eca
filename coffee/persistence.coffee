@@ -244,14 +244,19 @@ class IndexedModules
   setDB: ( @db ) ->
     @log.info "DB | (IdxedMods) Registered new DB connection for '#{ @setname }'"
 
+
+  ###
+  @private storeModule( *mId, userId, data* )
+  @param {String} mId
+  @param {String} userId
+  @param {object} data
+  ###
   storeModule: ( mId, userId, data ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ mId }, #{ userId }, data )"
     @db.sadd "#{ @setname }s", mId,
       replyHandler "sadd '#{ mId }' to '#{ @setname }'"
-    @db.hmset "#{ @setname }:#{ mId }", 'code', data['code'],
-      replyHandler "hmset 'code' in hash '#{ @setname }:#{ mId }'"
-    @db.hmset "#{ @setname }:#{ mId }", 'reqparams', data['reqparams'],
-      replyHandler "hmset 'reqparams' in hash '#{ @setname }:#{ mId }'"
+    @db.hmset "#{ @setname }:#{ mId }", data,
+      replyHandler "hmset properties in hash '#{ @setname }:#{ mId }'"
     @linkModule mId, userId
 
   #TODO add testing
@@ -293,7 +298,7 @@ class IndexedModules
 
   #TODO add testing
   getAvailableModuleIds: ( userId, cb ) =>
-    @log.info "DB | (IdxedMods) #{ @setname }.getPublicModuleIds( #{ @suserId } )"
+    @log.info "DB | (IdxedMods) #{ @setname }.getPublicModuleIds( #{ userId } )"
     @db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 
   getModuleIds: ( cb ) =>

@@ -22,19 +22,19 @@ db = require path.join '..', 'js-coffee', 'persistence'
 db opts
 
 
-exports.testListener = ( test ) ->
-  test.expect 2
+# exports.testListener = ( test ) ->
+#   test.expect 2
 
-  oRuleOne = objects.rules.ruleOne
-  oRuleTwo = objects.rules.ruleOne
-  db.storeRule 'test-cm-rule', JSON.stringify oRuleOne
-  cm.addListener 'init', ( evt ) =>
-    test.deepEqual evt, oRuleOne, 'Event is not the same!'
-    console.log 'got and checked init'
+#   oRuleOne = objects.rules.ruleOne
+#   oRuleTwo = objects.rules.ruleOne
+#   db.storeRule 'test-cm-rule', JSON.stringify oRuleOne
+#   cm.addListener 'init', ( evt ) =>
+#     test.deepEqual evt, oRuleOne, 'Event is not the same!'
+#     console.log 'got and checked init'
 
-    cm.addListener 'newRule', ( evt ) =>
-      console.log 'new rule listener added'
-      test.deepEqual evt, oRuleTwo, 'Event is not the same!'
-      test.done()
-    cm.processRequest oUser, oRuleTwo, ( answ ) =>
-      console.log answ 
+#     cm.addListener 'newRule', ( evt ) =>
+#       console.log 'new rule listener added'
+#       test.deepEqual evt, oRuleTwo, 'Event is not the same!'
+#       test.done()
+#     cm.processRequest oUser, oRuleTwo, ( answ ) =>
+#       console.log answ 

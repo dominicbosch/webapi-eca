@@ -344,11 +344,18 @@ Persistence
       return this.log.info("DB | (IdxedMods) Registered new DB connection for '" + this.setname + "'");
     };
 
+
+    /*
+    @private storeModule( *mId, userId, data* )
+    @param {String} mId
+    @param {String} userId
+    @param {object} data
+     */
+
     IndexedModules.prototype.storeModule = function(mId, userId, data) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + mId + ", " + userId + ", data )");
       this.db.sadd("" + this.setname + "s", mId, replyHandler("sadd '" + mId + "' to '" + this.setname + "'"));
-      this.db.hmset("" + this.setname + ":" + mId, 'code', data['code'], replyHandler("hmset 'code' in hash '" + this.setname + ":" + mId + "'"));
-      this.db.hmset("" + this.setname + ":" + mId, 'reqparams', data['reqparams'], replyHandler("hmset 'reqparams' in hash '" + this.setname + ":" + mId + "'"));
+      this.db.hmset("" + this.setname + ":" + mId, data, replyHandler("hmset properties in hash '" + this.setname + ":" + mId + "'"));
       return this.linkModule(mId, userId);
     };
 
@@ -385,7 +392,7 @@ Persistence
     };
 
     IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".getPublicModuleIds( " + this.suserId + " )");
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getPublicModuleIds( " + userId + " )");
       return this.db.sunion("public-" + this.setname + "s", "user:" + userId + ":" + this.setname + "s", cb);
     };
 

@@ -1,8 +1,9 @@
 
 
 fOnLoad = () ->
+
   document.title = 'Rule Forge!'
-  $( '#pagetitle' ).text '{{{user.username}}}, forge your custom rule!'
+  $( '#pagetitle' ).text '{{{user.username}}}, forge your rule!'
 
   # Fetch Event Poller user-specific parameters
   fFetchEventParams = ( name ) ->
@@ -35,6 +36,7 @@ fOnLoad = () ->
 
 #FIXME Add possibility for custom event via text input
 #FIXME Add conditions
+#FIXME Only send user parameters encrypted! RSA required! Crypto-js doesn't provide it
 
 
   # Init Event Pollers
@@ -42,9 +44,13 @@ fOnLoad = () ->
     command: 'get_event_pollers'
   $.post( '/usercommand', obj )
     .done ( data ) ->
-      fAppendEvent = ( id, name ) ->
-        $( '#select_event' ).append $( '<option>' ).text id + ' -> ' + name
-      fAppendEvent id, name for id, name of data.message
+      fAppendEvents = ( id, events ) ->
+        try
+          arrNames = JSON.parse events
+          $( '#select_event' ).append $( '<option>' ).text id + ' -> ' + name for name in arrNames
+        catch err
+          console.error 'ERROR: non-array received from server: ' + events
+      fAppendEvents id, events for id, events of data.message
       fFetchEventParams $( '#select_event option:selected' ).text()
     .fail ( err ) ->
       console.log err
@@ -61,10 +67,15 @@ fOnLoad = () ->
   $.post( '/usercommand', obj )
     .done ( data ) ->
       i = 0
-      fAppendAction = ( id, name ) ->
-        $( '#select_actions' ).append $( '<option>' ).attr( 'id', i++ ).text id + ' -> ' + name
-        arrActionInvoker.push id + ' -> ' + name
-      fAppendAction id, name for id, name of data.message
+      fAppendActions = ( id, actions ) ->
+        try
+          arrNames = JSON.parse actions
+          for name in arrNames
+            $( '#select_actions' ).append $( '<option>' ).attr( 'id', i++ ).text id + ' -> ' + name
+          arrActionInvoker.push id + ' -> ' + name
+        catch err
+          console.error 'ERROR: non-array received from server: ' + actions
+      fAppendActions id, actions for id, actions of data.message
     .fail ( err ) ->
       console.log err
       $( '#info' ).text 'Error fetching event poller'
@@ -131,7 +142,6 @@ fOnLoad = () ->
       if $( '#select_event option:selected' ).length is 0
           throw new Error 'Please create an Event Poller first!'
 
-      arrEP = $( '#select_event option:selected' ).val().split ' -> '
       if $( '#input_id' ).val() is ''
         throw new Error 'Please enter a rule name!'
 
@@ -146,6 +156,7 @@ fOnLoad = () ->
       if $( '#selected_actions tr' ).length is 0
         throw new Error 'Please select at least one action or create one!'
 
+      # Store all selected action invokers
       ap = {}
       $( '#action_params div' ).each () ->
         id = $( this ).attr( 'id' ).substring 3
@@ -157,9 +168,15 @@ fOnLoad = () ->
             throw new Error "'#{ key }' missing for '#{ id }'"
           params[key] = val
         ap[id] = params
-      acts = []
+      acts = {}
       $( '#selected_actions .title' ).each () ->
-        acts.push $( this ).text()
+        arrAct = $( this ).text().split ' -> '
+        if not acts[arrAct[0]]
+          acts[arrAct[0]] =
+            functions: []
+        acts[arrAct[0]].functions.push arrAct[1]
+
+      arrEP = $( '#select_event option:selected' ).val().split ' -> '
       obj =
         command: 'forge_rule'
         id: $( '#input_id' ).val()

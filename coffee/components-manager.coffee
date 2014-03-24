@@ -82,18 +82,19 @@ commandFunctions =
         cm = dynmod.compileString src, obj.id, {}, obj.lang
         answ = cm.answ
         if answ.code is 200
-          events = []
-          events.push name for name, id of cm.module
-          @log.info "CM | Storing new eventpoller with events #{ events }"
-          answ.message = 
-            "Event Poller module successfully stored! Found following event(s): #{ events }"
-          db.eventPollers.storeModule obj.id, user.username,
-            code: obj.data
-            lang: obj.lang
-            params: obj.params
-            events: events
-          if obj.public is 'true'
-            db.eventPollers.publish obj.id
+          if not obj.id or not obj.params
+            answ.code = 400
+            answ.message = "Your request didn't contain all necessary fields! id and params required"
+          else
+            events = []
+            events.push name for name, id of cm.module
+            @log.info "CM | Storing new eventpoller with events #{ events }"
+            answ.message = 
+              "Event Poller module successfully stored! Found following event(s): #{ events }"
+            obj.events = JSON.stringify events
+            db.eventPollers.storeModule obj.id, user.username, obj
+            if obj.public is 'true'
+              db.eventPollers.publish obj.id
       cb answ
   
   get_event_pollers: ( user, obj, cb ) ->
@@ -148,50 +149,61 @@ commandFunctions =
         cm = dynmod.compileString src, obj.id, {}, obj.lang
         answ = cm.answ
         if answ.code is 200
-          actions = []
-          actions.push name for name, id of cm.module
-          @log.info "CM | Storing new eventpoller with actions #{ actions }"
-          answ.message = 
-            "Action Invoker module successfully stored! Found following action(s): #{ actions }"
-          db.actionInvokers.storeModule obj.id, user.username,
-            code: obj.data
-            lang: obj.lang
-            params: obj.params
-            actions: actions
-          if obj.public is 'true'
-            db.actionInvokers.publish obj.id
+          if not obj.id or not obj.params
+            answ.code = 400
+            answ.message = "Your request didn't contain all necessary fields! id and params required"
+          else
+            actions = []
+            actions.push name for name, id of cm.module
+            @log.info "CM | Storing new eventpoller with actions #{ actions }"
+            answ.message = 
+              "Action Invoker module successfully stored! Found following action(s): #{ actions }"
+            obj.actions = JSON.stringify actions
+            db.actionInvokers.storeModule obj.id, user.username, obj
+            if obj.public is 'true'
+              db.actionInvokers.publish obj.id
       cb answ
 
   get_rules: ( user, obj, cb ) ->
     console.log 'CM | Implement get_rules'
 
   # A rule needs to be in following format:
-  # 
+  # - id
+  # - event
+  # - conditions
+  # - actions
   forge_rule: ( user, obj, cb ) =>
-    console.log obj
-    db.getRule obj.id, ( err, objRule ) =>
+    db.getRule obj.id, ( err, oExisting ) =>
       try
-        if objRule isnt null
+        if oExisting isnt null
           answ =
             code: 409
             message: 'Rule name already existing!'
         else
-          rule =
-            id: obj.id
-            # users: [ user.username ] # This should be fetched from the db in each listener
-            event: "#{ obj.event.module } -> #{ obj.event.function }"
-            conditions: obj.conditions
-            actions: obj.actions
-          modules = JSON.parse obj.action_params
-          db.storeRule rule.id, JSON.stringify rule
-          db.linkRule rule.id, user.username
-          db.activateRule rule.id, user.username
-          db.eventPollers.storeUserParams obj.event.module, user.username, obj.event_params
-          db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of modules
-          @ee.emit 'newRule', JSON.stringify rule
-          answ =
-            code: 400
-            message: 'Rule stored and activated!'
+          if not obj.id or not obj.event or 
+              not obj.conditions or not obj.actions
+            answ =
+              code: 400
+              message: 'Missing properties in rule!'
+          else
+            ep = JSON.parse obj.event
+            rule =
+              id: obj.id
+              event: ep
+              conditions: JSON.parse obj.conditions
+              actions: JSON.parse obj.actions
+            strRule = JSON.stringify rule
+            db.storeRule rule.id, strRule
+            db.linkRule rule.id, user.username
+            db.activateRule rule.id, user.username
+            if obj.event_params
+              db.eventPollers.storeUserParams ep.module, user.username, obj.event_params
+            arrParams = JSON.parse obj.action_params
+            db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
+            @ee.emit 'newRule', strRule
+            answ =
+              code: 200
+              message: 'Rule stored and activated!'
       catch err
         answ =
           code: 400

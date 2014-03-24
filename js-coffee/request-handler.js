@@ -76,10 +76,15 @@ Request Handler
       return body += data;
     });
     return req.on('end', function() {
-      var answ, obj, rand, timestamp;
+      var answ, err, obj, rand, timestamp;
       if (req.session && req.session.user) {
-        obj = qs.parse(body);
-        if (obj && obj.event) {
+        try {
+          obj = JSON.parse(body);
+        } catch (_error) {
+          err = _error;
+          resp.send(400, 'Badly formed event!');
+        }
+        if (obj && obj.event && !err) {
           timestamp = (new Date).toISOString();
           rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
           obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;

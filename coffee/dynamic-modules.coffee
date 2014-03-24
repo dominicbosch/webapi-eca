@@ -65,7 +65,6 @@ exports.compileString = ( src, id, params, lang ) =>
   try
     vm.runInNewContext src, sandbox, id + '.vm'
   catch err
-    console.log err
     answ.code = 400
     answ.message = 'Loading Module failed: ' + err.message
   ret =

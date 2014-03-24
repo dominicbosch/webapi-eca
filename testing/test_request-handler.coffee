@@ -169,7 +169,7 @@ exports.events =
         test.done()
 
     @rh.handleEvent req, resp # set the handler to listening
-    postRequestData req, qs.stringify oEvt # emit the data post event
+    postRequestData req, JSON.stringify oEvt # emit the data post event
     setTimeout fPopEvent, 200 # try to fetch the db entry
 
   testIncorrectEvent: ( test ) =>
@@ -295,4 +295,3 @@ exports.testUserCommands = ( test ) =>
   @rh.handleUserCommand req, resp # set the handler to listening
   postRequestData req, qs.stringify oReqData # emit the data post event
   
-

@@ -73,7 +73,6 @@ Dynamic Modules
         vm.runInNewContext(src, sandbox, id + '.vm');
       } catch (_error) {
         err = _error;
-        console.log(err);
         answ.code = 400;
         answ.message = 'Loading Module failed: ' + err.message;
       }

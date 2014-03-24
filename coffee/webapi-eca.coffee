@@ -169,11 +169,11 @@ init = =>
       cm.addListener 'init', ( evt ) ->
         poller.send 
           event: 'init'
-          data:evt
+          data: evt
       cm.addListener 'newRule', ( evt ) ->
         poller.send 
           event: 'newRule'
-          data:evt
+          data: evt
       cm.addListener 'init', ( evt ) ->
         engine.internalEvent 'init', evt
       cm.addListener 'newRule', ( evt ) ->

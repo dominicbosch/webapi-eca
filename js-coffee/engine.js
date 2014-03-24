@@ -21,11 +21,11 @@ var updateActionModules = function() {
     if(!listActionModules[user]) listActionModules[user] = {};
     for ( var rule in listRules[user] ) {
       var actions = listRules[user][rule].actions;
-      for ( var i = 0; i < actions.length; i++ ){
-        var arrMod = actions[i].split(' -> ');
-        if ( !listActionModules[user][arrMod[0]] ){
-          db.actionInvokers.getModule(arrMod[0], function( err, objAM ){
-            db.actionInvokers.getUserParams(arrMod[0], user, function( err, objParams ) {
+      console.log(actions);
+      for ( var module in actions ){
+        for ( var i = 0; i < actions[module]['functions'].length; i++ ){
+          db.actionInvokers.getModule(module, function( err, objAM ){
+            db.actionInvokers.getUserParams(module, user, function( err, objParams ) {
               console.log (objAM);
 
               //FIXME am name is called 'actions'???
@@ -33,8 +33,8 @@ var updateActionModules = function() {
                 var answ = dynmod.compileString(objAM.code, objAM.actions + "_" + user, objParams, objAM.lang);
                 console.log('answ');
                 console.log(answ);
-                listActionModules[user][arrMod[0]] = answ.module;
-                console.log('loaded ' + user + ': ' + arrMod[0]);
+                listActionModules[user][module] = answ.module;
+                console.log('loaded ' + user + ': ' + module);
                 console.log(listActionModules);
               // }
             });
@@ -46,9 +46,13 @@ var updateActionModules = function() {
 };
 
 exports.internalEvent = function( evt, data ) {
-  try{
+  try {
+    // TODO do we need to determine init from newRule?
+    console.log (evt);
+    console.log (data);
     var obj = JSON.parse( data );
     db.getRuleActivatedUsers(obj.id, function ( err, arrUsers ) {
+      console.log (arrUsers);
       for(var i = 0; i < arrUsers.length; i++) {
         if( !listRules[arrUsers[i]]) listRules[arrUsers[i]] = {};
         listRules[arrUsers[i]][obj.id] = obj;
@@ -79,31 +83,51 @@ function pollQueue() {
 function processEvent(evt) {
   log.info('EN', 'processing event: ' + evt.event + '(' + evt.eventid + ')');
   var actions = checkEvent(evt);
+  console.log('found actions to invoke:');
+  console.log(actions);
   for(var user in actions) {
-    for(var i = 0; i < actions[user].length; i++) {
-      invokeAction(evt, user, actions[user][i]);
+    for(var module in actions[user]) {
+      for(var i = 0; i < actions[user][module]['functions'].length; i++) {
+        var act = {
+          module: module,
+          function: actions[user][module]['functions'][i]
+        }
+        invokeAction(evt, user, act);
+      }
     }
   }
 }
 
 /**
+ FIXME merge with processEvent
+
  * Check an event against the rules repository and return the actions
  * if the conditons are met.
  * @param {Object} evt the event to check
  */
 function checkEvent(evt) {
-  var actions = {};
+  var actions = {}, tEvt;
   for(var user in listRules) {
-    actions[user] = [];
+    actions[user] = {};
     for(var rule in listRules[user]) {
     //TODO this needs to get depth safe, not only data but eventually also
     // on one level above (eventid and other meta)
-
-      if(listRules[user][rule].event === evt.event && validConditions(evt.payload, listRules[user][rule])) {
+      tEvt = listRules[user][rule].event;
+      if(tEvt.module + ' -> ' + tEvt.function === evt.event && validConditions(evt.payload, listRules[user][rule])) {
         log.info('EN', 'Rule "' + rule + '" fired');
-        var arrAct = listRules[user][rule].actions;
-        for(var i = 0; i < arrAct.length; i++) {
-          if(actions[user].indexOf(arrAct[i]) === -1) actions[user].push(arrAct[i]);
+        var oAct = listRules[user][rule].actions;
+        console.log (oAct);
+        for(var module in oAct) {
+          if(!actions[user][module]) {
+            actions[user][module] = {
+              functions: []
+            };
+          }
+          for(var i = 0; i < oAct[module]['functions'].length; i++ ){
+            console.log ('processing action ' + i + ', ' + oAct[module]['functions'][i]);
+            actions[user][module]['functions'].push(oAct[module]['functions'][i]);
+            // if(actions[user].indexOf(arrAct[i]) === -1) actions[user].push(arrAct[i]);
+          }
         }
       }
     }
@@ -147,26 +171,21 @@ function validConditions(evt, rule) {
  * @param {Object} action The action to be invoked
  */
 function invokeAction( evt, user, action ) {
-  var actionargs = {},
-      arrModule = action.split(' -> ');
+  console.log('invoking action');
+  var actionargs = {};
       //FIXME internal events, such as loopback ha sno arrow
       //TODO this requires change. the module property will be the identifier
       // in the actions object (or shall we allow several times the same action?)
-  if(arrModule.length < 2) {
-    log.error('EN', 'Invalid rule detected!');
-    return;
-  }
-  console.log('invoking action');
-  console.log(arrModule[0]);
+  console.log(action.module);
   console.log(listActionModules);
-  var srvc = listActionModules[user][arrModule[0]];
+  var srvc = listActionModules[user][action.module];
   console.log(srvc);
-  if(srvc && srvc[arrModule[1]]) {
+  if(srvc && srvc[action.function]) {
     //FIXME preprocessing not only on data
     //FIXME no preprocessing at all, why don't we just pass the whole event to the action?'
     // preprocessActionArguments(evt.payload, action.arguments, actionargs);
     try {
-      if(srvc[arrModule[1]]) srvc[arrModule[1]](evt.payload);
+      if(srvc[action.function]) srvc[action.function](evt.payload);
     } catch(err) {
       log.error('EN', 'during action execution: ' + err);
     }
