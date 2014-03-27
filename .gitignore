@@ -1,6 +1,4 @@
 *~
 *.log
-*credentials.json
-*node_modules
 .project
 .settings
