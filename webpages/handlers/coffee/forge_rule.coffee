@@ -168,25 +168,23 @@ fOnLoad = () ->
             throw new Error "'#{ key }' missing for '#{ id }'"
           params[key] = val
         ap[id] = params
-      acts = {}
+      acts = []
       $( '#selected_actions .title' ).each () ->
-        arrAct = $( this ).text().split ' -> '
-        if not acts[arrAct[0]]
-          acts[arrAct[0]] =
-            functions: []
-        acts[arrAct[0]].functions.push arrAct[1]
+        acts.push $( this ).text()
 
-      arrEP = $( '#select_event option:selected' ).val().split ' -> '
       obj =
         command: 'forge_rule'
-        id: $( '#input_id' ).val()
-        event: JSON.stringify
-          module: arrEP[0]
-          function: arrEP[1]
-        event_params: JSON.stringify ep
-        conditions: JSON.stringify {} #TODO Add conditions!
-        actions: JSON.stringify acts
-        action_params: JSON.stringify ap
+        payload:
+          id: $( '#input_id' ).val()
+          event: $( '#select_event option:selected' ).val()
+          event_params: ep
+          conditions: {} #TODO Add conditions!
+          actions: acts
+          action_params: ap
+          # event_params: JSON.stringify ep
+          # conditions: JSON.stringify {} #TODO Add conditions!
+          # actions: JSON.stringify acts
+          # action_params: JSON.stringify ap
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message

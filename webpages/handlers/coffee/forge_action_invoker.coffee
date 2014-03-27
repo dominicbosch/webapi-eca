@@ -55,12 +55,13 @@ fOnLoad = () ->
         if val isnt ""
           listParams.push val
       obj =
-        id: $( '#input_id' ).val()
         command: 'forge_action_invoker'
-        lang: $( '#editor_mode' ).val()
-        public: $( '#is_public' ).is ':checked'
-        data: editor.getValue()
-        params: JSON.stringify listParams
+        payload:
+          id: $( '#input_id' ).val()
+          lang: $( '#editor_mode' ).val()
+          public: $( '#is_public' ).is ':checked'
+          data: editor.getValue()
+          params: JSON.stringify listParams
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message

@@ -22,19 +22,31 @@ db = require path.join '..', 'js-coffee', 'persistence'
 db opts
 
 
-# exports.testListener = ( test ) ->
-#   test.expect 2
+exports.testListener = ( test ) =>
+  test.expect 2
 
-#   oRuleOne = objects.rules.ruleOne
-#   oRuleTwo = objects.rules.ruleOne
-#   db.storeRule 'test-cm-rule', JSON.stringify oRuleOne
-#   cm.addListener 'init', ( evt ) =>
-#     test.deepEqual evt, oRuleOne, 'Event is not the same!'
-#     console.log 'got and checked init'
+  oUser = objects.users.userOne
+  oRuleOne = objects.rules.ruleOne
+  oRuleTwo = objects.rules.ruleTwo
+  db.storeRule 'test-cm-rule', JSON.stringify oRuleOne
+  request =
+    command: 'forge_rule'
+    payload: oRuleTwo
 
-#     cm.addListener 'newRule', ( evt ) =>
-#       console.log 'new rule listener added'
-#       test.deepEqual evt, oRuleTwo, 'Event is not the same!'
-#       test.done()
-#     cm.processRequest oUser, oRuleTwo, ( answ ) =>
-#       console.log answ 
+  cm.addListener 'newRule', ( evt ) =>
+    console.log 'got new rule!'
+    test.deepEqual evt, oRuleTwo, 'Event is not the same!'
+    test.done()
+
+  console.log 'new rule listener added'    
+  cm.addListener 'init', ( evt ) =>
+    test.deepEqual evt, oRuleOne, 'Event is not the same!'
+    console.log 'got and checked init'
+
+    cm.processRequest oUser, request, ( answ ) =>
+      console.log answ
+      if answ.code isnt 200
+        test.ok false, 'testListener failed: ' + answ.message
+        test.done()
+
+  console.log 'init listener added'    

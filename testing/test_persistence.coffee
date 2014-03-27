@@ -46,7 +46,7 @@ exports.Availability =
   testPurgeQueue: ( test ) =>
     test.expect 2
 
-    db.pushEvent objects.events.evt1
+    db.pushEvent objects.events.eventOne
     db.purgeEventQueue()
     db.popEvent ( err, obj ) =>
       test.ifError err, 'Error during pop after purging!'
@@ -85,13 +85,13 @@ exports.EventQueue =
   testNonEmptyPopping: ( test ) =>
     test.expect 3
 
-    db.pushEvent objects.events.evt1
+    db.pushEvent objects.events.eventOne
     db.popEvent ( err, obj ) =>
       test.ifError err,
         'Error during non-empty popping!'
       test.notStrictEqual obj, null,
         'There was no event in the queue!'
-      test.deepEqual objects.events.evt1, obj,
+      test.deepEqual objects.events.eventOne, obj,
         'Wrong event in queue!'
       
       test.done()
@@ -105,15 +105,15 @@ exports.EventQueue =
         
         test.done()
 
-    db.pushEvent objects.events.evt1
-    db.pushEvent objects.events.evt2
+    db.pushEvent objects.events.eventOne
+    db.pushEvent objects.events.eventTwo
     # eventually it would be wise to not care about the order of events
     db.popEvent ( err, obj ) =>
       test.ifError err,
         'Error during multiple push and pop!'
       test.notStrictEqual obj, null,
         'There was no event in the queue!'
-      test.deepEqual objects.events.evt1, obj,
+      test.deepEqual objects.events.eventOne, obj,
         'Wrong event in queue!'
       forkEnds()
     db.popEvent ( err, obj ) =>
@@ -121,7 +121,7 @@ exports.EventQueue =
         'Error during multiple push and pop!'
       test.notStrictEqual obj, null,
         'There was no event in the queue!'
-      test.deepEqual objects.events.evt2, obj,
+      test.deepEqual objects.events.eventTwo, obj,
         'Wrong event in queue!'
       forkEnds()
 

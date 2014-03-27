@@ -21,6 +21,14 @@ opts =
 opts[ 'db-port' ] = 6379
 db = require path.join '..', 'js-coffee', 'persistence'
 db opts
+rh = require path.join '..', 'js-coffee', 'request-handler'
+args = 
+  logger: log 
+args[ 'request-service' ] = ( usr, obj, cb ) ->
+  test.ok false, 'testEvent should not cause a service request call'
+args[ 'shutdown-function' ] = () ->
+  test.ok false, 'testEvent should not cause a system shutdown'
+rh args
 
 createRequest = ( query, origUrl ) ->
   req = new events.EventEmitter()
@@ -56,13 +64,6 @@ createResponse = ( cb ) ->
         code = 200
       cb code, msg
 
-exports.setUp = ( cb ) =>
-  @rh = require path.join '..', 'js-coffee', 'request-handler'
-  cb()
-
-exports.tearDown = ( cb ) =>
-  cb()
-
 exports.session =
   setUp: ( cb ) =>
     @oUsr = objects.users.userOne
@@ -75,14 +76,6 @@ exports.session =
 
   testLoginAndOut: ( test ) =>
     test.expect 6
-
-    args = 
-      logger: log 
-    args[ 'request-service' ] = ( usr, obj, cb ) ->
-      test.ok false, 'testEvent should not cause a service request call'
-    args[ 'shutdown-function' ] = () ->
-      test.ok false, 'testEvent should not cause a system shutdown'
-    @rh args
 
     req = createRequest()
     resp = createResponse ( code, msg ) =>
@@ -103,23 +96,16 @@ exports.session =
           test.strictEqual code, 200, 'Logout failed'
           test.strictEqual req.session.user, null, 'User not removed from session'
           test.done()
-        @rh.handleLogout req, resp # set the handler to listening
-      @rh.handleLogin req, resp # set the handler to listening
+        rh.handleLogout req, resp # set the handler to listening
+      rh.handleLogin req, resp # set the handler to listening
       postRequestData req, qs.stringify @oUsr # emit the data post event
 
-    @rh.handleLogin req, resp # set the handler to listening
+    rh.handleLogin req, resp # set the handler to listening
     postRequestData req, qs.stringify @oUsr # emit the data post event
 
 
   testWrongLogin: ( test ) =>
     test.expect 2
-    args = 
-      logger: log 
-    args[ 'request-service' ] = ( usr, obj, cb ) ->
-      test.ok false, 'testEvent should not cause a service request call'
-    args[ 'shutdown-function' ] = () ->
-      test.ok false, 'testEvent should not cause a system shutdown'
-    @rh args
 
     req = createRequest()
     resp = createResponse ( code, msg ) =>
@@ -130,7 +116,7 @@ exports.session =
     usr =
       username: @oUsr.username
       password: 'wrongpassword'
-    @rh.handleLogin req, resp # set the handler to listening
+    rh.handleLogin req, resp # set the handler to listening
     postRequestData req, qs.stringify usr # emit the data post event
 
 exports.events =
@@ -140,18 +126,8 @@ exports.events =
 
   testCorrectEvent: ( test ) =>
     test.expect 2
-    
-    args =
-      logger: log
-    args[ 'request-service' ] = ( usr, obj, cb ) ->
-      test.ok false, 'testEvent should not cause a service request call'
-    args[ 'shutdown-function' ] = () ->
-      test.ok false, 'testEvent should not cause a system shutdown'
-    @rh args
 
-    oEvt = 
-      event: 'unittest'
-      data: 'a lot of data'
+    oEvt = objects.events.eventOne
 
     semaphore = 2
     fPopEvent = () =>
@@ -168,20 +144,12 @@ exports.events =
       if --semaphore is 0
         test.done()
 
-    @rh.handleEvent req, resp # set the handler to listening
+    rh.handleEvent req, resp # set the handler to listening
     postRequestData req, JSON.stringify oEvt # emit the data post event
     setTimeout fPopEvent, 200 # try to fetch the db entry
 
   testIncorrectEvent: ( test ) =>
     test.expect 2
-
-    args =
-      logger: log
-    args[ 'request-service' ] = ( usr, obj, cb ) ->
-      test.ok false, 'testEvent should not cause a service request call'
-    args[ 'shutdown-function' ] = () ->
-      test.ok false, 'testEvent should not cause a system shutdown'
-    @rh args
 
     oEvt = 
       data: 'event misses event type property'
@@ -200,20 +168,12 @@ exports.events =
       if --semaphore is 0
         test.done()
 
-    @rh.handleEvent req, resp # set the handler to listening
+    rh.handleEvent req, resp # set the handler to listening
     postRequestData req, qs.stringify oEvt # emit the data post event
     setTimeout fPopEvent, 200 # try to fetch the db entry
 
 exports.testLoginOrPage = ( test ) =>
     test.expect 3
-
-    args = 
-      logger: log 
-    args[ 'request-service' ] = ( usr, obj, cb ) ->
-      test.ok false, 'testEvent should not cause a service request call'
-    args[ 'shutdown-function' ] = () ->
-      test.ok false, 'testEvent should not cause a system shutdown'
-    @rh args
 
     req = createRequest()
     req.query =
@@ -238,28 +198,19 @@ exports.testLoginOrPage = ( test ) =>
           test.ok msg.indexOf( 'document.title = \'Error!\'' ) > 0, 'Didn\' get forge page?'
           test.done()
 
-        @rh.handleForge req, resp # set the handler to listening
-      @rh.handleForge req, resp # set the handler to listening
-    @rh.handleForge req, resp # set the handler to listening
+        rh.handleForge req, resp # set the handler to listening
+      rh.handleForge req, resp # set the handler to listening
+    rh.handleForge req, resp # set the handler to listening
 
 
 exports.testUserCommandsNoLogin = ( test ) =>
   test.expect 1
 
-  args = 
-    logger: log 
-  args[ 'request-service' ] = ( usr, obj, cb ) ->
-    test.ok false, 'testEvent should not cause a service request call'
-  args[ 'shutdown-function' ] = () ->
-    test.ok false, 'testEvent should not cause a system shutdown'
-  @rh args
-
-
   req = createRequest()
   resp = createResponse ( code, msg ) =>
     test.strictEqual code, 401, 'Login did not fail?'
     test.done()
-  @rh.handleUserCommand req, resp # set the handler to listening
+  rh.handleUserCommand req, resp # set the handler to listening
 
 
 exports.testUserCommands = ( test ) =>
@@ -283,15 +234,13 @@ exports.testUserCommands = ( test ) =>
   args[ 'request-service' ] = ( usr, obj, cb ) ->
     test.ok true, 'Yay we got the request!'
     cb oRespData
-  args[ 'shutdown-function' ] = () ->
-    test.ok false, 'testEvent should not cause a system shutdown'
-  @rh args
+  rh args
 
   req = createLoggedInRequest()
   resp = createResponse ( code, msg ) =>
     test.strictEqual code, 200, 'Service wasn\'t happy with our request'
     test.deepEqual msg, oRespData, 'Service didn\'t return expected'
     test.done()
-  @rh.handleUserCommand req, resp # set the handler to listening
+  rh.handleUserCommand req, resp # set the handler to listening
   postRequestData req, qs.stringify oReqData # emit the data post event
   

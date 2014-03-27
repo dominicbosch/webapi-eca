@@ -60,8 +60,9 @@ exports.addListener = ( evt, eh ) =>
 
 # cb ( obj ) where obj should contain at least the HTTP response code and a message
 exports.processRequest = ( user, obj, cb ) =>
+  console.log obj
   if commandFunctions[obj.command]
-    answ = commandFunctions[obj.command] user, obj, cb
+    answ = commandFunctions[obj.command] user, obj.payload, cb
   else
     cb
       code: 404
@@ -71,21 +72,19 @@ commandFunctions =
   forge_event_poller: ( user, obj, cb ) =>
     answ = 
       code: 200
-
-    db.eventPollers.getModule obj.id, ( err, mod ) =>
-      if mod
-        answ.code = 409
-        answ.message = 'Event Poller module name already existing: ' + obj.id
-
-      else
-        src = obj.data
-        cm = dynmod.compileString src, obj.id, {}, obj.lang
-        answ = cm.answ
-        if answ.code is 200
-          if not obj.id or not obj.params
-            answ.code = 400
-            answ.message = "Your request didn't contain all necessary fields! id and params required"
-          else
+    if not obj.id or not obj.params
+      answ.code = 400
+      answ.message = "Your request didn't contain all necessary fields! id and params required"
+    else    
+      db.eventPollers.getModule obj.id, ( err, mod ) =>
+        if mod
+          answ.code = 409
+          answ.message = 'Event Poller module name already existing: ' + obj.id
+        else
+          src = obj.data
+          cm = dynmod.compileString src, obj.id, {}, obj.lang
+          answ = cm.answ
+          if answ.code is 200
             events = []
             events.push name for name, id of cm.module
             @log.info "CM | Storing new eventpoller with events #{ events }"
@@ -186,10 +185,9 @@ commandFunctions =
               code: 400
               message: 'Missing properties in rule!'
           else
-            ep = JSON.parse obj.event
             rule =
               id: obj.id
-              event: ep
+              event: obj.event
               conditions: JSON.parse obj.conditions
               actions: JSON.parse obj.actions
             strRule = JSON.stringify rule

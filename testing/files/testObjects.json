@@ -1,11 +1,13 @@
 {
   "events": {
-    "evt1":{
-      "eventid": "test_1",
-      "event": "test_1"
+    "eventOne":{
+      "event": "test_1",
+      "payload": {
+        "property": "test_1",
+        "nestedProperty": "really nested"
+      }
     },
-    "evt2":{
-      "eventid": "test_2",
+    "eventTwo":{
       "event": "test_2"
     }
   },

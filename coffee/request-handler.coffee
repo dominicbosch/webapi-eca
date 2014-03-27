@@ -65,6 +65,7 @@ objects.*
 @public handleEvent( *req, resp* )
 ###
 exports.handleEvent = ( req, resp ) ->
+  console.log 'handleEvent'
   body = ''
   req.on 'data', ( data ) ->
     body += data
@@ -74,7 +75,6 @@ exports.handleEvent = ( req, resp ) ->
         obj = JSON.parse body
       catch err
         resp.send 400, 'Badly formed event!'
-
       # If required event properties are present we process the event #
       if obj and obj.event and not err
         timestamp = ( new Date ).toISOString()
