@@ -31,7 +31,7 @@ exports.testListener = ( test ) =>
   db.storeRule 'test-cm-rule', JSON.stringify oRuleOne
   request =
     command: 'forge_rule'
-    payload: oRuleTwo
+    payload: JSON.stringify oRuleTwo
 
   cm.addListener 'newRule', ( evt ) =>
     console.log 'got new rule!'
@@ -43,10 +43,10 @@ exports.testListener = ( test ) =>
     test.deepEqual evt, oRuleOne, 'Event is not the same!'
     console.log 'got and checked init'
 
-    cm.processRequest oUser, request, ( answ ) =>
-      console.log answ
-      if answ.code isnt 200
-        test.ok false, 'testListener failed: ' + answ.message
-        test.done()
+  cm.processRequest oUser, request, ( answ ) =>
+    console.log answ
+    if answ.code isnt 200
+      test.ok false, 'testListener failed: ' + answ.message
+      test.done()
 
   console.log 'init listener added'    

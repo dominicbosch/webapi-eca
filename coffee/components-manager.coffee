@@ -58,18 +58,24 @@ exports.addListener = ( evt, eh ) =>
       @ee.emit 'init', rule for id, rule of obj
 
 
-# cb ( obj ) where obj should contain at least the HTTP response code and a message
-exports.processRequest = ( user, obj, cb ) =>
-  console.log obj
+# callback ( answ ) where answ is an object and contains at least the HTTP response code and a message
+# obj has a command parameter and an optional payload which is a stringified JSON object
+exports.processRequest = ( user, obj, callback ) =>
   if commandFunctions[obj.command]
-    answ = commandFunctions[obj.command] user, obj.payload, cb
+    try
+      oPayload = JSON.parse obj.payload
+      commandFunctions[obj.command] user, oPayload, callback
+    catch err
+      callback
+        code: 400
+        message: 'Nice try...'
   else
-    cb
+    callback
       code: 404
-      message: 'Strange request!'
+      message: 'What do you want from me?'
 
 commandFunctions =
-  forge_event_poller: ( user, obj, cb ) =>
+  forge_event_poller: ( user, obj, callback ) =>
     answ = 
       code: 200
     if not obj.id or not obj.params
@@ -94,9 +100,9 @@ commandFunctions =
             db.eventPollers.storeModule obj.id, user.username, obj
             if obj.public is 'true'
               db.eventPollers.publish obj.id
-      cb answ
+      callback answ
   
-  get_event_pollers: ( user, obj, cb ) ->
+  get_event_pollers: ( user, obj, callback ) ->
     db.eventPollers.getAvailableModuleIds user.username, ( err, obj ) ->
       oRes = {}
       sem = obj.length
@@ -104,18 +110,18 @@ commandFunctions =
         db.eventPollers.getModule id, ( err, obj ) ->
           oRes[id] = obj.events
           if --sem is 0
-            cb 
+            callback 
               code: 200
               message: oRes
       fGetEvents id for id in obj
   
-  get_event_poller_params: ( user, obj, cb ) ->
+  get_event_poller_params: ( user, obj, callback ) ->
     db.eventPollers.getModuleParams obj.id, ( err, obj ) ->
-      cb
+      callback
         code: 200
         message: obj
 
-  get_action_invokers: ( user, obj, cb ) ->
+  get_action_invokers: ( user, obj, callback ) ->
     db.actionInvokers.getAvailableModuleIds user.username, ( err, obj ) ->
       oRes = {}
       sem = obj.length
@@ -123,18 +129,18 @@ commandFunctions =
         db.actionInvokers.getModule id, ( err, obj ) ->
           oRes[id] = obj.actions
           if --sem is 0
-            cb 
+            callback 
               code: 200
               message: oRes
       fGetActions id for id in obj
 
-  get_action_invoker_params: ( user, obj, cb ) ->
+  get_action_invoker_params: ( user, obj, callback ) ->
     db.actionInvokers.getModuleParams obj.id, ( err, obj ) ->
-      cb
+      callback
         code: 200
         message: obj
 
-  forge_action_invoker: ( user, obj, cb ) =>
+  forge_action_invoker: ( user, obj, callback ) =>
     answ = 
       code: 200
 
@@ -161,9 +167,9 @@ commandFunctions =
             db.actionInvokers.storeModule obj.id, user.username, obj
             if obj.public is 'true'
               db.actionInvokers.publish obj.id
-      cb answ
+      callback answ
 
-  get_rules: ( user, obj, cb ) ->
+  get_rules: ( user, obj, callback ) ->
     console.log 'CM | Implement get_rules'
 
   # A rule needs to be in following format:
@@ -171,19 +177,20 @@ commandFunctions =
   # - event
   # - conditions
   # - actions
-  forge_rule: ( user, obj, cb ) =>
-    db.getRule obj.id, ( err, oExisting ) =>
-      try
-        if oExisting isnt null
-          answ =
-            code: 409
-            message: 'Rule name already existing!'
-        else
-          if not obj.id or not obj.event or 
-              not obj.conditions or not obj.actions
+  forge_rule: ( user, obj, callback ) =>
+    obj = JSON.parse obj
+    if not obj.id or not obj.event or 
+        not obj.conditions or not obj.actions
+      answ =
+        code: 400
+        message: 'Missing properties in rule!'
+    else
+      db.getRule obj.id, ( err, oExisting ) =>
+        try
+          if oExisting isnt null
             answ =
-              code: 400
-              message: 'Missing properties in rule!'
+              code: 409
+              message: 'Rule name already existing!'
           else
             rule =
               id: obj.id
@@ -202,9 +209,9 @@ commandFunctions =
             answ =
               code: 200
               message: 'Rule stored and activated!'
-      catch err
-        answ =
-          code: 400
-          message: 'bad bad request...'
-        console.log err
-      cb answ
+        catch err
+          answ =
+            code: 400
+            message: 'bad bad request...'
+          console.log err
+        callback answ
