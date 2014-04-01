@@ -62,6 +62,7 @@ fOnLoad = () ->
           public: $( '#is_public' ).is ':checked'
           data: editor.getValue()
           params: JSON.stringify listParams
+      obj.payload = JSON.stringify obj.payload
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message

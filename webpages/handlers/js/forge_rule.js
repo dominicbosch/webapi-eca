@@ -11,7 +11,9 @@
       arr = name.split(' -> ');
       obj = {
         command: 'get_event_poller_params',
-        id: arr[0]
+        payload: {
+          id: arr[0]
+        }
       };
       return $.post('/usercommand', obj).done(function(data) {
         var arrParams, fAppendParam, table, _i, _len, _results;
@@ -235,6 +237,7 @@
             action_params: ap
           }
         };
+        obj.payload = JSON.stringify(obj.payload);
         return $.post('/usercommand', obj).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');

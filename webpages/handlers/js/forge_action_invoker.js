@@ -75,6 +75,7 @@
             params: JSON.stringify(listParams)
           }
         };
+        obj.payload = JSON.stringify(obj.payload);
         return $.post('/usercommand', obj).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');

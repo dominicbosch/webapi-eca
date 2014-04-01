@@ -90,7 +90,11 @@ Persistence
       } else {
         numAttempts = 0;
         fCheckConnection = function() {
+          var _ref;
           if (_this.connRefused) {
+            if ((_ref = _this.db) != null) {
+              _ref.quit();
+            }
             return cb(new Error('DB | Connection refused! Wrong port?'));
           } else {
             if (_this.db.connected) {

@@ -10,7 +10,8 @@ fOnLoad = () ->
     arr = name.split ' -> '
     obj =
       command: 'get_event_poller_params'
-      id: arr[0]
+      payload:
+        id: arr[0]
     $.post( '/usercommand', obj )
       .done ( data ) ->
         if data.message
@@ -185,6 +186,7 @@ fOnLoad = () ->
           # conditions: JSON.stringify {} #TODO Add conditions!
           # actions: JSON.stringify acts
           # action_params: JSON.stringify ap
+      obj.payload = JSON.stringify obj.payload
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message

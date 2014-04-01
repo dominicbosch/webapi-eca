@@ -78,6 +78,7 @@ exports.isConnected = ( cb ) =>
       numAttempts = 0
       fCheckConnection = =>
         if @connRefused
+          @db?.quit()
           cb new Error 'DB | Connection refused! Wrong port?'
         else
           if @db.connected

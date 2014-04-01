@@ -10,7 +10,7 @@ Components Manager
 
 
 (function() {
-  var commandFunctions, db, dynmod, events, exports, fs, path, vm,
+  var commandFunctions, db, dynmod, events, exports, fs, hasRequiredParams, path, vm,
     _this = this;
 
   db = require('./persistence');
@@ -70,11 +70,38 @@ Components Manager
     }
   };
 
-  exports.processRequest = function(user, obj, cb) {
-    var answ;
-    console.log(obj);
-    if (commandFunctions[obj.command]) {
-      return answ = commandFunctions[obj.command](user, obj.payload, cb);
+  /*
+  Processes a user request coming through the request-handler.
+  - `user` is the user object as it comes from the DB.
+  - `oReq` is the request object that contains:
+    - `command` as a string 
+    - `payload` an optional stringified JSON object 
+  The callback function `cb( obj )` will receive an object containing the HTTP
+  response code and a corresponding message.
+  
+  @public processRequest ( *user, oReq, cb* )
+  @param {Object} user
+  @param {Object} oReq
+  @param {function} cb
+  */
+
+
+  exports.processRequest = function(user, oReq, cb) {
+    var dat, err;
+    if (!oReq.payload) {
+      oReq.payload = '{}';
+    }
+    try {
+      dat = JSON.parse(oReq.payload);
+    } catch (_error) {
+      err = _error;
+      return cb({
+        code: 404,
+        message: 'You had a strange payload in your request!'
+      });
+    }
+    if (commandFunctions[oReq.command]) {
+      return commandFunctions[oReq.command](user, dat, cb);
     } else {
       return cb({
         code: 404,
@@ -83,24 +110,38 @@ Components Manager
     }
   };
 
+  hasRequiredParams = function(arrParams, oReq) {
+    var answ, param, _i, _len;
+    answ = {
+      code: 400,
+      message: "Your request didn't contain all necessary fields! id and params required"
+    };
+    for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+      param = arrParams[_i];
+      if (!oReq[param]) {
+        return answ;
+      }
+    }
+    answ.code = 200;
+    answ.message = 'All required properties found';
+    return answ;
+  };
+
   commandFunctions = {
-    forge_event_poller: function(user, obj, cb) {
+    forge_event_poller: function(user, oReq, cb) {
       var answ;
-      answ = {
-        code: 200
-      };
-      if (!obj.id || !obj.params) {
-        answ.code = 400;
-        return answ.message = "Your request didn't contain all necessary fields! id and params required";
+      answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oReq);
+      if (answ.code !== 200) {
+        return cb(answ);
       } else {
-        db.eventPollers.getModule(obj.id, function(err, mod) {
+        return db.eventPollers.getModule(oReq.id, function(err, mod) {
           var cm, id, name, src, _ref;
           if (mod) {
             answ.code = 409;
-            return answ.message = 'Event Poller module name already existing: ' + obj.id;
+            answ.message = 'Event Poller module name already existing: ' + oReq.id;
           } else {
-            src = obj.data;
-            cm = dynmod.compileString(src, obj.id, {}, obj.lang);
+            src = oReq.data;
+            cm = dynmod.compileString(src, oReq.id, {}, oReq.lang);
             answ = cm.answ;
             if (answ.code === 200) {
               events = [];
@@ -111,100 +152,119 @@ Components Manager
               }
               _this.log.info("CM | Storing new eventpoller with events " + events);
               answ.message = "Event Poller module successfully stored! Found following event(s): " + events;
-              obj.events = JSON.stringify(events);
-              db.eventPollers.storeModule(obj.id, user.username, obj);
-              if (obj["public"] === 'true') {
-                return db.eventPollers.publish(obj.id);
+              oReq.events = JSON.stringify(events);
+              db.eventPollers.storeModule(oReq.id, user.username, oReq);
+              if (oReq["public"] === 'true') {
+                db.eventPollers.publish(oReq.id);
               }
             }
           }
+          return cb(answ);
         });
-        return cb(answ);
       }
     },
-    get_event_pollers: function(user, obj, cb) {
-      return db.eventPollers.getAvailableModuleIds(user.username, function(err, obj) {
-        var fGetEvents, id, oRes, sem, _i, _len, _results;
+    get_event_pollers: function(user, oReq, cb) {
+      return db.eventPollers.getAvailableModuleIds(user.username, function(err, arrNames) {
+        var answReq, fGetEvents, id, oRes, sem, _i, _len, _results;
         oRes = {};
-        sem = obj.length;
-        fGetEvents = function(id) {
-          return db.eventPollers.getModule(id, function(err, obj) {
-            oRes[id] = obj.events;
-            if (--sem === 0) {
-              return cb({
-                code: 200,
-                message: oRes
-              });
-            }
+        answReq = function() {
+          return cb({
+            code: 200,
+            message: oRes
           });
         };
-        _results = [];
-        for (_i = 0, _len = obj.length; _i < _len; _i++) {
-          id = obj[_i];
-          _results.push(fGetEvents(id));
-        }
-        return _results;
-      });
-    },
-    get_event_poller_params: function(user, obj, cb) {
-      return db.eventPollers.getModuleParams(obj.id, function(err, obj) {
-        return cb({
-          code: 200,
-          message: obj
-        });
-      });
-    },
-    get_action_invokers: function(user, obj, cb) {
-      return db.actionInvokers.getAvailableModuleIds(user.username, function(err, obj) {
-        var fGetActions, id, oRes, sem, _i, _len, _results;
-        oRes = {};
-        sem = obj.length;
-        fGetActions = function(id) {
-          return db.actionInvokers.getModule(id, function(err, obj) {
-            oRes[id] = obj.actions;
-            if (--sem === 0) {
-              return cb({
-                code: 200,
-                message: oRes
-              });
-            }
-          });
-        };
-        _results = [];
-        for (_i = 0, _len = obj.length; _i < _len; _i++) {
-          id = obj[_i];
-          _results.push(fGetActions(id));
-        }
-        return _results;
-      });
-    },
-    get_action_invoker_params: function(user, obj, cb) {
-      return db.actionInvokers.getModuleParams(obj.id, function(err, obj) {
-        return cb({
-          code: 200,
-          message: obj
-        });
-      });
-    },
-    forge_action_invoker: function(user, obj, cb) {
-      var answ;
-      answ = {
-        code: 200
-      };
-      return db.actionInvokers.getModule(obj.id, function(err, mod) {
-        var actions, cm, id, name, src, _ref;
-        if (mod) {
-          answ.code = 409;
-          answ.message = 'Action Invoker module name already existing: ' + obj.id;
+        sem = arrNames.length;
+        if (sem === 0) {
+          return answReq();
         } else {
-          src = obj.data;
-          cm = dynmod.compileString(src, obj.id, {}, obj.lang);
-          answ = cm.answ;
-          if (answ.code === 200) {
-            if (!obj.id || !obj.params) {
-              answ.code = 400;
-              answ.message = "Your request didn't contain all necessary fields! id and params required";
-            } else {
+          fGetEvents = function(id) {
+            return db.eventPollers.getModule(id, function(err, oModule) {
+              oRes[id] = oModule.events;
+              if (--sem === 0) {
+                return answReq();
+              }
+            });
+          };
+          _results = [];
+          for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+            id = arrNames[_i];
+            _results.push(fGetEvents(id));
+          }
+          return _results;
+        }
+      });
+    },
+    get_event_poller_params: function(user, oReq, cb) {
+      var answ;
+      answ = hasRequiredParams(['id'], oReq);
+      if (answ.code !== 200) {
+        return cb(answ);
+      } else {
+        return db.eventPollers.getModuleParams(oReq.id, function(err, oReq) {
+          answ.message = oReq;
+          return cb(answ);
+        });
+      }
+    },
+    get_action_invokers: function(user, oReq, cb) {
+      return db.actionInvokers.getAvailableModuleIds(user.username, function(err, arrNames) {
+        var answReq, fGetActions, id, oRes, sem, _i, _len, _results;
+        oRes = {};
+        answReq = function() {
+          return cb({
+            code: 200,
+            message: oRes
+          });
+        };
+        sem = arrNames.length;
+        if (sem === 0) {
+          return answReq();
+        } else {
+          fGetActions = function(id) {
+            return db.actionInvokers.getModule(id, function(err, oModule) {
+              oRes[id] = oModule.actions;
+              if (--sem === 0) {
+                return answReq();
+              }
+            });
+          };
+          _results = [];
+          for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+            id = arrNames[_i];
+            _results.push(fGetActions(id));
+          }
+          return _results;
+        }
+      });
+    },
+    get_action_invoker_params: function(user, oReq, cb) {
+      var answ;
+      answ = hasRequiredParams(['id'], oReq);
+      if (answ.code !== 200) {
+        return cb(answ);
+      } else {
+        return db.actionInvokers.getModuleParams(oReq.id, function(err, oReq) {
+          answ.message = oReq;
+          return cb(answ);
+        });
+      }
+    },
+    forge_action_invoker: function(user, oReq, cb) {
+      var answ;
+      answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oReq);
+      if (answ.code !== 200) {
+        return cb(answ);
+      } else {
+        return db.actionInvokers.getModule(oReq.id, function(err, mod) {
+          var actions, cm, id, name, src, _ref;
+          if (mod) {
+            answ.code = 409;
+            answ.message = 'Action Invoker module name already existing: ' + oReq.id;
+          } else {
+            src = oReq.data;
+            cm = dynmod.compileString(src, oReq.id, {}, oReq.lang);
+            answ = cm.answ;
+            if (answ.code === 200) {
               actions = [];
               _ref = cm.module;
               for (name in _ref) {
@@ -213,50 +273,51 @@ Components Manager
               }
               _this.log.info("CM | Storing new eventpoller with actions " + actions);
               answ.message = "Action Invoker module successfully stored! Found following action(s): " + actions;
-              obj.actions = JSON.stringify(actions);
-              db.actionInvokers.storeModule(obj.id, user.username, obj);
-              if (obj["public"] === 'true') {
-                db.actionInvokers.publish(obj.id);
+              oReq.actions = JSON.stringify(actions);
+              db.actionInvokers.storeModule(oReq.id, user.username, oReq);
+              if (oReq["public"] === 'true') {
+                db.actionInvokers.publish(oReq.id);
               }
             }
           }
-        }
-        return cb(answ);
-      });
+          return cb(answ);
+        });
+      }
     },
-    get_rules: function(user, obj, cb) {
+    get_rules: function(user, oReq, cb) {
       return console.log('CM | Implement get_rules');
     },
-    forge_rule: function(user, obj, cb) {
-      return db.getRule(obj.id, function(err, oExisting) {
+    forge_rule: function(user, oReq, cb) {
+      console.log(oReq);
+      return db.getRule(oReq.id, function(err, oExisting) {
         var answ, arrParams, id, params, rule, strRule;
-        try {
-          if (oExisting !== null) {
+        if (oExisting !== null) {
+          answ = {
+            code: 409,
+            message: 'Rule name already existing!'
+          };
+        } else {
+          if (!oReq.id || !oReq.event || !oReq.conditions || !oReq.actions) {
             answ = {
-              code: 409,
-              message: 'Rule name already existing!'
+              code: 400,
+              message: 'Missing properties in rule!'
             };
           } else {
-            if (!obj.id || !obj.event || !obj.conditions || !obj.actions) {
-              answ = {
-                code: 400,
-                message: 'Missing properties in rule!'
-              };
-            } else {
+            try {
               rule = {
-                id: obj.id,
-                event: obj.event,
-                conditions: JSON.parse(obj.conditions),
-                actions: JSON.parse(obj.actions)
+                id: oReq.id,
+                event: oReq.event,
+                conditions: JSON.parse(oReq.conditions),
+                actions: JSON.parse(oReq.actions)
               };
               strRule = JSON.stringify(rule);
               db.storeRule(rule.id, strRule);
               db.linkRule(rule.id, user.username);
               db.activateRule(rule.id, user.username);
-              if (obj.event_params) {
-                db.eventPollers.storeUserParams(ep.module, user.username, obj.event_params);
+              if (oReq.event_params) {
+                db.eventPollers.storeUserParams(ep.module, user.username, oReq.event_params);
               }
-              arrParams = JSON.parse(obj.action_params);
+              arrParams = JSON.parse(oReq.action_params);
               for (id in arrParams) {
                 params = arrParams[id];
                 db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
@@ -266,15 +327,15 @@ Components Manager
                 code: 200,
                 message: 'Rule stored and activated!'
               };
+            } catch (_error) {
+              err = _error;
+              answ = {
+                code: 400,
+                message: 'bad bad request...'
+              };
+              console.log(err);
             }
           }
-        } catch (_error) {
-          err = _error;
-          answ = {
-            code: 400,
-            message: 'bad bad request...'
-          };
-          console.log(err);
         }
         return cb(answ);
       });

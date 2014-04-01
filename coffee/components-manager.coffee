@@ -58,31 +58,59 @@ exports.addListener = ( evt, eh ) =>
       @ee.emit 'init', rule for id, rule of obj
 
 
-# cb ( obj ) where obj should contain at least the HTTP response code and a message
-exports.processRequest = ( user, obj, cb ) =>
-  console.log obj
-  if commandFunctions[obj.command]
-    answ = commandFunctions[obj.command] user, obj.payload, cb
+###
+Processes a user request coming through the request-handler.
+- `user` is the user object as it comes from the DB.
+- `oReq` is the request object that contains:
+  - `command` as a string 
+  - `payload` an optional stringified JSON object 
+The callback function `cb( obj )` will receive an object containing the HTTP
+response code and a corresponding message.
+
+@public processRequest ( *user, oReq, cb* )
+@param {Object} user
+@param {Object} oReq
+@param {function} cb
+###
+
+exports.processRequest = ( user, oReq, cb ) =>
+  if not oReq.payload
+    oReq.payload = '{}'
+  try
+    dat = JSON.parse oReq.payload
+  catch err
+    return cb
+      code: 404
+      message: 'You had a strange payload in your request!'
+  if commandFunctions[oReq.command]
+    commandFunctions[oReq.command] user, dat, cb
   else
     cb
       code: 404
       message: 'Strange request!'
 
+hasRequiredParams = ( arrParams, oReq ) ->
+  answ =
+    code: 400
+    message: "Your request didn't contain all necessary fields! id and params required"
+  return answ for param in arrParams when not oReq[param]
+  answ.code = 200
+  answ.message = 'All required properties found'
+  answ
+
 commandFunctions =
-  forge_event_poller: ( user, obj, cb ) =>
-    answ = 
-      code: 200
-    if not obj.id or not obj.params
-      answ.code = 400
-      answ.message = "Your request didn't contain all necessary fields! id and params required"
-    else    
-      db.eventPollers.getModule obj.id, ( err, mod ) =>
+  forge_event_poller: ( user, oReq, cb ) =>
+    answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oReq
+    if answ.code isnt 200
+      cb answ
+    else
+      db.eventPollers.getModule oReq.id, ( err, mod ) =>
         if mod
           answ.code = 409
-          answ.message = 'Event Poller module name already existing: ' + obj.id
+          answ.message = 'Event Poller module name already existing: ' + oReq.id
         else
-          src = obj.data
-          cm = dynmod.compileString src, obj.id, {}, obj.lang
+          src = oReq.data
+          cm = dynmod.compileString src, oReq.id, {}, oReq.lang
           answ = cm.answ
           if answ.code is 200
             events = []
@@ -90,80 +118,92 @@ commandFunctions =
             @log.info "CM | Storing new eventpoller with events #{ events }"
             answ.message = 
               "Event Poller module successfully stored! Found following event(s): #{ events }"
-            obj.events = JSON.stringify events
-            db.eventPollers.storeModule obj.id, user.username, obj
-            if obj.public is 'true'
-              db.eventPollers.publish obj.id
-      cb answ
+            oReq.events = JSON.stringify events
+            db.eventPollers.storeModule oReq.id, user.username, oReq
+            if oReq.public is 'true'
+              db.eventPollers.publish oReq.id
+        cb answ
   
-  get_event_pollers: ( user, obj, cb ) ->
-    db.eventPollers.getAvailableModuleIds user.username, ( err, obj ) ->
+  get_event_pollers: ( user, oReq, cb ) ->
+    db.eventPollers.getAvailableModuleIds user.username, ( err, arrNames ) ->
       oRes = {}
-      sem = obj.length
-      fGetEvents = ( id ) ->
-        db.eventPollers.getModule id, ( err, obj ) ->
-          oRes[id] = obj.events
-          if --sem is 0
-            cb 
-              code: 200
-              message: oRes
-      fGetEvents id for id in obj
-  
-  get_event_poller_params: ( user, obj, cb ) ->
-    db.eventPollers.getModuleParams obj.id, ( err, obj ) ->
-      cb
-        code: 200
-        message: obj
-
-  get_action_invokers: ( user, obj, cb ) ->
-    db.actionInvokers.getAvailableModuleIds user.username, ( err, obj ) ->
-      oRes = {}
-      sem = obj.length
-      fGetActions = ( id ) ->
-        db.actionInvokers.getModule id, ( err, obj ) ->
-          oRes[id] = obj.actions
-          if --sem is 0
-            cb 
-              code: 200
-              message: oRes
-      fGetActions id for id in obj
-
-  get_action_invoker_params: ( user, obj, cb ) ->
-    db.actionInvokers.getModuleParams obj.id, ( err, obj ) ->
-      cb
-        code: 200
-        message: obj
-
-  forge_action_invoker: ( user, obj, cb ) =>
-    answ = 
-      code: 200
-
-    db.actionInvokers.getModule obj.id, ( err, mod ) =>
-      if mod
-        answ.code = 409
-        answ.message = 'Action Invoker module name already existing: ' + obj.id
-
+      answReq = () ->
+        cb
+          code: 200
+          message: oRes
+      sem = arrNames.length
+      if sem is 0
+        answReq()
       else
-        src = obj.data
-        cm = dynmod.compileString src, obj.id, {}, obj.lang
-        answ = cm.answ
-        if answ.code is 200
-          if not obj.id or not obj.params
-            answ.code = 400
-            answ.message = "Your request didn't contain all necessary fields! id and params required"
-          else
+        fGetEvents = ( id ) ->
+          db.eventPollers.getModule id, ( err, oModule ) ->
+            oRes[id] = oModule.events
+            if --sem is 0
+              answReq()
+        fGetEvents id for id in arrNames
+  
+  get_event_poller_params: ( user, oReq, cb ) ->
+    answ = hasRequiredParams [ 'id' ], oReq
+    if answ.code isnt 200
+      cb answ
+    else
+      db.eventPollers.getModuleParams oReq.id, ( err, oReq ) ->
+        answ.message = oReq
+        cb answ
+
+  get_action_invokers: ( user, oReq, cb ) ->
+    db.actionInvokers.getAvailableModuleIds user.username, ( err, arrNames ) ->
+      oRes = {}
+      answReq = () ->
+        cb
+          code: 200
+          message: oRes
+      sem = arrNames.length
+      if sem is 0
+        answReq()
+      else
+        fGetActions = ( id ) ->
+          db.actionInvokers.getModule id, ( err, oModule ) ->
+            oRes[id] = oModule.actions
+            if --sem is 0
+              answReq()
+        fGetActions id for id in arrNames
+
+  get_action_invoker_params: ( user, oReq, cb ) ->
+    answ = hasRequiredParams [ 'id' ], oReq
+    if answ.code isnt 200
+      cb answ
+    else
+      db.actionInvokers.getModuleParams oReq.id, ( err, oReq ) ->
+        answ.message = oReq
+        cb answ
+
+  forge_action_invoker: ( user, oReq, cb ) =>
+    answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oReq
+    if answ.code isnt 200
+      cb answ
+    else
+      db.actionInvokers.getModule oReq.id, ( err, mod ) =>
+        if mod
+          answ.code = 409
+          answ.message = 'Action Invoker module name already existing: ' + oReq.id
+        else
+          src = oReq.data
+          cm = dynmod.compileString src, oReq.id, {}, oReq.lang
+          answ = cm.answ
+          if answ.code is 200
             actions = []
             actions.push name for name, id of cm.module
             @log.info "CM | Storing new eventpoller with actions #{ actions }"
             answ.message = 
               "Action Invoker module successfully stored! Found following action(s): #{ actions }"
-            obj.actions = JSON.stringify actions
-            db.actionInvokers.storeModule obj.id, user.username, obj
-            if obj.public is 'true'
-              db.actionInvokers.publish obj.id
-      cb answ
+            oReq.actions = JSON.stringify actions
+            db.actionInvokers.storeModule oReq.id, user.username, oReq
+            if oReq.public is 'true'
+              db.actionInvokers.publish oReq.id
+        cb answ
 
-  get_rules: ( user, obj, cb ) ->
+  get_rules: ( user, oReq, cb ) ->
     console.log 'CM | Implement get_rules'
 
   # A rule needs to be in following format:
@@ -171,40 +211,41 @@ commandFunctions =
   # - event
   # - conditions
   # - actions
-  forge_rule: ( user, obj, cb ) =>
-    db.getRule obj.id, ( err, oExisting ) =>
-      try
-        if oExisting isnt null
+  forge_rule: ( user, oReq, cb ) =>
+    console.log oReq
+    db.getRule oReq.id, ( err, oExisting ) =>
+      if oExisting isnt null
+        answ =
+          code: 409
+          message: 'Rule name already existing!'
+      else
+        if not oReq.id or not oReq.event or 
+            not oReq.conditions or not oReq.actions
           answ =
-            code: 409
-            message: 'Rule name already existing!'
+            code: 400
+            message: 'Missing properties in rule!'
         else
-          if not obj.id or not obj.event or 
-              not obj.conditions or not obj.actions
-            answ =
-              code: 400
-              message: 'Missing properties in rule!'
-          else
+          try
             rule =
-              id: obj.id
-              event: obj.event
-              conditions: JSON.parse obj.conditions
-              actions: JSON.parse obj.actions
+              id: oReq.id
+              event: oReq.event
+              conditions: JSON.parse oReq.conditions
+              actions: JSON.parse oReq.actions
             strRule = JSON.stringify rule
             db.storeRule rule.id, strRule
             db.linkRule rule.id, user.username
             db.activateRule rule.id, user.username
-            if obj.event_params
-              db.eventPollers.storeUserParams ep.module, user.username, obj.event_params
-            arrParams = JSON.parse obj.action_params
+            if oReq.event_params
+              db.eventPollers.storeUserParams ep.module, user.username, oReq.event_params
+            arrParams = JSON.parse oReq.action_params
             db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
             @ee.emit 'newRule', strRule
             answ =
               code: 200
               message: 'Rule stored and activated!'
-      catch err
-        answ =
-          code: 400
-          message: 'bad bad request...'
-        console.log err
+          catch err
+            answ =
+              code: 400
+              message: 'bad bad request...'
+            console.log err
       cb answ
