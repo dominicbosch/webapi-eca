@@ -57,37 +57,36 @@ exports.addListener = ( evt, eh ) =>
     db.getRules ( err, obj ) =>
       @ee.emit 'init', rule for id, rule of obj
 
-
 ###
 Processes a user request coming through the request-handler.
 - `user` is the user object as it comes from the DB.
 - `oReq` is the request object that contains:
   - `command` as a string 
   - `payload` an optional stringified JSON object 
-The callback function `cb( obj )` will receive an object containing the HTTP
-response code and a corresponding message.
+The callback function `callback( obj )` will receive an object
+containing the HTTP response code and a corresponding message.
 
-@public processRequest ( *user, oReq, cb* )
+@public processRequest ( *user, oReq, callback* )
 @param {Object} user
 @param {Object} oReq
-@param {function} cb
+@param {function} callback
 ###
 
-exports.processRequest = ( user, oReq, cb ) =>
+exports.processRequest = ( user, oReq, callback ) =>
   if not oReq.payload
     oReq.payload = '{}'
   try
     dat = JSON.parse oReq.payload
   catch err
-    return cb
+    return callback
       code: 404
       message: 'You had a strange payload in your request!'
   if commandFunctions[oReq.command]
-    commandFunctions[oReq.command] user, dat, cb
+    commandFunctions[oReq.command] user, dat, callback
   else
-    cb
+    callback
       code: 404
-      message: 'Strange request!'
+      message: 'What do you want from me?'
 
 hasRequiredParams = ( arrParams, oReq ) ->
   answ =

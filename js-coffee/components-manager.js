@@ -76,17 +76,17 @@ Components Manager
   - `oReq` is the request object that contains:
     - `command` as a string 
     - `payload` an optional stringified JSON object 
-  The callback function `cb( obj )` will receive an object containing the HTTP
-  response code and a corresponding message.
+  The callback function `callback( obj )` will receive an object
+  containing the HTTP response code and a corresponding message.
   
-  @public processRequest ( *user, oReq, cb* )
+  @public processRequest ( *user, oReq, callback* )
   @param {Object} user
   @param {Object} oReq
-  @param {function} cb
+  @param {function} callback
   */
 
 
-  exports.processRequest = function(user, oReq, cb) {
+  exports.processRequest = function(user, oReq, callback) {
     var dat, err;
     if (!oReq.payload) {
       oReq.payload = '{}';
@@ -95,17 +95,17 @@ Components Manager
       dat = JSON.parse(oReq.payload);
     } catch (_error) {
       err = _error;
-      return cb({
+      return callback({
         code: 404,
         message: 'You had a strange payload in your request!'
       });
     }
     if (commandFunctions[oReq.command]) {
-      return commandFunctions[oReq.command](user, dat, cb);
+      return commandFunctions[oReq.command](user, dat, callback);
     } else {
-      return cb({
+      return callback({
         code: 404,
-        message: 'Strange request!'
+        message: 'What do you want from me?'
       });
     }
   };
