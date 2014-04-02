@@ -103,4 +103,4 @@ exports.getLogConf = -> fetchProp 'log'
 
 @public getCryptoKey()
 ###
-exports.getCryptoKey = -> fetchProp 'crypto-key'
+exports.getKeygenPassphrase = -> fetchProp 'keygen-passphrase'

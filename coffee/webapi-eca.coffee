@@ -40,7 +40,7 @@ fs = require 'fs'
 path = require 'path'
 cp = require 'child_process'
 
-# - External Module: [optimist](https://github.com/substack/node-optimist)
+# - External Modules: [optimist](https://github.com/substack/node-optimist)
 optimist = require 'optimist'
 
 procCmds = {}
@@ -93,34 +93,35 @@ if argv.help
   console.log optimist.help()
   process.exit()
 
+conf argv.c
+# > Check whether the config file is ready, which is required to start the server.
+if !conf.isReady()
+  console.error 'FAIL: Config file not ready! Shutting down...'
+  process.exit()
+
+logconf = conf.getLogConf()
+
+if argv.m
+  logconf[ 'mode' ] = argv.m
+if argv.i
+  logconf[ 'io-level' ] = argv.i
+if argv.f
+  logconf[ 'file-level' ] = argv.f
+if argv.p
+  logconf[ 'file-path' ] = argv.p
+if argv.n
+  logconf[ 'nolog' ] = argv.n
+try
+  fs.unlinkSync path.resolve __dirname, '..', 'logs', logconf[ 'file-path' ]
+@log = logger.getLogger logconf
+@log.info 'RS | STARTING SERVER'
+
 ###
 This function is invoked right after the module is loaded and starts the server.
 
 @private init()
 ###
 init = =>
-  conf argv.c
-  # > Check whether the config file is ready, which is required to start the server.
-  if !conf.isReady()
-    console.error 'FAIL: Config file not ready! Shutting down...'
-    process.exit()
-
-  logconf = conf.getLogConf()
-
-  if argv.m
-    logconf[ 'mode' ] = argv.m
-  if argv.i
-    logconf[ 'io-level' ] = argv.i
-  if argv.f
-    logconf[ 'file-level' ] = argv.f
-  if argv.p
-    logconf[ 'file-path' ] = argv.p
-  if argv.n
-    logconf[ 'nolog' ] = argv.n
-  try
-    fs.unlinkSync path.resolve __dirname, '..', 'logs', logconf[ 'file-path' ]
-  @log = logger.getLogger logconf
-  @log.info 'RS | STARTING SERVER'
 
   args =
     logger: @log

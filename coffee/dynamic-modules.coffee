@@ -14,6 +14,28 @@ needle = require 'needle'
 # - External Modules: [coffee-script](http://coffeescript.org/)
 cs = require 'coffee-script'
 
+
+
+# cryptico = require 'my-cryptico'
+
+# conf = require path.join '..', 'js-coffee', 'config'
+# conf opts
+
+# passPhrase = conf.getKeygenPassphrase()
+# numBits = 1024
+# console.log passPhrase
+
+# oPrivateRSAkey = cryptico.generateRSAKey passPhrase, numBits
+# strPublicKey = cryptico.publicKeyString oPrivateRSAkey
+# plainText = "Matt, I need you to help me with my Starcraft strategy."
+# oEncrypted = cryptico.encrypt plainText, strPublicKey
+
+# console.log oEncrypted.cipher
+# oDecrypted = cryptico.decrypt oEncrypted.cipher, oPrivateRSAkey
+# console.log oDecrypted.plaintext
+
+
+
 ###
 Module call
 -----------
@@ -37,7 +59,7 @@ compile it first into JS.
 @param {Object} params
 @param {String} lang
 ###
-exports.compileString = ( src, id, params, lang ) =>
+exports.compileString = ( src, userId, moduleId, params, lang ) =>
   answ =
     code: 200
     message: 'Successfully compiled'
@@ -52,7 +74,7 @@ exports.compileString = ( src, id, params, lang ) =>
         err.location.first_line
   #FIXME not log but debug module is required to provide information to the user
   sandbox = 
-    id: id #TODO the ID needs to be a combination of the module id and the user name
+    id: userId + '.' + moduleId + '.vm'
     params: params
     needle: needle
     log: console.log
@@ -63,7 +85,7 @@ exports.compileString = ( src, id, params, lang ) =>
   #it can still be active after that if there was a timing function or a callback used...
   #kill the child each time? how to determine whether there's still a token in the module?
   try
-    vm.runInNewContext src, sandbox, id + '.vm'
+    vm.runInNewContext src, sandbox, sandbox.id
   catch err
     answ.code = 400
     answ.message = 'Loading Module failed: ' + err.message

@@ -125,7 +125,7 @@ getModuleParams = ( user, oPayload, dbMod, callback ) ->
       answ.message = oPayload
       callback answ
 
-forgeModule = ( user, oPayload, dbMod, callback ) ->
+forgeModule = ( user, oPayload, dbMod, callback ) =>
   answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oPayload
   if answ.code isnt 200
     callback answ
@@ -136,12 +136,12 @@ forgeModule = ( user, oPayload, dbMod, callback ) ->
         answ.message = 'Event Poller module name already existing: ' + oPayload.id
       else
         src = oPayload.data
-        cm = dynmod.compileString src, oPayload.id, {}, oPayload.lang
+        cm = dynmod.compileString src, user.username, oPayload.id, {}, oPayload.lang
         answ = cm.answ
         if answ.code is 200
           funcs = []
           funcs.push name for name, id of cm.module
-          @log.info "CM | Storing new module with functions #{ funcs }"
+          @log.info "CM | Storing new module with functions #{ funcs.join() }"
           answ.message = 
             "Event Poller module successfully stored! Found following function(s): #{ funcs }"
           oPayload.functions = JSON.stringify funcs

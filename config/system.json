@@ -6,5 +6,6 @@
     "io-level": "info",
     "file-level": "info",
     "file-path": "server.log"
-  }
+  },
+  "keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
 }

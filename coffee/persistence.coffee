@@ -2,10 +2,11 @@
 
 Persistence
 ============
-> Handles the connection to the database and provides functionalities for
-> event pollers, action invokers, rules and the encrypted storing of authentication tokens.
+> Handles the connection to the database and provides functionalities for event pollers,
+> action invokers, rules and the (hopefully encrypted) storing of user-specific parameters
+> per module.
 > General functionality as a wrapper for the module holds initialization,
-> encryption/decryption, the retrieval of modules and shut down.
+> the retrieval of modules and shut down.
 > 
 > The general structure for linked data is that the key is stored in a set.
 > By fetching all set entries we can then fetch all elements, which is
@@ -22,13 +23,8 @@ Persistence
 # **Loads Modules:**
 
 # - External Modules:
-#   [crypto-js](https://github.com/evanvosberg/crypto-js) and
 #   [redis](https://github.com/mranney/node_redis)
-crypto = require 'crypto-js'
 redis = require 'redis'
-
-# yeah I know you know it now... good luck
-crypto_key = "}f6y1y}B{.an$}2c$Yl.$mSnF\\HX149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw;:DPV;4gy:qf]Zq{\"6sgK{,}^\"!]O;qBM3G?]h_`Psw=b6bVXKXry7*"
 
 ###
 Module call
@@ -91,6 +87,7 @@ exports.isConnected = ( cb ) =>
             cb new Error 'DB | Connection to DB failed!'
       setTimeout fCheckConnection, 100
 
+
 ###
 Abstracts logging for simple action replies from the DB.
 
@@ -103,6 +100,7 @@ replyHandler = ( action ) =>
       @log.warn err, "during '#{ action }'"
     else
       @log.info "DB | #{ action }: #{ reply }"
+
 
 ###
 Push an event into the event queue.
@@ -129,7 +127,8 @@ exports.popEvent = ( cb ) =>
     ( err, obj ) ->
       pcb err, JSON.parse obj 
   @db.lpop 'event_queue', makeObj cb
-  
+
+
 ###
 Purge the event queue.
 
@@ -138,49 +137,6 @@ Purge the event queue.
 exports.purgeEventQueue = () =>
   @db.del 'event_queue', replyHandler 'purging event queue'  
 
-###
-Hashes a string based on SHA-3-512.
-
-@private hash( *plainText* )
-@param {String} plainText
-###
-hash = ( plainText ) => 
-  if !plainText? then return null
-  try
-    ( crypto.SHA3 plainText, { outputLength: 512 } ).toString()
-  catch err
-    @log.warn err, 'DB | during hashing'
-    null
-
-
-###
-Encrypts a string using the crypto key from the config file, based on aes-256-cbc.
-
-@private encrypt( *plainText* )
-@param {String} plainText
-###
-encrypt = ( plainText ) => 
-  if !plainText? then return null
-  try
-    crypto.AES.encrypt plainText, crypto_key
-  catch err
-    @log.warn err, 'DB | during encryption'
-    null
-
-###
-Decrypts an encrypted string and hands it back on success or null.
-
-@private decrypt( *crypticText* )
-@param {String} crypticText
-###
-decrypt = ( crypticText ) =>
-  if !crypticText? then return null;
-  try
-    dec = crypto.AES.decrypt crypticText, crypto_key
-    dec.toString crypto.enc.Utf8
-  catch err
-    @log.warn err, 'DB | during decryption'
-    null
 
 ###
 Fetches all linked data set keys from a linking set, fetches the single
@@ -238,7 +194,7 @@ getSetRecords = ( set, fSingle, cb ) =>
       # is used to preprocess the answer to determine correct execution
       fSingle reply, fCallback reply for reply in arrReply
 
-# TODO remove specific functions and allow direct access to instances of this class
+
 class IndexedModules
   constructor: ( @setname, @log ) ->
     @log.info "DB | (IdxedMods) Instantiated indexed modules for '#{ @setname }'"
@@ -249,6 +205,7 @@ class IndexedModules
 
   ###
   Stores a module and links it to the user.
+  
   @private storeModule( *userId, oModule* )
   @param {String} userId
   @param {object} oModule
@@ -317,10 +274,9 @@ class IndexedModules
       replyHandler "srem '#{ mId }' from #{ @setname }s"
     @db.del "#{ @setname }:#{ mId }",
       replyHandler "del of '#{ @setname }:#{ mId }'"
+    @unpublish mId
     @db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
-      @unlinkModule mId, userId for userId in obj  
-  #TODO check whether this unlink always fails! problems with db disconnect during testing...  
-  #TODO remove published ids
+      @unlinkModule mId, userId for userId in obj
   # TODO remove from public modules
   # TODO remove parameters
     # @log.info "DB | linkModule(#{ @setname }): #{ mId } to #{ userId }"
@@ -329,17 +285,26 @@ class IndexedModules
     # @db.sadd "user:#{ userId }:#{ @setname }s", mId,
     #   replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
 
-  storeUserParams: ( mId, userId, data ) =>
-    @log.info "DB | (IdxedMods) #{ @setname }.storeUserParams( #{ mId }, #{ userId }, data )"
+  ###
+  Stores user params for a module. They are expected to be RSA encrypted with helps of
+  the provided cryptico JS library and will only be decrypted right before the module is loaded!
+  
+  @private storeUserParams( *mId, userId, encData* )
+  @param {String} mId
+  @param {String} userId
+  @param {object} encData
+  ###
+  storeUserParams: ( mId, userId, encData ) =>
+    @log.info "DB | (IdxedMods) #{ @setname }.storeUserParams( #{ mId }, #{ userId }, encData )"
     @db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
       replyHandler "sadd '#{ mId }:#{ userId }' to '#{ @setname }-params'"
-    @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encrypt( data ),
+    @db.set "#{ @setname }-params:#{ mId }:#{ userId }", encData,
       replyHandler "set user params in '#{ @setname }-params:#{ mId }:#{ userId }'"
 
   getUserParams: ( mId, userId, cb ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
     @db.get "#{ @setname }-params:#{ mId }:#{ userId }", ( err, data ) ->
-      cb err, decrypt data
+      cb err, data
 
   getUserParamsIds: ( cb ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.getUserParamsIds()"
@@ -565,8 +530,6 @@ The password should be hashed before it is passed to this function.
 @param {Object} objUser
 ###
 exports.storeUser = ( objUser ) =>
-  #TODO Only store user if not already existing, or at least only then add a private key
-  #for his encryption. we would want to have one private key per user, right?
   @log.info "DB | storeUser: '#{ objUser.username }'"
   if objUser and objUser.username and objUser.password
     @db.sadd 'users', objUser.username,
