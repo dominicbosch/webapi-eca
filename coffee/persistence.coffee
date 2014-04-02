@@ -40,6 +40,7 @@ Initializes the DB connection with the given `db-port` property in the `args` ob
 exports = module.exports = ( args ) =>
   if not @db
     #TODO we need to have a secure concept here, private keys per user
+    #FIXME get rid of crpto
     if not args[ 'db-port' ]
       args[ 'db-port' ] = 6379
     @log = args.logger
@@ -247,18 +248,18 @@ class IndexedModules
 
 
   ###
-  @private storeModule( *mId, userId, data* )
-  @param {String} mId
+  Stores a module and links it to the user.
+  @private storeModule( *userId, oModule* )
   @param {String} userId
-  @param {object} data
+  @param {object} oModule
   ###
-  storeModule: ( mId, userId, data ) =>
-    @log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ mId }, #{ userId }, data )"
-    @db.sadd "#{ @setname }s", mId,
-      replyHandler "sadd '#{ mId }' to '#{ @setname }'"
-    @db.hmset "#{ @setname }:#{ mId }", data,
-      replyHandler "hmset properties in hash '#{ @setname }:#{ mId }'"
-    @linkModule mId, userId
+  storeModule: ( userId, oModule ) =>
+    @log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
+    @db.sadd "#{ @setname }s", oModule.id,
+      replyHandler "sadd '#{ oModule.id }' to '#{ @setname }'"
+    @db.hmset "#{ @setname }:#{ oModule.id }", oModule,
+      replyHandler "hmset properties in hash '#{ @setname }:#{ oModule.id }'"
+    @linkModule oModule.id, userId
 
   #TODO add testing
   linkModule: ( mId, userId ) =>

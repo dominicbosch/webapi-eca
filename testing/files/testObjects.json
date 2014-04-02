@@ -4,7 +4,9 @@
       "event": "test_1",
       "payload": {
         "property": "test_1",
-        "nestedProperty": "really nested"
+        "nestedProperty": {
+          "more": "really nested"
+        }
       }
     },
     "eventTwo":{
@@ -12,13 +14,21 @@
     }
   },
   "eps": {
-    "ep1": {
-      "code": "unit-test event poller 1 content",
-      "reqparams": "[param11,param12]"
+    "epOne": {
+      "id":"epOne",
+      "lang":"0",
+      "data":"\n#\n# EmailYak EVENT POLLER\n#\n# Requires user params:\n#  - apikey: The user's EmailYak API key\n#\n\nurl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'\n\nexports.newMail = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\n",
+      "public":"false",
+      "params":"[\"apikey\"]",
+      "functions":"[\"newMail\"]"
     },
-    "ep2": {
-      "code": "unit-test event poller 2 content",
-      "reqparams": "[param21,param22]"
+    "epTwo": {
+      "id":"epTwo",
+      "lang":"0",
+      "data":"\nurl = 'https://api.emailyak.com/v1/' + params.firstparam + '/json/get/new/email/'\n\nexports.newEvent = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\nexports.randomNess = ( pushEvent ) ->\n    console.log 'test runs: ' + params.secondparam\n",
+      "public":"true",
+      "params":"[\"firstparam\",\"secondparam\"]",
+      "functions":"[\"newEvent\",\"randomNess\"]"
     }
   },
   "rules": {

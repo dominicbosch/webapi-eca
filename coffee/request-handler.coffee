@@ -65,7 +65,6 @@ objects.*
 @public handleEvent( *req, resp* )
 ###
 exports.handleEvent = ( req, resp ) ->
-  console.log 'handleEvent'
   body = ''
   req.on 'data', ( data ) ->
     body += data

@@ -52,7 +52,7 @@ exports.compileString = ( src, id, params, lang ) =>
         err.location.first_line
   #FIXME not log but debug module is required to provide information to the user
   sandbox = 
-    id: id
+    id: id #TODO the ID needs to be a combination of the module id and the user name
     params: params
     needle: needle
     log: console.log

@@ -1,8 +1,10 @@
 path = require 'path'
 fs = require 'fs'
+stdPath = path.resolve __dirname, '..', 'logs', 'server.log'
+logger = require path.join '..', 'js-coffee', 'logging'
 
 getLog = ( strPath, cb ) ->
-  fWait = =>
+  fWait = ->
     # cb fs.readFileSync path, 'utf-8'
     str = fs.readFileSync path.resolve( strPath ), 'utf-8'
     arrStr = str.split "\n"
@@ -13,17 +15,12 @@ getLog = ( strPath, cb ) ->
     cb arrStr.slice 0, arrStr.length - 1
   setTimeout fWait, 100
 
-exports.setUp = ( cb ) =>
-  @stdPath = path.resolve __dirname, '..', 'logs', 'server.log'
+exports.setUp = ( cb ) ->
   try
-    fs.unlinkSync @stdPath
-  @logger = require path.join '..', 'js-coffee', 'logging'
+    fs.unlinkSync stdPath
   cb()
-  
-# exports.tearDown = ( cb ) =>
-#   cb()
 
-exports.testCreate = ( test ) =>
+exports.testCreate = ( test ) ->
   test.expect 2
   arrLogs = [
     'TL | testInitIO - info'
@@ -32,12 +29,12 @@ exports.testCreate = ( test ) =>
   ]
   args = {}
   args[ 'io-level' ] = 'error'
-  log = @logger.getLogger args
+  log = logger.getLogger args
   log.info arrLogs[0]
   log.warn arrLogs[1]
   log.error arrLogs[2]
-  test.ok fs.existsSync( @stdPath ), 'Log file does not exist!'
-  getLog @stdPath, ( arr ) ->
+  test.ok fs.existsSync( stdPath ), 'Log file does not exist!'
+  getLog stdPath, ( arr ) ->
     allCorrect = true
     for o,i  in arr
       if o.msg is not arrLogs[i]
@@ -45,20 +42,20 @@ exports.testCreate = ( test ) =>
     test.ok allCorrect, 'Log file does not contain the correct entries!'
     test.done()
 
-exports.testNoLog = ( test ) =>
+exports.testNoLog = ( test ) ->
   test.expect 1
 
-  log = @logger.getLogger
+  log = logger.getLogger
     nolog: true
   log.info 'TL | test 1'
 
-  fWait = () => 
-    test.ok !fs.existsSync( @stdPath ), 'Log file does still exist!'
+  fWait = () -> 
+    test.ok !fs.existsSync( stdPath ), 'Log file does still exist!'
     test.done()
 
   setTimeout fWait, 100
 
-exports.testCustomPath = ( test ) =>
+exports.testCustomPath = ( test ) ->
   test.expect 2
 
   strInfo = 'TL | custom path test 1'
@@ -67,10 +64,10 @@ exports.testCustomPath = ( test ) =>
   args[ 'file-path' ] = strPath
   args[ 'io-level' ] = 'error'
 
-  log = @logger.getLogger args
+  log = logger.getLogger args
   log.info strInfo
 
-  fWait = () => 
+  fWait = () -> 
     test.ok fs.existsSync( strPath ), 'Custom log file does not exist!'
     getLog strPath, ( arr ) ->
       test.ok arr[0].msg is strInfo, 'Custom log file not correct!'
@@ -80,7 +77,7 @@ exports.testCustomPath = ( test ) =>
 
   setTimeout fWait, 100
 
-exports.testWrongPath = ( test ) =>
+exports.testWrongPath = ( test ) ->
   empty = [
     'trace'
     'debug'
@@ -96,7 +93,7 @@ exports.testWrongPath = ( test ) =>
   args = {}
   args[ 'file-path' ] = strPath
   args[ 'io-level' ] = 'error'
-  log = @logger.getLogger args
+  log = logger.getLogger args
   test.ok prop in empty, "#{ prop } shouldn't be here" for prop of log
   test.done()
 

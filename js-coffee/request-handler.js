@@ -70,7 +70,6 @@ Request Handler
 
   exports.handleEvent = function(req, resp) {
     var body;
-    console.log('handleEvent');
     body = '';
     req.on('data', function(data) {
       return body += data;

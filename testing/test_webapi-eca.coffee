@@ -2,17 +2,10 @@
 cp = require 'child_process'
 path = require 'path'
 
-# exports.setUp = ( cb ) =>
-#   cb()
-  
-# exports.tearDown = ( cb ) =>
-#   @engine.send('die')
-#   cb()
-
 # TODO test http shutdown command
 # TODO test wrong/invalid config file
 
-exports.testShutDown = ( test ) =>
+exports.testShutDown = ( test ) ->
   test.expect 1
 
   isRunning = true
@@ -35,11 +28,11 @@ exports.testShutDown = ( test ) =>
     if isRunning
       test.ok false, '"testShutDown" Engine didn\'t shut down!'
       engine.kill()
-      test.done()
+      setTimeout test.done, 100
 
   setTimeout fWaitForStartup, 1000
 
-exports.testKill = ( test ) =>
+exports.testKill = ( test ) ->
   test.expect 1
 
   pth = path.resolve 'js-coffee', 'webapi-eca'
@@ -62,6 +55,9 @@ exports.testHttpPortAlreadyUsed = ( test ) =>
   test.expect 1
   isRunning = true
   pth = path.resolve 'js-coffee', 'webapi-eca'
+  
+  # Strange! why can't we make these variables local without
+  # the tests failing in one of the next tests...
   @engine_one = cp.fork pth, [ '-n', '-w', '8642' ] # [ '-i' , 'warn' ]
   @engine_one.on 'error', ( err ) ->
     console.log err
@@ -89,7 +85,7 @@ exports.testHttpPortAlreadyUsed = ( test ) =>
 
   setTimeout fWaitForFirstStartup, 1000
 
-exports.testHttpPortInvalid = ( test ) =>
+exports.testHttpPortInvalid = ( test ) ->
   test.expect 1
   
   isRunning = true
@@ -103,7 +99,7 @@ exports.testHttpPortInvalid = ( test ) =>
     console.log err
 
   # Garbage collect eventually still running process
-  fWaitForDeath = () =>
+  fWaitForDeath = () ->
     if isRunning
       test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'
       test.done()
@@ -111,7 +107,7 @@ exports.testHttpPortInvalid = ( test ) =>
 
   setTimeout fWaitForDeath, 1000
 
-exports.testDbPortInvalid = ( test ) =>
+exports.testDbPortInvalid = ( test ) ->
   test.expect 1
   
   isRunning = true
@@ -125,7 +121,7 @@ exports.testDbPortInvalid = ( test ) =>
     test.done()
 
   # Garbage collect eventually still running process
-  fWaitForDeath = () =>
+  fWaitForDeath = () ->
     engine.kill()
     if isRunning
       test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'

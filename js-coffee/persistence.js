@@ -328,18 +328,18 @@ Persistence
     };
 
     /*
-    @private storeModule( *mId, userId, data* )
-    @param {String} mId
+    Stores a module and links it to the user.
+    @private storeModule( *userId, oModule* )
     @param {String} userId
-    @param {object} data
+    @param {object} oModule
     */
 
 
-    IndexedModules.prototype.storeModule = function(mId, userId, data) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + mId + ", " + userId + ", data )");
-      this.db.sadd("" + this.setname + "s", mId, replyHandler("sadd '" + mId + "' to '" + this.setname + "'"));
-      this.db.hmset("" + this.setname + ":" + mId, data, replyHandler("hmset properties in hash '" + this.setname + ":" + mId + "'"));
-      return this.linkModule(mId, userId);
+    IndexedModules.prototype.storeModule = function(userId, oModule) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
+      this.db.sadd("" + this.setname + "s", oModule.id, replyHandler("sadd '" + oModule.id + "' to '" + this.setname + "'"));
+      this.db.hmset("" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset properties in hash '" + this.setname + ":" + oModule.id + "'"));
+      return this.linkModule(oModule.id, userId);
     };
 
     IndexedModules.prototype.linkModule = function(mId, userId) {

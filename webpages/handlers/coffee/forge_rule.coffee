@@ -182,10 +182,6 @@ fOnLoad = () ->
           conditions: {} #TODO Add conditions!
           actions: acts
           action_params: ap
-          # event_params: JSON.stringify ep
-          # conditions: JSON.stringify {} #TODO Add conditions!
-          # actions: JSON.stringify acts
-          # action_params: JSON.stringify ap
       obj.payload = JSON.stringify obj.payload
       $.post( '/usercommand', obj )
         .done ( data ) ->
