@@ -10,8 +10,8 @@ catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
 logger = require path.join '..', 'js-coffee', 'logging'
-log = logger.getLogger()
-  # nolog: true
+log = logger.getLogger
+  nolog: true
 
 cm = require path.join '..', 'js-coffee', 'components-manager'
 opts =
