@@ -22,63 +22,136 @@ engine opts
 db = require path.join '..', 'js-coffee', 'persistence'
 db opts
 
+listRules = engine.getListUserRules()
+
 oUser = objects.users.userOne
-oRuleOne = objects.rules.ruleOne
-oRuleTwo = objects.rules.ruleTwo
 oRuleReal = objects.rules.ruleReal
-oEpOne = objects.eps.epOne
-oEpTwo = objects.eps.epTwo
+oRuleRealTwo = objects.rules.ruleRealTwo
 oAiOne = objects.ais.aiOne
+oAiTwo = objects.ais.aiTwo
 
 exports.tearDown = ( cb ) ->
-  db.deleteRule oRuleOne.id
-  db.deleteRule oRuleTwo.id
   db.deleteRule oRuleReal.id
   db.actionInvokers.deleteModule oAiOne.id
+  db.actionInvokers.deleteModule oAiTwo.id
+  # TODO if user is deleted all his modules should be unlinked and deleted
   db.deleteUser oUser.username
+
+  engine.internalEvent
+    event: 'del'
+    user: oUser.username
+    rule: oRuleReal
+
+  engine.internalEvent
+    event: 'del'
+    user: oUser.username
+    rule: oRuleRealTwo
+
   setTimeout cb, 100
 
 exports.ruleEvents =
-  # init: first registration, multiple registration
-  #       actions loaded and added correctly
-  # new: new actions added
-  #       old actions removed
-  # delete: all actions removed if not required anymore 
-  testInit: ( test ) ->
+  testInitAddDeleteMultiple: ( test ) ->
+    test.expect 2 + 2 * oRuleReal.actions.length + oRuleRealTwo.actions.length
+
     db.storeUser oUser
-    test.done()
-    strRuleOne =  JSON.stringify oRuleOne
-    strRuleTwo =  JSON.stringify oRuleTwo
-    strRuleReal =  JSON.stringify oRuleReal
-
-    db.actionInvokers.storeModule oUser.username, oAiOne
-
-    db.storeRule oRuleOne.id, strRuleOne
-    db.linkRule oRuleOne.id, oUser.username
-    db.activateRule oRuleOne.id, oUser.username
-
-    db.storeRule oRuleTwo.id, strRuleTwo
-    db.linkRule oRuleTwo.id, oUser.username
-    db.activateRule oRuleTwo.id, oUser.username
-
-    db.storeRule oRuleReal.id, strRuleReal
+    db.storeRule oRuleReal.id, JSON.stringify oRuleReal
     db.linkRule oRuleReal.id, oUser.username
     db.activateRule oRuleReal.id, oUser.username
+    db.actionInvokers.storeModule oUser.username, oAiOne
+    db.actionInvokers.storeModule oUser.username, oAiTwo
 
-    db.getAllActivatedRuleIdsPerUser ( err, obj ) =>
-      @existingRules = obj
-      console.log 'existing'
-      console.log obj
+    test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
+        
+    engine.internalEvent
+      event: 'new'
+      user: oUser.username
+      rule: oRuleReal
+
+    fWaitForPersistence = () ->
+
+      for act in oRuleReal.actions
+        mod = ( act.split ' -> ' )[0]
+        test.ok listRules[oUser.username].actions[mod], 'Missing action!'
 
       engine.internalEvent
-        event: 'init'
+        event: 'new'
         user: oUser.username
-        rule: oRuleReal
+        rule: oRuleRealTwo
 
-      fCheckRules = () ->
-        db.getAllActivatedRuleIdsPerUser ( err, obj ) =>
-          console.log 'after init'
-          console.log obj
-          console.log @existingRules is obj
+      fWaitAgainForPersistence = () ->
 
-      setTimeout fCheckRules, 500
+        for act in oRuleRealTwo.actions
+          mod = ( act.split ' -> ' )[0]
+          test.ok listRules[oUser.username].actions[mod], 'Missing action!'
+
+        engine.internalEvent
+          event: 'del'
+          user: oUser.username
+          rule: oRuleRealTwo
+
+        for act in oRuleReal.actions
+          mod = ( act.split ' -> ' )[0]
+          test.ok listRules[oUser.username].actions[mod], 'Missing action!'
+
+        engine.internalEvent
+          event: 'del'
+          user: oUser.username
+          rule: oRuleReal
+
+        test.strictEqual listRules[oUser.username], undefined, 'Final user object exists!?'
+        test.done()
+
+      setTimeout fWaitAgainForPersistence, 200
+
+    setTimeout fWaitForPersistence, 200
+
+# #TODO
+#   testUpdate: ( test ) ->
+#     test.expect 0
+
+#     test.done()
+
+#     db.storeUser oUser
+#     db.storeRule oRuleReal.id, JSON.stringify oRuleReal
+#     db.linkRule oRuleReal.id, oUser.username
+#     db.activateRule oRuleReal.id, oUser.username
+#     db.actionInvokers.storeModule oUser.username, oAiOne
+
+
+#     db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+#       console.log 'existing'
+#       console.log obj
+
+#       engine.internalEvent
+#         event: 'init'
+#         user: oUser.username
+#         rule: oRuleReal
+
+#       fCheckRules = () ->
+#         db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+#           console.log 'after init'
+#           console.log obj
+
+#       setTimeout fCheckRules, 500
+
+exports.engine =
+  matchingEvent: ( test ) ->
+
+    db.storeUser oUser
+    db.storeRule oRuleReal.id, JSON.stringify oRuleReal
+    db.linkRule oRuleReal.id, oUser.username
+    db.activateRule oRuleReal.id, oUser.username
+    db.actionInvokers.storeModule oUser.username, oAiOne
+
+    engine.internalEvent
+      event: 'new'
+      user: oUser.username
+      rule: oRuleReal
+
+    fWaitForPersistence = () ->
+      evt = objects.events.eventReal
+      evt.eventid = 'event_testid'
+      db.pushEvent evt
+    setTimeout fWaitForPersistence, 200
+    setTimeout test.done, 500
+

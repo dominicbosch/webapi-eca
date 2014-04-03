@@ -79,7 +79,6 @@ exports.testListener = ( test ) =>
 
   cm.addRuleListener ( evt ) =>
     strEvt = JSON.stringify evt.rule
-    console.log evt
     if evt.event is 'init'
       if strEvt is strRuleOne or strEvt is strRuleTwo
         test.ok true, 'Dummy true to fill expected tests!'
