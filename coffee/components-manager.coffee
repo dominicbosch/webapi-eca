@@ -13,16 +13,15 @@ Components Manager
 # - [Persistence](persistence.html)
 db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
-dynmod = require './dynamic-modules' #TODO Rename to code-loader 
+dynmod = require './dynamic-modules'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
-#   [vm](http://nodejs.org/api/vm.html) and
-#   [path](http://nodejs.org/api/path.html),
+#   [path](http://nodejs.org/api/path.html) and
 #   [events](http://nodejs.org/api/events.html)
 fs = require 'fs'
-vm = require 'vm'
 path = require 'path'
 events = require 'events'
+eventEmitter = new events.EventEmitter()
 
 ###
 Module call
@@ -33,29 +32,40 @@ Initializes the Components Manager and constructs a new Event Emitter.
 ###
 exports = module.exports = ( args ) =>
   @log = args.logger
-  @ee = new events.EventEmitter()
   db args
   dynmod args
   module.exports
 
 
 ###
-Add an event handler (eh) for a certain event (evt).
-Current events are:
+Add an event handler (eh) that listens for rules.
 
-- init: as soon as an event handler is added, the init events are emitted for all existing rules.
-- newRule: If a new rule is activated, the newRule event is emitted
-
-@public addListener ( *evt, eh* )
-@param {String} evt
+@public addRuleListener ( *eh* )
 @param {function} eh
 ###
 
-exports.addListener = ( evt, eh ) =>
-  @ee.addListener evt, eh
-  if evt is 'init'
-    db.getRules ( err, obj ) =>
-      @ee.emit 'init', rule for id, rule of obj
+exports.addRuleListener = ( eh ) =>
+  eventEmitter.addListener 'rule', eh
+
+  # Fetch all active rules per user
+  db.getAllActivatedRuleIdsPerUser ( err, objUsers ) ->
+
+    # Go through all rules of each user
+    fGoThroughUsers = ( user, rules ) ->
+
+      # Fetch the rules object for each rule in each user
+      fFetchRule = ( rule ) ->
+        db.getRule rule, ( err, oRule ) =>
+          eventEmitter.emit 'rule',
+            event: 'init'
+            user: user
+            rule: JSON.parse oRule
+
+      # Go through all rules for each user
+      fFetchRule rule for rule in rules
+          
+    # Go through each user
+    fGoThroughUsers user, rules for user, rules of objUsers
 
 ###
 Processes a user request coming through the request-handler.
@@ -91,7 +101,7 @@ exports.processRequest = ( user, oReq, callback ) ->
 hasRequiredParams = ( arrParams, oPayload ) ->
   answ =
     code: 400
-    message: "Your request didn't contain all necessary fields! id and params required"
+    message: "Your request didn't contain all necessary fields! Requires: #{ arrParams.join() }"
   return answ for param in arrParams when not oPayload[param]
   answ.code = 200
   answ.message = 'All required properties found'
@@ -125,6 +135,7 @@ getModuleParams = ( user, oPayload, dbMod, callback ) ->
       answ.message = oPayload
       callback answ
 
+
 forgeModule = ( user, oPayload, dbMod, callback ) =>
   answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oPayload
   if answ.code isnt 200
@@ -151,6 +162,11 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
       callback answ
 
 commandFunctions =
+  get_public_key: ( user, oPayload, callback ) ->
+    callback
+      code: 200
+      message: dynmod.getPublicKey()
+
   get_event_pollers: ( user, oPayload, callback ) ->
     getModules  user, oPayload, db.eventPollers, callback
   
@@ -177,12 +193,12 @@ commandFunctions =
   # - event
   # - conditions
   # - actions
-  forge_rule: ( user, oPayload, callback ) =>
+  forge_rule: ( user, oPayload, callback ) ->
     answ = hasRequiredParams [ 'id', 'event', 'conditions', 'actions' ], oPayload
     if answ.code isnt 200
       callback answ
     else
-      db.getRule oPayload.id, ( err, oExisting ) =>
+      db.getRule oPayload.id, ( err, oExisting ) ->
         if oExisting isnt null
           answ =
             code: 409
@@ -198,10 +214,14 @@ commandFunctions =
           db.linkRule rule.id, user.username
           db.activateRule rule.id, user.username
           if oPayload.event_params
-            db.eventPollers.storeUserParams ep.module, user.username, oPayload.event_params
+            epModId = rule.event.split( ' -> ' )[0]
+            db.eventPollers.storeUserParams epModId, user.username, oPayload.event_params
           arrParams = oPayload.action_params
           db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
-          @ee.emit 'newRule', strRule
+          eventEmitter.emit 'rule',
+            event: 'new'
+            user: user.username
+            rule: rule
           answ =
             code: 200
             message: 'Rule stored and activated!'

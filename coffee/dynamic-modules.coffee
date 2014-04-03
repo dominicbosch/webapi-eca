@@ -6,33 +6,17 @@ Dynamic Modules
 > with only a few allowed node.js modules.
 ###
 
+# **Loads Modules:**
+
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 #   [events](http://nodejs.org/api/events.html)
 vm = require 'vm'
 needle = require 'needle'
 
-# - External Modules: [coffee-script](http://coffeescript.org/)
+# - External Modules: [coffee-script](http://coffeescript.org/),
+#       [cryptico](https://github.com/wwwtyro/cryptico)
 cs = require 'coffee-script'
-
-
-
-# cryptico = require 'my-cryptico'
-
-# conf = require path.join '..', 'js-coffee', 'config'
-# conf opts
-
-# passPhrase = conf.getKeygenPassphrase()
-# numBits = 1024
-# console.log passPhrase
-
-# oPrivateRSAkey = cryptico.generateRSAKey passPhrase, numBits
-# strPublicKey = cryptico.publicKeyString oPrivateRSAkey
-# plainText = "Matt, I need you to help me with my Starcraft strategy."
-# oEncrypted = cryptico.encrypt plainText, strPublicKey
-
-# console.log oEncrypted.cipher
-# oDecrypted = cryptico.decrypt oEncrypted.cipher, oPrivateRSAkey
-# console.log oDecrypted.plaintext
+cryptico = require 'my-cryptico'
 
 
 
@@ -45,8 +29,26 @@ Initializes the dynamic module handler.
 ###
 exports = module.exports = ( args ) =>
   @log = args.logger
+  # FIXME this can't come through the arguments
+  if not @strPublicKey and args[ 'keygen' ]
+    passPhrase = args[ 'keygen' ]
+    numBits = 1024
+    @oPrivateRSAkey = cryptico.generateRSAKey passPhrase, numBits
+    @strPublicKey = cryptico.publicKeyString @oPrivateRSAkey
+    @log.info "Public Key generated: #{ @strPublicKey }"
+
+  # plainText = "Matt, I need you to help me with my Starcraft strategy."
+  # oEncrypted = cryptico.encrypt plainText, strPublicKey
+
+  # console.log oEncrypted.cipher
+  # oDecrypted = cryptico.decrypt oEncrypted.cipher, oPrivateRSAkey
+  # console.log oDecrypted.plaintext
+
   module.exports
 
+
+exports.getPublicKey = () =>
+  @strPublicKey
 
 ###
 Try to run a JS module from a string, together with the
@@ -59,13 +61,12 @@ compile it first into JS.
 @param {Object} params
 @param {String} lang
 ###
-exports.compileString = ( src, userId, moduleId, params, lang ) =>
+exports.compileString = ( src, userId, modId, params, lang ) =>
   answ =
     code: 200
     message: 'Successfully compiled'
 
-  # src = "'use strict;'\n" + src
-  if lang is '0'
+  if lang is 'CoffeeScript'
     try
       src = cs.compile src
     catch err
@@ -74,7 +75,7 @@ exports.compileString = ( src, userId, moduleId, params, lang ) =>
         err.location.first_line
   #FIXME not log but debug module is required to provide information to the user
   sandbox = 
-    id: userId + '.' + moduleId + '.vm'
+    id: userId + '.' + modId + '.vm'
     params: params
     needle: needle
     log: console.log
@@ -86,6 +87,8 @@ exports.compileString = ( src, userId, moduleId, params, lang ) =>
   #kill the child each time? how to determine whether there's still a token in the module?
   try
     vm.runInNewContext src, sandbox, sandbox.id
+    # TODO We should investigate memory usage and garbage collection (global.gc())?
+    # Start Node with the flags —nouse_idle_notification and —expose_gc, and then when you want to run the GC, just call global.gc().
   catch err
     answ.code = 400
     answ.message = 'Loading Module failed: ' + err.message

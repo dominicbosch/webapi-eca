@@ -129,6 +129,9 @@ init = =>
   # > Fetch the `http-port` argument
   args[ 'http-port' ] = parseInt argv.w || conf.getHttpPort()
   args[ 'db-port' ] = parseInt argv.d || conf.getDbPort()
+
+  #FIXME this has to come from user input for security reasons:
+  args[ 'keygen' ] = conf.getKeygenPassphrase()
   
   @log.info 'RS | Initialzing DB'
   db args
@@ -167,19 +170,9 @@ init = =>
       # from engine and event poller
       @log.info 'RS | Initialzing module manager'
       cm args
-      cm.addListener 'init', ( evt ) ->
-        poller.send 
-          event: 'init'
-          data: evt
-      cm.addListener 'newRule', ( evt ) ->
-        poller.send 
-          event: 'newRule'
-          data: evt
-      cm.addListener 'init', ( evt ) ->
-        engine.internalEvent 'init', evt
-      cm.addListener 'newRule', ( evt ) ->
-        engine.internalEvent 'newRule', evt
-      
+      cm.addRuleListener engine.internalEvent
+      cm.addRuleListener ( evt ) -> poller.send evt
+
       @log.info 'RS | Initialzing http listener'
       # The request handler passes certain requests to the module manager
       args[ 'request-service' ] = cm.processRequest
@@ -195,7 +188,7 @@ Shuts down the server.
 shutDown = () =>
   @log.warn 'RS | Received shut down command!'
   db?.shutDown()
-  engine?.shutDown()
+  engine.shutDown()
   # We need to call process.exit() since the express server in the http-listener
   # can't be stopped gracefully. Why would you stop this system anyways!?? 
   process.exit()

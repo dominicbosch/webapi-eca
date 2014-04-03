@@ -10,7 +10,7 @@ fOnLoad = () ->
   editor.setShowPrintMargin false
   
   $( '#editor_mode' ).change ( el ) ->
-    if $( this ).val() is '0'
+    if $( this ).val() is 'CoffeeScript'
       editor.getSession().setMode "ace/mode/coffee"
     else 
       editor.getSession().setMode "ace/mode/javascript"

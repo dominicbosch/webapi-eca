@@ -15,6 +15,7 @@ var logger = require('./logging'),
 
 //TODO allow different polling intervals (a wrapper together with settimeout per to be polled could be an easy and solution)
 
+// FIXME Eventually we don't even need to pass these arguments because they are anyways cached even over child_processes 
 
 function init() {
   if(process.argv.length < 7){
@@ -33,7 +34,6 @@ function init() {
   var args = { logger: log };
   (ml = require('./components-manager'))(args);
   (db = require('./persistence'))(args);
-  initAdminCommands();
   initMessageActions();
   pollLoop();
   log.info('Event Poller instantiated');
@@ -106,31 +106,24 @@ function initMessageActions() {
     }
   };
   
-  //TODO this goes into module_manager, this will receive notification about
-  // new loaded/stored event modules and fetch them from the db
-  listMessageActions['cmd'] = function(args) {
-    var func = listAdminCommands[args[1]];
-    if(typeof(func) === 'function') func(args);
-  };
   
   process.on('message', function( msg ) {
-    
-    console.log (JSON.parse(msg.data));
+    console.log( 'EVENT POLLER GOT MESSAGE!');
+    console.log( typeof msg);
+    console.log(msg);
     // var arrProps = obj .split('|');
     // if(arrProps.length < 2) log.error('EP', 'too few parameter in message!');
     // else {
     //   var func = listMessageActions[arrProps[0]];
     //   if(func) func(arrProps);
     // }
+    console.log('EP internal event handled');
   });
 
   // very important so the process doesnt linger on when the paren process is killed  
   process.on('disconnect', shutDown);
 }
 
-function initAdminCommands() {
-  listAdminCommands['shutdown'] = shutDown
-}
 
 function checkRemotes() {
   for(var prop in listPoll) {

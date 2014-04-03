@@ -1,4 +1,11 @@
-
+strPublicKey = ''
+$.post( '/usercommand', command: 'get_public_key' )
+  .done ( data ) ->
+    strPublicKey = data.message
+  .fail ( err ) ->
+    console.log err
+    $( '#info' ).text 'Error fetching public key, unable to send user-specific parameters securely'
+    $( '#info' ).attr 'class', 'error'
 
 fOnLoad = () ->
 
@@ -12,19 +19,19 @@ fOnLoad = () ->
       command: 'get_event_poller_params'
       payload:
         id: arr[0]
+    obj.payload = JSON.stringify( obj.payload );
     $.post( '/usercommand', obj )
       .done ( data ) ->
         if data.message
           arrParams = JSON.parse data.message
           $( '#event_poller_params table' ).remove()
           if arrParams.length > 0
-            $( '#event_poller_params' ).text 'Required user-specific params:'
             table = $ '<table>'
             $( '#event_poller_params' ).append table
             fAppendParam = ( name ) ->
               tr = $( '<tr>' )
               tr.append $( '<td>' ).css 'width', '20px'
-              tr.append $( '<td>' ).text name
+              tr.append $( '<td>' ).attr( 'class', 'key' ).text name
               inp = $( '<input>' ).attr( 'type', 'password' ).attr 'id', "#{ name }"
               tr.append $( '<td>' ).text( ' :' ).append inp
               table.append tr
@@ -45,13 +52,17 @@ fOnLoad = () ->
     command: 'get_event_pollers'
   $.post( '/usercommand', obj )
     .done ( data ) ->
+      try
+        oEps = JSON.parse data.message
+      catch err
+        console.error 'ERROR: non-object received from server: ' + data.message
+        return
+      
       fAppendEvents = ( id, events ) ->
-        try
-          arrNames = JSON.parse events
-          $( '#select_event' ).append $( '<option>' ).text id + ' -> ' + name for name in arrNames
-        catch err
-          console.error 'ERROR: non-array received from server: ' + events
-      fAppendEvents id, events for id, events of data.message
+        fAppendEvent = ( evt ) ->
+          $( '#select_event' ).append $( '<option>' ).text id + ' -> ' + evt
+        fAppendEvent evt for evt in events
+      fAppendEvents id, events for id, events of oEps
       fFetchEventParams $( '#select_event option:selected' ).text()
     .fail ( err ) ->
       console.log err
@@ -67,17 +78,20 @@ fOnLoad = () ->
     command: 'get_action_invokers'
   $.post( '/usercommand', obj )
     .done ( data ) ->
+      try
+        oAis = JSON.parse data.message
+      catch err
+        console.error 'ERROR: non-object received from server: ' + data.message
+        return
       i = 0
       fAppendActions = ( id, actions ) ->
-        try
-          arrNames = JSON.parse actions
-          for name in arrNames
-            $( '#select_actions' ).append $( '<option>' ).attr( 'id', i++ ).text id + ' -> ' + name
-          arrActionInvoker.push id + ' -> ' + name
-        catch err
-          console.error 'ERROR: non-array received from server: ' + actions
-      fAppendActions id, actions for id, actions of data.message
-    .fail ( err ) ->
+        fAppendAction = ( act ) ->
+          $( '#select_actions' ).append $( '<option>' ).attr( 'id', i++ ).text id + ' -> ' + act
+          arrActionInvoker.push id + ' -> ' + act
+        fAppendAction act for act in actions
+      fAppendActions id, actions for id, actions of oAis
+
+   .fail ( err ) ->
       console.log err
       $( '#info' ).text 'Error fetching event poller'
       $( '#info' ).attr 'class', 'error'
@@ -86,7 +100,9 @@ fOnLoad = () ->
   fFetchActionParams = ( div, name ) ->
     obj =
       command: 'get_action_invoker_params'
-      id: name
+      payload:
+        id: name
+    obj.payload = JSON.stringify( obj.payload );
     $.post( '/usercommand', obj )
       .done ( data ) ->
         if data.message
@@ -117,7 +133,11 @@ fOnLoad = () ->
     tr.append $( '<td>' ).attr( 'class', 'title').text( opt.val() )
     table.append tr
     if $( '#ap_' + arrAI[0] ).length is 0
-      div = $( '<div>' ).attr( 'id', 'ap_' + arrAI[0] ).html "<i>#{ arrAI[0] }</i>"
+      div = $( '<div>' )
+        .attr( 'id', 'ap_' + arrAI[0] )
+      div.append $( '<div> ')
+        .attr( 'class', 'underlined')
+        .text arrAI[0]
       $( '#action_params' ).append div
       fFetchActionParams div, arrAI[0]
     opt.remove()
@@ -149,7 +169,7 @@ fOnLoad = () ->
       ep = {}
       $( "#event_poller_params tr" ).each () ->
         val = $( 'input', this ).val()
-        name = $( 'td:nth-child(2)', this ).text()
+        name = $( this ).children( '.key' ).text()
         if val is ''
           throw new Error "Please enter a value for '#{ name }' in the event module!"
         ep[name] = val
@@ -159,7 +179,7 @@ fOnLoad = () ->
 
       # Store all selected action invokers
       ap = {}
-      $( '#action_params div' ).each () ->
+      $( '> div', $( '#action_params' ) ).each () ->
         id = $( this ).attr( 'id' ).substring 3
         params = {}
         $( 'tr', this ).each () ->
@@ -168,23 +188,26 @@ fOnLoad = () ->
           if val is ''
             throw new Error "'#{ key }' missing for '#{ id }'"
           params[key] = val
-        ap[id] = params
+        encryptedParams = cryptico.encrypt JSON.stringify( params ), strPublicKey 
+        ap[id] = encryptedParams.cipher
       acts = []
       $( '#selected_actions .title' ).each () ->
         acts.push $( this ).text()
 
+      encryptedParams = cryptico.encrypt JSON.stringify( ep ), strPublicKey
       obj =
         command: 'forge_rule'
         payload:
           id: $( '#input_id' ).val()
           event: $( '#select_event option:selected' ).val()
-          event_params: ep
+          event_params: encryptedParams.cipher
           conditions: {} #TODO Add conditions!
           actions: acts
           action_params: ap
       obj.payload = JSON.stringify obj.payload
       $.post( '/usercommand', obj )
         .done ( data ) ->
+          console.log 'success'
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->

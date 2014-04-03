@@ -114,3 +114,10 @@ input[type=text]:focus {
   margin-left: 10px;
 }
 
+.underlined {
+  padding-left: 10px;
+  font-style: italic;
+  font-weight: bold;
+  text-decoration: underline;
+}
+

@@ -16,7 +16,7 @@
   "eps": {
     "epOne": {
       "id":"epOne",
-      "lang":"0",
+      "lang":"CoffeeScript",
       "data":"\n#\n# EmailYak EVENT POLLER\n#\n# Requires user params:\n#  - apikey: The user's EmailYak API key\n#\n\nurl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'\n\nexports.newMail = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\n",
       "public":"false",
       "params":"[\"apikey\"]",
@@ -24,11 +24,29 @@
     },
     "epTwo": {
       "id":"epTwo",
-      "lang":"0",
+      "lang":"CoffeeScript",
       "data":"\nurl = 'https://api.emailyak.com/v1/' + params.firstparam + '/json/get/new/email/'\n\nexports.newEvent = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\nexports.randomNess = ( pushEvent ) ->\n    console.log 'test runs: ' + params.secondparam\n",
       "public":"true",
       "params":"[\"firstparam\",\"secondparam\"]",
       "functions":"[\"newEvent\",\"randomNess\"]"
+    }
+  },
+  "ais": {
+    "aiOne": {
+      "id":"aiOne",
+      "lang":"CoffeeScript",
+      "data":"# Send a mail through emailyak\nexports.sendMail = ( args ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
+      "public":"false",
+      "params":"[\"apikey\"]",
+      "functions":"[\"sendMail\"]"
+    },
+    "aiTwo": {
+      "id":"aiTwo",
+      "lang":"CoffeeScript",
+      "data":"# Send a mail through emailyak\nexports.sendMail = ( args ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
+      "public":"false",
+      "params":"[\"apikey\",\"andmore\"]",
+      "functions":"[\"sendMail\"]"
     }
   },
   "userparams": {
@@ -52,6 +70,20 @@
         "property": "yourValue2"
       },
       "actions": []
+    },
+    "ruleThree": {
+      "id": "ruleThree_id",
+      "event": "custom-test-3",
+      "conditions": {
+        "property": "yourValue3"
+      },
+      "actions": []
+    },
+    "ruleReal": {
+      "id": "ruleReal",
+      "event": "epOne -> newMail",
+      "conditions": {},
+      "actions": ["aiOne -> sendMail"]
     }
   },
   "users": {

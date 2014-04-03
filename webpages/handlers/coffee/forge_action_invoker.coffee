@@ -10,7 +10,7 @@ fOnLoad = () ->
   editor.setShowPrintMargin false
   
   $( '#editor_mode' ).change ( el ) ->
-    if $( this ).val() is '0'
+    if $( this ).val() is 'CoffeeScript'
       editor.getSession().setMode "ace/mode/coffee"
     else 
       editor.getSession().setMode "ace/mode/javascript"
@@ -80,24 +80,3 @@ fOnLoad = () ->
             window.location.href = 'forge?page=forge_action_invoker'
 
 window.addEventListener 'load', fOnLoad, true
-
-#   "ais": {
-#     "ai1": {
-#       "code": "
-#       url = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'
-      
-# exports.sendMail = ( args ) ->
-#     data:
-#         FromAddress: "no-reply@mscliveweb.simpleyak.com"
-#         ToAddress: "test@mscliveweb.simpleyak.com"
-#     log 'set data, posting now'
-# needle.post url, data, ( err, resp, body ) ->
-#     log 'post returned'
-#     if not err and resp.statusCode is 200
-#         log 'Sent mail...'
-#     else
-#         log 'Error in EmailYak EM sendMail: ' + err.message
-#       "
-
-#     }
-#   },

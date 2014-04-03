@@ -25,12 +25,14 @@ db opts
 oUser = objects.users.userOne
 oRuleOne = objects.rules.ruleOne
 oRuleTwo = objects.rules.ruleTwo
+oRuleThree = objects.rules.ruleThree
 oEpOne = objects.eps.epOne
 oEpTwo = objects.eps.epTwo
 
 exports.tearDown = ( cb ) ->
   db.deleteRule oRuleOne.id
   db.deleteRule oRuleTwo.id
+  db.deleteRule oRuleThree.id
   setTimeout cb, 100
 
 exports.requestProcessing =
@@ -56,33 +58,50 @@ exports.requestProcessing =
       test.done()
 
 exports.testListener = ( test ) =>
-  test.expect 2
+  test.expect 3
 
-  db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+  strRuleOne =  JSON.stringify oRuleOne
+  strRuleTwo =  JSON.stringify oRuleTwo
+  strRuleThree =  JSON.stringify oRuleThree
+
+  db.storeUser oUser
+  db.storeRule oRuleOne.id, strRuleOne
+  db.linkRule oRuleOne.id, oUser.username
+  db.activateRule oRuleOne.id, oUser.username
+  
+  db.storeRule oRuleTwo.id, strRuleTwo
+  db.linkRule oRuleTwo.id, oUser.username
+  db.activateRule oRuleTwo.id, oUser.username
+
   request =
     command: 'forge_rule'
-    payload: JSON.stringify oRuleTwo
+    payload: strRuleThree
 
-  cm.addListener 'newRule', ( evt ) =>
-    try
-      newRule = JSON.parse evt
-    catch err
-      test.ok false, 'Failed to parse the newRule event'
-    test.deepEqual newRule, oRuleTwo, 'New Rule is not the same!'
-    test.done()
+  cm.addRuleListener ( evt ) =>
+    strEvt = JSON.stringify evt.rule
+    console.log evt
+    if evt.event is 'init'
+      if strEvt is strRuleOne or strEvt is strRuleTwo
+        test.ok true, 'Dummy true to fill expected tests!'
 
-  cm.addListener 'init', ( evt ) =>
-    try
-      initRule = JSON.parse evt
-    catch err
-      test.ok false, 'Failed to parse the newRule event'
-    test.deepEqual initRule, oRuleOne, 'Init Rule is not the same!'
+      if strEvt is strRuleThree
+        test.ok false, 'Init Rule found test rule number two??'
+
+    if evt.event is 'new'
+      if strEvt is strRuleOne or strEvt is strRuleTwo
+        test.ok false, 'New Rule got test rule number one??'
+
+      if strEvt is strRuleThree
+        test.ok true, 'Dummy true to fill expected tests!'
+
+
 
   fWaitForInit = ->
     cm.processRequest oUser, request, ( answ ) =>
       if answ.code isnt 200
         test.ok false, 'testListener failed: ' + answ.message
         test.done()
+    setTimeout test.done, 500
 
   setTimeout fWaitForInit, 200
 
@@ -96,6 +115,7 @@ exports.moduleHandling =
     test.expect 2
 
     db.eventPollers.storeModule oUser.username, oEpOne
+    db.eventPollers.storeModule oUser.username, oEpTwo
     request =
       command: 'get_event_pollers'
  
@@ -103,23 +123,25 @@ exports.moduleHandling =
       test.strictEqual 200, answ.code, 'GetModules failed...' 
       oExpected = {}
       oExpected[oEpOne.id] = JSON.parse oEpOne.functions
-      test.strictEqual JSON.stringify(oExpected), answ.message,
+      oExpected[oEpTwo.id] = JSON.parse oEpTwo.functions
+      test.deepEqual oExpected, JSON.parse(answ.message),
         'GetModules retrieved modules is not what we expected'
       test.done()
 
   testGetModuleParams: ( test ) ->
     test.expect 2
 
-    db.eventPollers.storeModule oUser.username, oEpTwo
+    db.eventPollers.storeModule oUser.username, oEpOne
 
     request =
       command: 'get_event_poller_params'
-      payload: '{"id": "' + oEpTwo.id + '"}'
- 
+      payload: 
+        id: oEpOne.id
+    request.payload = JSON.stringify request.payload
     cm.processRequest oUser, request, ( answ ) =>
       test.strictEqual 200, answ.code,
         'Required Module Parameters did not return 200'
-      test.strictEqual oEpTwo.params, answ.message,
+      test.strictEqual oEpOne.params, answ.message,
         'Required Module Parameters did not match'
       test.done()
 
