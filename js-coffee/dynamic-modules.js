@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cs, db, exports, needle, vm;
+  var cryptico, cs, db, exports, issueApiCall, needle, vm;
 
   db = require('./persistence');
 
@@ -49,6 +49,29 @@ Dynamic Modules
   exports.getPublicKey = (function(_this) {
     return function() {
       return _this.strPublicKey;
+    };
+  })(this);
+
+  issueApiCall = (function(_this) {
+    return function(method, url, credentials, cb) {
+      var err, func;
+      try {
+        if (method === 'get') {
+          func = needle.get;
+        } else {
+          func = needle.post;
+        }
+        return func(url, credentials, function(err, resp, body) {
+          if (!err) {
+            return cb(body);
+          } else {
+            return cb();
+          }
+        });
+      } catch (_error) {
+        err = _error;
+        return _this.log.info('DM | Error even before calling!');
+      }
     };
   })(this);
 
@@ -104,7 +127,7 @@ Dynamic Modules
         sandbox = {
           id: userId + '.' + modId + '.vm',
           params: params,
-          needle: needle,
+          apicall: issueApiCall,
           log: logFunction(userId, ruleId, modId),
           exports: {}
         };

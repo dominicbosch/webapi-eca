@@ -44,6 +44,9 @@ exports = module.exports = ( args ) =>
     exports.actionInvokers = new IndexedModules 'action-invoker', @log
     exports.initPort args[ 'db-port' ]
 
+exports.getLogger = () =>
+  @log 
+
 exports.initPort = ( port ) =>
   @connRefused = false
   @db?.quit()

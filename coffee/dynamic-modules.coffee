@@ -8,6 +8,7 @@ Dynamic Modules
 
 # **Loads Modules:**
 
+# - [Persistence](persistence.html)
 db = require './persistence'
 
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
@@ -53,6 +54,21 @@ exports = module.exports = ( args ) =>
 exports.getPublicKey = () =>
   @strPublicKey
 
+
+issueApiCall = ( method, url, credentials, cb ) =>
+  try 
+    if method is 'get'
+      func = needle.get
+    else
+      func = needle.post
+
+    func url, credentials, ( err, resp, body ) =>
+      if not err
+        cb body
+      else
+        cb()
+  catch err
+    @log.info 'DM | Error even before calling!'
 ###
 Try to run a JS module from a string, together with the
 given parameters. If it is written in CoffeeScript we
@@ -92,10 +108,11 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
         params = {}
     else
       params = {}
+
     sandbox = 
       id: userId + '.' + modId + '.vm'
       params: params
-      needle: needle
+      apicall: issueApiCall
       log: logFunction userId, ruleId, modId
       # debug: console.log
       exports: {}

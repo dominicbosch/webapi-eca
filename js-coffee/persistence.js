@@ -50,6 +50,12 @@ Persistence
     };
   })(this);
 
+  exports.getLogger = (function(_this) {
+    return function() {
+      return _this.log;
+    };
+  })(this);
+
   exports.initPort = (function(_this) {
     return function(port) {
       var _ref;
