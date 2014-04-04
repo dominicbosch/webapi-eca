@@ -1,27 +1,4 @@
 {
-  "events": {
-    "eventOne":{
-      "event": "test_1",
-      "payload": {
-        "property": "test_1",
-        "nestedProperty": {
-          "more": "really nested"
-        }
-      }
-    },
-    "eventTwo":{
-      "event": "test_2"
-    },
-    "eventReal":{
-      "event": "epOne -> newMail",
-      "payload": {
-        "property": "test_1",
-        "nestedProperty": {
-          "more": "really nested"
-        }
-      }
-    }
-  },
   "eps": {
     "epOne": {
       "id":"epOne",
@@ -44,23 +21,54 @@
     "aiOne": {
       "id":"aiOne",
       "lang":"CoffeeScript",
-      "data":"# Send a mail through emailyak\nexports.sendMail = ( args ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
+      "data":"exports.printToLog = ( evt ) ->\n\tlog evt.property",
       "public":"false",
       "params":"[\"apikey\"]",
-      "functions":"[\"sendMail\"]"
+      "functions":"[\"printToLog\"]"
     },
     "aiTwo": {
       "id":"aiTwo",
       "lang":"CoffeeScript",
-      "data":"# Send a mail through emailyak\nexports.otherEvent = ( args ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
+      "data":"# Send a mail through emailyak\nexports.otherEvent = ( evt ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
       "public":"false",
       "params":"[\"apikey\",\"andmore\"]",
       "functions":"[\"otherEvent\"]"
+    },
+    "aiThree": {
+      "id":"aiThree",
+      "lang":"CoffeeScript",
+      "data":"exports.printUserParamToLog = ( evt ) ->\n\tlog params.password",
+      "public":"false",
+      "params":"[\"password\"]",
+      "functions":"[\"printUserParamToLog\"]"
     }
   },
   "userparams": {
     "epUpOne": {
       "apikey": "testkey"
+    }
+  },
+  "events": {
+    "eventOne":{
+      "event": "test_1",
+      "payload": {
+        "property": "test_1",
+        "nestedProperty": {
+          "more": "really nested"
+        }
+      }
+    },
+    "eventTwo":{
+      "event": "test_2"
+    },
+    "eventReal":{
+      "event": "epOne -> newMail",
+      "payload": {
+        "property": "test_1",
+        "nestedProperty": {
+          "more": "really nested"
+        }
+      }
     }
   },
   "rules": {
@@ -86,13 +94,19 @@
       "id": "ruleReal",
       "event": "epOne -> newMail",
       "conditions": [".more:val(\"really nested\")"],
-      "actions": ["aiOne -> sendMail"]
+      "actions": ["aiOne -> printToLog"]
     },
     "ruleRealTwo": {
       "id": "ruleRealTwo",
       "event": "epOne -> newMail",
       "conditions": [],
       "actions": ["aiTwo -> otherEvent"]
+    },
+    "ruleRealThree": {
+      "id": "ruleRealThree",
+      "event": "epOne -> newMail",
+      "conditions": [],
+      "actions": ["aiThree -> printUserParamToLog"]
     }
   },
   "users": {

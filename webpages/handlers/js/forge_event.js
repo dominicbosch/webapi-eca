@@ -21,14 +21,18 @@
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');
         }).fail(function(err) {
-          if (err.responseText === '') {
-            err.responseText = 'No Response from Server!';
-          }
-          $('#info').text('Error in upload: ' + err.responseText);
-          $('#info').attr('class', 'error');
-          if (err.status === 401) {
-            return window.location.href = 'forge?page=forge_event';
-          }
+          var fDelayed;
+          fDelayed = function() {
+            if (err.responseText === '') {
+              err.responseText = 'No Response from Server!';
+            }
+            $('#info').text('Error in upload: ' + err.responseText);
+            $('#info').attr('class', 'error');
+            if (err.status === 401) {
+              return window.location.href = 'forge?page=forge_event';
+            }
+          };
+          return setTimeout(fDelayed, 500);
         });
       } catch (_error) {
         err = _error;

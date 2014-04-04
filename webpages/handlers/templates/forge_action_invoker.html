@@ -21,7 +21,7 @@ Action Invoker Name: <input id="input_id" type="text" />
 #  - company: The ProBidner company of the binder
 #  - context: The ProBinder context (the binder ID)
 # 
-exports.createBinderEntry = ( args ) ->
+exports.createBinderEntry = ( evt ) ->
 	url = 'https://probinder.com/service/27/save'
 
 	credentials =
@@ -29,9 +29,9 @@ exports.createBinderEntry = ( args ) ->
 		password: params.password
 
 	data =
-		companyId: args.company
-		context: args.context
-		text: args.content
+		companyId: evt.company
+		context: evt.context
+		text: evt.content
 
 	needle.post url, data, credentials, ( err, resp, body ) ->
 		if err

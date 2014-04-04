@@ -202,7 +202,6 @@ class IndexedModules
   setDB: ( @db ) ->
     @log.info "DB | (IdxedMods) Registered new DB connection for '#{ @setname }'"
 
-
   ###
   Stores a module and links it to the user.
   
@@ -252,7 +251,7 @@ class IndexedModules
 
   #TODO add testing
   getModuleParams: ( mId, cb ) =>
-    @log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
+    @log.info "DB | (IdxedMods) #{ @setname }.getModuleParams( #{ mId } )"
     @db.hget "#{ @setname }:#{ mId }", "params", cb
 
   #TODO add testing
@@ -277,13 +276,7 @@ class IndexedModules
     @unpublish mId
     @db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
       @unlinkModule mId, userId for userId in obj
-  # TODO remove from public modules
-  # TODO remove parameters
-    # @log.info "DB | linkModule(#{ @setname }): #{ mId } to #{ userId }"
-    # @db.sadd "#{ @setname }:#{ mId }:users", userId,
-    #   replyHandler "Linking '#{ @setname }:#{ mId }:users' #{ userId }"
-    # @db.sadd "user:#{ userId }:#{ @setname }s", mId,
-    #   replyHandler "Linking 'user:#{ userId }:#{ @setname }s' #{ mId }"
+      @deleteUserParams mId, userId for userId in obj
 
   ###
   Stores user params for a module. They are expected to be RSA encrypted with helps of
@@ -303,8 +296,7 @@ class IndexedModules
 
   getUserParams: ( mId, userId, cb ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
-    @db.get "#{ @setname }-params:#{ mId }:#{ userId }", ( err, data ) ->
-      cb err, data
+    @db.get "#{ @setname }-params:#{ mId }:#{ userId }", cb
 
   getUserParamsIds: ( cb ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.getUserParamsIds()"
@@ -321,6 +313,41 @@ class IndexedModules
 ###
 ## Rules
 ###
+
+
+###
+Appends a log entry.
+
+@public log( *userId, ruleId, message* )
+@param {String} userId
+@param {String} ruleId
+@param {String} message
+###
+exports.appendLog = ( userId, ruleId, moduleId, message ) =>
+  @db.append "#{ userId }:#{ ruleId }", 
+    "[#{ ( new Date ).toISOString() }] {#{ moduleId }} #{ message }\n"
+
+###
+Retrieves a log entry.
+
+@public getLog( *userId, ruleId* )
+@param {String} userId
+@param {String} ruleId
+@param {function} cb
+###
+exports.getLog = ( userId, ruleId, cb ) =>
+  @db.get "#{ userId }:#{ ruleId }", cb
+
+###
+Resets a log entry.
+
+@public resetLog( *userId, ruleId* )
+@param {String} userId
+@param {String} ruleId
+###
+exports.resetLog = ( userId, ruleId ) =>
+  @db.del "#{ userId }:#{ ruleId }", 
+    replyHandler "RESET LOG '#{ userId }:#{ ruleId }'"
 
 ###
 Query the DB for a rule and pass it to cb(err, obj).

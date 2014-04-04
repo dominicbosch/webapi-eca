@@ -314,7 +314,7 @@ Persistence
     };
 
     IndexedModules.prototype.getModuleParams = function(mId, cb) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + mId + " )");
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleParams( " + mId + " )");
       return this.db.hget("" + this.setname + ":" + mId, "params", cb);
     };
 
@@ -340,11 +340,15 @@ Persistence
       this.unpublish(mId);
       return this.db.smembers("" + this.setname + ":" + mId + ":users", (function(_this) {
         return function(err, obj) {
-          var userId, _i, _len, _results;
-          _results = [];
+          var userId, _i, _j, _len, _len1, _results;
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
             userId = obj[_i];
-            _results.push(_this.unlinkModule(mId, userId));
+            _this.unlinkModule(mId, userId);
+          }
+          _results = [];
+          for (_j = 0, _len1 = obj.length; _j < _len1; _j++) {
+            userId = obj[_j];
+            _results.push(_this.deleteUserParams(mId, userId));
           }
           return _results;
         };
@@ -370,9 +374,7 @@ Persistence
 
     IndexedModules.prototype.getUserParams = function(mId, userId, cb) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".getUserParams( " + mId + ", " + userId + " )");
-      return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, function(err, data) {
-        return cb(err, data);
-      });
+      return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, cb);
     };
 
     IndexedModules.prototype.getUserParamsIds = function(cb) {
@@ -394,6 +396,53 @@ Persistence
   /*
    *# Rules
    */
+
+
+  /*
+  Appends a log entry.
+  
+  @public log( *userId, ruleId, message* )
+  @param {String} userId
+  @param {String} ruleId
+  @param {String} message
+   */
+
+  exports.appendLog = (function(_this) {
+    return function(userId, ruleId, moduleId, message) {
+      return _this.db.append("" + userId + ":" + ruleId, "[" + ((new Date).toISOString()) + "] {" + moduleId + "} " + message + "\n");
+    };
+  })(this);
+
+
+  /*
+  Retrieves a log entry.
+  
+  @public getLog( *userId, ruleId* )
+  @param {String} userId
+  @param {String} ruleId
+  @param {function} cb
+   */
+
+  exports.getLog = (function(_this) {
+    return function(userId, ruleId, cb) {
+      return _this.db.get("" + userId + ":" + ruleId, cb);
+    };
+  })(this);
+
+
+  /*
+  Resets a log entry.
+  
+  @public resetLog( *userId, ruleId* )
+  @param {String} userId
+  @param {String} ruleId
+   */
+
+  exports.resetLog = (function(_this) {
+    return function(userId, ruleId) {
+      return _this.db.del("" + userId + ":" + ruleId, replyHandler("RESET LOG '" + userId + ":" + ruleId + "'"));
+    };
+  })(this);
 
 
   /*

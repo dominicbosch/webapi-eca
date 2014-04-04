@@ -199,31 +199,34 @@ Components Manager
         return callback(answ);
       } else {
         return dbMod.getModule(oPayload.id, function(err, mod) {
-          var cm, funcs, id, name, src, _ref;
+          var src;
           if (mod) {
             answ.code = 409;
-            answ.message = 'Event Poller module name already existing: ' + oPayload.id;
+            answ.message = 'Module name already existing: ' + oPayload.id;
+            return callback(answ);
           } else {
             src = oPayload.data;
-            cm = dynmod.compileString(src, user.username, oPayload.id, {}, oPayload.lang);
-            answ = cm.answ;
-            if (answ.code === 200) {
-              funcs = [];
-              _ref = cm.module;
-              for (name in _ref) {
-                id = _ref[name];
-                funcs.push(name);
+            return dynmod.compileString(src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, function(cm) {
+              var funcs, id, name, _ref;
+              answ = cm.answ;
+              if (answ.code === 200) {
+                funcs = [];
+                _ref = cm.module;
+                for (name in _ref) {
+                  id = _ref[name];
+                  funcs.push(name);
+                }
+                _this.log.info("CM | Storing new module with functions " + (funcs.join()));
+                answ.message = "Event Poller module successfully stored! Found following function(s): " + funcs;
+                oPayload.functions = JSON.stringify(funcs);
+                dbMod.storeModule(user.username, oPayload);
+                if (oPayload["public"] === 'true') {
+                  dbMod.publish(oPayload.id);
+                }
               }
-              _this.log.info("CM | Storing new module with functions " + (funcs.join()));
-              answ.message = "Event Poller module successfully stored! Found following function(s): " + funcs;
-              oPayload.functions = JSON.stringify(funcs);
-              dbMod.storeModule(user.username, oPayload);
-              if (oPayload["public"] === 'true') {
-                dbMod.publish(oPayload.id);
-              }
-            }
+              return callback(answ);
+            });
           }
-          return callback(answ);
         });
       }
     };
@@ -255,7 +258,45 @@ Components Manager
       return forgeModule(user, oPayload, db.actionInvokers, callback);
     },
     get_rules: function(user, oPayload, callback) {
-      return console.log('CM | Implement get_rules');
+      return db.getUserLinkedRules(user.username, function(err, obj) {
+        return callback({
+          code: 200,
+          message: obj
+        });
+      });
+    },
+    get_rule_log: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.getLog(user.username, oPayload.id, function(err, obj) {
+          return callback({
+            code: 200,
+            message: obj
+          });
+        });
+      }
+    },
+    delete_rule: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        db.deleteRule(oPayload.id);
+        eventEmitter.emit('rule', {
+          event: 'del',
+          user: user.username,
+          rule: null,
+          ruleId: oPayload.id
+        });
+        return callback({
+          code: 200,
+          message: 'OK!'
+        });
+      }
     },
     forge_rule: function(user, oPayload, callback) {
       var answ;
@@ -297,7 +338,7 @@ Components Manager
             });
             answ = {
               code: 200,
-              message: 'Rule stored and activated!'
+              message: "Rule '" + rule.id + "' stored and activated!"
             };
           }
           return callback(answ);

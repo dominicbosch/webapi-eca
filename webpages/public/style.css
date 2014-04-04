@@ -114,6 +114,14 @@ input[type=text]:focus {
   margin-left: 10px;
 }
 
+#tableRules tr {
+  margin-bottom: 10px;
+}
+#log_col {
+  padding-left: 20px;
+  border-left: double #666;
+}
+
 .underlined {
   padding-left: 10px;
   font-style: italic;

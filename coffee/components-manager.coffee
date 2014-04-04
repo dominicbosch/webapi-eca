@@ -144,22 +144,23 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
     dbMod.getModule oPayload.id, ( err, mod ) =>
       if mod
         answ.code = 409
-        answ.message = 'Event Poller module name already existing: ' + oPayload.id
+        answ.message = 'Module name already existing: ' + oPayload.id
+        callback answ
       else
         src = oPayload.data
-        cm = dynmod.compileString src, user.username, oPayload.id, {}, oPayload.lang
-        answ = cm.answ
-        if answ.code is 200
-          funcs = []
-          funcs.push name for name, id of cm.module
-          @log.info "CM | Storing new module with functions #{ funcs.join() }"
-          answ.message = 
-            "Event Poller module successfully stored! Found following function(s): #{ funcs }"
-          oPayload.functions = JSON.stringify funcs
-          dbMod.storeModule user.username, oPayload
-          if oPayload.public is 'true'
-            dbMod.publish oPayload.id
-      callback answ
+        dynmod.compileString src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, ( cm ) =>
+          answ = cm.answ
+          if answ.code is 200
+            funcs = []
+            funcs.push name for name, id of cm.module
+            @log.info "CM | Storing new module with functions #{ funcs.join() }"
+            answ.message = 
+              "Event Poller module successfully stored! Found following function(s): #{ funcs }"
+            oPayload.functions = JSON.stringify funcs
+            dbMod.storeModule user.username, oPayload
+            if oPayload.public is 'true'
+              dbMod.publish oPayload.id
+          callback answ
 
 commandFunctions =
   get_public_key: ( user, oPayload, callback ) ->
@@ -174,19 +175,47 @@ commandFunctions =
     getModules  user, oPayload, db.actionInvokers, callback
   
   get_event_poller_params: ( user, oPayload, callback ) ->
-    getModuleParams  user, oPayload, db.eventPollers, callback
+    getModuleParams user, oPayload, db.eventPollers, callback
   
   get_action_invoker_params: ( user, oPayload, callback ) ->
-    getModuleParams  user, oPayload, db.actionInvokers, callback
+    getModuleParams user, oPayload, db.actionInvokers, callback
   
   forge_event_poller: ( user, oPayload, callback ) ->
-    forgeModule  user, oPayload, db.eventPollers, callback
+    forgeModule user, oPayload, db.eventPollers, callback
   
   forge_action_invoker: ( user, oPayload, callback ) ->
-    forgeModule  user, oPayload, db.actionInvokers, callback
+    forgeModule user, oPayload, db.actionInvokers, callback
 
   get_rules: ( user, oPayload, callback ) ->
-    console.log 'CM | Implement get_rules'
+    db.getUserLinkedRules user.username, ( err, obj ) ->
+      callback
+        code: 200
+        message: obj
+
+  get_rule_log: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.getLog user.username, oPayload.id, ( err, obj ) ->
+        callback
+          code: 200
+          message: obj
+
+  delete_rule: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.deleteRule oPayload.id
+      eventEmitter.emit 'rule',
+        event: 'del'
+        user: user.username
+        rule: null
+        ruleId: oPayload.id
+      callback
+        code: 200
+        message: 'OK!'
 
   # A rule needs to be in following format:
   # - id
@@ -224,5 +253,5 @@ commandFunctions =
             rule: rule
           answ =
             code: 200
-            message: 'Rule stored and activated!'
+            message: "Rule '#{ rule.id }' stored and activated!"
         callback answ

@@ -18,6 +18,27 @@ Engine
 
   jsonQuery = require('js-select');
 
+
+  /*
+  This is ging to have a structure like:
+  An object of users with their active rules and the required action modules
+  "user-1":
+    "rule-1":
+      "rule": oRule-1
+      "actions":
+        "action-1": oAction-1
+        "action-2": oAction-2
+    "rule-2":
+      "rule": oRule-2
+      "actions":
+        "action-1": oAction-1
+  "user-2":
+    "rule-3":
+      "rule": oRule-3
+      "actions":
+        "action-3": oAction-3
+   */
+
   listUserRules = {};
 
   isRunning = false;
@@ -38,7 +59,7 @@ Engine
         _this.log = args.logger;
         db(args);
         dynmod(args);
-        pollQueue();
+        setTimeout(pollQueue, 10);
         return module.exports;
       }
     };
@@ -70,20 +91,22 @@ Engine
     return function(evt) {
       var oRule, oUser;
       if (!listUserRules[evt.user] && evt.event !== 'del') {
-        listUserRules[evt.user] = {
-          rules: {},
-          actions: {}
-        };
+        listUserRules[evt.user] = {};
       }
       oUser = listUserRules[evt.user];
       oRule = evt.rule;
-      if (evt.event === 'new' || (evt.event === 'init' && !oUser.rules[oRule.id])) {
-        oUser.rules[oRule.id] = oRule;
-        updateActionModules(oRule, false);
+      if (evt.event === 'new' || (evt.event === 'init' && !oUser[oRule.id])) {
+        oUser[oRule.id] = {
+          rule: oRule,
+          actions: {}
+        };
+        updateActionModules(oRule.id);
       }
       if (evt.event === 'del' && oUser) {
-        delete oUser.rules[oRule.id];
-        return updateActionModules(oRule, true);
+        delete oUser[evt.ruleId];
+      }
+      if (JSON.stringify(oUser) === "{}") {
+        return delete listUserRules[evt.user];
       }
     };
   })(this);
@@ -93,35 +116,29 @@ Engine
   As soon as changes were made to the rule set we need to ensure that the aprropriate action
   invoker modules are loaded, updated or deleted.
   
-  @private updateActionModules ( *oNewRule* )
-  @param {Object} oNewRule
+  @private updateActionModules ( *updatedRuleId* )
+  @param {Object} updatedRuleId
    */
 
-  updateActionModules = function(oNewRule, isDeleteOp) {
+  updateActionModules = function(updatedRuleId) {
     var fAddRequired, fRemoveNotRequired, name, oUser, userName, _results;
     fRemoveNotRequired = function(oUser) {
-      var action, fRequired, req, _results;
+      var action, fRequired, _results;
       fRequired = function(actionName) {
-        var action, mod, nmRl, oRl, _i, _len, _ref, _ref1;
-        _ref = oUser.rules;
-        for (nmRl in _ref) {
-          oRl = _ref[nmRl];
-          _ref1 = oRl.actions;
-          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-            action = _ref1[_i];
-            mod = (action.split(' -> '))[0];
-            if (mod === actionName) {
-              return true;
-            }
+        var action, _i, _len, _ref;
+        _ref = oUser[updatedRuleId].rule.actions;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          action = _ref[_i];
+          if ((action.split(' -> '))[0] === actionName) {
+            return true;
           }
         }
         return false;
       };
       _results = [];
-      for (action in oUser.actions) {
-        req = fRequired(action);
-        if (!req) {
-          _results.push(delete oUser.actions[action]);
+      for (action in oUser[updatedRuleId].rule.actions) {
+        if (!fRequired(action)) {
+          _results.push(delete oUser[updatedRuleId].actions[action]);
         } else {
           _results.push(void 0);
         }
@@ -133,22 +150,24 @@ Engine
       fRemoveNotRequired(oUser);
     }
     fAddRequired = function(userName, oUser) {
-      var fCheckRules, nmRl, oRl, _ref;
-      fCheckRules = function(oRule) {
+      var fCheckRules, nmRl, oRl, _results;
+      fCheckRules = function(oMyRule) {
         var action, fAddIfNewOrNotExisting, _i, _len, _ref, _results;
         fAddIfNewOrNotExisting = function(actionName) {
           var moduleName;
           moduleName = (actionName.split(' -> '))[0];
-          if (!isDeleteOp && (!oUser.actions[moduleName] || oRule.id === oNewRule.id)) {
+          if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
             return db.actionInvokers.getModule(moduleName, function(err, obj) {
-              var params, res;
-              params = {};
-              res = dynmod.compileString(obj.data, userName, moduleName, params, obj.lang);
-              return oUser.actions[moduleName] = res.module;
+              return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
+                if (!result.answ === 200) {
+                  this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName);
+                }
+                return oMyRule.actions[moduleName] = result.module;
+              });
             });
           }
         };
-        _ref = oRule.actions;
+        _ref = oMyRule.rule.actions;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           action = _ref[_i];
@@ -156,14 +175,12 @@ Engine
         }
         return _results;
       };
-      _ref = oUser.rules;
-      for (nmRl in _ref) {
-        oRl = _ref[nmRl];
-        fCheckRules(oRl);
+      _results = [];
+      for (nmRl in oUser) {
+        oRl = oUser[nmRl];
+        _results.push(fCheckRules(oRl));
       }
-      if (JSON.stringify(oUser.rules) === "{}") {
-        return delete listUserRules[userName];
-      }
+      return _results;
     };
     _results = [];
     for (userName in listUserRules) {
@@ -195,6 +212,9 @@ Engine
 
   validConditions = function(evt, rule) {
     var prop, _i, _len, _ref;
+    if (rule.conditions.length === 0) {
+      return true;
+    }
     _ref = rule.conditions;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       prop = _ref[_i];
@@ -215,27 +235,43 @@ Engine
 
   processEvent = (function(_this) {
     return function(evt) {
-      var action, arr, oRule, oUser, ruleName, userName, _results;
+      var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleName, userName, _results;
+      fSearchAndInvokeAction = function(node, arrPath, evt, depth) {
+        var err;
+        if (!node) {
+          this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ' + " at depth " + depth));
+          return;
+        }
+        if (depth === arrPath.length) {
+          try {
+            return node(evt.payload);
+          } catch (_error) {
+            err = _error;
+            return this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
+          }
+        } else {
+          return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, evt, depth + 1);
+        }
+      };
       _this.log.info('EN | processing event: ' + evt.event + '(' + evt.eventid + ')');
       _results = [];
       for (userName in listUserRules) {
         oUser = listUserRules[userName];
         _results.push((function() {
-          var _ref, _results1;
-          _ref = oUser.rules;
+          var _results1;
           _results1 = [];
-          for (ruleName in _ref) {
-            oRule = _ref[ruleName];
-            if (evt.event === oRule.event && validConditions(evt, oRule)) {
+          for (ruleName in oUser) {
+            oMyRule = oUser[ruleName];
+            if (evt.event === oMyRule.rule.event && validConditions(evt, oMyRule.rule)) {
               this.log.info('EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName);
               _results1.push((function() {
-                var _i, _len, _ref1, _results2;
-                _ref1 = oRule.actions;
+                var _i, _len, _ref, _results2;
+                _ref = oMyRule.rule.actions;
                 _results2 = [];
-                for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-                  action = _ref1[_i];
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                  action = _ref[_i];
                   arr = action.split(' -> ');
-                  _results2.push(listUserRules[userName]['actions'][arr[0]][arr[1]](evt));
+                  _results2.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0], arr[1]], evt, 0));
                 }
                 return _results2;
               })());

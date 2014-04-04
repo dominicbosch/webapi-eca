@@ -20,12 +20,15 @@ fOnLoad = () ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          if err.responseText is ''
-            err.responseText = 'No Response from Server!'
-          $( '#info' ).text 'Error in upload: ' + err.responseText
-          $( '#info' ).attr 'class', 'error'
-          if err.status is 401
-            window.location.href = 'forge?page=forge_event'
+          fDelayed = () ->
+            if err.responseText is ''
+              err.responseText = 'No Response from Server!'
+            $( '#info' ).text 'Error in upload: ' + err.responseText
+            $( '#info' ).attr 'class', 'error'
+            if err.status is 401
+              window.location.href = 'forge?page=forge_event'
+          setTimeout fDelayed, 500
+          
     catch err
       $( '#info' ).text 'You have errors in your JSON object! ' + err
       $( '#info' ).attr 'class', 'error'

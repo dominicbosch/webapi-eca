@@ -14,9 +14,6 @@
       menubar.append(link);
     };
 
-    fCreateLink( 'invoke event',
-      fRedirect( 'forge?page=forge_event' )
-    );
     fCreateLink( 'forge event poller',
       fRedirect( 'forge?page=forge_event_poller' )
     );
@@ -25,6 +22,12 @@
     );
     fCreateLink( 'forge rule',
       fRedirect( 'forge?page=forge_rule' )
+    );
+    fCreateLink( 'invoke event',
+      fRedirect( 'forge?page=forge_event' )
+    );
+    fCreateLink( 'edit rules',
+      fRedirect( 'forge?page=edit_rules' )
     );
     fCreateLink( 'admin', fRedirect( 'admin' ) );
 

@@ -11,8 +11,8 @@ catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
 logger = require path.join '..', 'js-coffee', 'logging'
-log = logger.getLogger()
-  # nolog: true
+log = logger.getLogger
+  nolog: true
 opts =
   logger: log
 
@@ -61,7 +61,7 @@ exports.ruleEvents =
     db.actionInvokers.storeModule oUser.username, oAiTwo
 
     test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
-        
+
     engine.internalEvent
       event: 'new'
       user: oUser.username
@@ -71,7 +71,8 @@ exports.ruleEvents =
 
       for act in oRuleReal.actions
         mod = ( act.split ' -> ' )[0]
-        test.ok listRules[oUser.username].actions[mod], 'Missing action!'
+        test.ok listRules[oUser.username][oRuleReal.id].actions[mod], 'Missing action!'
+  
 
       engine.internalEvent
         event: 'new'
@@ -82,21 +83,23 @@ exports.ruleEvents =
 
         for act in oRuleRealTwo.actions
           mod = ( act.split ' -> ' )[0]
-          test.ok listRules[oUser.username].actions[mod], 'Missing action!'
-
+          test.ok listRules[oUser.username][oRuleRealTwo.id].actions[mod], 'Missing action!'
+    
         engine.internalEvent
           event: 'del'
           user: oUser.username
-          rule: oRuleRealTwo
+          rule: null
+          ruleId: oRuleRealTwo.id
 
         for act in oRuleReal.actions
           mod = ( act.split ' -> ' )[0]
-          test.ok listRules[oUser.username].actions[mod], 'Missing action!'
-
+          test.ok listRules[oUser.username][oRuleReal.id].actions[mod], 'Missing action!'
+    
         engine.internalEvent
           event: 'del'
           user: oUser.username
-          rule: oRuleReal
+          rule: null
+          ruleId: oRuleReal.id
 
         test.strictEqual listRules[oUser.username], undefined, 'Final user object exists!?'
         test.done()
@@ -135,7 +138,8 @@ exports.ruleEvents =
 #       setTimeout fCheckRules, 500
 
 exports.engine =
-  matchingEvent: ( test ) ->
+  testMatchingEvent: ( test ) ->
+    test.expect 1
 
     db.storeUser oUser
     db.storeRule oRuleReal.id, JSON.stringify oRuleReal
@@ -152,6 +156,16 @@ exports.engine =
       evt = objects.events.eventReal
       evt.eventid = 'event_testid'
       db.pushEvent evt
-    setTimeout fWaitForPersistence, 200
-    setTimeout test.done, 500
 
+      fWaitAgain = () ->
+        db.getLog oUser.username, oRuleReal.id, ( err, data ) ->
+          try
+            logged = data.split( '] ' )[1]
+            test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property + "\n", 'Did not log the right thing'
+          catch e
+            test.ok false, 'Parsing log failed'
+          test.done()
+
+      setTimeout fWaitAgain, 200
+
+    setTimeout fWaitForPersistence, 200

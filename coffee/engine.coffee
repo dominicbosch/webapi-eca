@@ -19,6 +19,25 @@ dynmod = require './dynamic-modules'
 #   [js-select](https://www.npmjs.org/package/js-select)
 jsonQuery = require 'js-select'
 
+###
+This is ging to have a structure like:
+An object of users with their active rules and the required action modules
+"user-1":
+  "rule-1":
+    "rule": oRule-1
+    "actions":
+      "action-1": oAction-1
+      "action-2": oAction-2
+  "rule-2":
+    "rule": oRule-2
+    "actions":
+      "action-1": oAction-1
+"user-2":
+  "rule-3":
+    "rule": oRule-3
+    "actions":
+      "action-3": oAction-3
+###
 listUserRules = {}
 isRunning = false
 
@@ -35,7 +54,7 @@ exports = module.exports = ( args ) =>
     @log = args.logger
     db args
     dynmod args
-    pollQueue()
+    setTimeout pollQueue, 10 # Very important, this forks a token for the poll task
     module.exports
 
 
@@ -59,50 +78,48 @@ are basically CRUD on rules.
 ###
 exports.internalEvent = ( evt ) =>
   if not listUserRules[evt.user] and evt.event isnt 'del'
-    listUserRules[evt.user] =
-      rules: {}
-      actions: {}
+    listUserRules[evt.user] = {}
 
   oUser = listUserRules[evt.user]
   oRule = evt.rule
-  if evt.event is 'new' or ( evt.event is 'init' and not oUser.rules[oRule.id] )
-    oUser.rules[oRule.id] = oRule
-    updateActionModules oRule, false
+  if evt.event is 'new' or ( evt.event is 'init' and not oUser[oRule.id] )
+    oUser[oRule.id] = 
+      rule: oRule
+      actions: {}
+    updateActionModules oRule.id
 
   if evt.event is 'del' and oUser
-    delete oUser.rules[oRule.id]
-    updateActionModules oRule, true
+    delete oUser[evt.ruleId]
+
+  # If a user is empty after all the updates above, we remove her from the list
+  if JSON.stringify( oUser ) is "{}"
+    delete listUserRules[evt.user]
+
 
 
 ###
 As soon as changes were made to the rule set we need to ensure that the aprropriate action
 invoker modules are loaded, updated or deleted.
 
-@private updateActionModules ( *oNewRule* )
-@param {Object} oNewRule
+@private updateActionModules ( *updatedRuleId* )
+@param {Object} updatedRuleId
 ###
-updateActionModules = ( oNewRule, isDeleteOp ) ->
+updateActionModules = ( updatedRuleId ) ->
   
   # Remove all action invoker modules that are not required anymore
   fRemoveNotRequired = ( oUser ) ->
 
-    # Check whether the action is still existing in a rule
+    # Check whether the action is still existing in the rule
     fRequired = ( actionName ) ->
-      # return true for nmRl, oRl of oUser.rules when actionName in oRl.actions
-      for nmRl, oRl of oUser.rules
-        for action in oRl.actions
-          mod = (action.split ' -> ')[0]
-          if mod is actionName
-            return true
+      for action in oUser[updatedRuleId].rule.actions
+        # Since the event is in the format 'module -> function' we need to split the string
+        if (action.split ' -> ')[0] is actionName
+          return true
       false
 
-
-    # Go thorugh all actions and check whether the action is still required
-    for action of oUser.actions 
-      req = fRequired action
-      if not req
-        delete oUser.actions[action]
-    # delete oUser.actions[action] for action of oUser.actions when not fRequired action
+    # Go thorugh all loaded action modules and check whether the action is still required
+    for action of oUser[updatedRuleId].rule.actions 
+      delete oUser[updatedRuleId].actions[action] if not fRequired action
 
   fRemoveNotRequired oUser for name, oUser of listUserRules
 
@@ -110,25 +127,34 @@ updateActionModules = ( oNewRule, isDeleteOp ) ->
   fAddRequired = ( userName, oUser ) ->
 
     # Check whether the action is existing in a rule and load if not
-    fCheckRules = ( oRule ) ->
+    fCheckRules = ( oMyRule ) ->
 
       # Load the action invoker module if it was part of the updated rule or if it's new
       fAddIfNewOrNotExisting = ( actionName ) ->
         moduleName = (actionName.split ' -> ')[0]
-        if not isDeleteOp and ( not oUser.actions[moduleName] or oRule.id is oNewRule.id )
+        if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
           db.actionInvokers.getModule moduleName, ( err, obj ) ->
-            params = {}
-            res = dynmod.compileString obj.data, userName, moduleName, params, obj.lang
-            oUser.actions[moduleName] = res.module
+            # we compile the module and pass: 
+            dynmod.compileString obj.data,  # code
+              userName,                           # userId
+              oMyRule.rule.id,                    # ruleId
+              moduleName,                         # moduleId
+              obj.lang,                           # script language
+              db.actionInvokers,                   # the DB interface
+              ( result ) ->
+                if not result.answ is 200
+                  @log.error "EN | Compilation of code failed! #{ userName },
+                    #{ oMyRule.rule.id }, #{ moduleName }"
+                oMyRule.actions[moduleName] = result.module
 
-      fAddIfNewOrNotExisting action for action in oRule.actions
+      fAddIfNewOrNotExisting action for action in oMyRule.rule.actions
 
-    # Go thorugh all actions and check whether the action is still required
-    fCheckRules oRl for nmRl, oRl of oUser.rules
-    if JSON.stringify( oUser.rules ) is "{}" # TODO check whether this is really doing what it is supposed to do
-      delete listUserRules[userName]
+    # Go thorugh all rules and check whether the action is still required
+    fCheckRules oRl for nmRl, oRl of oUser
 
+  # load all required modules for all users
   fAddRequired userName, oUser for userName, oUser of listUserRules
+
 
 pollQueue = () ->
   if isRunning
@@ -145,6 +171,8 @@ Checks whether all conditions of the rule are met by the event.
 @param {Object} rule
 ###
 validConditions = ( evt, rule ) ->
+  if rule.conditions.length is 0
+    return true
   for prop in rule.conditions
     return false if jsonQuery( evt, prop ).nodes().length is 0
   return true
@@ -156,15 +184,27 @@ Handles retrieved events.
 @param {Object} evt
 ###
 processEvent = ( evt ) =>
+
+  fSearchAndInvokeAction = ( node, arrPath, evt, depth ) ->
+    if not node
+      @log.error "EN | Didn't find property in user rule list: " + arrPath.join ', ' + " at depth " + depth
+      return
+    if depth is arrPath.length
+      try
+        node evt.payload
+      catch err
+        @log.info "EN | ERROR IN ACTION INVOKER: " + err.message
+    else
+      fSearchAndInvokeAction node[arrPath[depth]], arrPath, evt, depth + 1
+
   @log.info 'EN | processing event: ' + evt.event + '(' + evt.eventid + ')'
   for userName, oUser of listUserRules
-    for ruleName, oRule of oUser.rules
-      if evt.event is oRule.event and validConditions evt, oRule
+    for ruleName, oMyRule of oUser
+      if evt.event is oMyRule.rule.event and validConditions evt, oMyRule.rule
         @log.info 'EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName
-        # fStoreAction userName, action for action in oRule.actions
-        for action in oRule.actions
+        for action in oMyRule.rule.actions
           arr = action.split ' -> '
-          listUserRules[userName]['actions'][arr[0]][arr[1]] evt
+          fSearchAndInvokeAction listUserRules, [ userName, ruleName, 'actions', arr[0], arr[1]], evt, 0
 
 exports.shutDown = () ->
   isRunning = false

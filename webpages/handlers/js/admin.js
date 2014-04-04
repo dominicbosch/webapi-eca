@@ -14,14 +14,18 @@
         $('#info').text(data.message);
         return $('#info').attr('class', 'success');
       }).fail(function(err) {
-        if (err.responseText === '') {
-          err.responseText = 'No Response from Server!';
-        }
-        $('#info').text('Error: ' + err.responseText);
-        $('#info').attr('class', 'error');
-        if (err.status === 401) {
-          return window.location.href = 'admin';
-        }
+        var fDelayed;
+        fDelayed = function() {
+          if (err.responseText === '') {
+            err.responseText = 'No Response from Server!';
+          }
+          $('#info').text('Error: ' + err.responseText);
+          $('#info').attr('class', 'error');
+          if (err.status === 401) {
+            return window.location.href = 'admin';
+          }
+        };
+        return setTimeout(fDelayed, 500);
       });
     });
   };

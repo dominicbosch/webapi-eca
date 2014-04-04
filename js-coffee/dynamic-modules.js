@@ -9,7 +9,9 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cs, exports, needle, vm;
+  var cryptico, cs, db, exports, needle, vm;
+
+  db = require('./persistence');
 
   vm = require('vm');
 
@@ -33,11 +35,12 @@ Dynamic Modules
       var numBits, passPhrase;
       _this.log = args.logger;
       if (!_this.strPublicKey && args['keygen']) {
+        db(args);
         passPhrase = args['keygen'];
         numBits = 1024;
         _this.oPrivateRSAkey = cryptico.generateRSAKey(passPhrase, numBits);
         _this.strPublicKey = cryptico.publicKeyString(_this.oPrivateRSAkey);
-        _this.log.info("Public Key generated: " + _this.strPublicKey);
+        _this.log.info("DM | Public Key generated: " + _this.strPublicKey);
       }
       return module.exports;
     };
@@ -63,8 +66,8 @@ Dynamic Modules
    */
 
   exports.compileString = (function(_this) {
-    return function(src, userId, modId, params, lang) {
-      var answ, err, ret, sandbox;
+    return function(src, userId, ruleId, modId, lang, dbMod, cb) {
+      var answ, err, fTryToLoad, logFunction;
       answ = {
         code: 200,
         message: 'Successfully compiled'
@@ -78,25 +81,53 @@ Dynamic Modules
           answ.message = 'Compilation of CoffeeScript failed at line ' + err.location.first_line;
         }
       }
-      sandbox = {
-        id: userId + '.' + modId + '.vm',
-        params: params,
-        needle: needle,
-        log: console.log,
-        exports: {}
+      logFunction = function(uId, rId, mId) {
+        return function(msg) {
+          return db.appendLog(uId, rId, mId, msg);
+        };
       };
-      try {
-        vm.runInNewContext(src, sandbox, sandbox.id);
-      } catch (_error) {
-        err = _error;
-        answ.code = 400;
-        answ.message = 'Loading Module failed: ' + err.message;
+      db.resetLog(userId, ruleId);
+      fTryToLoad = function(params) {
+        var oDecrypted, sandbox;
+        if (params) {
+          try {
+            oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
+            params = JSON.parse(oDecrypted.plaintext);
+          } catch (_error) {
+            err = _error;
+            _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+            params = {};
+          }
+        } else {
+          params = {};
+        }
+        sandbox = {
+          id: userId + '.' + modId + '.vm',
+          params: params,
+          needle: needle,
+          log: logFunction(userId, ruleId, modId),
+          exports: {}
+        };
+        try {
+          vm.runInNewContext(src, sandbox, sandbox.id);
+        } catch (_error) {
+          err = _error;
+          console.log(err);
+          answ.code = 400;
+          answ.message = 'Loading Module failed: ' + err.message;
+        }
+        return cb({
+          answ: answ,
+          module: sandbox.exports
+        });
+      };
+      if (dbMod) {
+        return dbMod.getUserParams(modId, userId, function(err, obj) {
+          return fTryToLoad(obj);
+        });
+      } else {
+        return fTryToLoad();
       }
-      ret = {
-        answ: answ,
-        module: sandbox.exports
-      };
-      return ret;
     };
   })(this);
 

@@ -68,15 +68,17 @@ fOnLoad = () ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          if err.responseText is ''
-            msg = 'No Response from Server!'
-          else
-            try
-              oErr = JSON.parse err.responseText
-              msg = oErr.message
-          $( '#info' ).text 'Event Poller not stored! ' + msg
-          $( '#info' ).attr 'class', 'error'
-          if err.status is 401
-            window.location.href = 'forge?page=forge_event_poller'
+          fDelayed = () ->
+            if err.responseText is ''
+              msg = 'No Response from Server!'
+            else
+              try
+                oErr = JSON.parse err.responseText
+                msg = oErr.message
+            $( '#info' ).text 'Event Poller not stored! ' + msg
+            $( '#info' ).attr 'class', 'error'
+            if err.status is 401
+              window.location.href = 'forge?page=forge_event_poller'
+          setTimeout fDelayed, 500
 
 window.addEventListener 'load', fOnLoad, true
