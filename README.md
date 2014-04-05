@@ -1,11 +1,9 @@
 README: webapi-eca
 ==================
 > A Modular ECA Engine Server which acts as a middleware between WebAPI's.
-> This folder continues examples of an ECA engine and how certain use cases
-> could be implemented together with a rules language.
 > 
-> The server is started through the [server.js](server.html) module by calling
-> `node rule_server.js`. 
+> The server is started through the [webapi-eca.js](webapi-eca.html) module by calling
+> `node js/webapi-eca.js`. 
 
 
 Getting started
@@ -29,26 +27,29 @@ Download and install dependencies:
     cd webapi-eca
     npm install
 
-Get your [redis](http://redis.io/) instance up and running (and find the port for the config file below) or create your own `js/db_interface.js`.
+Get your [redis](http://redis.io/) instance up and running (and find the port for the config file below) or create your own `js/persistence.js`.
 
 Edit the configuration file:
 
-    vi config/config.json
+    vi config/system.json
 
 Apply your settings, for example:
-# TODO Remake
-
 
     {
-        "http_port": 8125,
-        "db_port": 6379,
-        "crypto_key": "[your key]",
-        "session_secret": "[your secret]"
+      "http-port": 8125,            # The port on which the system listens for requests
+      "db-port": 6379,              # The db-port where your redis instance is listening
+      "log": {                      ### logging configurations
+        "mode": "development",      # if set to productive no expensive origin lookup is performed and logged
+        "io-level": "info",         # the log-level for the std I/O stream
+        "file-level": "info",       # the log-level for the log file
+        "file-path": "server.log"   # log file path, relative to cwd
+        ( add "nolog": "true" if no log shall be generated at all. Mainly used for unit tests )
+      }
     }
 
 Start the server:
 
-    run_server.sh
+    run_engine.sh
     
 *Congratulations, your own WebAPI based ECA engine server is now up and running!*
 
@@ -69,32 +70,3 @@ Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 Run test suite:
 
     run_tests.sh
-
-_
-
-TODO
-----
-
-* Redis queue
-* user handling (personal credentials)
-* security in terms of users (private key, login)
-* vm for modules, only give few libraries (no fs!)
-* rules generator (provide webpage that is used to create rules dependent on the existing modues)
-* geo location module, test on smartphone.
-
-_
-
-TODO per module
----------------
-
-Testing | clean documentation | Clean error handling (Especially in loading of modules and their credentials):
-
-* DB Interface
-* Engine
-* Event Poller
-* HTTP Listener
-* Logging
-* Module Loader
-* Module Manager
-* Server
-

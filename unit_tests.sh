@@ -6,7 +6,7 @@ var fs = require( 'fs' ),
   db = require( './js-coffee/persistence' ),
   args = process.argv.slice( 2 ),
   fEnd = function() {
-    console.log('Shutting down DB from unit_test.sh script...');
+    console.log( 'Shutting down DB from unit_test.sh script...' );
     db.shutDown();
   };
    
