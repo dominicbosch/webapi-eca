@@ -41,13 +41,6 @@ exports = module.exports = ( args ) =>
     @strPublicKey = cryptico.publicKeyString @oPrivateRSAkey
     @log.info "DM | Public Key generated: #{ @strPublicKey }"
 
-  # plainText = "Matt, I need you to help me with my Starcraft strategy."
-  # oEncrypted = cryptico.encrypt plainText, strPublicKey
-
-  # console.log oEncrypted.cipher
-  # oDecrypted = cryptico.decrypt oEncrypted.cipher, oPrivateRSAkey
-  # console.log oDecrypted.plaintext
-
   module.exports
 
 

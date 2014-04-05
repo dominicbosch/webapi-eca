@@ -10,16 +10,16 @@ try
 catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
 opts =
   logger: log
 
-cm = require path.join '..', 'js-coffee', 'components-manager'
+cm = require path.join '..', 'js', 'components-manager'
 cm opts
 
-db = require path.join '..', 'js-coffee', 'persistence'
+db = require path.join '..', 'js', 'persistence'
 db opts
 
 oUser = objects.users.userOne

@@ -1,7 +1,7 @@
 path = require 'path'
 fs = require 'fs'
 stdPath = path.resolve __dirname, '..', 'logs', 'server.log'
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 
 getLog = ( strPath, cb ) ->
   fWait = ->

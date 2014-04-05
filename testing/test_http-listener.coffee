@@ -23,7 +23,7 @@ exports.testsGoInWebAPI_ECA_Module = ( test ) ->
 # path = require 'path'
 # http = require 'http'
 # needle = require 'needle'
-# logger = require path.join '..', 'js-coffee', 'logging'
+# logger = require path.join '..', 'js', 'logging'
 # log = logger.getLogger
 #   nolog: true
 
@@ -32,7 +32,7 @@ exports.testsGoInWebAPI_ECA_Module = ( test ) ->
 #   pathFile = path.resolve  'webpages', 'public', 'style.css'
 #   fl = fs.readFileSync pathFile, 'utf-8'
 
-#   hl = require path.join '..', 'js-coffee', 'http-listener'
+#   hl = require path.join '..', 'js', 'http-listener'
 #   fWaitForTestEnd = () =>
 #     console.log 'hl end?'
 #     process.kill()
@@ -59,7 +59,7 @@ exports.testsGoInWebAPI_ECA_Module = ( test ) ->
 # exports.testWrongPort = ( test ) =>
 #   test.expect 1
 
-#   hl = require path.join '..', 'js-coffee', 'http-listener'
+#   hl = require path.join '..', 'js', 'http-listener'
 #   fWaitForTestEnd = () =>
 #     console.log 'hl end?'
 #     process.kill()

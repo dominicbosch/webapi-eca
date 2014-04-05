@@ -1,8 +1,8 @@
 path = require 'path'
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
-conf = require path.join '..', 'js-coffee', 'config'
+conf = require path.join '..', 'js', 'config'
 conf
   logger: log
 

@@ -69,19 +69,17 @@ exports.addRuleListener = ( eh ) =>
 
 ###
 Processes a user request coming through the request-handler.
+
 - `user` is the user object as it comes from the DB.
 - `oReq` is the request object that contains:
+
   - `command` as a string 
   - `payload` an optional stringified JSON object 
 The callback function `callback( obj )` will receive an object
 containing the HTTP response code and a corresponding message.
 
 @public processRequest ( *user, oReq, callback* )
-@param {Object} user
-@param {Object} oReq
-@param {function} callback
 ###
-
 exports.processRequest = ( user, oReq, callback ) ->
   if not oReq.payload
     oReq.payload = '{}'
@@ -92,12 +90,21 @@ exports.processRequest = ( user, oReq, callback ) ->
       code: 404
       message: 'You had a strange payload in your request!'
   if commandFunctions[oReq.command]
+
+    # If the command function was registered we invoke it
     commandFunctions[oReq.command] user, dat, callback
   else
     callback
       code: 404
       message: 'What do you want from me?'
 
+###
+Checks whether all required parameters are present in the payload.
+
+@private hasRequiredParams ( *arrParams, oPayload* )
+@param {Array} arrParams
+@param {Object} oPayload
+###
 hasRequiredParams = ( arrParams, oPayload ) ->
   answ =
     code: 400
@@ -107,6 +114,15 @@ hasRequiredParams = ( arrParams, oPayload ) ->
   answ.message = 'All required properties found'
   answ
 
+###
+Fetches all available modules and return them together with the available functions.
+
+@private getModules ( *user, oPayload, dbMod, callback* )
+@param {Object} user
+@param {Object} oPayload
+@param {Object} dbMod
+@param {function} callback
+###
 getModules = ( user, oPayload, dbMod, callback ) ->
   dbMod.getAvailableModuleIds user.username, ( err, arrNames ) ->
     oRes = {}
@@ -218,6 +234,7 @@ commandFunctions =
         message: 'OK!'
 
   # A rule needs to be in following format:
+  
   # - id
   # - event
   # - conditions

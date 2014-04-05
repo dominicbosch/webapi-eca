@@ -16,20 +16,20 @@ try
 catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
 opts =
   logger: log
   keygen: passPhrase
 
-db = require path.join '..', 'js-coffee', 'persistence'
+db = require path.join '..', 'js', 'persistence'
 db opts
 
-engine = require path.join '..', 'js-coffee', 'engine'
+engine = require path.join '..', 'js', 'engine'
 engine opts
 
-dm = require path.join '..', 'js-coffee', 'dynamic-modules'
+dm = require path.join '..', 'js', 'dynamic-modules'
 dm opts
 
 oUser = objects.users.userOne

@@ -9,10 +9,10 @@ try
 catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
-db = require path.join '..', 'js-coffee', 'persistence'
+db = require path.join '..', 'js', 'persistence'
 opts =
   logger: log
 opts[ 'db-port' ] = 6379

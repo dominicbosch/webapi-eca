@@ -100,16 +100,15 @@ initRouting = ( port ) =>
     @shutDownSystem()
 
 
-# ###
+#
 # Shuts down the http listener.
 # There's no way to gracefully stop express from running, thus we
 # call process.exit() at the very end of our existance.
 # ... but process.exit cancels the unit tests ...
 # thus we do it in the main module and use a cli flag for the unit tests 
-# @public shutDown()
-# ###
+#
 # exports.shutDown = () =>
-#   @log?.warn 'HL | Shutting down HTTP listener'
+#   log?.warn 'HL | Shutting down HTTP listener'
 #   console.log 'exiting...'
 #   process.exit()
 

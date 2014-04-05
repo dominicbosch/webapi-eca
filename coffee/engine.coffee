@@ -22,21 +22,22 @@ jsonQuery = require 'js-select'
 ###
 This is ging to have a structure like:
 An object of users with their active rules and the required action modules
-"user-1":
-  "rule-1":
-    "rule": oRule-1
-    "actions":
-      "action-1": oAction-1
-      "action-2": oAction-2
-  "rule-2":
-    "rule": oRule-2
-    "actions":
-      "action-1": oAction-1
-"user-2":
-  "rule-3":
-    "rule": oRule-3
-    "actions":
-      "action-3": oAction-3
+
+    "user-1":
+      "rule-1":
+        "rule": oRule-1
+        "actions":
+          "action-1": oAction-1
+          "action-2": oAction-2
+      "rule-2":
+        "rule": oRule-2
+        "actions":
+          "action-1": oAction-1
+    "user-2":
+      "rule-3":
+        "rule": oRule-3
+        "actions":
+          "action-3": oAction-3
 ###
 listUserRules = {}
 isRunning = false
@@ -61,10 +62,11 @@ exports = module.exports = ( args ) =>
 ###
 This is a helper function for the unit tests so we can verify that action
 modules are loaded correctly
-#TODO we should change this to functions returning true or false rather than returning
-#the whole list
+
 @public getListUserRules ()
 ###
+#TODO we should change this to functions returning true or false rather than returning
+#the whole list
 exports.getListUserRules = () ->
   listUserRules
 

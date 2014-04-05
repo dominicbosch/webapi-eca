@@ -9,7 +9,7 @@ exports.testShutDown = ( test ) ->
   test.expect 1
 
   isRunning = true
-  pth = path.resolve 'js-coffee', 'webapi-eca'
+  pth = path.resolve 'js', 'webapi-eca'
   engine = cp.fork pth, [ '-n', '-w', '8640'  ] # [ '-i' , 'warn' ]
 
   engine.on 'error', ( err ) ->
@@ -35,7 +35,7 @@ exports.testShutDown = ( test ) ->
 exports.testKill = ( test ) ->
   test.expect 1
 
-  pth = path.resolve 'js-coffee', 'webapi-eca'
+  pth = path.resolve 'js', 'webapi-eca'
   engine = cp.fork pth, [ '-n', '-w', '8641' ] # [ '-i' , 'warn' ]
   engine.on 'error', ( err ) ->
     console.log err
@@ -54,7 +54,7 @@ exports.testKill = ( test ) ->
 exports.testHttpPortAlreadyUsed = ( test ) =>
   test.expect 1
   isRunning = true
-  pth = path.resolve 'js-coffee', 'webapi-eca'
+  pth = path.resolve 'js', 'webapi-eca'
   
   # Strange! why can't we make these variables local without
   # the tests failing in one of the next tests...
@@ -89,7 +89,7 @@ exports.testHttpPortInvalid = ( test ) ->
   test.expect 1
   
   isRunning = true
-  pth = path.resolve 'js-coffee', 'webapi-eca'
+  pth = path.resolve 'js', 'webapi-eca'
   engine = cp.fork pth, [ '-n', '-w', '1' ] # [ '-i' , 'warn' ]
   engine.on 'exit', ( code, signal ) ->
     test.ok true, 'Engine stopped'
@@ -111,7 +111,7 @@ exports.testDbPortInvalid = ( test ) ->
   test.expect 1
   
   isRunning = true
-  pth = path.resolve 'js-coffee', 'webapi-eca'
+  pth = path.resolve 'js', 'webapi-eca'
   engine = cp.fork pth, [ '-n', '-d', '10'] # [ '-i' , 'warn' ]
   engine.on 'error', ( err ) ->
     console.log err

@@ -10,16 +10,16 @@ try
 catch err
   console.log 'Error fetching standard objects file: ' + err.message
 
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
 opts =
   logger: log
 
-engine = require path.join '..', 'js-coffee', 'engine'
+engine = require path.join '..', 'js', 'engine'
 engine opts
 
-db = require path.join '..', 'js-coffee', 'persistence'
+db = require path.join '..', 'js', 'persistence'
 db opts
 
 listRules = engine.getListUserRules()

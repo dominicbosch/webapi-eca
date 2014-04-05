@@ -3,7 +3,7 @@ process.chdir( __dirname );
 var fs = require( 'fs' ),
   path = require( 'path' ),
   nodeunit = require( 'nodeunit' ),
-  db = require( './js-coffee/persistence' ),
+  db = require( './js/persistence' ),
   args = process.argv.slice( 2 ),
   fEnd = function() {
     console.log( 'Shutting down DB from unit_test.sh script...' );

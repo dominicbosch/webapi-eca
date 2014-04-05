@@ -14,16 +14,16 @@ try
     console.log 'Error parsing standard objects file: ' + err.message
 catch err
   console.log 'Error fetching standard objects file: ' + err.message
-logger = require path.join '..', 'js-coffee', 'logging'
+logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
   nolog: true
 opts =
   logger: log
 opts[ 'db-port' ] = 6379
-db = require path.join '..', 'js-coffee', 'persistence'
+db = require path.join '..', 'js', 'persistence'
 db opts
 
-rh = require path.join '..', 'js-coffee', 'request-handler'
+rh = require path.join '..', 'js', 'request-handler'
 opts[ 'request-service' ] = ( usr, obj, cb ) ->
   test.ok false, 'testEvent should not cause a service request call'
 opts[ 'shutdown-function' ] = () ->

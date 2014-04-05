@@ -277,7 +277,7 @@ objects.*
 exports.handleAdmin = ( req, resp ) ->
   if not req.session.user
     page = 'login'
-  # TODO isAdmin should come from the db role
+  #TODO isAdmin should come from the db role
   else if req.session.user.isAdmin isnt "true"
     page = 'login'
     msg = 'You need to be admin!'
