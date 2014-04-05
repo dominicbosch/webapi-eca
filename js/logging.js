@@ -28,7 +28,7 @@
         fatal: function() {}
       };
       args = args != null ? args : {};
-      if (args.nolog) {
+      if (args.nolog === true || args.nolog === 'true') {
         return emptylog;
       } else {
         try {

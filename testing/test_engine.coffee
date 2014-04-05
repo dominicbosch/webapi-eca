@@ -31,6 +31,10 @@ oAiOne = objects.ais.aiOne
 oAiTwo = objects.ais.aiTwo
 
 exports.tearDown = ( cb ) ->
+  engine.startEngine()
+  cb()
+  
+exports.tearDown = ( cb ) ->
   db.deleteRule oRuleReal.id
   db.actionInvokers.deleteModule oAiOne.id
   db.actionInvokers.deleteModule oAiTwo.id
@@ -46,6 +50,7 @@ exports.tearDown = ( cb ) ->
     event: 'del'
     user: oUser.username
     rule: oRuleRealTwo
+  engine.shutDown()
 
   setTimeout cb, 100
 
@@ -161,7 +166,8 @@ exports.engine =
         db.getLog oUser.username, oRuleReal.id, ( err, data ) ->
           try
             logged = data.split( '] ' )[1]
-            test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property + "\n", 'Did not log the right thing'
+            logged = logged.split( "\n" )[0]
+            test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property, 'Did not log the right thing'
           catch e
             test.ok false, 'Parsing log failed'
           test.done()

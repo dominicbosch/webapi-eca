@@ -91,7 +91,8 @@ exports.testCorrectUserParams = ( test ) ->
       db.getLog oUser.username, oRuleReal.id, ( err, data ) ->
         try
           logged = data.split( '] ' )[1]
-          test.strictEqual logged, "{#{ oAi.id }} " + pw + "\n", 'Did not log the right thing'
+          logged = logged.split( "\n" )[0]
+          test.strictEqual logged, "{#{ oAi.id }} " + pw, 'Did not log the right thing'
         catch e
           test.ok false, 'Parsing log failed'
 
@@ -100,6 +101,7 @@ exports.testCorrectUserParams = ( test ) ->
           user: oUser.username
           rule: null
           ruleId: oRuleReal.id
+        engine.shutDown()
         setTimeout test.done, 200
 
     setTimeout fWaitAgain, 200

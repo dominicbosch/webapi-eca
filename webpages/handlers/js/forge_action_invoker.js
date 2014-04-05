@@ -10,6 +10,7 @@
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/coffee");
     editor.setShowPrintMargin(false);
+    editor.session.setUseSoftTabs(false);
     $('#editor_mode').change(function(el) {
       if ($(this).val() === 'CoffeeScript') {
         return editor.getSession().setMode("ace/mode/coffee");

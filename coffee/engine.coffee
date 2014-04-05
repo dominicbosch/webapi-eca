@@ -16,7 +16,7 @@ db = require './persistence'
 dynmod = require './dynamic-modules'
 
 # - External Modules:
-#   [js-select](https://www.npmjs.org/package/js-select)
+#   [js-select](https://github.com/harthur/js-select)
 jsonQuery = require 'js-select'
 
 ###
@@ -51,11 +51,10 @@ Initializes the Engine and starts polling the event queue for new events.
 ###
 exports = module.exports = ( args ) =>
   if not isRunning
-    isRunning = true
     @log = args.logger
     db args
     dynmod args
-    setTimeout pollQueue, 10 # Very important, this forks a token for the poll task
+    setTimeout exports.startEngine, 10 # Very important, this forks a token for the poll task
     module.exports
 
 
@@ -70,6 +69,11 @@ modules are loaded correctly
 exports.getListUserRules = () ->
   listUserRules
 
+# We need this so we can shut it down after the module unit tests
+exports.startEngine = () ->
+  if not isRunning
+    isRunning = true
+    pollQueue()
 
 ###
 An event associated to rules happened and is captured here. Such events 
@@ -157,13 +161,14 @@ updateActionModules = ( updatedRuleId ) ->
   # load all required modules for all users
   fAddRequired userName, oUser for userName, oUser of listUserRules
 
-
+semaphore = 0
 pollQueue = () ->
   if isRunning
     db.popEvent ( err, obj ) ->
       if not err and obj
         processEvent obj
-      setTimeout pollQueue, 50 #TODO adapt to load
+      semaphore--
+    setTimeout pollQueue, 20 * semaphore #FIXME right wayx to adapt to load?
 
 ###
 Checks whether all conditions of the rule are met by the event.
@@ -179,6 +184,7 @@ validConditions = ( evt, rule ) ->
     return false if jsonQuery( evt, prop ).nodes().length is 0
   return true
 
+semaphore = 0
 ###
 Handles retrieved events.
 
@@ -186,18 +192,21 @@ Handles retrieved events.
 @param {Object} evt
 ###
 processEvent = ( evt ) =>
-
-  fSearchAndInvokeAction = ( node, arrPath, evt, depth ) ->
+  fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) ->
     if not node
       @log.error "EN | Didn't find property in user rule list: " + arrPath.join ', ' + " at depth " + depth
       return
     if depth is arrPath.length
       try
-        node evt.payload
+        semaphore++
+        node[funcName] evt.payload
       catch err
         @log.info "EN | ERROR IN ACTION INVOKER: " + err.message
+        node.logger err.message
+      if semaphore-- % 100 is 0
+        @log.warn "EN | The system is producing too many tokens! Currently: #{ semaphore }"
     else
-      fSearchAndInvokeAction node[arrPath[depth]], arrPath, evt, depth + 1
+      fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
   @log.info 'EN | processing event: ' + evt.event + '(' + evt.eventid + ')'
   for userName, oUser of listUserRules
@@ -206,7 +215,7 @@ processEvent = ( evt ) =>
         @log.info 'EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName
         for action in oMyRule.rule.actions
           arr = action.split ' -> '
-          fSearchAndInvokeAction listUserRules, [ userName, ruleName, 'actions', arr[0], arr[1]], evt, 0
+          fSearchAndInvokeAction listUserRules, [ userName, ruleName, 'actions', arr[0]], arr[1], evt, 0
 
 exports.shutDown = () ->
   isRunning = false

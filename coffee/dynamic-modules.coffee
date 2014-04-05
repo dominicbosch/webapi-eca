@@ -48,20 +48,26 @@ exports.getPublicKey = () =>
   @strPublicKey
 
 
-issueApiCall = ( method, url, credentials, cb ) =>
-  try 
-    if method is 'get'
-      func = needle.get
-    else
-      func = needle.post
-
-    func url, credentials, ( err, resp, body ) =>
-      if not err
-        cb body
+issueApiCall = ( logger ) ->
+  ( method, url, credentials, cb ) ->
+    try 
+      if method is 'get'
+        func = needle.get
       else
-        cb()
-  catch err
-    @log.info 'DM | Error even before calling!'
+        func = needle.post
+
+      func url, credentials, ( err, resp, body ) =>
+        try
+          cb err, resp, body
+        catch err
+          logger 'Error during apicall! ' + err.message
+    catch err
+      logger 'Error before apicall! ' + err.message
+
+logFunction = ( uId, rId, mId ) ->
+  ( msg ) ->
+    db.appendLog uId, rId, mId, msg
+
 ###
 Try to run a JS module from a string, together with the
 given parameters. If it is written in CoffeeScript we
@@ -86,11 +92,6 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
       answ.message = 'Compilation of CoffeeScript failed at line ' +
         err.location.first_line
 
-  logFunction = ( uId, rId, mId ) ->
-    ( msg ) ->
-      db.appendLog uId, rId, mId, msg
-  db.resetLog userId, ruleId
-
   fTryToLoad = ( params ) =>
     if params
       try
@@ -98,15 +99,18 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
         params = JSON.parse oDecrypted.plaintext
       catch err
         @log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+        @log.warn err
         params = {}
     else
       params = {}
 
+    logFunc = logFunction userId, ruleId, modId
     sandbox = 
       id: userId + '.' + modId + '.vm'
       params: params
-      apicall: issueApiCall
-      log: logFunction userId, ruleId, modId
+      apicall: issueApiCall logFunc
+      # needle: needle
+      log: logFunc
       # debug: console.log
       exports: {}
 
@@ -119,12 +123,12 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
       # TODO We should investigate memory usage and garbage collection (global.gc())?
       # Start Node with the flags —nouse_idle_notification and —expose_gc, and then when you want to run the GC, just call global.gc().
     catch err
-      console.log err
       answ.code = 400
       answ.message = 'Loading Module failed: ' + err.message
     cb
       answ: answ
       module: sandbox.exports
+      logger: sandbox.log
 
   if dbMod
     dbMod.getUserParams modId, userId, ( err, obj ) ->

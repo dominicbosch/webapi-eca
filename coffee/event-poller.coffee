@@ -15,7 +15,7 @@ db = require './persistence'
 dynmod = require './dynamic-modules'
 
 # If we do not receive all required arguments we shut down immediately
-if process.argv.length < 7
+if process.argv.length < 8
   console.error 'Not all arguments have been passed!'
   process.exit()
 
@@ -31,7 +31,9 @@ log.info 'EP | Event Poller starts up'
 
 # Initialize required modules (should be in cache already)
 db logger: log
-dynmod logger: log
+dynmod
+  logger: log
+  keygen: process.argv[ 7 ]
 
 # Initialize module local variables and 
 listUserModules = {}
@@ -90,6 +92,7 @@ fLoadModule = ( msg ) ->
               id: msg.rule.event
               pollfunc: arrName[1]
               module: result.module
+              logger: result.logger
 
             log.info "EP | New event module loaded! #{ msg.user },
               #{ msg.rule.id }, #{ arrName[0] }"
@@ -115,24 +118,24 @@ pollLoop = () ->
       # Go through each of the users modules
       for ruleName, myRule of oRules
 
-        # This is the to be polled function
-        fPoll = myRule.module[myRule.pollfunc]
+        # # This is the to be polled function
+        # fPoll = myRule.module[myRule.pollfunc]
         
         # We have to register the poll function in belows anonymous function
         # because we're fast iterating through the listUserModules and references will
         # eventually not be what they are expected to be
-        fRegisterModuleReference = ( ruleId, userId, eventId ) ->
-          ( obj ) ->
-            db.pushEvent
-              event: eventId
-              eventid: "polled #{ eventId } #{ userId }_#{ ( new Date ).toISOString() }"
-              payload: obj
+        fCallFunction = ( oRule, ruleId, userId ) ->
+          try
+            oRule.module[oRule.pollfunc] ( obj ) ->
+              db.pushEvent
+                event: oRule.id
+                eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date ).toISOString() }"
+                payload: obj
+          catch err
+            log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
+            oRule.logger err.message
 
-        try
-          fPoll fRegisterModuleReference ruleName, userName, myRule.id
-        catch err
-          log.info 'EP | ERROR encountered during polling!'
-          log.info err
+        fCallFunction myRule, ruleName, userName
     setTimeout pollLoop, 10000
 
 

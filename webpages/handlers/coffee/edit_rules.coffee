@@ -5,6 +5,7 @@ fOnLoad = () ->
 
   fErrHandler = ( errMsg ) ->
     ( err ) ->
+      $( '#log_col' ).text ""
       fDelayed = () ->
         if err.responseText is ''
           msg = 'No Response from Server!'
@@ -38,6 +39,7 @@ fOnLoad = () ->
   $( '#tableRules' ).on 'click', 'img.del', () ->
     ruleName = $( 'div', $( this ).closest( 'tr' )).text()
     if confirm  "Do you really want to delete the rule '#{ ruleName }'?"
+      $( '#log_col' ).text ""
       data =
         command: 'delete_rule'
         payload:

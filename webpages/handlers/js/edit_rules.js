@@ -9,6 +9,7 @@
     fErrHandler = function(errMsg) {
       return function(err) {
         var fDelayed;
+        $('#log_col').text("");
         fDelayed = function() {
           var msg, oErr;
           if (err.responseText === '') {
@@ -53,6 +54,7 @@
       var data, ruleName;
       ruleName = $('div', $(this).closest('tr')).text();
       if (confirm("Do you really want to delete the rule '" + ruleName + "'?")) {
+        $('#log_col').text("");
         data = {
           command: 'delete_rule',
           payload: {

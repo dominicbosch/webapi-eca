@@ -10,7 +10,7 @@ Engine
  */
 
 (function() {
-  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, pollQueue, processEvent, updateActionModules, validConditions;
+  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, pollQueue, processEvent, semaphore, updateActionModules, validConditions;
 
   db = require('./persistence');
 
@@ -56,11 +56,10 @@ Engine
   exports = module.exports = (function(_this) {
     return function(args) {
       if (!isRunning) {
-        isRunning = true;
         _this.log = args.logger;
         db(args);
         dynmod(args);
-        setTimeout(pollQueue, 10);
+        setTimeout(exports.startEngine, 10);
         return module.exports;
       }
     };
@@ -76,6 +75,13 @@ Engine
 
   exports.getListUserRules = function() {
     return listUserRules;
+  };
+
+  exports.startEngine = function() {
+    if (!isRunning) {
+      isRunning = true;
+      return pollQueue();
+    }
   };
 
 
@@ -190,14 +196,17 @@ Engine
     return _results;
   };
 
+  semaphore = 0;
+
   pollQueue = function() {
     if (isRunning) {
-      return db.popEvent(function(err, obj) {
+      db.popEvent(function(err, obj) {
         if (!err && obj) {
           processEvent(obj);
         }
-        return setTimeout(pollQueue, 50);
+        return semaphore--;
       });
+      return setTimeout(pollQueue, 20 * semaphore);
     }
   };
 
@@ -225,6 +234,8 @@ Engine
     return true;
   };
 
+  semaphore = 0;
+
 
   /*
   Handles retrieved events.
@@ -236,7 +247,7 @@ Engine
   processEvent = (function(_this) {
     return function(evt) {
       var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleName, userName, _results;
-      fSearchAndInvokeAction = function(node, arrPath, evt, depth) {
+      fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
         var err;
         if (!node) {
           this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ' + " at depth " + depth));
@@ -244,13 +255,18 @@ Engine
         }
         if (depth === arrPath.length) {
           try {
-            return node(evt.payload);
+            semaphore++;
+            node[funcName](evt.payload);
           } catch (_error) {
             err = _error;
-            return this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
+            this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
+            node.logger(err.message);
+          }
+          if (semaphore-- % 100 === 0) {
+            return this.log.warn("EN | The system is producing too many tokens! Currently: " + semaphore);
           }
         } else {
-          return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, evt, depth + 1);
+          return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
         }
       };
       _this.log.info('EN | processing event: ' + evt.event + '(' + evt.eventid + ')');
@@ -271,7 +287,7 @@ Engine
                 for (_i = 0, _len = _ref.length; _i < _len; _i++) {
                   action = _ref[_i];
                   arr = action.split(' -> ');
-                  _results2.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0], arr[1]], evt, 0));
+                  _results2.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0]], arr[1], evt, 0));
                 }
                 return _results2;
               })());

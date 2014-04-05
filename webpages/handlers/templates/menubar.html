@@ -14,24 +14,27 @@
       menubar.append(link);
     };
 
-    fCreateLink( 'forge event poller',
+    fCreateLink( 'Forge Event Poller',
       fRedirect( 'forge?page=forge_event_poller' )
     );
-    fCreateLink( 'forge action invoker',
+    fCreateLink( 'Forge Action Invoker',
       fRedirect( 'forge?page=forge_action_invoker' )
     );
-    fCreateLink( 'forge rule',
+    fCreateLink( 'Forge Rule',
       fRedirect( 'forge?page=forge_rule' )
     );
-    fCreateLink( 'invoke event',
+    fCreateLink( 'Invoke Event',
       fRedirect( 'forge?page=forge_event' )
     );
-    fCreateLink( 'edit rules',
+    fCreateLink( 'Edit Modules',
+      fRedirect( 'forge?page=edit_modules' )
+    );
+    fCreateLink( 'Edit rules',
       fRedirect( 'forge?page=edit_rules' )
     );
-    fCreateLink( 'admin', fRedirect( 'admin' ) );
+//    fCreateLink( 'admin', fRedirect( 'admin' ) );
 
-    fCreateLink( 'logout',  function() {
+    fCreateLink( 'Logout',  function() {
       $.post( '/logout' ).done( fRedirect( document.URL ) );
     });
   </script>

@@ -118,7 +118,7 @@ WebAPI-ECA Engine
   }
 
   if (argv.n) {
-    logconf['nolog'] = argv.n;
+    logconf['nolog'] = true;
   }
 
   try {
@@ -157,7 +157,7 @@ WebAPI-ECA Engine
           _this.log.info('RS | Initialzing engine');
           engine(args);
           _this.log.info('RS | Forking a child process for the event poller');
-          cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog']];
+          cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog'], args['keygen']];
           poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
           _this.log.info('RS | Initialzing module manager');
           cm(args);

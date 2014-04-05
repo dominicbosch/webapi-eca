@@ -15,7 +15,11 @@
   });
 
   fOnLoad = function() {
-    var arrActionInvoker, fFetchActionParams, fFetchEventParams, obj;
+    var arrActionInvoker, editor, fFetchActionParams, fFetchEventParams, obj;
+    editor = ace.edit("editor_conditions");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/json");
+    editor.setShowPrintMargin(false);
     document.title = 'Rule Forge!';
     $('#pagetitle').text('{{{user.username}}}, forge your rule!');
     fFetchEventParams = function(name) {
@@ -190,17 +194,18 @@
       });
     };
     $('#select_actions').on('change', function() {
-      var arrAI, div, img, opt, table, tr;
+      var arrAI, div, idAI, img, opt, table, tr;
       opt = $('option:selected', this);
       arrAI = opt.val().split(' -> ');
+      idAI = opt.attr('id');
       table = $('#selected_actions');
-      tr = $('<tr>').attr('id', 'title_' + opt.attr('id'));
+      tr = $('<tr>').attr('id', 'title_' + idAI);
       img = $('<img>').attr('src', 'red_cross_small.png');
       tr.append($('<td>').css('width', '20px').append(img));
       tr.append($('<td>').attr('class', 'title').text(opt.val()));
       table.append(tr);
-      if ($('#ap_' + arrAI[0]).length === 0) {
-        div = $('<div>').attr('id', 'ap_' + arrAI[0]);
+      if ($('#ap_' + idAI).length === 0) {
+        div = $('<div>').attr('id', 'ap_' + idAI);
         div.append($('<div> ')).attr('class', 'underlined').text(arrAI[0]);
         $('#action_params').append(div);
         fFetchActionParams(div, arrAI[0]);
@@ -208,7 +213,7 @@
       return opt.remove();
     });
     $('#selected_actions').on('click', 'img', function() {
-      var arrName, id, isSelected, name, opt;
+      var arrName, id, name, opt;
       id = $(this).closest('tr').attr('id').substring(6);
       name = arrActionInvoker[id];
       arrName = name.split(' -> ');
@@ -216,18 +221,10 @@
       $('#params_' + id).remove();
       opt = $('<option>').attr('id', id).text(name);
       $('#select_actions').append(opt);
-      isSelected = false;
-      $('#selected_actions td').each(function() {
-        if ($(this).text().indexOf(arrName[0]) > -1) {
-          return isSelected = true;
-        }
-      });
-      if (!isSelected) {
-        return $('#ap_' + arrName[0]).remove();
-      }
+      return $('#ap_' + id).remove();
     });
     return $('#but_submit').click(function() {
-      var acts, ap, encryptedParams, ep, err;
+      var acts, ap, conds, encryptedParams, ep, err;
       try {
         if ($('#select_event option:selected').length === 0) {
           throw new Error('Please create an Event Poller first!');
@@ -269,6 +266,15 @@
         $('#selected_actions .title').each(function() {
           return acts.push($(this).text());
         });
+        try {
+          conds = JSON.parse(editor.getValue());
+        } catch (_error) {
+          err = _error;
+          throw new Error("Parsing of your conditions failed! Needs to be an Array of Strings!");
+        }
+        if (!(conds instanceof Array)) {
+          throw new Error("Conditions Invalid! Needs to be an Array of Strings!");
+        }
         encryptedParams = cryptico.encrypt(JSON.stringify(ep), strPublicKey);
         obj = {
           command: 'forge_rule',
@@ -276,7 +282,7 @@
             id: $('#input_id').val(),
             event: $('#select_event option:selected').val(),
             event_params: encryptedParams.cipher,
-            conditions: [],
+            conditions: conds,
             actions: acts,
             action_params: ap
           }
@@ -307,6 +313,8 @@
         });
       } catch (_error) {
         err = _error;
+        $('#info').text('Error in upload: ' + err.message);
+        $('#info').attr('class', 'error');
         return alert(err.message);
       }
     });

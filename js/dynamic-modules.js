@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cs, db, exports, issueApiCall, needle, vm;
+  var cryptico, cs, db, exports, issueApiCall, logFunction, needle, vm;
 
   db = require('./persistence');
 
@@ -52,7 +52,7 @@ Dynamic Modules
     };
   })(this);
 
-  issueApiCall = (function(_this) {
+  issueApiCall = function(logger) {
     return function(method, url, credentials, cb) {
       var err, func;
       try {
@@ -61,19 +61,28 @@ Dynamic Modules
         } else {
           func = needle.post;
         }
-        return func(url, credentials, function(err, resp, body) {
-          if (!err) {
-            return cb(body);
-          } else {
-            return cb();
-          }
-        });
+        return func(url, credentials, (function(_this) {
+          return function(err, resp, body) {
+            try {
+              return cb(err, resp, body);
+            } catch (_error) {
+              err = _error;
+              return logger('Error during apicall! ' + err.message);
+            }
+          };
+        })(this));
       } catch (_error) {
         err = _error;
-        return _this.log.info('DM | Error even before calling!');
+        return logger('Error before apicall! ' + err.message);
       }
     };
-  })(this);
+  };
+
+  logFunction = function(uId, rId, mId) {
+    return function(msg) {
+      return db.appendLog(uId, rId, mId, msg);
+    };
+  };
 
 
   /*
@@ -90,7 +99,7 @@ Dynamic Modules
 
   exports.compileString = (function(_this) {
     return function(src, userId, ruleId, modId, lang, dbMod, cb) {
-      var answ, err, fTryToLoad, logFunction;
+      var answ, err, fTryToLoad;
       answ = {
         code: 200,
         message: 'Successfully compiled'
@@ -104,14 +113,8 @@ Dynamic Modules
           answ.message = 'Compilation of CoffeeScript failed at line ' + err.location.first_line;
         }
       }
-      logFunction = function(uId, rId, mId) {
-        return function(msg) {
-          return db.appendLog(uId, rId, mId, msg);
-        };
-      };
-      db.resetLog(userId, ruleId);
       fTryToLoad = function(params) {
-        var oDecrypted, sandbox;
+        var logFunc, oDecrypted, sandbox;
         if (params) {
           try {
             oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
@@ -119,29 +122,31 @@ Dynamic Modules
           } catch (_error) {
             err = _error;
             _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+            _this.log.warn(err);
             params = {};
           }
         } else {
           params = {};
         }
+        logFunc = logFunction(userId, ruleId, modId);
         sandbox = {
           id: userId + '.' + modId + '.vm',
           params: params,
-          apicall: issueApiCall,
-          log: logFunction(userId, ruleId, modId),
+          apicall: issueApiCall(logFunc),
+          log: logFunc,
           exports: {}
         };
         try {
           vm.runInNewContext(src, sandbox, sandbox.id);
         } catch (_error) {
           err = _error;
-          console.log(err);
           answ.code = 400;
           answ.message = 'Loading Module failed: ' + err.message;
         }
         return cb({
           answ: answ,
-          module: sandbox.exports
+          module: sandbox.exports,
+          logger: sandbox.log
         });
       };
       if (dbMod) {

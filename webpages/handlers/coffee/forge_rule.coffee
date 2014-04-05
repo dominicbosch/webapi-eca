@@ -9,6 +9,12 @@ $.post( '/usercommand', command: 'get_public_key' )
 
 fOnLoad = () ->
 
+  editor = ace.edit "editor_conditions"
+  editor.setTheme "ace/theme/monokai"
+  editor.getSession().setMode "ace/mode/json"
+  editor.setShowPrintMargin false
+  # editor.session.setUseSoftTabs false 
+
   document.title = 'Rule Forge!'
   $( '#pagetitle' ).text '{{{user.username}}}, forge your rule!'
 
@@ -134,16 +140,17 @@ fOnLoad = () ->
   $( '#select_actions' ).on 'change', () ->
     opt = $ 'option:selected', this
     arrAI = opt.val().split ' -> '
+    idAI = opt.attr 'id'
 
     table = $( '#selected_actions' )
-    tr = $( '<tr>' ).attr( 'id', 'title_' + opt.attr 'id')
+    tr = $( '<tr>' ).attr( 'id', 'title_' + idAI )
     img = $( '<img>' ).attr 'src', 'red_cross_small.png'
     tr.append $( '<td>' ).css( 'width', '20px' ).append img
     tr.append $( '<td>' ).attr( 'class', 'title').text( opt.val() )
     table.append tr
-    if $( '#ap_' + arrAI[0] ).length is 0
+    if $( '#ap_' + idAI ).length is 0
       div = $( '<div>' )
-        .attr( 'id', 'ap_' + arrAI[0] )
+        .attr( 'id', 'ap_' + idAI )
       div.append $( '<div> ')
         .attr( 'class', 'underlined')
         .text arrAI[0]
@@ -159,12 +166,7 @@ fOnLoad = () ->
     $( '#params_' + id ).remove()
     opt = $( '<option>' ).attr( 'id', id ).text name
     $( '#select_actions' ).append opt
-    isSelected = false
-    $( '#selected_actions td' ).each () ->
-      if $( this ).text().indexOf( arrName[0] ) > -1
-        isSelected = true
-    if not isSelected
-      $( '#ap_' + arrName[0] ).remove()
+    $( '#ap_' + id ).remove()
 
 
   $( '#but_submit' ).click () ->
@@ -203,6 +205,14 @@ fOnLoad = () ->
       $( '#selected_actions .title' ).each () ->
         acts.push $( this ).text()
 
+      try
+        conds = JSON.parse editor.getValue()
+      catch err
+        throw new Error "Parsing of your conditions failed! Needs to be an Array of Strings!"
+      
+      if conds not instanceof Array
+        throw new Error "Conditions Invalid! Needs to be an Array of Strings!"
+
       encryptedParams = cryptico.encrypt JSON.stringify( ep ), strPublicKey
       obj =
         command: 'forge_rule'
@@ -210,7 +220,7 @@ fOnLoad = () ->
           id: $( '#input_id' ).val()
           event: $( '#select_event option:selected' ).val()
           event_params: encryptedParams.cipher
-          conditions: [] #TODO Add conditions!
+          conditions: conds
           actions: acts
           action_params: ap
       obj.payload = JSON.stringify obj.payload
@@ -232,6 +242,7 @@ fOnLoad = () ->
               window.location.href = 'forge?page=forge_rule'
           setTimeout fDelayed, 500
     catch err
+      $( '#info' ).text 'Error in upload: ' + err.message
+      $( '#info' ).attr 'class', 'error'
       alert err.message
-
 window.addEventListener 'load', fOnLoad, true

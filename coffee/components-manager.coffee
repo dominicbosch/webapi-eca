@@ -54,15 +54,23 @@ exports.addRuleListener = ( eh ) =>
     fGoThroughUsers = ( user, rules ) ->
 
       # Fetch the rules object for each rule in each user
-      fFetchRule = ( rule ) ->
-        db.getRule rule, ( err, oRule ) =>
-          eventEmitter.emit 'rule',
-            event: 'init'
-            user: user
-            rule: JSON.parse oRule
+      fFetchRule = ( userName ) ->
+        ( rule ) ->
+          db.getRule rule, ( err, strRule ) =>
+            try 
+              oRule = JSON.parse strRule
+              db.resetLog userName, oRule.id
+              db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized"
+
+              eventEmitter.emit 'rule',
+                event: 'init'
+                user: userName
+                rule: oRule
+            catch err
+              @log.warn "CM | There's an invalid rule in the system: #{ strRule }"
 
       # Go through all rules for each user
-      fFetchRule rule for rule in rules
+      fFetchRule( user ) rule for rule in rules
           
     # Go through each user
     fGoThroughUsers user, rules for user, rules of objUsers
@@ -171,7 +179,7 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
             funcs.push name for name, id of cm.module
             @log.info "CM | Storing new module with functions #{ funcs.join() }"
             answ.message = 
-              "Event Poller module successfully stored! Found following function(s): #{ funcs }"
+              " Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
             oPayload.functions = JSON.stringify funcs
             dbMod.storeModule user.username, oPayload
             if oPayload.public is 'true'
@@ -184,24 +192,62 @@ commandFunctions =
       code: 200
       message: dynmod.getPublicKey()
 
+# EVENT POLLERS
+# -------------
   get_event_pollers: ( user, oPayload, callback ) ->
     getModules  user, oPayload, db.eventPollers, callback
   
-  get_action_invokers: ( user, oPayload, callback ) ->
-    getModules  user, oPayload, db.actionInvokers, callback
+  get_full_event_poller: ( user, oPayload, callback ) ->
+    db.eventPollers.getModule oPayload.id, ( err, obj ) ->
+      callback
+        code: 200
+        message: JSON.stringify obj
   
   get_event_poller_params: ( user, oPayload, callback ) ->
     getModuleParams user, oPayload, db.eventPollers, callback
-  
-  get_action_invoker_params: ( user, oPayload, callback ) ->
-    getModuleParams user, oPayload, db.actionInvokers, callback
-  
+
   forge_event_poller: ( user, oPayload, callback ) ->
     forgeModule user, oPayload, db.eventPollers, callback
+ 
+  delete_event_poller: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.eventPollers.deleteModule oPayload.id
+      callback
+        code: 200
+        message: 'OK!'
+
+# ACTION INVOKERS
+# ---------------
+  get_action_invokers: ( user, oPayload, callback ) ->
+    getModules  user, oPayload, db.actionInvokers, callback
+  
+  get_full_action_invoker: ( user, oPayload, callback ) ->
+    db.actionInvokers.getModule oPayload.id, ( err, obj ) ->
+      callback
+        code: 200
+        message: JSON.stringify obj
+
+  get_action_invoker_params: ( user, oPayload, callback ) ->
+    getModuleParams user, oPayload, db.actionInvokers, callback
   
   forge_action_invoker: ( user, oPayload, callback ) ->
     forgeModule user, oPayload, db.actionInvokers, callback
 
+  delete_action_invoker: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.actionInvokers.deleteModule oPayload.id
+      callback
+        code: 200
+        message: 'OK!'
+
+# RULES
+# -----
   get_rules: ( user, oPayload, callback ) ->
     db.getUserLinkedRules user.username, ( err, obj ) ->
       callback
@@ -217,21 +263,6 @@ commandFunctions =
         callback
           code: 200
           message: obj
-
-  delete_rule: ( user, oPayload, callback ) ->
-    answ = hasRequiredParams [ 'id' ], oPayload
-    if answ.code isnt 200
-      callback answ
-    else
-      db.deleteRule oPayload.id
-      eventEmitter.emit 'rule',
-        event: 'del'
-        user: user.username
-        rule: null
-        ruleId: oPayload.id
-      callback
-        code: 200
-        message: 'OK!'
 
   # A rule needs to be in following format:
   
@@ -264,6 +295,8 @@ commandFunctions =
             db.eventPollers.storeUserParams epModId, user.username, oPayload.event_params
           arrParams = oPayload.action_params
           db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
+          db.resetLog user.username, rule.id
+          db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
           eventEmitter.emit 'rule',
             event: 'new'
             user: user.username
@@ -272,3 +305,18 @@ commandFunctions =
             code: 200
             message: "Rule '#{ rule.id }' stored and activated!"
         callback answ
+
+  delete_rule: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.deleteRule oPayload.id
+      eventEmitter.emit 'rule',
+        event: 'del'
+        user: user.username
+        rule: null
+        ruleId: oPayload.id
+      callback
+        code: 200
+        message: 'OK!'

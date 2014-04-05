@@ -83,7 +83,7 @@ opt =
   'p':
     alias : 'log-file-path',
     describe: 'Specify the path to the log file within the "logs" folder'
-#  `-n`, `--nolog`: Set this if no output shall be generated
+#  `-n`, `--nolog`: Set this true if no output shall be generated
   'n':
     alias : 'nolog',
     describe: 'Set this if no output shall be generated'
@@ -111,7 +111,7 @@ if argv.f
 if argv.p
   logconf[ 'file-path' ] = argv.p
 if argv.n
-  logconf[ 'nolog' ] = argv.n
+  logconf[ 'nolog' ] = true
 try
   fs.unlinkSync path.resolve __dirname, '..', 'logs', logconf[ 'file-path' ]
 @log = logger.getLogger logconf
@@ -163,8 +163,10 @@ init = =>
         args.logconf[ 'file-level' ]
         # - the optional path to the log file
         args.logconf[ 'file-path' ]
-        # - whether a log file shall be written at all: null else
+        # - whether a log file shall be written at all [true|false]
         args.logconf[ 'nolog' ]
+        # - The keygen phrase, this has to be handled differently in the future!
+        args[ 'keygen' ]
       ]
       poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs
 

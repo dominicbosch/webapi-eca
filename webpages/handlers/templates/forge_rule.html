@@ -1,16 +1,30 @@
-<b>Rule Name: </b><input id="input_id" type="text" /><br><br>
-<b>Event: </b><select id="select_event"></select>
+<b>Rule Name: </b><input id="input_id" type="text" /><br>
+<h2>EVENT</h2>
+<select id="select_event"></select>
 <div id="event_poller_params">
-	<br><div class="underlined">Required user-specific params:</div>
+	<br><b>Required Parameters:</b>
 </div>
-<br><br>
-<b>Actions: </b><select id="select_actions"><option></option></select>
-<br><br>
-<b>Selected Actions:</b>
-<table id="selected_actions"></table>
-<br><br>
-<b>Required Params:</b>
-<br><br>
-<div id="action_params"></div>
-<br><br>
-<button id="but_submit">save</button>
+<br>
+<h2>CONDITIONS</h2>
+Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors">js-select selectors</a> for valid selectors!
+<table>
+<tr><td>
+	<div id="editor_conditions">
+[
+	".nested_property:val(\"has this value\")"
+]
+	</div>
+</td></tr>
+<tr><td>
+	<h2>ACTIONS</h2>
+	<select id="select_actions"><option></option></select>
+	<br><br>
+	<b>Selected Actions:</b>
+	<table id="selected_actions"></table>
+	<br><br>
+	<b>Required Parameters:</b>
+	<br><br>
+	<div id="action_params"></div>
+	<br><br>
+	<button id="but_submit">save</button>
+</td></tr></table>

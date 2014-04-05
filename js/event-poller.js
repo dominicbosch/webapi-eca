@@ -17,7 +17,7 @@ Dynamic Modules
 
   dynmod = require('./dynamic-modules');
 
-  if (process.argv.length < 7) {
+  if (process.argv.length < 8) {
     console.error('Not all arguments have been passed!');
     process.exit();
   }
@@ -42,7 +42,8 @@ Dynamic Modules
   });
 
   dynmod({
-    logger: log
+    logger: log,
+    keygen: process.argv[7]
   });
 
   listUserModules = {};
@@ -85,7 +86,8 @@ Dynamic Modules
             listUserModules[msg.user][msg.rule.id] = {
               id: msg.rule.event,
               pollfunc: arrName[1],
-              module: result.module
+              module: result.module,
+              logger: result.logger
             };
             return log.info("EP | New event module loaded! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
           });
@@ -105,29 +107,29 @@ Dynamic Modules
    */
 
   pollLoop = function() {
-    var err, fPoll, fRegisterModuleReference, myRule, oRules, ruleName, userName;
+    var fCallFunction, myRule, oRules, ruleName, userName;
     if (isRunning) {
       for (userName in listUserModules) {
         oRules = listUserModules[userName];
         for (ruleName in oRules) {
           myRule = oRules[ruleName];
-          fPoll = myRule.module[myRule.pollfunc];
-          fRegisterModuleReference = function(ruleId, userId, eventId) {
-            return function(obj) {
-              return db.pushEvent({
-                event: eventId,
-                eventid: "polled " + eventId + " " + userId + "_" + ((new Date).toISOString()),
-                payload: obj
+          fCallFunction = function(oRule, ruleId, userId) {
+            var err;
+            try {
+              return oRule.module[oRule.pollfunc](function(obj) {
+                return db.pushEvent({
+                  event: oRule.id,
+                  eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date).toISOString()),
+                  payload: obj
+                });
               });
-            };
+            } catch (_error) {
+              err = _error;
+              log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
+              return oRule.logger(err.message);
+            }
           };
-          try {
-            fPoll(fRegisterModuleReference(ruleName, userName, myRule.id));
-          } catch (_error) {
-            err = _error;
-            log.info('EP | ERROR encountered during polling!');
-            log.info(err);
-          }
+          fCallFunction(myRule, ruleName, userName);
         }
       }
       return setTimeout(pollLoop, 10000);

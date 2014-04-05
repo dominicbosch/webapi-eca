@@ -8,6 +8,7 @@ fOnLoad = () ->
   editor.setTheme "ace/theme/monokai"
   editor.getSession().setMode "ace/mode/coffee"
   editor.setShowPrintMargin false
+  editor.session.setUseSoftTabs false 
   
   $( '#editor_mode' ).change ( el ) ->
     if $( this ).val() is 'CoffeeScript'

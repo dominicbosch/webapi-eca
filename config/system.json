@@ -2,6 +2,7 @@
   "http-port": 8125,
   "db-port": 6379,
   "log": {
+  	"nolog": "false",
     "mode": "development",
     "io-level": "info",
     "file-level": "info",

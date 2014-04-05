@@ -57,21 +57,32 @@ Components Manager
         var fGoThroughUsers, rules, user, _results;
         fGoThroughUsers = function(user, rules) {
           var fFetchRule, rule, _i, _len, _results;
-          fFetchRule = function(rule) {
-            return db.getRule(rule, (function(_this) {
-              return function(err, oRule) {
-                return eventEmitter.emit('rule', {
-                  event: 'init',
-                  user: user,
-                  rule: JSON.parse(oRule)
-                });
-              };
-            })(this));
+          fFetchRule = function(userName) {
+            return function(rule) {
+              return db.getRule(rule, (function(_this) {
+                return function(err, strRule) {
+                  var oRule;
+                  try {
+                    oRule = JSON.parse(strRule);
+                    db.resetLog(userName, oRule.id);
+                    db.appendLog(userName, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized");
+                    return eventEmitter.emit('rule', {
+                      event: 'init',
+                      user: userName,
+                      rule: oRule
+                    });
+                  } catch (_error) {
+                    err = _error;
+                    return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
+                  }
+                };
+              })(this));
+            };
           };
           _results = [];
           for (_i = 0, _len = rules.length; _i < _len; _i++) {
             rule = rules[_i];
-            _results.push(fFetchRule(rule));
+            _results.push(fFetchRule(user)(rule));
           }
           return _results;
         };
@@ -236,7 +247,7 @@ Components Manager
                   funcs.push(name);
                 }
                 _this.log.info("CM | Storing new module with functions " + (funcs.join()));
-                answ.message = "Event Poller module successfully stored! Found following function(s): " + funcs;
+                answ.message = " Module " + oPayload.id + " successfully stored! Found following function(s): " + funcs;
                 oPayload.functions = JSON.stringify(funcs);
                 dbMod.storeModule(user.username, oPayload);
                 if (oPayload["public"] === 'true') {
@@ -261,20 +272,62 @@ Components Manager
     get_event_pollers: function(user, oPayload, callback) {
       return getModules(user, oPayload, db.eventPollers, callback);
     },
-    get_action_invokers: function(user, oPayload, callback) {
-      return getModules(user, oPayload, db.actionInvokers, callback);
+    get_full_event_poller: function(user, oPayload, callback) {
+      return db.eventPollers.getModule(oPayload.id, function(err, obj) {
+        return callback({
+          code: 200,
+          message: JSON.stringify(obj)
+        });
+      });
     },
     get_event_poller_params: function(user, oPayload, callback) {
       return getModuleParams(user, oPayload, db.eventPollers, callback);
     },
-    get_action_invoker_params: function(user, oPayload, callback) {
-      return getModuleParams(user, oPayload, db.actionInvokers, callback);
-    },
     forge_event_poller: function(user, oPayload, callback) {
       return forgeModule(user, oPayload, db.eventPollers, callback);
     },
+    delete_event_poller: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        db.eventPollers.deleteModule(oPayload.id);
+        return callback({
+          code: 200,
+          message: 'OK!'
+        });
+      }
+    },
+    get_action_invokers: function(user, oPayload, callback) {
+      return getModules(user, oPayload, db.actionInvokers, callback);
+    },
+    get_full_action_invoker: function(user, oPayload, callback) {
+      return db.actionInvokers.getModule(oPayload.id, function(err, obj) {
+        return callback({
+          code: 200,
+          message: JSON.stringify(obj)
+        });
+      });
+    },
+    get_action_invoker_params: function(user, oPayload, callback) {
+      return getModuleParams(user, oPayload, db.actionInvokers, callback);
+    },
     forge_action_invoker: function(user, oPayload, callback) {
       return forgeModule(user, oPayload, db.actionInvokers, callback);
+    },
+    delete_action_invoker: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        db.actionInvokers.deleteModule(oPayload.id);
+        return callback({
+          code: 200,
+          message: 'OK!'
+        });
+      }
     },
     get_rules: function(user, oPayload, callback) {
       return db.getUserLinkedRules(user.username, function(err, obj) {
@@ -295,25 +348,6 @@ Components Manager
             code: 200,
             message: obj
           });
-        });
-      }
-    },
-    delete_rule: function(user, oPayload, callback) {
-      var answ;
-      answ = hasRequiredParams(['id'], oPayload);
-      if (answ.code !== 200) {
-        return callback(answ);
-      } else {
-        db.deleteRule(oPayload.id);
-        eventEmitter.emit('rule', {
-          event: 'del',
-          user: user.username,
-          rule: null,
-          ruleId: oPayload.id
-        });
-        return callback({
-          code: 200,
-          message: 'OK!'
         });
       }
     },
@@ -350,6 +384,8 @@ Components Manager
               params = arrParams[id];
               db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
             }
+            db.resetLog(user.username, rule.id);
+            db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized");
             eventEmitter.emit('rule', {
               event: 'new',
               user: user.username,
@@ -361,6 +397,25 @@ Components Manager
             };
           }
           return callback(answ);
+        });
+      }
+    },
+    delete_rule: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        db.deleteRule(oPayload.id);
+        eventEmitter.emit('rule', {
+          event: 'del',
+          user: user.username,
+          rule: null,
+          ruleId: oPayload.id
+        });
+        return callback({
+          code: 200,
+          message: 'OK!'
         });
       }
     }
