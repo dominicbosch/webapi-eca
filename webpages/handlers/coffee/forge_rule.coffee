@@ -16,7 +16,7 @@ fOnLoad = () ->
   # editor.session.setUseSoftTabs false 
 
   document.title = 'Rule Forge!'
-  $( '#pagetitle' ).text '{{{user.username}}}, forge your rule!'
+  $( '#pagetitle' ).text '{{{user.username}}}, forge your ECA Rule!'
 
   # Fetch Event Poller user-specific parameters
   fFetchEventParams = ( name ) ->

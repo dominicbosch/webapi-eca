@@ -177,7 +177,7 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
           if answ.code is 200
             funcs = []
             funcs.push name for name, id of cm.module
-            @log.info "CM | Storing new module with functions #{ funcs.join() }"
+            @log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
             answ.message = 
               " Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
             oPayload.functions = JSON.stringify funcs

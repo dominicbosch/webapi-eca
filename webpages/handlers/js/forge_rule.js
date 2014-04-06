@@ -21,7 +21,7 @@
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
     document.title = 'Rule Forge!';
-    $('#pagetitle').text('{{{user.username}}}, forge your rule!');
+    $('#pagetitle').text('{{{user.username}}}, forge your ECA Rule!');
     fFetchEventParams = function(name) {
       var arr, obj;
       if (name) {

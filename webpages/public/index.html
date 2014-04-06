@@ -1,3 +1,13 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title></title>
+    <link href='http://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+  </head>
+  <body>
 <div id="menubar">
   <script>
     var menubar = $( '#menubar' );
@@ -32,10 +42,20 @@
     fCreateLink( 'Edit Rules',
       fRedirect( 'forge?page=edit_rules' )
     );
-//    fCreateLink( 'admin', fRedirect( 'admin' ) );
-
     fCreateLink( 'Logout',  function() {
       $.post( '/logout' ).done( fRedirect( document.URL ) );
     });
   </script>
 </div>
+
+    <div id="info"></div>
+		<div id="mainbody">
+		<p></p>
+
+	    <div id="pagetitle">Welcome to the WebAPI ECA-Engine!</div>
+	    <p>
+	    	Enjoy creating your own ECA rules, together with the required action invoker modules!
+	    </p>
+		</div>
+  </body>
+</html>

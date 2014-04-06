@@ -49,20 +49,15 @@ exports.getPublicKey = () =>
 
 
 issueApiCall = ( logger ) ->
-  ( method, url, credentials, cb ) ->
-    try 
-      if method is 'get'
-        func = needle.get
-      else
-        func = needle.post
-
-      func url, credentials, ( err, resp, body ) =>
+  ( method, url, data, options, cb ) ->
+    try
+      needle.request method, url, data, options, ( err, resp, body ) =>
         try
           cb err, resp, body
         catch err
-          logger 'Error during apicall! ' + err.message
+          logger 'Error during needle request! ' + err.message
     catch err
-      logger 'Error before apicall! ' + err.message
+      logger 'Error before needle request! ' + err.message
 
 logFunction = ( uId, rId, mId ) ->
   ( msg ) ->
@@ -108,10 +103,9 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
     sandbox = 
       id: userId + '.' + modId + '.vm'
       params: params
-      apicall: issueApiCall logFunc
-      # needle: needle
+      needlereq: issueApiCall logFunc
       log: logFunc
-      # debug: console.log
+      debug: console.log
       exports: {}
 
     #TODO child_process to run module!
@@ -124,7 +118,10 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
       # Start Node with the flags —nouse_idle_notification and —expose_gc, and then when you want to run the GC, just call global.gc().
     catch err
       answ.code = 400
-      answ.message = 'Loading Module failed: ' + err.message
+      msg = err.message
+      if not msg
+        msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number'
+      answ.message = 'Loading Module failed: ' + msg
     cb
       answ: answ
       module: sandbox.exports

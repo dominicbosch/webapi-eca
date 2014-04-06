@@ -43,7 +43,7 @@ Apply your settings, for example:
         "io-level": "info",         # the log-level for the std I/O stream
         "file-level": "info",       # the log-level for the log file
         "file-path": "server.log"   # log file path, relative to cwd
-        ( add "nolog": "true" if no log shall be generated at all. Mainly used for unit tests )
+        "nolog": "false"            # false if no log shall be generated at all. Mainly used for unit tests
       }
     }
 
@@ -54,9 +54,13 @@ Start the server:
 *Congratulations, your own WebAPI based ECA engine server is now up and running!*
 
 
-Optional command line tools:
-----------------------------
-    
+Optional command line scripts
+-----------------------------
+        
+Run test suite:
+
+    run_tests.sh
+
 Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 
 > **WARNING:**
@@ -66,7 +70,3 @@ Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 > *`!!! 5` needs to be relaced with  `doctype html`*
 
     run_doc.sh
-    
-Run test suite:
-
-    run_tests.sh

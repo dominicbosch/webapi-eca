@@ -53,27 +53,22 @@ Dynamic Modules
   })(this);
 
   issueApiCall = function(logger) {
-    return function(method, url, credentials, cb) {
-      var err, func;
+    return function(method, url, data, options, cb) {
+      var err;
       try {
-        if (method === 'get') {
-          func = needle.get;
-        } else {
-          func = needle.post;
-        }
-        return func(url, credentials, (function(_this) {
+        return needle.request(method, url, data, options, (function(_this) {
           return function(err, resp, body) {
             try {
               return cb(err, resp, body);
             } catch (_error) {
               err = _error;
-              return logger('Error during apicall! ' + err.message);
+              return logger('Error during needle request! ' + err.message);
             }
           };
         })(this));
       } catch (_error) {
         err = _error;
-        return logger('Error before apicall! ' + err.message);
+        return logger('Error before needle request! ' + err.message);
       }
     };
   };
@@ -114,7 +109,7 @@ Dynamic Modules
         }
       }
       fTryToLoad = function(params) {
-        var logFunc, oDecrypted, sandbox;
+        var logFunc, msg, oDecrypted, sandbox;
         if (params) {
           try {
             oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
@@ -132,8 +127,9 @@ Dynamic Modules
         sandbox = {
           id: userId + '.' + modId + '.vm',
           params: params,
-          apicall: issueApiCall(logFunc),
+          needlereq: issueApiCall(logFunc),
           log: logFunc,
+          debug: console.log,
           exports: {}
         };
         try {
@@ -141,7 +137,11 @@ Dynamic Modules
         } catch (_error) {
           err = _error;
           answ.code = 400;
-          answ.message = 'Loading Module failed: ' + err.message;
+          msg = err.message;
+          if (!msg) {
+            msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number';
+          }
+          answ.message = 'Loading Module failed: ' + msg;
         }
         return cb({
           answ: answ,

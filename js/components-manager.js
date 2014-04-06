@@ -246,7 +246,7 @@ Components Manager
                   id = _ref[name];
                   funcs.push(name);
                 }
-                _this.log.info("CM | Storing new module with functions " + (funcs.join()));
+                _this.log.info("CM | Storing new module with functions " + (funcs.join(', ')));
                 answ.message = " Module " + oPayload.id + " successfully stored! Found following function(s): " + funcs;
                 oPayload.functions = JSON.stringify(funcs);
                 dbMod.storeModule(user.username, oPayload);

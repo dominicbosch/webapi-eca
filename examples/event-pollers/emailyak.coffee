@@ -1,12 +1,4 @@
-Event Poller Name: <input id="input_id" type="text" />
-<select id="editor_mode">
-	<option>CoffeeScript</option>
-	<option>JavaScript</option>
-</select> is public: <input type="checkbox" id="is_public" />
-<table id="editor_table">
-	<tr>
-		<td id="editor_col" valign="top">
-<div id="editor">
+
 #
 # EmailYak EVENT POLLER
 # ---------------------
@@ -31,21 +23,4 @@ exports.newMail = ( pushEvent ) ->
         	if resp.statusCode is 200
 	            mails = JSON.parse( body ).Emails
 	            pushEvent mail for mail in mails
-</div>
-  <button id="but_submit">save</button>    
-		</td>
-		<td id="params_col" valign="top">
-This event poller requires user-specific properties:
-<table id="tableParams">
-	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="text" value="apikey" /></td>
-	</tr>
-	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="text" /></td>
-	</tr>
-</table>
-		</td>
-	</tr>
-</table>
+
