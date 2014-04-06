@@ -494,7 +494,7 @@ exports.Rules =
 
     fWaitForDeletion = () ->
       db.deleteRule oRuleOne.id
-      setTimeout fWaitForTest, 300
+      setTimeout fWaitForTest, 500
 
     setTimeout fWaitForDeletion, 100
 
@@ -561,7 +561,6 @@ exports.User =
       db.getUserIds ( err, obj ) ->
         test.ok oUser.username in obj,
           'User key was not stored!?'
-        db.deleteUser oUser.username
         test.done()
 
   testDelete: ( test ) ->

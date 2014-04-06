@@ -15,19 +15,21 @@ fOnLoad = () ->
     try
       val = editor.getValue()
       JSON.parse val # try to parse, throw an error if JSON not valid
+      window.scrollTo 0, 0
       $.post( '/event', val )
         .done ( data ) ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          fDelayed = () ->
-            if err.responseText is ''
-              err.responseText = 'No Response from Server!'
-            $( '#info' ).text 'Error in upload: ' + err.responseText
-            $( '#info' ).attr 'class', 'error'
-            if err.status is 401
-              window.location.href = 'forge?page=forge_event'
-          setTimeout fDelayed, 500
+          if err.status is 401
+            window.location.href = 'forge?page=forge_event'
+          else
+            fDelayed = () ->
+              if err.responseText is ''
+                err.responseText = 'No Response from Server!'
+              $( '#info' ).text 'Error in upload: ' + err.responseText
+              $( '#info' ).attr 'class', 'error'
+            setTimeout fDelayed, 500
           
     catch err
       $( '#info' ).text 'You have errors in your JSON object! ' + err

@@ -9,21 +9,25 @@
     fErrHandler = function(errMsg) {
       return function(err) {
         var fDelayed;
-        $('#log_col').text("");
-        fDelayed = function() {
-          var msg, oErr;
-          if (err.responseText === '') {
-            msg = 'No Response from Server!';
-          } else {
-            try {
-              oErr = JSON.parse(err.responseText);
-              msg = oErr.message;
-            } catch (_error) {}
-          }
-          $('#info').text(errMsg + msg);
-          return $('#info').attr('class', 'error');
-        };
-        return setTimeout(fDelayed, 500);
+        if (err.status === 401) {
+          return window.location.href = 'forge?page=edit_rules';
+        } else {
+          $('#log_col').text("");
+          fDelayed = function() {
+            var msg, oErr;
+            if (err.responseText === '') {
+              msg = 'No Response from Server!';
+            } else {
+              try {
+                oErr = JSON.parse(err.responseText);
+                msg = oErr.message;
+              } catch (_error) {}
+            }
+            $('#info').text(errMsg + msg);
+            return $('#info').attr('class', 'error');
+          };
+          return setTimeout(fDelayed, 500);
+        }
       };
     };
     fFetchRules = function() {

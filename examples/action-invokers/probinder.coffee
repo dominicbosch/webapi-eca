@@ -1,4 +1,3 @@
-
 ### 
 ProBinder ACTION INVOKER
 ------------------------
@@ -38,7 +37,7 @@ Call the ProBinder service with the given parameters.
 @param {String} args.method the required method identifier to be appended to the url
 @param {function} [args.callback] the function to receive the request answer
 ###
-exports.call = ( args ) ->
+callService = ( args ) ->
 	if not args.service or not args.method
 		log 'ERROR in call function: Missing arguments!'
 	else
@@ -46,41 +45,6 @@ exports.call = ( args ) ->
 			args.callback = standardCallback 'call'
 		url = urlService + args.service + '/' + args.method
 		needlereq 'post', url, args.data, credentials, args.callback
-
-###
-Calls the user's unread content service.
-
-@param {Object} [args] the optional object containing the callback function
-@param {function} [args.callback] refer to call function
-###
-exports.getUnreadContents = ( args ) ->
-	if not args.callback
-		args.callback = standardCallback 'getUnreadContents'
-	exports.call
-		service: '36'
-		method: 'unreadcontent'
-		callback: args.callback
-
-
-###
-Calls the content get service with the content id and the service id provided. 
-
-@param {Object} args the object containing the service id and the content id,
-   success and error callback methods
-@param {String} args.serviceid the service id that is able to process this content
-@param {String} args.contentid the content id
-@param {function} [args.callback] receives the needle answer from the "call" function
-###
-exports.getContent = ( args ) ->
-	if not args.callback
-		args.callback = standardCallback 'getContent'
-	exports.call
-		service: '2'
-		method: 'get'
-		data: 
-			id: args.contentid
-			service: args.serviceid
-		callback: args.callback
 
 
 ###
@@ -92,7 +56,7 @@ Does everything to post something in a binder
 exports.newContent = ( args ) ->
 	if not args.callback
 		args.callback = standardCallback 'newContent'
-	exports.call
+	callService
 		service: '27'
 		method: 'save'
 		data:
@@ -111,11 +75,11 @@ Does everything to post a file info in a binder tabe
 exports.makeFileEntry = ( args ) ->
 	if not args.callback
 		args.callback = standardCallback 'makeFileEntry'
-	exports.getContent
+	getContent
 		serviceid: args.service
 		contentid: args.id
 		callback: ( err, resp, body ) ->
-			exports.call
+			callService
 				service: '27'
 				method: 'save'
 				data:
@@ -126,6 +90,26 @@ exports.makeFileEntry = ( args ) ->
 				callback: args.callback
 
 ###
+Calls the content get service with the content id and the service id provided. 
+
+@param {Object} args the object containing the service id and the content id,
+   success and error callback methods
+@param {String} args.serviceid the service id that is able to process this content
+@param {String} args.contentid the content id
+@param {function} [args.callback] receives the needle answer from the "call" function
+###
+getContent = ( args ) ->
+	if not args.callback
+		args.callback = standardCallback 'getContent'
+	callService
+		service: '2'
+		method: 'get'
+		data: 
+			id: args.contentid
+			service: args.serviceid
+		callback: args.callback
+
+###
 Sets the content as read.
 
 @param {Object} args the object containing the content
@@ -134,7 +118,7 @@ Sets the content as read.
 exports.setRead = ( args ) ->
 	if not args.callback
 		args.callback = standardCallback 'setRead'
-	exports.call
+	callService
 		service: '2'
 		method: 'setread'
 		data:

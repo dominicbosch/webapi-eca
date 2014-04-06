@@ -49,7 +49,7 @@ exports = module.exports = ( args ) =>
   fStoreUser = ( username, oUser ) ->
     oUser.username = username
     db.storeUser oUser
-  fStoreUser user, users[user] for user of users
+  fStoreUser user, oUser for user, oUser of users
   module.exports
 
 
@@ -104,7 +104,7 @@ exports.handleLogin = ( req, resp ) =>
   body = ''
   req.on 'data', ( data ) -> body += data
   req.on 'end', =>
-    obj = qs.parse body
+    obj = JSON.parse body
     db.loginUser obj.username, obj.password, ( err, usr ) =>
       if err
         # Tapping on fingers, at least in log...

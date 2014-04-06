@@ -30,7 +30,7 @@ oRuleRealTwo = objects.rules.ruleRealTwo
 oAiOne = objects.ais.aiOne
 oAiTwo = objects.ais.aiTwo
 
-exports.tearDown = ( cb ) ->
+exports.setUp = ( cb ) ->
   engine.startEngine()
   cb()
   
@@ -52,7 +52,7 @@ exports.tearDown = ( cb ) ->
     rule: oRuleRealTwo
   engine.shutDown()
 
-  setTimeout cb, 100
+  setTimeout cb, 200
 
 exports.ruleEvents =
   testInitAddDeleteMultiple: ( test ) ->
@@ -145,7 +145,6 @@ exports.ruleEvents =
 exports.engine =
   testMatchingEvent: ( test ) ->
     test.expect 1
-
     db.storeUser oUser
     db.storeRule oRuleReal.id, JSON.stringify oRuleReal
     db.linkRule oRuleReal.id, oUser.username
@@ -165,6 +164,7 @@ exports.engine =
       fWaitAgain = () ->
         db.getLog oUser.username, oRuleReal.id, ( err, data ) ->
           try
+
             logged = data.split( '] ' )[1]
             logged = logged.split( "\n" )[0]
             test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property, 'Did not log the right thing'

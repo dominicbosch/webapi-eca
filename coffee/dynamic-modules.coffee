@@ -15,11 +15,13 @@ db = require './persistence'
 #   [events](http://nodejs.org/api/events.html)
 vm = require 'vm'
 needle = require 'needle'
+request = require 'request'
 
 # - External Modules: [coffee-script](http://coffeescript.org/),
 #       [cryptico](https://github.com/wwwtyro/cryptico)
 cs = require 'coffee-script'
 cryptico = require 'my-cryptico'
+cryptoJS = require 'crypto-js'
 
 
 
@@ -47,8 +49,12 @@ exports = module.exports = ( args ) =>
 exports.getPublicKey = () =>
   @strPublicKey
 
-
-issueApiCall = ( logger ) ->
+# We need to wrap the callbacks in try/catch so the token does not get killed and
+# other modules are not called. This will be obsolete as soon as each module
+# runs in a child process
+# FIXME this seems not to achieve what we expected... token gets still lost 
+# -> implement child processes per module. (or better per user?)
+issueNeedleCall = ( logger ) ->
   ( method, url, data, options, cb ) ->
     try
       needle.request method, url, data, options, ( err, resp, body ) =>
@@ -58,6 +64,17 @@ issueApiCall = ( logger ) ->
           logger 'Error during needle request! ' + err.message
     catch err
       logger 'Error before needle request! ' + err.message
+
+issueRequest = ( logger ) ->
+  ( options, cb ) ->
+    try
+      request options, ( err, resp, body ) =>
+        try
+          cb err, resp, body
+        catch err
+          logger 'Error during request! ' + err.message
+    catch err
+      logger 'Error before request! ' + err.message
 
 logFunction = ( uId, rId, mId ) ->
   ( msg ) ->
@@ -88,6 +105,7 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
         err.location.first_line
 
   fTryToLoad = ( params ) =>
+
     if params
       try
         oDecrypted = cryptico.decrypt params, @oPrivateRSAkey
@@ -103,7 +121,9 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
     sandbox = 
       id: userId + '.' + modId + '.vm'
       params: params
-      needlereq: issueApiCall logFunc
+      needlereq: issueNeedleCall logFunc
+      request: issueRequest logFunc
+      cryptoJS: cryptoJS
       log: logFunc
       debug: console.log
       exports: {}

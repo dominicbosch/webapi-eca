@@ -12,10 +12,11 @@ fOnLoad = () ->
     data =
       username: $( '#username' ).val()
       password: hp.toString()
-    $.post( '/login', data )
+    $.post( '/login', JSON.stringify( data ) )
       .done ( data ) ->
         window.location.href = document.URL
       .fail ( err ) ->
         alert 'Authentication not successful!'
 
 window.addEventListener 'load', fOnLoad, true
+

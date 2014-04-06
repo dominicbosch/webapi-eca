@@ -16,11 +16,11 @@ exports.newMail = ( pushEvent ) ->
 	# 
 	# Syntax: needle.request method, url, data, [options], callback
 	#
-    needlereq 'get', url, null, null, ( err, resp, body ) ->
-        if err
-        	log 'Error in EmailYak EM newMail: ' + err.message
-        else
-        	if resp.statusCode is 200
-	            mails = JSON.parse( body ).Emails
-	            pushEvent mail for mail in mails
+	needlereq 'get', url, null, null, ( err, resp, body ) ->
+		if err
+			log 'Error in EmailYak EM newMail: ' + err.message
+		else
+			log body
+			if resp.statusCode is 200
+				pushEvent mail for mail in body.Emails
 

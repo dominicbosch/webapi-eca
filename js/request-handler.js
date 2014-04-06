@@ -29,7 +29,7 @@ Request Handler
 
   exports = module.exports = (function(_this) {
     return function(args) {
-      var fStoreUser, user, users;
+      var fStoreUser, oUser, user, users;
       _this.log = args.logger;
       _this.userRequestHandler = args['request-service'];
       _this.objAdminCmds = {
@@ -50,7 +50,8 @@ Request Handler
         return db.storeUser(oUser);
       };
       for (user in users) {
-        fStoreUser(user, users[user]);
+        oUser = users[user];
+        fStoreUser(user, oUser);
       }
       return module.exports;
     };
@@ -124,7 +125,7 @@ Request Handler
       });
       return req.on('end', function() {
         var obj;
-        obj = qs.parse(body);
+        obj = JSON.parse(body);
         return db.loginUser(obj.username, obj.password, function(err, usr) {
           if (err) {
             _this.log.warn("RH | AUTH-UH-OH ( " + obj.username + " ): " + err.message);

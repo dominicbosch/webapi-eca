@@ -327,7 +327,7 @@ Appends a log entry.
 @param {String} message
 ###
 exports.appendLog = ( userId, ruleId, moduleId, message ) =>
-  @db.append "#{ userId }:#{ ruleId }", 
+  @db.append "#{ userId }:#{ ruleId }:log", 
     "[#{ ( new Date ).toISOString() }] {#{ moduleId }} #{ message }\n"
 
 ###
@@ -339,7 +339,7 @@ Retrieves a log entry.
 @param {function} cb
 ###
 exports.getLog = ( userId, ruleId, cb ) =>
-  @db.get "#{ userId }:#{ ruleId }", cb
+  @db.get "#{ userId }:#{ ruleId }:log", cb
 
 ###
 Resets a log entry.
@@ -349,8 +349,8 @@ Resets a log entry.
 @param {String} ruleId
 ###
 exports.resetLog = ( userId, ruleId ) =>
-  @db.del "#{ userId }:#{ ruleId }", 
-    replyHandler "RESET LOG '#{ userId }:#{ ruleId }'"
+  @db.del "#{ userId }:#{ ruleId }:log", 
+    replyHandler "del '#{ userId }:#{ ruleId }:log'"
 
 ###
 Query the DB for a rule and pass it to cb(err, obj).
@@ -360,7 +360,7 @@ Query the DB for a rule and pass it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRule = ( ruleId, cb ) =>
-  @log.info "DB | getRule: '#{ ruleId }'"
+  @log.info "DB | get: 'rule:#{ ruleId }'"
   @db.get "rule:#{ ruleId }", cb
 
 ###
@@ -370,7 +370,7 @@ Fetch all rules and pass them to cb(err, obj).
 @param {function} cb
 ###
 exports.getRules = ( cb ) =>
-  @log.info 'DB | Fetching all Rules'
+  @log.info "DB | Fetching all Rules: getSetRecords 'rules'"
   getSetRecords 'rules', exports.getRule, cb
 
 ###
@@ -380,7 +380,7 @@ Fetch all rule IDs and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRuleIds = ( cb ) =>
-  @log.info 'DB | Fetching all Rule IDs'
+  @log.info "DB | Fetching all Rule IDs: 'rules'"
   @db.smembers 'rules', cb
 
 ###
@@ -393,9 +393,9 @@ Store a string representation of a rule in the DB.
 exports.storeRule = ( ruleId, data ) =>
   @log.info "DB | storeRule: '#{ ruleId }'"
   @db.sadd 'rules', "#{ ruleId }",
-    replyHandler "storing rule key '#{ ruleId }'"
+    replyHandler "sadd rules: '#{ ruleId }'"
   @db.set "rule:#{ ruleId }", data,
-    replyHandler "storing rule '#{ ruleId }'"
+    replyHandler "set 'rule:#{ ruleId }': data"
 
 ###
 Delete a string representation of a rule.
@@ -406,24 +406,25 @@ Delete a string representation of a rule.
 ###
 exports.deleteRule = ( ruleId ) =>
   @log.info "DB | deleteRule: '#{ ruleId }'"
-  @db.srem "rules", ruleId, replyHandler "Deleting rule key '#{ ruleId }'"
-  @db.del "rule:#{ ruleId }", replyHandler "Deleting rule '#{ ruleId }'"
+  @db.srem "rules", ruleId, replyHandler "srem 'rules': '#{ ruleId }'"
+  @db.del "rule:#{ ruleId }", replyHandler "del: 'rule:#{ ruleId }'"
 
   # We also need to delete all references in linked and active users
   @db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
     delLinkedUserRule = ( userId ) =>
+      exports.resetLog userId, ruleId
       @db.srem "user:#{ userId }:rules", ruleId,
-        replyHandler "Deleting rule key '#{ ruleId }' in linked user '#{ userId }'"
+        replyHandler "srem 'user:#{ userId }:rules': '#{ ruleId }'"
     delLinkedUserRule id  for id in obj
-  @db.del "rule:#{ ruleId }:users", replyHandler "Deleting rule '#{ ruleId }' users"
+  @db.del "rule:#{ ruleId }:users", replyHandler "del 'rule:#{ ruleId }:users'"
 
   @db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
     delActiveUserRule = ( userId ) =>
       @db.srem "user:#{ userId }:active-rules", ruleId,
-        replyHandler "Deleting rule key '#{ ruleId }' in active user '#{ userId }'"
+        replyHandler "srem 'user:#{ userId }:active-rules': '#{ ruleId }'"
     delActiveUserRule id  for id in obj
-  @db.del "rule:#{ ruleId }:active-users",
-    replyHandler "Deleting rule '#{ ruleId }' active users"
+  @db.del "rule:#{ ruleId }:active-users", 
+    replyHandler "del 'rule:#{ ruleId }:active-users'"
 
 ###
 Associate a rule to a user.
@@ -433,11 +434,11 @@ Associate a rule to a user.
 @param {String} userId
 ###
 exports.linkRule = ( ruleId, userId ) =>
-  @log.info "DB | linkRule: '#{ ruleId }' for user '#{ userId }'"
+  @log.info "DB | linkRule: '#{ ruleId }' to user '#{ userId }'"
   @db.sadd "rule:#{ ruleId }:users", userId,
-    replyHandler "storing user '#{ userId }' for rule key '#{ ruleId }'"
+    replyHandler "sadd 'rule:#{ ruleId }:users': '#{ userId }'"
   @db.sadd "user:#{ userId }:rules", ruleId,
-    replyHandler "storing rule key '#{ ruleId }' for user '#{ userId }'"
+    replyHandler "sadd 'user:#{ userId }:rules': '#{ ruleId }'"
 
 ###
 Get rules linked to a user and hand it to cb(err, obj).
@@ -447,7 +448,7 @@ Get rules linked to a user and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getUserLinkedRules = ( userId, cb ) =>
-  @log.info "DB | getUserLinkedRules: for user '#{ userId }'"
+  @log.info "DB | getUserLinkedRules: 'user:#{ userId }:rules'"
   @db.smembers "user:#{ userId }:rules", cb
 
 ###
@@ -458,7 +459,7 @@ Get users linked to a rule and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRuleLinkedUsers = ( ruleId, cb ) =>
-  @log.info "DB | getRuleLinkedUsers: for rule '#{ ruleId }'"
+  @log.info "DB | getRuleLinkedUsers: 'rule:#{ ruleId }:users'"
   @db.smembers "rule:#{ ruleId }:users", cb
 
 ###
@@ -471,9 +472,9 @@ Delete an association of a rule to a user.
 exports.unlinkRule = ( ruleId, userId ) =>
   @log.info "DB | unlinkRule: '#{ ruleId }:#{ userId }'"
   @db.srem "rule:#{ ruleId }:users", userId,
-    replyHandler "removing user '#{ userId }' for rule key '#{ ruleId }'"
+    replyHandler "srem 'rule:#{ ruleId }:users': '#{ userId }'"
   @db.srem "user:#{ userId }:rules", ruleId,
-    replyHandler "removing rule key '#{ ruleId }' for user '#{ userId }'"
+    replyHandler "srem 'user:#{ userId }:rules': '#{ ruleId }'"
 
 ###
 Activate a rule.
@@ -485,9 +486,9 @@ Activate a rule.
 exports.activateRule = ( ruleId, userId ) =>
   @log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
   @db.sadd "rule:#{ ruleId }:active-users", userId,
-    replyHandler "storing activated user '#{ userId }' in rule '#{ ruleId }'"
+    replyHandler "sadd 'rule:#{ ruleId }:active-users': '#{ userId }'"
   @db.sadd "user:#{ userId }:active-rules", ruleId,
-    replyHandler "storing activated rule '#{ ruleId }' in user '#{ userId }'"
+    replyHandler "sadd 'user:#{ userId }:active-rules': '#{ ruleId }'"
 
 ###
 Get rules activated for a user and hand it to cb(err, obj).
@@ -497,7 +498,7 @@ Get rules activated for a user and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getUserActivatedRules = ( userId, cb ) =>
-  @log.info "DB | getUserActivatedRules: for user '#{ userId }'"
+  @log.info "DB | getUserActivatedRules: smembers 'user:#{ userId }:active-rules'"
   @db.smembers "user:#{ userId }:active-rules", cb
 
 ###
@@ -508,7 +509,7 @@ Get users activated for a rule and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRuleActivatedUsers = ( ruleId, cb ) =>
-  @log.info "DB | getRuleActivatedUsers: for rule '#{ ruleId }'"
+  @log.info "DB | getRuleActivatedUsers: smembers 'rule:#{ ruleId }:active-users'"
   @db.smembers "rule:#{ ruleId }:active-users", cb
 
 ###
@@ -521,9 +522,9 @@ Deactivate a rule.
 exports.deactivateRule = ( ruleId, userId ) =>
   @log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
   @db.srem "rule:#{ ruleId }:active-users", userId,
-    replyHandler "removing activated user '#{ userId }' in rule '#{ ruleId }'"
+    replyHandler "srem 'rule:#{ ruleId }:active-users': '#{ userId }'"
   @db.srem "user:#{ userId }:active-rules", ruleId,
-    replyHandler "removing activated rule '#{ ruleId }' in user '#{ userId }'"
+    replyHandler "srem 'user:#{ userId }:active-rules' '#{ ruleId }'"
 
 ###
 Fetch all active ruleIds and pass them to cb(err, obj).

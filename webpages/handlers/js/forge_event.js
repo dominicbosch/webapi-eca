@@ -17,22 +17,24 @@
       try {
         val = editor.getValue();
         JSON.parse(val);
+        window.scrollTo(0, 0);
         return $.post('/event', val).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');
         }).fail(function(err) {
           var fDelayed;
-          fDelayed = function() {
-            if (err.responseText === '') {
-              err.responseText = 'No Response from Server!';
-            }
-            $('#info').text('Error in upload: ' + err.responseText);
-            $('#info').attr('class', 'error');
-            if (err.status === 401) {
-              return window.location.href = 'forge?page=forge_event';
-            }
-          };
-          return setTimeout(fDelayed, 500);
+          if (err.status === 401) {
+            return window.location.href = 'forge?page=forge_event';
+          } else {
+            fDelayed = function() {
+              if (err.responseText === '') {
+                err.responseText = 'No Response from Server!';
+              }
+              $('#info').text('Error in upload: ' + err.responseText);
+              return $('#info').attr('class', 'error');
+            };
+            return setTimeout(fDelayed, 500);
+          }
         });
       } catch (_error) {
         err = _error;

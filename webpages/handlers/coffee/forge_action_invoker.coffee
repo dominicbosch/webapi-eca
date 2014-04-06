@@ -64,22 +64,24 @@ fOnLoad = () ->
           data: editor.getValue()
           params: JSON.stringify listParams
       obj.payload = JSON.stringify obj.payload
+      window.scrollTo 0, 0
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          fDelayed = () ->
-            if err.responseText is ''
-              msg = 'No Response from Server!'
-            else
-              try
-                oErr = JSON.parse err.responseText
-                msg = oErr.message
-            $( '#info' ).text 'Action Invoker not stored! ' + msg
-            $( '#info' ).attr 'class', 'error'
-            if err.status is 401
-              window.location.href = 'forge?page=forge_action_invoker'
-          setTimeout fDelayed, 500
+          if err.status is 401
+            window.location.href = 'forge?page=forge_action_invoker'
+          else
+            fDelayed = () ->
+              if err.responseText is ''
+                msg = 'No Response from Server!'
+              else
+                try
+                  oErr = JSON.parse err.responseText
+                  msg = oErr.message
+              $( '#info' ).text 'Action Invoker not stored! ' + msg
+              $( '#info' ).attr 'class', 'error'
+            setTimeout fDelayed, 500
 
 window.addEventListener 'load', fOnLoad, true

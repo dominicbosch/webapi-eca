@@ -77,28 +77,30 @@
           }
         };
         obj.payload = JSON.stringify(obj.payload);
+        window.scrollTo(0, 0);
         return $.post('/usercommand', obj).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');
         }).fail(function(err) {
           var fDelayed;
-          fDelayed = function() {
-            var msg, oErr;
-            if (err.responseText === '') {
-              msg = 'No Response from Server!';
-            } else {
-              try {
-                oErr = JSON.parse(err.responseText);
-                msg = oErr.message;
-              } catch (_error) {}
-            }
-            $('#info').text('Action Invoker not stored! ' + msg);
-            $('#info').attr('class', 'error');
-            if (err.status === 401) {
-              return window.location.href = 'forge?page=forge_action_invoker';
-            }
-          };
-          return setTimeout(fDelayed, 500);
+          if (err.status === 401) {
+            return window.location.href = 'forge?page=forge_action_invoker';
+          } else {
+            fDelayed = function() {
+              var msg, oErr;
+              if (err.responseText === '') {
+                msg = 'No Response from Server!';
+              } else {
+                try {
+                  oErr = JSON.parse(err.responseText);
+                  msg = oErr.message;
+                } catch (_error) {}
+              }
+              $('#info').text('Action Invoker not stored! ' + msg);
+              return $('#info').attr('class', 'error');
+            };
+            return setTimeout(fDelayed, 500);
+          }
         });
       }
     });

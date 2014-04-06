@@ -19,23 +19,27 @@
     fErrHandler = function(errMsg) {
       return function(err) {
         var fDelayed;
-        $('#moduleName').html("<h2>&nbsp;</h2>");
-        $('#moduleLanguage').html("<b>&nbsp;</b>");
-        editor.setValue("");
-        fDelayed = function() {
-          var msg, oErr;
-          if (err.responseText === '') {
-            msg = 'No Response from Server!';
-          } else {
-            try {
-              oErr = JSON.parse(err.responseText);
-              msg = oErr.message;
-            } catch (_error) {}
-          }
-          $('#info').text(errMsg + msg);
-          return $('#info').attr('class', 'error');
-        };
-        return setTimeout(fDelayed, 500);
+        if (err.status === 401) {
+          return window.location.href = 'forge?page=edit_modules';
+        } else {
+          $('#moduleName').html("<h2>&nbsp;</h2>");
+          $('#moduleLanguage').html("<b>&nbsp;</b>");
+          editor.setValue("");
+          fDelayed = function() {
+            var msg, oErr;
+            if (err.responseText === '') {
+              msg = 'No Response from Server!';
+            } else {
+              try {
+                oErr = JSON.parse(err.responseText);
+                msg = oErr.message;
+              } catch (_error) {}
+            }
+            $('#info').text(errMsg + msg);
+            return $('#info').attr('class', 'error');
+          };
+          return setTimeout(fDelayed, 500);
+        }
       };
     };
     fFetchModules = function() {
@@ -119,6 +123,7 @@
         }
         editor.setValue(oMod.data);
         editor.gotoLine(1, 1);
+        editor.scrollToRow(1);
         $('#moduleName').html("<h2>" + oMod.id + "</h2>");
         return $('#moduleLanguage').html("<b>" + oMod.lang + "</b>");
       }).fail(fErrHandler('Could not get module! '));

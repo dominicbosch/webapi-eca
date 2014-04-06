@@ -17,7 +17,7 @@
         username: $('#username').val(),
         password: hp.toString()
       };
-      return $.post('/login', data).done(function(data) {
+      return $.post('/login', JSON.stringify(data)).done(function(data) {
         return window.location.href = document.URL;
       }).fail(function(err) {
         return alert('Authentication not successful!');

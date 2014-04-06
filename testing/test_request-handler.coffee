@@ -3,7 +3,6 @@ fs = require 'fs'
 path = require 'path'
 events = require 'events'
 cp = require 'child_process'
-qs = require 'querystring'
 
 
 try
@@ -98,10 +97,10 @@ exports.session =
           test.done()
         rh.handleLogout req, resp # set the handler to listening
       rh.handleLogin req, resp # set the handler to listening
-      postRequestData req, qs.stringify @oUsr # emit the data post event
+      postRequestData req, JSON.stringify @oUsr # emit the data post event
 
     rh.handleLogin req, resp # set the handler to listening
-    postRequestData req, qs.stringify @oUsr # emit the data post event
+    postRequestData req, JSON.stringify @oUsr # emit the data post event
 
 
   testWrongLogin: ( test ) =>
@@ -117,7 +116,7 @@ exports.session =
       username: @oUsr.username
       password: 'wrongpassword'
     rh.handleLogin req, resp # set the handler to listening
-    postRequestData req, qs.stringify usr # emit the data post event
+    postRequestData req, JSON.stringify usr # emit the data post event
 
 exports.events =
   setUp: ( cb ) ->
@@ -170,7 +169,7 @@ exports.events =
         test.done()
 
     rh.handleEvent req, resp # set the handler to listening
-    postRequestData req, qs.stringify oEvt # emit the data post event
+    postRequestData req, JSON.stringify oEvt # emit the data post event
     setTimeout fPopEvent, 200 # try to fetch the db entry
 
 exports.testLoginOrPage = ( test ) ->
@@ -243,5 +242,5 @@ exports.testUserCommands = ( test ) ->
     test.deepEqual msg, oRespData, 'Service didn\'t return expected'
     test.done()
   rh.handleUserCommand req, resp # set the handler to listening
-  postRequestData req, qs.stringify oReqData # emit the data post event
+  postRequestData req, JSON.stringify oReqData # emit the data post event
   

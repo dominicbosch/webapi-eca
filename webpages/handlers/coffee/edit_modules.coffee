@@ -16,19 +16,22 @@ fOnLoad = () ->
 
   fErrHandler = ( errMsg ) ->
     ( err ) ->
-      $( '#moduleName' ).html "<h2>&nbsp;</h2>"
-      $( '#moduleLanguage' ).html "<b>&nbsp;</b>"
-      editor.setValue ""
-      fDelayed = () ->
-        if err.responseText is ''
-          msg = 'No Response from Server!'
-        else
-          try
-            oErr = JSON.parse err.responseText
-            msg = oErr.message
-        $( '#info' ).text errMsg + msg
-        $( '#info' ).attr 'class', 'error'
-      setTimeout fDelayed, 500
+      if err.status is 401
+        window.location.href = 'forge?page=edit_modules'
+      else
+        $( '#moduleName' ).html "<h2>&nbsp;</h2>"
+        $( '#moduleLanguage' ).html "<b>&nbsp;</b>"
+        editor.setValue ""
+        fDelayed = () ->
+          if err.responseText is ''
+            msg = 'No Response from Server!'
+          else
+            try
+              oErr = JSON.parse err.responseText
+              msg = oErr.message
+          $( '#info' ).text errMsg + msg
+          $( '#info' ).attr 'class', 'error'
+        setTimeout fDelayed, 500
 
   fFetchModules = () ->
     if moduleType is 'Event Poller'
@@ -97,6 +100,7 @@ fOnLoad = () ->
           editor.getSession().setMode "ace/mode/javascript"
         editor.setValue oMod.data
         editor.gotoLine 1, 1
+        editor.scrollToRow 1
         $( '#moduleName' ).html "<h2>#{ oMod.id }</h2>"
         $( '#moduleLanguage' ).html "<b>#{ oMod.lang }</b>"
 

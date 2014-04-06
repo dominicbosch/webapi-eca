@@ -415,7 +415,7 @@ Persistence
 
   exports.appendLog = (function(_this) {
     return function(userId, ruleId, moduleId, message) {
-      return _this.db.append("" + userId + ":" + ruleId, "[" + ((new Date).toISOString()) + "] {" + moduleId + "} " + message + "\n");
+      return _this.db.append("" + userId + ":" + ruleId + ":log", "[" + ((new Date).toISOString()) + "] {" + moduleId + "} " + message + "\n");
     };
   })(this);
 
@@ -431,7 +431,7 @@ Persistence
 
   exports.getLog = (function(_this) {
     return function(userId, ruleId, cb) {
-      return _this.db.get("" + userId + ":" + ruleId, cb);
+      return _this.db.get("" + userId + ":" + ruleId + ":log", cb);
     };
   })(this);
 
@@ -446,7 +446,7 @@ Persistence
 
   exports.resetLog = (function(_this) {
     return function(userId, ruleId) {
-      return _this.db.del("" + userId + ":" + ruleId, replyHandler("RESET LOG '" + userId + ":" + ruleId + "'"));
+      return _this.db.del("" + userId + ":" + ruleId + ":log", replyHandler("del '" + userId + ":" + ruleId + ":log'"));
     };
   })(this);
 
@@ -461,7 +461,7 @@ Persistence
 
   exports.getRule = (function(_this) {
     return function(ruleId, cb) {
-      _this.log.info("DB | getRule: '" + ruleId + "'");
+      _this.log.info("DB | get: 'rule:" + ruleId + "'");
       return _this.db.get("rule:" + ruleId, cb);
     };
   })(this);
@@ -476,7 +476,7 @@ Persistence
 
   exports.getRules = (function(_this) {
     return function(cb) {
-      _this.log.info('DB | Fetching all Rules');
+      _this.log.info("DB | Fetching all Rules: getSetRecords 'rules'");
       return getSetRecords('rules', exports.getRule, cb);
     };
   })(this);
@@ -491,7 +491,7 @@ Persistence
 
   exports.getRuleIds = (function(_this) {
     return function(cb) {
-      _this.log.info('DB | Fetching all Rule IDs');
+      _this.log.info("DB | Fetching all Rule IDs: 'rules'");
       return _this.db.smembers('rules', cb);
     };
   })(this);
@@ -508,8 +508,8 @@ Persistence
   exports.storeRule = (function(_this) {
     return function(ruleId, data) {
       _this.log.info("DB | storeRule: '" + ruleId + "'");
-      _this.db.sadd('rules', "" + ruleId, replyHandler("storing rule key '" + ruleId + "'"));
-      return _this.db.set("rule:" + ruleId, data, replyHandler("storing rule '" + ruleId + "'"));
+      _this.db.sadd('rules', "" + ruleId, replyHandler("sadd rules: '" + ruleId + "'"));
+      return _this.db.set("rule:" + ruleId, data, replyHandler("set 'rule:" + ruleId + "': data"));
     };
   })(this);
 
@@ -525,12 +525,13 @@ Persistence
   exports.deleteRule = (function(_this) {
     return function(ruleId) {
       _this.log.info("DB | deleteRule: '" + ruleId + "'");
-      _this.db.srem("rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "'"));
-      _this.db.del("rule:" + ruleId, replyHandler("Deleting rule '" + ruleId + "'"));
+      _this.db.srem("rules", ruleId, replyHandler("srem 'rules': '" + ruleId + "'"));
+      _this.db.del("rule:" + ruleId, replyHandler("del: 'rule:" + ruleId + "'"));
       _this.db.smembers("rule:" + ruleId + ":users", function(err, obj) {
         var delLinkedUserRule, id, _i, _len, _results;
         delLinkedUserRule = function(userId) {
-          return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "' in linked user '" + userId + "'"));
+          exports.resetLog(userId, ruleId);
+          return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules': '" + ruleId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -539,11 +540,11 @@ Persistence
         }
         return _results;
       });
-      _this.db.del("rule:" + ruleId + ":users", replyHandler("Deleting rule '" + ruleId + "' users"));
+      _this.db.del("rule:" + ruleId + ":users", replyHandler("del 'rule:" + ruleId + ":users'"));
       _this.db.smembers("rule:" + ruleId + ":active-users", function(err, obj) {
         var delActiveUserRule, id, _i, _len, _results;
         delActiveUserRule = function(userId) {
-          return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("Deleting rule key '" + ruleId + "' in active user '" + userId + "'"));
+          return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("srem 'user:" + userId + ":active-rules': '" + ruleId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -552,7 +553,7 @@ Persistence
         }
         return _results;
       });
-      return _this.db.del("rule:" + ruleId + ":active-users", replyHandler("Deleting rule '" + ruleId + "' active users"));
+      return _this.db.del("rule:" + ruleId + ":active-users", replyHandler("del 'rule:" + ruleId + ":active-users'"));
     };
   })(this);
 
@@ -567,9 +568,9 @@ Persistence
 
   exports.linkRule = (function(_this) {
     return function(ruleId, userId) {
-      _this.log.info("DB | linkRule: '" + ruleId + "' for user '" + userId + "'");
-      _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("storing user '" + userId + "' for rule key '" + ruleId + "'"));
-      return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("storing rule key '" + ruleId + "' for user '" + userId + "'"));
+      _this.log.info("DB | linkRule: '" + ruleId + "' to user '" + userId + "'");
+      _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("sadd 'rule:" + ruleId + ":users': '" + userId + "'"));
+      return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("sadd 'user:" + userId + ":rules': '" + ruleId + "'"));
     };
   })(this);
 
@@ -584,7 +585,7 @@ Persistence
 
   exports.getUserLinkedRules = (function(_this) {
     return function(userId, cb) {
-      _this.log.info("DB | getUserLinkedRules: for user '" + userId + "'");
+      _this.log.info("DB | getUserLinkedRules: 'user:" + userId + ":rules'");
       return _this.db.smembers("user:" + userId + ":rules", cb);
     };
   })(this);
@@ -600,7 +601,7 @@ Persistence
 
   exports.getRuleLinkedUsers = (function(_this) {
     return function(ruleId, cb) {
-      _this.log.info("DB | getRuleLinkedUsers: for rule '" + ruleId + "'");
+      _this.log.info("DB | getRuleLinkedUsers: 'rule:" + ruleId + ":users'");
       return _this.db.smembers("rule:" + ruleId + ":users", cb);
     };
   })(this);
@@ -617,8 +618,8 @@ Persistence
   exports.unlinkRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | unlinkRule: '" + ruleId + ":" + userId + "'");
-      _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("removing user '" + userId + "' for rule key '" + ruleId + "'"));
-      return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("removing rule key '" + ruleId + "' for user '" + userId + "'"));
+      _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users': '" + userId + "'"));
+      return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules': '" + ruleId + "'"));
     };
   })(this);
 
@@ -634,8 +635,8 @@ Persistence
   exports.activateRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | activateRule: '" + ruleId + "' for '" + userId + "'");
-      _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("storing activated user '" + userId + "' in rule '" + ruleId + "'"));
-      return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("storing activated rule '" + ruleId + "' in user '" + userId + "'"));
+      _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("sadd 'rule:" + ruleId + ":active-users': '" + userId + "'"));
+      return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("sadd 'user:" + userId + ":active-rules': '" + ruleId + "'"));
     };
   })(this);
 
@@ -650,7 +651,7 @@ Persistence
 
   exports.getUserActivatedRules = (function(_this) {
     return function(userId, cb) {
-      _this.log.info("DB | getUserActivatedRules: for user '" + userId + "'");
+      _this.log.info("DB | getUserActivatedRules: smembers 'user:" + userId + ":active-rules'");
       return _this.db.smembers("user:" + userId + ":active-rules", cb);
     };
   })(this);
@@ -666,7 +667,7 @@ Persistence
 
   exports.getRuleActivatedUsers = (function(_this) {
     return function(ruleId, cb) {
-      _this.log.info("DB | getRuleActivatedUsers: for rule '" + ruleId + "'");
+      _this.log.info("DB | getRuleActivatedUsers: smembers 'rule:" + ruleId + ":active-users'");
       return _this.db.smembers("rule:" + ruleId + ":active-users", cb);
     };
   })(this);
@@ -683,8 +684,8 @@ Persistence
   exports.deactivateRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | deactivateRule: '" + ruleId + "' for '" + userId + "'");
-      _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("removing activated user '" + userId + "' in rule '" + ruleId + "'"));
-      return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("removing activated rule '" + ruleId + "' in user '" + userId + "'"));
+      _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users': '" + userId + "'"));
+      return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("srem 'user:" + userId + ":active-rules' '" + ruleId + "'"));
     };
   })(this);
 

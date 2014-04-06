@@ -127,6 +127,7 @@ input[type=text]:focus {
 #tableRules tr {
   margin-bottom: 10px;
 }
+
 #log_col {
   padding-left: 20px;
   border-left: double #666;

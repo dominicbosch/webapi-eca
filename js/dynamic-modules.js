@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cs, db, exports, issueApiCall, logFunction, needle, vm;
+  var cryptico, cryptoJS, cs, db, exports, issueNeedleCall, issueRequest, logFunction, needle, request, vm;
 
   db = require('./persistence');
 
@@ -17,9 +17,13 @@ Dynamic Modules
 
   needle = require('needle');
 
+  request = require('request');
+
   cs = require('coffee-script');
 
   cryptico = require('my-cryptico');
+
+  cryptoJS = require('crypto-js');
 
 
   /*
@@ -52,7 +56,7 @@ Dynamic Modules
     };
   })(this);
 
-  issueApiCall = function(logger) {
+  issueNeedleCall = function(logger) {
     return function(method, url, data, options, cb) {
       var err;
       try {
@@ -69,6 +73,27 @@ Dynamic Modules
       } catch (_error) {
         err = _error;
         return logger('Error before needle request! ' + err.message);
+      }
+    };
+  };
+
+  issueRequest = function(logger) {
+    return function(options, cb) {
+      var err;
+      try {
+        return request(options, (function(_this) {
+          return function(err, resp, body) {
+            try {
+              return cb(err, resp, body);
+            } catch (_error) {
+              err = _error;
+              return logger('Error during request! ' + err.message);
+            }
+          };
+        })(this));
+      } catch (_error) {
+        err = _error;
+        return logger('Error before request! ' + err.message);
       }
     };
   };
@@ -127,7 +152,9 @@ Dynamic Modules
         sandbox = {
           id: userId + '.' + modId + '.vm',
           params: params,
-          needlereq: issueApiCall(logFunc),
+          needlereq: issueNeedleCall(logFunc),
+          request: issueRequest(logFunc),
+          cryptoJS: cryptoJS,
           log: logFunc,
           debug: console.log,
           exports: {}

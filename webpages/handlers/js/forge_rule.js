@@ -9,9 +9,13 @@
   }).done(function(data) {
     return strPublicKey = data.message;
   }).fail(function(err) {
-    console.log(err);
-    $('#info').text('Error fetching public key, unable to send user-specific parameters securely');
-    return $('#info').attr('class', 'error');
+    if (err.status === 401) {
+      return window.location.href = 'forge?page=forge_rule';
+    } else {
+      console.log(err);
+      $('#info').text('Error fetching public key, unable to send user-specific parameters securely');
+      return $('#info').attr('class', 'error');
+    }
   });
 
   fOnLoad = function() {
@@ -60,12 +64,16 @@
           }
         }).fail(function(err) {
           var fDelayed;
-          fDelayed = function() {
-            console.log(err);
-            $('#info').text('Error fetching event poller params');
-            return $('#info').attr('class', 'error');
-          };
-          return setTimeout(fDelayed, 500);
+          if (err.status === 401) {
+            return window.location.href = 'forge?page=forge_rule';
+          } else {
+            fDelayed = function() {
+              console.log(err);
+              $('#info').text('Error fetching event poller params');
+              return $('#info').attr('class', 'error');
+            };
+            return setTimeout(fDelayed, 500);
+          }
         });
       }
     };
@@ -100,12 +108,16 @@
       return fFetchEventParams($('#select_event option:selected').text());
     }).fail(function(err) {
       var fDelayed;
-      fDelayed = function() {
-        console.log(err);
-        $('#info').text('Error fetching event poller');
-        return $('#info').attr('class', 'error');
-      };
-      return setTimeout(fDelayed, 500);
+      if (err.status === 401) {
+        return window.location.href = 'forge?page=forge_rule';
+      } else {
+        fDelayed = function() {
+          console.log(err);
+          $('#info').text('Error fetching event poller');
+          return $('#info').attr('class', 'error');
+        };
+        return setTimeout(fDelayed, 500);
+      }
     });
     $('#select_event').change(function() {
       return fFetchEventParams($(this).val());
@@ -145,12 +157,16 @@
       return _results;
     }).fail(function(err) {
       var fDelayed;
-      console.log(err);
-      fDelayed = function() {
-        $('#info').text('Error fetching event poller');
-        return $('#info').attr('class', 'error');
-      };
-      return setTimeout(fDelayed, 500);
+      if (err.status === 401) {
+        return window.location.href = 'forge?page=forge_rule';
+      } else {
+        console.log(err);
+        fDelayed = function() {
+          $('#info').text('Error fetching event poller');
+          return $('#info').attr('class', 'error');
+        };
+        return setTimeout(fDelayed, 500);
+      }
     });
     fFetchActionParams = function(div, name) {
       obj = {
@@ -185,16 +201,20 @@
         }
       }).fail(function(err) {
         var fDelayed;
-        console.log(err);
-        fDelayed = function() {
-          $('#info').text('Error fetching action invoker params');
-          return $('#info').attr('class', 'error');
-        };
-        return setTimeout(fDelayed, 500);
+        if (err.status === 401) {
+          return window.location.href = 'forge?page=forge_rule';
+        } else {
+          console.log(err);
+          fDelayed = function() {
+            $('#info').text('Error fetching action invoker params');
+            return $('#info').attr('class', 'error');
+          };
+          return setTimeout(fDelayed, 500);
+        }
       });
     };
     $('#select_actions').on('change', function() {
-      var arrAI, div, idAI, img, opt, table, tr;
+      var arrAI, div, idAI, img, opt, table, td, tr;
       opt = $('option:selected', this);
       arrAI = opt.val().split(' -> ');
       idAI = opt.attr('id');
@@ -206,7 +226,9 @@
       table.append(tr);
       if ($('#ap_' + idAI).length === 0) {
         div = $('<div>').attr('id', 'ap_' + idAI);
-        div.append($('<div> ')).attr('class', 'underlined').text(arrAI[0]);
+        td = $('<div> ');
+        td.append($('<div>')).attr('class', 'modName underlined').text(arrAI[0]);
+        div.append(td);
         $('#action_params').append(div);
         fFetchActionParams(div, arrAI[0]);
       }
@@ -247,7 +269,8 @@
         }
         ap = {};
         $('> div', $('#action_params')).each(function() {
-          var encryptedParams, id, params;
+          var encryptedParams, id, modName, params;
+          modName = $('.modName', this).text();
           id = $(this).attr('id').substring(3);
           params = {};
           $('tr', this).each(function() {
@@ -260,7 +283,7 @@
             return params[key] = val;
           });
           encryptedParams = cryptico.encrypt(JSON.stringify(params), strPublicKey);
-          return ap[id] = encryptedParams.cipher;
+          return ap[modName] = encryptedParams.cipher;
         });
         acts = [];
         $('#selected_actions .title').each(function() {
@@ -288,28 +311,30 @@
           }
         };
         obj.payload = JSON.stringify(obj.payload);
+        window.scrollTo(0, 0);
         return $.post('/usercommand', obj).done(function(data) {
           $('#info').text(data.message);
           return $('#info').attr('class', 'success');
         }).fail(function(err) {
           var fDelayed;
-          fDelayed = function() {
-            var msg, oErr;
-            if (err.responseText === '') {
-              msg = 'No Response from Server!';
-            } else {
-              try {
-                oErr = JSON.parse(err.responseText);
-                msg = oErr.message;
-              } catch (_error) {}
-            }
-            $('#info').text('Error in upload: ' + msg);
-            $('#info').attr('class', 'error');
-            if (err.status === 401) {
-              return window.location.href = 'forge?page=forge_rule';
-            }
-          };
-          return setTimeout(fDelayed, 500);
+          if (err.status === 401) {
+            return window.location.href = 'forge?page=forge_rule';
+          } else {
+            fDelayed = function() {
+              var msg, oErr;
+              if (err.responseText === '') {
+                msg = 'No Response from Server!';
+              } else {
+                try {
+                  oErr = JSON.parse(err.responseText);
+                  msg = oErr.message;
+                } catch (_error) {}
+              }
+              $('#info').text('Error in upload: ' + msg);
+              return $('#info').attr('class', 'error');
+            };
+            return setTimeout(fDelayed, 500);
+          }
         });
       } catch (_error) {
         err = _error;

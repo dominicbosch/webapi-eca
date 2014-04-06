@@ -3,9 +3,12 @@ $.post( '/usercommand', command: 'get_public_key' )
   .done ( data ) ->
     strPublicKey = data.message
   .fail ( err ) ->
-    console.log err
-    $( '#info' ).text 'Error fetching public key, unable to send user-specific parameters securely'
-    $( '#info' ).attr 'class', 'error'
+    if err.status is 401
+      window.location.href = 'forge?page=forge_rule'
+    else
+      console.log err
+      $( '#info' ).text 'Error fetching public key, unable to send user-specific parameters securely'
+      $( '#info' ).attr 'class', 'error'
 
 fOnLoad = () ->
 
@@ -44,11 +47,14 @@ fOnLoad = () ->
                 table.append tr
               fAppendParam name for name in arrParams
         .fail ( err ) ->
-          fDelayed = () ->
-            console.log err
-            $( '#info' ).text 'Error fetching event poller params'
-            $( '#info' ).attr 'class', 'error'
-          setTimeout fDelayed, 500
+          if err.status is 401
+            window.location.href = 'forge?page=forge_rule'
+          else
+            fDelayed = () ->
+              console.log err
+              $( '#info' ).text 'Error fetching event poller params'
+              $( '#info' ).attr 'class', 'error'
+            setTimeout fDelayed, 500
 
 
 #FIXME Add possibility for custom event via text input
@@ -74,11 +80,14 @@ fOnLoad = () ->
       fAppendEvents id, events for id, events of oEps
       fFetchEventParams $( '#select_event option:selected' ).text()
     .fail ( err ) ->
-      fDelayed = () ->
-        console.log err
-        $( '#info' ).text 'Error fetching event poller'
-        $( '#info' ).attr 'class', 'error'
-      setTimeout fDelayed, 500
+      if err.status is 401
+        window.location.href = 'forge?page=forge_rule'
+      else
+        fDelayed = () ->
+          console.log err
+          $( '#info' ).text 'Error fetching event poller'
+          $( '#info' ).attr 'class', 'error'
+        setTimeout fDelayed, 500
 
   $( '#select_event' ).change () ->
     fFetchEventParams $( this ).val()
@@ -103,11 +112,14 @@ fOnLoad = () ->
       fAppendActions id, actions for id, actions of oAis
 
     .fail ( err ) ->
-      console.log err
-      fDelayed = () ->
-        $( '#info' ).text 'Error fetching event poller'
-        $( '#info' ).attr 'class', 'error'
-      setTimeout fDelayed, 500
+      if err.status is 401
+        window.location.href = 'forge?page=forge_rule'
+      else
+        console.log err
+        fDelayed = () ->
+          $( '#info' ).text 'Error fetching event poller'
+          $( '#info' ).attr 'class', 'error'
+        setTimeout fDelayed, 500
 
   # Fetch Action Invoker user-specific parameters
   fFetchActionParams = ( div, name ) ->
@@ -131,11 +143,14 @@ fOnLoad = () ->
               table.append tr
             fAppendActionParam name for name in arrParams
       .fail ( err ) ->
-        console.log err
-        fDelayed = () ->
-          $( '#info' ).text 'Error fetching action invoker params'
-          $( '#info' ).attr 'class', 'error'
-        setTimeout fDelayed, 500
+        if err.status is 401
+          window.location.href = 'forge?page=forge_rule'
+        else
+          console.log err
+          fDelayed = () ->
+            $( '#info' ).text 'Error fetching action invoker params'
+            $( '#info' ).attr 'class', 'error'
+          setTimeout fDelayed, 500
 
   $( '#select_actions' ).on 'change', () ->
     opt = $ 'option:selected', this
@@ -151,9 +166,10 @@ fOnLoad = () ->
     if $( '#ap_' + idAI ).length is 0
       div = $( '<div>' )
         .attr( 'id', 'ap_' + idAI )
-      div.append $( '<div> ')
-        .attr( 'class', 'underlined')
-        .text arrAI[0]
+      td = $( '<div> ')
+      td.append $( '<div>' )
+        .attr( 'class', 'modName underlined' ).text arrAI[0]
+      div.append td
       $( '#action_params' ).append div
       fFetchActionParams div, arrAI[0]
     opt.remove()
@@ -191,6 +207,7 @@ fOnLoad = () ->
       # Store all selected action invokers
       ap = {}
       $( '> div', $( '#action_params' ) ).each () ->
+        modName = $( '.modName', this ).text()
         id = $( this ).attr( 'id' ).substring 3
         params = {}
         $( 'tr', this ).each () ->
@@ -200,7 +217,7 @@ fOnLoad = () ->
             throw new Error "'#{ key }' missing for '#{ id }'"
           params[key] = val
         encryptedParams = cryptico.encrypt JSON.stringify( params ), strPublicKey 
-        ap[id] = encryptedParams.cipher
+        ap[modName] = encryptedParams.cipher
       acts = []
       $( '#selected_actions .title' ).each () ->
         acts.push $( this ).text()
@@ -224,23 +241,25 @@ fOnLoad = () ->
           actions: acts
           action_params: ap
       obj.payload = JSON.stringify obj.payload
+      window.scrollTo 0, 0
       $.post( '/usercommand', obj )
         .done ( data ) ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          fDelayed = () ->
-            if err.responseText is ''
-              msg = 'No Response from Server!'
-            else
-              try
-                oErr = JSON.parse err.responseText
-                msg = oErr.message
-            $( '#info' ).text 'Error in upload: ' + msg
-            $( '#info' ).attr 'class', 'error'
-            if err.status is 401
-              window.location.href = 'forge?page=forge_rule'
-          setTimeout fDelayed, 500
+          if err.status is 401
+            window.location.href = 'forge?page=forge_rule'
+          else
+            fDelayed = () ->
+              if err.responseText is ''
+                msg = 'No Response from Server!'
+              else
+                try
+                  oErr = JSON.parse err.responseText
+                  msg = oErr.message
+              $( '#info' ).text 'Error in upload: ' + msg
+              $( '#info' ).attr 'class', 'error'
+            setTimeout fDelayed, 500
     catch err
       $( '#info' ).text 'Error in upload: ' + err.message
       $( '#info' ).attr 'class', 'error'

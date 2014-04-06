@@ -5,17 +5,20 @@ fOnLoad = () ->
 
   fErrHandler = ( errMsg ) ->
     ( err ) ->
-      $( '#log_col' ).text ""
-      fDelayed = () ->
-        if err.responseText is ''
-          msg = 'No Response from Server!'
-        else
-          try
-            oErr = JSON.parse err.responseText
-            msg = oErr.message
-        $( '#info' ).text errMsg + msg
-        $( '#info' ).attr 'class', 'error'
-      setTimeout fDelayed, 500
+      if err.status is 401
+        window.location.href = 'forge?page=edit_rules'
+      else
+        $( '#log_col' ).text ""
+        fDelayed = () ->
+          if err.responseText is ''
+            msg = 'No Response from Server!'
+          else
+            try
+              oErr = JSON.parse err.responseText
+              msg = oErr.message
+          $( '#info' ).text errMsg + msg
+          $( '#info' ).attr 'class', 'error'
+        setTimeout fDelayed, 500
 
   fFetchRules = () ->
     $.post( '/usercommand', command: 'get_rules' )
