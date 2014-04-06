@@ -6,7 +6,8 @@ var fs = require( 'fs' ),
   db = require( './js/persistence' ),
   args = process.argv.slice( 2 ),
   fEnd = function() {
-    console.log( 'Shutting down DB from unit_test.sh script...' );
+    console.log( 'Shutting down DB from unit_test.sh script. '
+      +'This might take as long as the event poller loop delay is...' );
     db.shutDown();
   };
    

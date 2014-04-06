@@ -72,7 +72,7 @@ exports.testHttpPortAlreadyUsed = ( test ) =>
       isRunning = false
       test.done()
   
-    setTimeout fWaitForDeath, 1000
+    setTimeout fWaitForDeath, 12000
   
   # Garbage collect eventually still running process
   fWaitForDeath = () =>
@@ -105,7 +105,7 @@ exports.testHttpPortInvalid = ( test ) ->
       test.done()
     # engine.kill()
 
-  setTimeout fWaitForDeath, 1000
+  setTimeout fWaitForDeath, 12000
 
 exports.testDbPortInvalid = ( test ) ->
   test.expect 1
@@ -127,4 +127,4 @@ exports.testDbPortInvalid = ( test ) ->
       test.ok false, '"testHttpPortInvalid" Engine didn\'t shut down!'
       test.done()
 
-  setTimeout fWaitForDeath, 1000
+  setTimeout fWaitForDeath, 12000
