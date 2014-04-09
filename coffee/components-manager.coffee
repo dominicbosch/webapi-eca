@@ -181,6 +181,7 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
             answ.message = 
               " Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
             oPayload.functions = JSON.stringify funcs
+            oPayload.functionParameters = JSON.stringify cm.funcParams
             dbMod.storeModule user.username, oPayload
             if oPayload.public is 'true'
               dbMod.publish oPayload.id
@@ -225,13 +226,27 @@ commandFunctions =
     getModules  user, oPayload, db.actionInvokers, callback
   
   get_full_action_invoker: ( user, oPayload, callback ) ->
-    db.actionInvokers.getModule oPayload.id, ( err, obj ) ->
-      callback
-        code: 200
-        message: JSON.stringify obj
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.actionInvokers.getModule oPayload.id, ( err, obj ) ->
+        callback
+          code: 200
+          message: JSON.stringify obj
 
   get_action_invoker_params: ( user, oPayload, callback ) ->
     getModuleParams user, oPayload, db.actionInvokers, callback
+
+  get_action_invoker_function_params: ( user, oPayload, callback ) ->
+    answ = hasRequiredParams [ 'id' ], oPayload
+    if answ.code isnt 200
+      callback answ
+    else
+      db.actionInvokers.getModuleField oPayload.id, 'functionParameters', ( err, obj ) ->
+        callback
+          code: 200
+          message: obj
   
   forge_action_invoker: ( user, oPayload, callback ) ->
     forgeModule user, oPayload, db.actionInvokers, callback
@@ -281,20 +296,28 @@ commandFunctions =
             code: 409
             message: 'Rule name already existing!'
         else
+          console.log 'new ruke'
           rule =
             id: oPayload.id
             event: oPayload.event
             conditions: oPayload.conditions
             actions: oPayload.actions
           strRule = JSON.stringify rule
+          console.log 'stringified'
           db.storeRule rule.id, strRule
+          console.log 'stored'
           db.linkRule rule.id, user.username
+          console.log 'linked'
           db.activateRule rule.id, user.username
+          console.log 'activated'
           if oPayload.event_params
             epModId = rule.event.split( ' -> ' )[0]
             db.eventPollers.storeUserParams epModId, user.username, oPayload.event_params
+          console.log 'event params loaded'
           arrParams = oPayload.action_params
+          console.log 'arractionparams'
           db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
+          console.log 'action aprams stored'
           db.resetLog user.username, rule.id
           db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
           eventEmitter.emit 'rule',
@@ -304,6 +327,7 @@ commandFunctions =
           answ =
             code: 200
             message: "Rule '#{ rule.id }' stored and activated!"
+          console.log 'done'
         callback answ
 
   delete_rule: ( user, oPayload, callback ) ->

@@ -249,6 +249,7 @@ Components Manager
                 _this.log.info("CM | Storing new module with functions " + (funcs.join(', ')));
                 answ.message = " Module " + oPayload.id + " successfully stored! Found following function(s): " + funcs;
                 oPayload.functions = JSON.stringify(funcs);
+                oPayload.functionParameters = JSON.stringify(cm.funcParams);
                 dbMod.storeModule(user.username, oPayload);
                 if (oPayload["public"] === 'true') {
                   dbMod.publish(oPayload.id);
@@ -303,15 +304,35 @@ Components Manager
       return getModules(user, oPayload, db.actionInvokers, callback);
     },
     get_full_action_invoker: function(user, oPayload, callback) {
-      return db.actionInvokers.getModule(oPayload.id, function(err, obj) {
-        return callback({
-          code: 200,
-          message: JSON.stringify(obj)
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.actionInvokers.getModule(oPayload.id, function(err, obj) {
+          return callback({
+            code: 200,
+            message: JSON.stringify(obj)
+          });
         });
-      });
+      }
     },
     get_action_invoker_params: function(user, oPayload, callback) {
       return getModuleParams(user, oPayload, db.actionInvokers, callback);
+    },
+    get_action_invoker_function_params: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.actionInvokers.getModuleField(oPayload.id, 'functionParameters', function(err, obj) {
+          return callback({
+            code: 200,
+            message: obj
+          });
+        });
+      }
     },
     forge_action_invoker: function(user, oPayload, callback) {
       return forgeModule(user, oPayload, db.actionInvokers, callback);
@@ -365,6 +386,7 @@ Components Manager
               message: 'Rule name already existing!'
             };
           } else {
+            console.log('new ruke');
             rule = {
               id: oPayload.id,
               event: oPayload.event,
@@ -372,18 +394,25 @@ Components Manager
               actions: oPayload.actions
             };
             strRule = JSON.stringify(rule);
+            console.log('stringified');
             db.storeRule(rule.id, strRule);
+            console.log('stored');
             db.linkRule(rule.id, user.username);
+            console.log('linked');
             db.activateRule(rule.id, user.username);
+            console.log('activated');
             if (oPayload.event_params) {
               epModId = rule.event.split(' -> ')[0];
               db.eventPollers.storeUserParams(epModId, user.username, oPayload.event_params);
             }
+            console.log('event params loaded');
             arrParams = oPayload.action_params;
+            console.log('arractionparams');
             for (id in arrParams) {
               params = arrParams[id];
               db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
             }
+            console.log('action aprams stored');
             db.resetLog(user.username, rule.id);
             db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized");
             eventEmitter.emit('rule', {
@@ -395,6 +424,7 @@ Components Manager
               code: 200,
               message: "Rule '" + rule.id + "' stored and activated!"
             };
+            console.log('done');
           }
           return callback(answ);
         });

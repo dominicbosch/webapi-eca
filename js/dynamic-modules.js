@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cryptoJS, cs, db, exports, issueNeedleCall, issueRequest, logFunction, needle, request, vm;
+  var cryptico, cryptoJS, cs, db, exports, getFunctionParamNames, issueNeedleCall, issueRequest, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -104,6 +104,18 @@ Dynamic Modules
     };
   };
 
+  regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+
+  getFunctionParamNames = function(fName, func, oFuncs) {
+    var fnStr, result;
+    fnStr = func.toString().replace(regexpComments, '');
+    result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(/([^\s,]+)/g);
+    if (!result) {
+      result = [];
+    }
+    return oFuncs[fName] = result;
+  };
+
 
   /*
   Try to run a JS module from a string, together with the
@@ -134,7 +146,7 @@ Dynamic Modules
         }
       }
       fTryToLoad = function(params) {
-        var logFunc, msg, oDecrypted, sandbox;
+        var fName, func, logFunc, msg, oDecrypted, oFuncParams, sandbox, _ref;
         if (params) {
           try {
             oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
@@ -170,9 +182,16 @@ Dynamic Modules
           }
           answ.message = 'Loading Module failed: ' + msg;
         }
+        oFuncParams = {};
+        _ref = sandbox.exports;
+        for (fName in _ref) {
+          func = _ref[fName];
+          getFunctionParamNames(fName, func, oFuncParams);
+        }
         return cb({
           answ: answ,
           module: sandbox.exports,
+          funcParams: oFuncParams,
           logger: sandbox.log
         });
       };

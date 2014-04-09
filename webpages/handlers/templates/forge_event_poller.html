@@ -40,14 +40,18 @@ exports.newMail = ( pushEvent ) ->
 This event poller requires user-specific properties:
 <table id="tableParams">
 	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="text" value="apikey" /></td>
+		<td><img src="red_cross_small.png" title="Remove?"></td>
+		<td><input type="checkbox" title="Password shielded input?" checked="true" /></td>
+		<td><input type="text" class="textinput" value="apikey" /></td>
 	</tr>
 	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="text" /></td>
+		<td><img src="red_cross_small.png" title="Remove?"></td>
+		<td><input type="checkbox" title="Password shielded input?" /></td>
+		<td><input type="text" class="textinput" /></td>
 	</tr>
-</table>
+</table><!-- 
+		<td><input type="checkbox" title="Password shielded input?" /></td>
+		<td></td> -->
 		</td>
 	</tr>
 </table>

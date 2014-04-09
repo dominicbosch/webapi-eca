@@ -3,7 +3,7 @@
   var fOnLoad;
 
   fOnLoad = function() {
-    var editor, fChangeCrosses;
+    var editor, fChangeInputVisibility;
     document.title = 'Forge Action Invoker';
     $('#pagetitle').text("{{{user.username}}}, forge your custom action invoker!");
     editor = ace.edit("editor");
@@ -18,14 +18,14 @@
         return editor.getSession().setMode("ace/mode/javascript");
       }
     });
-    fChangeCrosses = function() {
-      return $('#tableParams img').each(function(id) {
-        var par;
-        par = $(this).closest('tr');
-        if (par.is(':last-child' || par.is(':only-child'))) {
-          return $(this).hide();
+    fChangeInputVisibility = function() {
+      return $('#tableParams tr').each(function(id) {
+        if ($(this).is(':last-child' || $(this).is(':only-child'))) {
+          $('img', this).hide();
+          return $('input[type=checkbox]', this).hide();
         } else {
-          return $(this).show();
+          $('img', this).show();
+          return $('input[type=checkbox]', this).show();
         }
       });
     };
@@ -35,36 +35,43 @@
       if (!par.is(':last-child')) {
         par.remove();
       }
-      return fChangeCrosses();
+      return fChangeInputVisibility();
     });
-    $('#tableParams').on('keyup', 'input', function() {
-      var img, inp, par, tr;
-      par = $(this).closest('tr');
-      if (par.is(':last-child')) {
-        tr = $('<tr>');
-        img = $('<img>').attr('src', 'red_cross_small.png');
-        inp = $('<input>').attr('type', 'text');
-        tr.append($('<td>').append(img));
-        tr.append($('<td>').append(inp));
-        par.parent().append(tr);
-        return fChangeCrosses();
-      } else if ($(this).val() === '' && !par.is(':only-child')) {
-        return par.remove();
+    $('#tableParams').on('keyup', 'input', function(e) {
+      var cb, code, img, inp, par, tr;
+      code = e.keyCode || e.which;
+      if (code !== 9) {
+        par = $(this).closest('tr');
+        if (par.is(':last-child')) {
+          tr = $('<tr>');
+          img = $('<img>').attr('title', 'Remove?').attr('src', 'red_cross_small.png');
+          cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
+          inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
+          tr.append($('<td>').append(img));
+          tr.append($('<td>').append(cb));
+          tr.append($('<td>').append(inp));
+          par.parent().append(tr);
+          return fChangeInputVisibility();
+        } else if ($(this).val() === '' && !par.is(':only-child')) {
+          return par.remove();
+        }
       }
     });
-    fChangeCrosses();
+    fChangeInputVisibility();
     return $('#but_submit').click(function() {
       var listParams, obj;
       if ($('#input_id').val() === '') {
         return alert('Please enter an action invoker name!');
       } else {
-        listParams = [];
-        $('#tableParams input').each(function() {
-          var val;
-          val = $(this).val();
+        listParams = {};
+        $('#tableParams tr').each(function() {
+          var shld, val;
+          val = $('input.textinput', this).val();
+          shld = $('input[type=checkbox]', this).is(':checked');
           if (val !== "") {
-            return listParams.push(val);
+            listParams[val] = shld;
           }
+          return true;
         });
         obj = {
           command: 'forge_action_invoker',

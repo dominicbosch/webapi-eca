@@ -262,6 +262,7 @@ Persistence
       this.getModuleIds = __bind(this.getModuleIds, this);
       this.getAvailableModuleIds = __bind(this.getAvailableModuleIds, this);
       this.getModuleParams = __bind(this.getModuleParams, this);
+      this.getModuleField = __bind(this.getModuleField, this);
       this.getModule = __bind(this.getModule, this);
       this.unpublish = __bind(this.unpublish, this);
       this.publish = __bind(this.publish, this);
@@ -317,6 +318,11 @@ Persistence
     IndexedModules.prototype.getModule = function(mId, cb) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + mId + " )");
       return this.db.hgetall("" + this.setname + ":" + mId, cb);
+    };
+
+    IndexedModules.prototype.getModuleField = function(mId, field, cb) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + mId + " )");
+      return this.db.hget("" + this.setname + ":" + mId, field, cb);
     };
 
     IndexedModules.prototype.getModuleParams = function(mId, cb) {

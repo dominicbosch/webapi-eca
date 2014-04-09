@@ -47,11 +47,13 @@ fOnLoad = () ->
     oMods = JSON.parse data.message
     for modName of oMods
       tr = $ '<tr>'
-      img = $( '<img>' ).attr( 'class', 'del' ).attr 'src', 'red_cross_small.png'
-      imgTwo = $( '<img>' ).attr( 'class', 'log' ).attr 'src', 'logicon.png'
       inp = $( '<div>' ).text modName
+      img = $( '<img>' ).attr( 'class', 'del' )
+        .attr( 'title', 'Delete Module' ).attr 'src', 'red_cross_small.png'
       tr.append( $( '<td>' ).append img )
-      tr.append( $( '<td>' ).append imgTwo )
+      img = $( '<img>' ).attr( 'class', 'log' )
+        .attr( 'title', 'Edit Module' ).attr 'src', 'edit.png'
+      tr.append( $( '<td>' ).append img )
       tr.append( $( '<td>' ).append inp )
       $( '#tableModules' ).append tr
 

@@ -252,6 +252,10 @@ class IndexedModules
     @log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
     @db.hgetall "#{ @setname }:#{ mId }", cb
 
+  getModuleField: ( mId, field, cb ) =>
+    @log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
+    @db.hget "#{ @setname }:#{ mId }", field, cb
+
   #TODO add testing
   getModuleParams: ( mId, cb ) =>
     @log.info "DB | (IdxedMods) #{ @setname }.getModuleParams( #{ mId } )"

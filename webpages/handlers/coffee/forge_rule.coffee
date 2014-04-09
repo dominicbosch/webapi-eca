@@ -1,4 +1,13 @@
 strPublicKey = ''
+
+fFailedRequest = ( msg ) ->
+  ( err ) ->
+    if err.status is 401
+      window.location.href = 'forge?page=forge_rule'
+    else
+      $( '#info' ).text msg
+      $( '#info' ).attr 'class', 'error'
+
 $.post( '/usercommand', command: 'get_public_key' )
   .done ( data ) ->
     strPublicKey = data.message
@@ -6,20 +15,18 @@ $.post( '/usercommand', command: 'get_public_key' )
     if err.status is 401
       window.location.href = 'forge?page=forge_rule'
     else
-      console.log err
-      $( '#info' ).text 'Error fetching public key, unable to send user-specific parameters securely'
+      $( '#info' ).text 'Error fetching public key, unable to send user specific parameters securely'
       $( '#info' ).attr 'class', 'error'
 
 fOnLoad = () ->
+  document.title = 'Rule Forge!'
+  $( '#pagetitle' ).text '{{{user.username}}}, forge your ECA Rule!'
 
   editor = ace.edit "editor_conditions"
   editor.setTheme "ace/theme/monokai"
   editor.getSession().setMode "ace/mode/json"
   editor.setShowPrintMargin false
   # editor.session.setUseSoftTabs false 
-
-  document.title = 'Rule Forge!'
-  $( '#pagetitle' ).text '{{{user.username}}}, forge your ECA Rule!'
 
   # Fetch Event Poller user-specific parameters
   fFetchEventParams = ( name ) ->
@@ -33,39 +40,24 @@ fOnLoad = () ->
       $.post( '/usercommand', obj )
         .done ( data ) ->
           if data.message
-            arrParams = JSON.parse data.message
+            oParams = JSON.parse data.message
             $( '#event_poller_params table' ).remove()
-            if arrParams.length > 0
-              table = $ '<table>'
-              $( '#event_poller_params' ).append table
-              fAppendParam = ( name ) ->
-                tr = $( '<tr>' )
-                tr.append $( '<td>' ).css 'width', '20px'
-                tr.append $( '<td>' ).attr( 'class', 'key' ).text name
-                inp = $( '<input>' ).attr( 'type', 'password' ).attr 'id', "#{ name }"
-                tr.append $( '<td>' ).text( ' :' ).append inp
-                table.append tr
-              fAppendParam name for name in arrParams
-        .fail ( err ) ->
-          if err.status is 401
-            window.location.href = 'forge?page=forge_rule'
-          else
-            fDelayed = () ->
-              console.log err
-              $( '#info' ).text 'Error fetching event poller params'
-              $( '#info' ).attr 'class', 'error'
-            setTimeout fDelayed, 500
-
-
-#FIXME Add possibility for custom event via text input
-#FIXME Add conditions
-#FIXME Only send user parameters encrypted! RSA required! Crypto-js doesn't provide it
-
+            table = $ '<table>'
+            $( '#event_poller_params' ).append table
+            fAppendParam = ( name, shielded ) ->
+              tr = $( '<tr>' )
+              tr.append $( '<td>' ).css 'width', '20px'
+              tr.append $( '<td>' ).attr( 'class', 'key' ).text name
+              inp = $( '<input>' ).attr 'id', "#{ name }"
+              if shielded
+                inp.attr( 'type', 'password' )
+              tr.append $( '<td>' ).text( ' : ' ).append inp
+              table.append tr
+            fAppendParam name, shielded for name, shielded of oParams
+        .fail fFailedRequest 'Error fetching event poller params'
 
   # Init Event Pollers
-  obj =
-    command: 'get_event_pollers'
-  $.post( '/usercommand', obj )
+  $.post( '/usercommand', command: 'get_event_pollers' )
     .done ( data ) ->
       try
         oEps = JSON.parse data.message
@@ -79,110 +71,119 @@ fOnLoad = () ->
         fAppendEvent evt for evt in events
       fAppendEvents id, events for id, events of oEps
       fFetchEventParams $( '#select_event option:selected' ).text()
-    .fail ( err ) ->
-      if err.status is 401
-        window.location.href = 'forge?page=forge_rule'
-      else
-        fDelayed = () ->
-          console.log err
-          $( '#info' ).text 'Error fetching event poller'
-          $( '#info' ).attr 'class', 'error'
-        setTimeout fDelayed, 500
+    .fail fFailedRequest 'Error fetching event poller'
 
   $( '#select_event' ).change () ->
     fFetchEventParams $( this ).val()
 
   # Init Action Invoker
-  arrActionInvoker = []
   obj =
     command: 'get_action_invokers'
   $.post( '/usercommand', obj )
+
     .done ( data ) ->
       try
         oAis = JSON.parse data.message
       catch err
         console.error 'ERROR: non-object received from server: ' + data.message
         return
-      i = 0
-      fAppendActions = ( id, actions ) ->
-        fAppendAction = ( act ) ->
-          $( '#select_actions' ).append $( '<option>' ).attr( 'id', i++ ).text id + ' -> ' + act
-          arrActionInvoker.push id + ' -> ' + act
-        fAppendAction act for act in actions
-      fAppendActions id, actions for id, actions of oAis
+      fAppendActions = ( module, actions ) ->
+        for act in actions
+          $( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
+      fAppendActions module, actions for module, actions of oAis
+    .fail fFailedRequest 'Error fetching event poller'
 
-    .fail ( err ) ->
-      if err.status is 401
-        window.location.href = 'forge?page=forge_rule'
-      else
-        console.log err
-        fDelayed = () ->
-          $( '#info' ).text 'Error fetching event poller'
-          $( '#info' ).attr 'class', 'error'
-        setTimeout fDelayed, 500
-
-  # Fetch Action Invoker user-specific parameters
-  fFetchActionParams = ( div, name ) ->
+  fFetchActionParams = ( div, modName ) ->
     obj =
       command: 'get_action_invoker_params'
       payload:
-        id: name
+        id: modName
     obj.payload = JSON.stringify( obj.payload );
     $.post( '/usercommand', obj )
       .done ( data ) ->
         if data.message
-          arrParams = JSON.parse data.message
-          if arrParams.length > 0
-            table = $ '<table>'
-            div.append table
-            fAppendActionParam = ( name ) ->
-              tr = $( '<tr>' )
-              tr.append $( '<td>' ).css 'width', '20px'
-              tr.append $( '<td>' ).attr( 'class', 'key').text name
-              tr.append $( '<td>' ).text(' :').append $( '<input>' ).attr( 'type', 'password' )
-              table.append tr
-            fAppendActionParam name for name in arrParams
-      .fail ( err ) ->
-        if err.status is 401
-          window.location.href = 'forge?page=forge_rule'
-        else
-          console.log err
-          fDelayed = () ->
-            $( '#info' ).text 'Error fetching action invoker params'
-            $( '#info' ).attr 'class', 'error'
-          setTimeout fDelayed, 500
+          oParams = JSON.parse data.message
+          table = $ '<table>'
+          div.append table
+          fAppendActionParam = ( name, shielded ) ->
+            tr = $( '<tr>' )
+            tr.append $( '<td>' ).css 'width', '20px'
+            tr.append $( '<td>' ).attr( 'class', 'key').text name
+            inp = $( '<input>' ).attr 'id', "#{ name }"
+            if shielded
+              inp.attr( 'type', 'password' )
+            else
+              inp.attr( 'type', 'text' )
+            tr.append $( '<td>' ).text(' : ').append inp
+            table.append tr
+          fAppendActionParam name, sh for name, sh of oParams
+      .fail fFailedRequest 'Error fetching action invoker params'
+
+  fFetchActionFunctionParams = ( tag, arrName ) ->
+    obj =
+      command: 'get_action_invoker_function_params'
+      payload:
+        id: arrName[ 0 ]
+    obj.payload = JSON.stringify( obj.payload );
+    $.post( '/usercommand', obj )
+      .done ( data ) ->
+        if data.message
+          oParams = JSON.parse data.message
+          if oParams[ arrName[ 1 ] ]
+            table = $( '<table>' ).appendTo tag
+            for functionArgument in oParams[ arrName[ 1 ] ]
+              tr = $( '<tr>' ).appendTo table
+              td = $( '<td>' ).appendTo tr
+              td.append $( '<div>' ).text functionArgument
+              tr.append td
+              td = $( '<td>' ).appendTo tr
+              td.append $( '<input>' ).attr 'type', 'text'
+              tr.append td
+              tr.append td
+              td = $( '<td>' ).appendTo tr
+              td.append $( '<input>' ).attr( 'type', 'checkbox' )
+                .attr 'title', 'js-select expression to be resolved on event?'
+      .fail fFailedRequest 'Error fetching action invoker function params'
 
   $( '#select_actions' ).on 'change', () ->
     opt = $ 'option:selected', this
-    arrAI = opt.val().split ' -> '
-    idAI = opt.attr 'id'
-
+    arrName = opt.text().split ' -> '
+    
+    arrEls = $( "#action_params div.modName" ).map( () ->
+      $( this ).text()
+    ).get()
     table = $( '#selected_actions' )
-    tr = $( '<tr>' ).attr( 'id', 'title_' + idAI )
+    tr = $( '<tr>' ).appendTo table
     img = $( '<img>' ).attr 'src', 'red_cross_small.png'
     tr.append $( '<td>' ).css( 'width', '20px' ).append img
-    tr.append $( '<td>' ).attr( 'class', 'title').text( opt.val() )
-    table.append tr
-    if $( '#ap_' + idAI ).length is 0
-      div = $( '<div>' )
-        .attr( 'id', 'ap_' + idAI )
-      td = $( '<div> ')
-      td.append $( '<div>' )
-        .attr( 'class', 'modName underlined' ).text arrAI[0]
-      div.append td
-      $( '#action_params' ).append div
-      fFetchActionParams div, arrAI[0]
+    tr.append $( '<td>' ).attr( 'class', 'title').text opt.val() 
+    td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
+    fFetchActionFunctionParams td, arrName
+    if arrName[ 0 ] not in arrEls
+      div = $( '<div>' ).appendTo $( '#action_params' )
+      subdiv = $( '<div> ').appendTo div 
+      subdiv.append $( '<div>' )
+        .attr( 'class', 'modName underlined' ).text arrName[ 0 ]
+      fFetchActionParams div, arrName[ 0 ]
     opt.remove()
 
   $( '#selected_actions' ).on 'click', 'img', () ->
-    id = $( this ).closest( 'tr' ).attr( 'id' ).substring 6
-    name = arrActionInvoker[id]
-    arrName = name.split ' -> '
-    $( '#title_' + id ).remove()
-    $( '#params_' + id ).remove()
-    opt = $( '<option>' ).attr( 'id', id ).text name
+    act = $( this ).closest( 'td' ).siblings( '.title' ).text()
+    arrName = act.split ' -> '
+
+    nMods = 0
+    # Check whether we're the only function left that was selected from this module
+    $( "#selected_actions td.title" ).each () ->
+      arrNm = $( this ).text().split ' -> '
+      nMods++ if arrNm[0] is arrName[0]
+    if nMods is 1
+      $('#action_params > div').each () ->
+        if $( this ).children( 'div.modName' ).text() is arrName[ 0 ]
+          $( this ).remove()
+
+    opt = $( '<option>' ).text arrName[ 0 ]
     $( '#select_actions' ).append opt
-    $( '#ap_' + id ).remove()
+    $( this ).closest( 'tr' ).remove()
 
 
   $( '#but_submit' ).click () ->
@@ -208,20 +209,23 @@ fOnLoad = () ->
       ap = {}
       $( '> div', $( '#action_params' ) ).each () ->
         modName = $( '.modName', this ).text()
-        id = $( this ).attr( 'id' ).substring 3
         params = {}
         $( 'tr', this ).each () ->
           key = $( '.key', this ).text()
           val = $( 'input', this ).val()
           if val is ''
-            throw new Error "'#{ key }' missing for '#{ id }'"
+            throw new Error "'#{ key }' missing for '#{ modName }'"
           params[key] = val
         encryptedParams = cryptico.encrypt JSON.stringify( params ), strPublicKey 
         ap[modName] = encryptedParams.cipher
       acts = []
-      $( '#selected_actions .title' ).each () ->
-        acts.push $( this ).text()
-
+      actParams = {}
+      $( '#selected_actions' ).each () ->
+        acts.push $( '.title', this ).text()
+        $( '.funcMappings tr' ).each () ->
+          console.log $( 'input[type=text]', this ).val()
+          console.log $( 'input[type=checkbox]', this ).is( ':checked' )
+      
       try
         conds = JSON.parse editor.getValue()
       catch err
@@ -240,6 +244,7 @@ fOnLoad = () ->
           conditions: conds
           actions: acts
           action_params: ap
+          action_functions: actParams
       obj.payload = JSON.stringify obj.payload
       window.scrollTo 0, 0
       $.post( '/usercommand', obj )
@@ -247,21 +252,26 @@ fOnLoad = () ->
           $( '#info' ).text data.message
           $( '#info' ).attr 'class', 'success'
         .fail ( err ) ->
-          if err.status is 401
-            window.location.href = 'forge?page=forge_rule'
+          if err.responseText is ''
+            msg = 'No Response from Server!'
           else
-            fDelayed = () ->
-              if err.responseText is ''
-                msg = 'No Response from Server!'
-              else
-                try
-                  oErr = JSON.parse err.responseText
-                  msg = oErr.message
-              $( '#info' ).text 'Error in upload: ' + msg
-              $( '#info' ).attr 'class', 'error'
-            setTimeout fDelayed, 500
+            try
+              msg = JSON.parse( err.responseText ).message
+          fFailedRequest( 'Error in upload: ' + msg ) err
     catch err
       $( '#info' ).text 'Error in upload: ' + err.message
       $( '#info' ).attr 'class', 'error'
       alert err.message
+
+  arrParams = window.location.search.substring(1).split '&'
+  id = ''
+  for param in arrParams
+    arrKV = param.split '='
+    if arrKV[ 0 ] is 'id'
+      id = decodeURIComponent arrKV[ 1 ]
+  if id isnt ''
+    console.log id
+
+
+
 window.addEventListener 'load', fOnLoad, true

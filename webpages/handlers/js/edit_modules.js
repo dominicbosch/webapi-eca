@@ -54,17 +54,17 @@
       }).done(fUpdateModuleList).fail(fErrHandler('Did not retrieve rules! '));
     };
     fUpdateModuleList = function(data) {
-      var img, imgTwo, inp, modName, oMods, tr, _results;
+      var img, inp, modName, oMods, tr, _results;
       $('#tableModules tr').remove();
       oMods = JSON.parse(data.message);
       _results = [];
       for (modName in oMods) {
         tr = $('<tr>');
-        img = $('<img>').attr('class', 'del').attr('src', 'red_cross_small.png');
-        imgTwo = $('<img>').attr('class', 'log').attr('src', 'logicon.png');
         inp = $('<div>').text(modName);
+        img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'red_cross_small.png');
         tr.append($('<td>').append(img));
-        tr.append($('<td>').append(imgTwo));
+        img = $('<img>').attr('class', 'log').attr('title', 'Edit Module').attr('src', 'edit.png');
+        tr.append($('<td>').append(img));
         tr.append($('<td>').append(inp));
         _results.push($('#tableModules').append(tr));
       }

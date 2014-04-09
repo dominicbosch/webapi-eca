@@ -80,6 +80,15 @@ logFunction = ( uId, rId, mId ) ->
   ( msg ) ->
     db.appendLog uId, rId, mId, msg
 
+regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+getFunctionParamNames = ( fName, func, oFuncs ) ->
+  fnStr = func.toString().replace regexpComments, ''
+  result = fnStr.slice( fnStr.indexOf( '(' ) + 1, fnStr.indexOf( ')' ) ).match /([^\s,]+)/g
+  if not result
+     result = []
+  oFuncs[fName] = result
+
+
 ###
 Try to run a JS module from a string, together with the
 given parameters. If it is written in CoffeeScript we
@@ -142,9 +151,13 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
       if not msg
         msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number'
       answ.message = 'Loading Module failed: ' + msg
+    oFuncParams = {}
+    for fName, func of sandbox.exports
+      getFunctionParamNames fName, func, oFuncParams
     cb
       answ: answ
       module: sandbox.exports
+      funcParams: oFuncParams
       logger: sandbox.log
 
   if dbMod

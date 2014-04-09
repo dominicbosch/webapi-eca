@@ -4,9 +4,6 @@ EmailYak ACTION INVOKER
 #
 # Requires user params:
 #  - apikey: The user's EmailYak API key
-#  - sender: The email address belonging to your apikey
-#  - receipient: The email address for the one that receives the mail
-#  - subject: The subject of the mail
 ###
 
 url = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'
@@ -29,13 +26,16 @@ standardCallback = ( funcName ) ->
 ###
 Send a mail through Emailyak.
 
-@param {Object} args.content the content to be posted in the mail body
+@param sender The email address belonging to your apikey
+@param receipient The email address for the one that receives the mail
+@param subject The subject of the mail
+@param content The content of the mail
 ###
-exports.sendMail = ( args ) ->
+exports.sendMail = ( sender, receipient, subject, content ) ->
 	data =
-		FromAddress: params.sender
-		ToAddress: params.receipient
-		Subject: params.subject
-		TextBody: args.content
+		FromAddress: sender
+		ToAddress: receipient
+		Subject: subject
+		TextBody: content
 	needlereq 'post', url, data, json: true, standardCallback 'sendMail'
 

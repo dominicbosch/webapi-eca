@@ -3,7 +3,7 @@
   var fOnLoad;
 
   fOnLoad = function() {
-    var fErrHandler, fFetchRules, fUpdateRuleList;
+    var fChangeInputVisibility, fErrHandler, fFetchRules, fUpdateRuleList;
     document.title = 'Edit Rules';
     $('#pagetitle').text("{{{user.username}}}, edit your Rules!");
     fErrHandler = function(errMsg) {
@@ -36,18 +36,20 @@
       }).done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
     };
     fUpdateRuleList = function(data) {
-      var img, imgTwo, inp, ruleName, tr, _i, _len, _ref, _results;
+      var img, inp, ruleName, tr, _i, _len, _ref, _results;
       $('#tableRules tr').remove();
       _ref = data.message;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         ruleName = _ref[_i];
         tr = $('<tr>');
-        img = $('<img>').attr('class', 'del').attr('src', 'red_cross_small.png');
-        imgTwo = $('<img>').attr('class', 'log').attr('src', 'logicon.png');
-        inp = $('<div>').text(ruleName);
+        img = $('<img>').attr('class', 'del').attr('title', 'Delete Rule').attr('src', 'red_cross_small.png');
         tr.append($('<td>').append(img));
-        tr.append($('<td>').append(imgTwo));
+        img = $('<img>').attr('class', 'edit').attr('title', 'Edit Rule').attr('src', 'edit.png');
+        tr.append($('<td>').append(img));
+        img = $('<img>').attr('class', 'log').attr('title', 'Show Rule Log').attr('src', 'logicon.png');
+        tr.append($('<td>').append(img));
+        inp = $('<div>').text(ruleName);
         tr.append($('<td>').append(inp));
         _results.push($('#tableRules').append(tr));
       }
@@ -69,7 +71,12 @@
         return $.post('/usercommand', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
       }
     });
-    return $('#tableRules').on('click', 'img.log', function() {
+    $('#tableRules').on('click', 'img.edit', function() {
+      var ruleName;
+      ruleName = $('div', $(this).closest('tr')).text();
+      return window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent(ruleName);
+    });
+    $('#tableRules').on('click', 'img.log', function() {
       var data, ruleName;
       ruleName = $('div', $(this).closest('tr')).text();
       data = {
@@ -85,6 +92,46 @@
         return $('#log_col').html("<h3>" + ruleName + " Log:</h3>" + log);
       }).fail(fErrHandler('Could not get rule log! '));
     });
+    fChangeInputVisibility = function() {
+      return $('#tableParams tr').each(function(id) {
+        if ($(this).is(':last-child' || $(this).is(':only-child'))) {
+          $('img', this).hide();
+          return $('input[type=checkbox]', this).hide();
+        } else {
+          $('img', this).show();
+          return $('input[type=checkbox]', this).show();
+        }
+      });
+    };
+    $('#tableParams').on('click', 'img', function() {
+      var par;
+      par = $(this).closest('tr');
+      if (!par.is(':last-child')) {
+        par.remove();
+      }
+      return fChangeInputVisibility();
+    });
+    $('#tableParams').on('keyup', 'input', function(e) {
+      var cb, code, img, inp, par, tr;
+      code = e.keyCode || e.which;
+      if (code !== 9) {
+        par = $(this).closest('tr');
+        if (par.is(':last-child')) {
+          tr = $('<tr>');
+          img = $('<img>').attr('title', 'Remove?').attr('src', 'red_cross_small.png');
+          cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
+          inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
+          tr.append($('<td>').append(img));
+          tr.append($('<td>').append(cb));
+          tr.append($('<td>').append(inp));
+          par.parent().append(tr);
+          return fChangeInputVisibility();
+        } else if ($(this).val() === '' && !par.is(':only-child')) {
+          return par.remove();
+        }
+      }
+    });
+    return fChangeInputVisibility();
   };
 
   window.addEventListener('load', fOnLoad, true);

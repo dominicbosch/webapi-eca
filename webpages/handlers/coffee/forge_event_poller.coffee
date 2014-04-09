@@ -16,44 +16,53 @@ fOnLoad = () ->
       editor.getSession().setMode "ace/mode/javascript"
   
   # Add parameter list functionality
-  fChangeCrosses = () ->
-    $( '#tableParams img' ).each ( id ) ->
-      par = $( this ).closest 'tr'
-      if par.is ':last-child' or par.is ':only-child'
-        $( this ).hide()
+  fChangeInputVisibility = () ->
+    $( '#tableParams tr' ).each ( id ) ->
+      if $( this ).is ':last-child' or $( this ).is ':only-child'
+        $( 'img', this ).hide()
+        $( 'input[type=checkbox]', this ).hide()
       else
-        $( this ).show()  
+        $( 'img', this ).show()
+        $( 'input[type=checkbox]', this ).show()
 
   $( '#tableParams' ).on 'click', 'img', () ->
     par = $( this ).closest 'tr' 
     if not par.is ':last-child'
       par.remove()
-    fChangeCrosses()
+    fChangeInputVisibility()
 
-  $( '#tableParams' ).on 'keyup', 'input', () ->
-    par = $( this ).closest( 'tr' )
-    if par.is ':last-child'
-      tr = $ '<tr>'
-      img = $( '<img>' ).attr 'src', 'red_cross_small.png'
-      inp = $( '<input>' ).attr 'type', 'text'
-      tr.append( $( '<td>' ).append img )
-      tr.append( $( '<td>' ).append inp )
-      par.parent().append tr
-      fChangeCrosses()
-    else if $( this ).val() is '' and not par.is ':only-child'
-      par.remove()
-  fChangeCrosses()
+  $( '#tableParams' ).on 'keyup', 'input', ( e ) ->
+    code = e.keyCode or e.which
+    if code isnt 9
+      par = $( this ).closest( 'tr' )
+      if par.is ':last-child'
+        tr = $ '<tr>'
+        img = $( '<img>' ).attr( 'title', 'Remove?').attr 'src', 'red_cross_small.png'
+        cb = $( '<input>' ).attr( 'type', 'checkbox' ).attr 'title', 'Password shielded input?'
+        inp = $( '<input>' ).attr( 'type', 'text' ).attr 'class', 'textinput'
+        tr.append( $( '<td>' ).append img )
+        tr.append( $( '<td>' ).append cb )
+        tr.append( $( '<td>' ).append inp )
+        tr.append $( '<td>' )
+        par.parent().append tr
+        fChangeInputVisibility()
+      else if $( this ).val() is '' and not par.is ':only-child'
+        par.remove()
+
+  fChangeInputVisibility()
 
   # Add submit button logic
   $( '#but_submit' ).click () ->
     if $( '#input_id' ).val() is ''
       alert 'Please enter an event poller name!'
     else
-      listParams = []
-      $( '#tableParams input' ).each () ->
-        val =  $( this ).val()
+      listParams = {}
+      $( '#tableParams tr' ).each () ->
+        val =  $( 'input.textinput', this ).val()
+        shld = $( 'input[type=checkbox]', this ).is ':checked'
         if val isnt ""
-          listParams.push val
+          listParams[val] = shld
+        true
       obj =
         command: 'forge_event_poller'
         payload:
