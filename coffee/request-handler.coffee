@@ -93,6 +93,7 @@ exports.handleEvent = ( req, resp ) ->
     #   resp.send 401, 'Please login!'
 
 
+
 ###
 Associates the user object with the session if login is successful.
 
