@@ -223,11 +223,12 @@ Components Manager
 
   forgeModule = (function(_this) {
     return function(user, oPayload, dbMod, callback) {
-      var answ;
+      var answ, i;
       answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oPayload);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
+        i = 0;
         return dbMod.getModule(oPayload.id, function(err, mod) {
           var src;
           if (mod) {
@@ -379,14 +380,13 @@ Components Manager
         return callback(answ);
       } else {
         return db.getRule(oPayload.id, function(err, oExisting) {
-          var arrParams, epModId, id, params, rule, strRule;
+          var arr, epModId, id, oParams, params, rule, strRule;
           if (oExisting !== null) {
             answ = {
               code: 409,
               message: 'Rule name already existing!'
             };
           } else {
-            console.log('new ruke');
             rule = {
               id: oPayload.id,
               event: oPayload.event,
@@ -394,25 +394,24 @@ Components Manager
               actions: oPayload.actions
             };
             strRule = JSON.stringify(rule);
-            console.log('stringified');
             db.storeRule(rule.id, strRule);
-            console.log('stored');
             db.linkRule(rule.id, user.username);
-            console.log('linked');
             db.activateRule(rule.id, user.username);
-            console.log('activated');
             if (oPayload.event_params) {
               epModId = rule.event.split(' -> ')[0];
               db.eventPollers.storeUserParams(epModId, user.username, oPayload.event_params);
             }
-            console.log('event params loaded');
-            arrParams = oPayload.action_params;
-            console.log('arractionparams');
-            for (id in arrParams) {
-              params = arrParams[id];
+            oParams = oPayload.action_params;
+            for (id in oParams) {
+              params = oParams[id];
               db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
             }
-            console.log('action aprams stored');
+            oParams = oPayload.action_functions;
+            for (id in oParams) {
+              params = oParams[id];
+              arr = id.split(' -> ');
+              db.actionInvokers.storeUserArguments(arr[0], arr[1], user.username, JSON.stringify(params));
+            }
             db.resetLog(user.username, rule.id);
             db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized");
             eventEmitter.emit('rule', {
@@ -424,7 +423,6 @@ Components Manager
               code: 200,
               message: "Rule '" + rule.id + "' stored and activated!"
             };
-            console.log('done');
           }
           return callback(answ);
         });

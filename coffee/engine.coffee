@@ -39,6 +39,11 @@ An object of users with their active rules and the required action modules
         "actions":
           "action-3": oAction-3
 ###
+
+#TODO how often do we allow rules to be processed?
+#it would make sense to implement a scheduler approach, which means to store the
+#events in the DB and query for them if a rule is evaluated. Through this we would allow
+#a CEP approach, rather than just ECA and could combine events/evaluate time constraints
 listUserRules = {}
 isRunning = false
 

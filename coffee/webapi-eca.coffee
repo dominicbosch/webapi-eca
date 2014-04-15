@@ -147,6 +147,7 @@ init = =>
     else
       # > Initialize all required modules with the args object.
       @log.info 'RS | Initialzing engine'
+      #TODO We could in the future make the engine a child process as well
       engine args
       
       # Start the event poller. The module manager will emit events for it

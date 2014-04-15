@@ -28,6 +28,7 @@ oRuleTwo = objects.rules.ruleTwo
 oRuleThree = objects.rules.ruleThree
 oEpOne = objects.eps.epOne
 oEpTwo = objects.eps.epTwo
+oAiTwo = objects.ais.aiTwo
 
 exports.tearDown = ( cb ) ->
   db.deleteRule oRuleOne.id
@@ -108,6 +109,7 @@ exports.moduleHandling =
   tearDown: ( cb ) ->
     db.eventPollers.deleteModule oEpOne.id
     db.eventPollers.deleteModule oEpTwo.id
+    db.actionInvokers.deleteModule oAiTwo.id
     setTimeout cb, 100
 
   testGetModules: ( test ) ->
@@ -148,14 +150,18 @@ exports.moduleHandling =
     test.expect 2
 
     oTmp = {}
-    oTmp[key] = val for key, val of oEpTwo when key isnt 'functions'
+    for key, val of oAiTwo
+      oTmp[key] = val if key isnt 'functions' and key isnt 'functionParameters'
+
     request =
-      command: 'forge_event_poller'
+      command: 'forge_action_invoker'
       payload: JSON.stringify oTmp
  
     cm.processRequest oUser, request, ( answ ) =>
       test.strictEqual 200, answ.code, 'Forging Module did not return 200'
 
-      db.eventPollers.getModule oEpTwo.id, ( err, obj ) ->
-        test.deepEqual obj, oEpTwo, 'Forged Module is not what we expected'
+      db.actionInvokers.getModule oAiTwo.id, ( err, obj ) ->
+        console.log obj
+        console.log oAiTwo
+        test.deepEqual obj, oAiTwo, 'Forged Module is not what we expected'
         test.done()

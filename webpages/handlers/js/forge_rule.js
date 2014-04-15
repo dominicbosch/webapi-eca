@@ -194,7 +194,7 @@
               functionArgument = _ref[_i];
               tr = $('<tr>').appendTo(table);
               td = $('<td>').appendTo(tr);
-              td.append($('<div>').text(functionArgument));
+              td.append($('<div>').attr('class', 'funcarg').text(functionArgument));
               tr.append(td);
               td = $('<td>').appendTo(tr);
               td.append($('<input>').attr('type', 'text'));
@@ -295,10 +295,17 @@
         acts = [];
         actParams = {};
         $('#selected_actions').each(function() {
-          acts.push($('.title', this).text());
+          var actionName;
+          actionName = $('.title', this).text();
+          acts.push(actionName);
           return $('.funcMappings tr').each(function() {
-            console.log($('input[type=text]', this).val());
-            return console.log($('input[type=checkbox]', this).is(':checked'));
+            var tmp;
+            tmp = {
+              argument: $('div.funcarg', this).val(),
+              value: $('input[type=text]', this).val(),
+              regexp: $('input[type=checkbox]', this).is(':checked')
+            };
+            return actParams[actionName] = cryptico.encrypt(JSON.stringify(tmp), strPublicKey);
           });
         });
         try {

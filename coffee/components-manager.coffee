@@ -165,6 +165,7 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
   if answ.code isnt 200
     callback answ
   else
+    i = 0
     dbMod.getModule oPayload.id, ( err, mod ) =>
       if mod
         answ.code = 409
@@ -296,28 +297,24 @@ commandFunctions =
             code: 409
             message: 'Rule name already existing!'
         else
-          console.log 'new ruke'
           rule =
             id: oPayload.id
             event: oPayload.event
             conditions: oPayload.conditions
             actions: oPayload.actions
           strRule = JSON.stringify rule
-          console.log 'stringified'
           db.storeRule rule.id, strRule
-          console.log 'stored'
           db.linkRule rule.id, user.username
-          console.log 'linked'
           db.activateRule rule.id, user.username
-          console.log 'activated'
           if oPayload.event_params
             epModId = rule.event.split( ' -> ' )[0]
             db.eventPollers.storeUserParams epModId, user.username, oPayload.event_params
-          console.log 'event params loaded'
-          arrParams = oPayload.action_params
-          console.log 'arractionparams'
-          db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of arrParams
-          console.log 'action aprams stored'
+          oParams = oPayload.action_params
+          db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of oParams
+          oParams = oPayload.action_functions
+          for id, params of oParams
+            arr = id.split ' -> '
+            db.actionInvokers.storeUserArguments arr[ 0 ], arr[ 1 ], user.username, JSON.stringify params 
           db.resetLog user.username, rule.id
           db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
           eventEmitter.emit 'rule',
@@ -327,7 +324,6 @@ commandFunctions =
           answ =
             code: 200
             message: "Rule '#{ rule.id }' stored and activated!"
-          console.log 'done'
         callback answ
 
   delete_rule: ( user, oPayload, callback ) ->

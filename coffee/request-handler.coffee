@@ -68,26 +68,29 @@ exports.handleEvent = ( req, resp ) ->
   body = ''
   req.on 'data', ( data ) ->
     body += data
+
   req.on 'end', ->
-    if req.session and req.session.user
-      try
-        obj = JSON.parse body
-      catch err
-        resp.send 400, 'Badly formed event!'
-      # If required event properties are present we process the event #
-      if obj and obj.event and not err
-        timestamp = ( new Date ).toISOString()
-        rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
-        obj.eventid = "#{ obj.event }_#{ timestamp }_#{ rand }"
-        answ =
-          code: 200
-          message: "Thank you for the event: #{ obj.eventid }"
-        resp.send answ.code, answ
-        db.pushEvent obj
-      else
-        resp.send 400, 'Your event was missing important parameters!'
+    #if req.session and req.session.user
+    try
+      obj = JSON.parse body
+      console.log 'got foreign event!'
+      console.log obj
+    catch err
+      resp.send 400, 'Badly formed event!'
+    # If required event properties are present we process the event #
+    if obj and obj.event and not err
+      timestamp = ( new Date ).toISOString()
+      rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
+      obj.eventid = "#{ obj.event }_#{ timestamp }_#{ rand }"
+      answ =
+        code: 200
+        message: "Thank you for the event: #{ obj.eventid }"
+      resp.send answ.code, answ
+      db.pushEvent obj
     else
-      resp.send 401, 'Please login!'
+      resp.send 400, 'Your event was missing important parameters!'
+    # else
+    #   resp.send 401, 'Please login!'
 
 
 ###

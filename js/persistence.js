@@ -253,6 +253,9 @@ Persistence
     function IndexedModules(setname, log) {
       this.setname = setname;
       this.log = log;
+      this.deleteUserArguments = __bind(this.deleteUserArguments, this);
+      this.getUserArguments = __bind(this.getUserArguments, this);
+      this.storeUserArguments = __bind(this.storeUserArguments, this);
       this.deleteUserParams = __bind(this.deleteUserParams, this);
       this.getUserParamsIds = __bind(this.getUserParamsIds, this);
       this.getUserParams = __bind(this.getUserParams, this);
@@ -352,15 +355,19 @@ Persistence
       this.unpublish(mId);
       return this.db.smembers("" + this.setname + ":" + mId + ":users", (function(_this) {
         return function(err, obj) {
-          var userId, _i, _j, _len, _len1, _results;
+          var userId, _i, _j, _k, _len, _len1, _len2, _results;
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
             userId = obj[_i];
             _this.unlinkModule(mId, userId);
           }
-          _results = [];
           for (_j = 0, _len1 = obj.length; _j < _len1; _j++) {
             userId = obj[_j];
-            _results.push(_this.deleteUserParams(mId, userId));
+            _this.deleteUserParams(mId, userId);
+          }
+          _results = [];
+          for (_k = 0, _len2 = obj.length; _k < _len2; _k++) {
+            userId = obj[_k];
+            _results.push(_this.deleteUserArguments(mId, userId));
           }
           return _results;
         };
@@ -398,6 +405,44 @@ Persistence
       this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams(" + mId + ", " + userId + " )");
       this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("srem '" + mId + ":" + userId + "' from '" + this.setname + "-params'"));
       return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
+    };
+
+
+    /*
+    Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
+    the provided cryptico JS library and will only be decrypted right before the module is loaded!
+    
+    @private storeUserArguments( *mId, userId, encData* )
+    @param {String} mId
+    @param {String} userId
+    @param {object} encData
+     */
+
+    IndexedModules.prototype.storeUserArguments = function(mId, funcId, userId, encData) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + mId + ", " + funcId + ", " + userId + ", encData )");
+      this.db.sadd("" + this.setname + ":" + mId + ":" + userId + ":functions", funcId, replyHandler("sadd '" + funcId + "' to '" + this.setname + ":" + mId + ":" + userId + ":functions'"));
+      return this.db.set("" + this.setname + ":" + mId + ":" + userId + ":function:" + funcId, encData, replyHandler("set user params in '" + this.setname + ":" + mId + ":" + userId + ":function:" + func + "'"));
+    };
+
+    IndexedModules.prototype.getUserArguments = function(mId, funcId, userId, cb) {
+      console.log('calling ffunct');
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + mId + ", " + funcId + ", " + userId + " )");
+      return this.db.get("" + this.setname + ":" + mId + ":" + userId + ":function:" + funcId, cb);
+    };
+
+    IndexedModules.prototype.deleteUserArguments = function(mId, userId) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments(" + mId + ", " + userId + " )");
+      return this.db.smembers("" + this.setname + ":" + mId + ":" + userId + ":functions", (function(_this) {
+        return function(err, obj) {
+          var func, _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = obj.length; _i < _len; _i++) {
+            func = obj[_i];
+            _results.push(_this.db.del("" + _this.setname + ":" + mId + ":" + userId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + mId + ":" + userId + ":function:" + func + "'")));
+          }
+          return _results;
+        };
+      })(this));
     };
 
     return IndexedModules;

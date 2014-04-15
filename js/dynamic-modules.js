@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cryptoJS, cs, db, exports, getFunctionParamNames, issueNeedleCall, issueRequest, logFunction, needle, regexpComments, request, vm;
+  var cryptico, cryptoJS, cs, db, exports, getFunctionParamNames, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -55,48 +55,6 @@ Dynamic Modules
       return _this.strPublicKey;
     };
   })(this);
-
-  issueNeedleCall = function(logger) {
-    return function(method, url, data, options, cb) {
-      var err;
-      try {
-        return needle.request(method, url, data, options, (function(_this) {
-          return function(err, resp, body) {
-            try {
-              return cb(err, resp, body);
-            } catch (_error) {
-              err = _error;
-              return logger('Error during needle request! ' + err.message);
-            }
-          };
-        })(this));
-      } catch (_error) {
-        err = _error;
-        return logger('Error before needle request! ' + err.message);
-      }
-    };
-  };
-
-  issueRequest = function(logger) {
-    return function(options, cb) {
-      var err;
-      try {
-        return request(options, (function(_this) {
-          return function(err, resp, body) {
-            try {
-              return cb(err, resp, body);
-            } catch (_error) {
-              err = _error;
-              return logger('Error during request! ' + err.message);
-            }
-          };
-        })(this));
-      } catch (_error) {
-        err = _error;
-        return logger('Error before request! ' + err.message);
-      }
-    };
-  };
 
   logFunction = function(uId, rId, mId) {
     return function(msg) {
@@ -146,7 +104,7 @@ Dynamic Modules
         }
       }
       fTryToLoad = function(params) {
-        var fName, func, logFunc, msg, oDecrypted, oFuncParams, sandbox, _ref;
+        var fName, func, logFunc, msg, oDecrypted, oFuncArgs, oFuncParams, sandbox, _ref;
         if (params) {
           try {
             oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
@@ -164,8 +122,8 @@ Dynamic Modules
         sandbox = {
           id: userId + '.' + modId + '.vm',
           params: params,
-          needlereq: issueNeedleCall(logFunc),
-          request: issueRequest(logFunc),
+          needle: needle,
+          request: request,
           cryptoJS: cryptoJS,
           log: logFunc,
           debug: console.log,
@@ -188,10 +146,31 @@ Dynamic Modules
           func = _ref[fName];
           getFunctionParamNames(fName, func, oFuncParams);
         }
+        if (dbMod) {
+          oFuncArgs = {};
+          console.log('oFuncParams');
+          console.log(oFuncParams);
+          for (func in oFuncParams) {
+            console.log('fetching ' + func);
+            console.log(typeof func);
+            dbMod.getUserArguments(modId, func, userId, function(err, obj) {
+              console.log(err, obj);
+              try {
+                oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
+                return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+              } catch (_error) {
+                err = _error;
+                _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+                return _this.log.warn(err);
+              }
+            });
+          }
+        }
         return cb({
           answ: answ,
           module: sandbox.exports,
           funcParams: oFuncParams,
+          funcArgs: oFuncArgs,
           logger: sandbox.log
         });
       };
@@ -200,7 +179,7 @@ Dynamic Modules
           return fTryToLoad(obj);
         });
       } else {
-        return fTryToLoad();
+        return fTryToLoad(null);
       }
     };
   })(this);

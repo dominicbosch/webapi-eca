@@ -284,6 +284,7 @@ class IndexedModules
     @db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
       @unlinkModule mId, userId for userId in obj
       @deleteUserParams mId, userId for userId in obj
+      @deleteUserArguments mId, userId for userId in obj
 
   ###
   Stores user params for a module. They are expected to be RSA encrypted with helps of
@@ -315,6 +316,34 @@ class IndexedModules
       replyHandler "srem '#{ mId }:#{ userId }' from '#{ @setname }-params'"
     @db.del "#{ @setname }-params:#{ mId }:#{ userId }",
       replyHandler "del '#{ @setname }-params:#{ mId }:#{ userId }'"
+
+  ###
+  Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
+  the provided cryptico JS library and will only be decrypted right before the module is loaded!
+  
+  @private storeUserArguments( *mId, userId, encData* )
+  @param {String} mId
+  @param {String} userId
+  @param {object} encData
+  ###
+  storeUserArguments: ( mId, funcId, userId, encData ) =>
+    @log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ mId }, #{ funcId }, #{ userId }, encData )"
+    @db.sadd "#{ @setname }:#{ mId }:#{ userId }:functions", funcId,
+      replyHandler "sadd '#{ funcId }' to '#{ @setname }:#{ mId }:#{ userId }:functions'"
+    @db.set "#{ @setname }:#{ mId }:#{ userId }:function:#{ funcId }", encData,
+      replyHandler "set user params in '#{ @setname }:#{ mId }:#{ userId }:function:#{ func }'"
+
+  getUserArguments: ( mId, funcId, userId, cb ) =>
+    console.log 'calling ffunct'
+    @log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ mId }, #{ funcId }, #{ userId } )"
+    @db.get "#{ @setname }:#{ mId }:#{ userId }:function:#{ funcId }", cb
+
+  deleteUserArguments: ( mId, userId ) =>
+    @log.info "DB | (IdxedMods) #{ @setname }.deleteUserArguments(#{ mId }, #{ userId } )"
+    @db.smembers "#{ @setname }:#{ mId }:#{ userId }:functions", ( err, obj ) =>
+      for func in obj
+        @db.del "#{ @setname }:#{ mId }:#{ userId }:function:#{ func }",
+        replyHandler "del '#{ @setname }:#{ mId }:#{ userId }:function:#{ func }'"
 
 
 ###

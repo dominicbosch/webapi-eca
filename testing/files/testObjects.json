@@ -6,7 +6,8 @@
       "data":"\n#\n# EmailYak EVENT POLLER\n#\n# Requires user params:\n#  - apikey: The user's EmailYak API key\n#\n\nurl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'\n\nexports.newMail = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\n",
       "public":"false",
       "params":"[\"apikey\"]",
-      "functions":"[\"newMail\"]"
+      "functions":"[\"newMail\"]",
+      "functionArgs":"{\"newMail\":[\"pushEvent\"]}"
     },
     "epTwo": {
       "id":"epTwo",
@@ -14,7 +15,8 @@
       "data":"\nurl = 'https://api.emailyak.com/v1/' + params.firstparam + '/json/get/new/email/'\n\nexports.newEvent = ( pushEvent ) ->\n    needle.get url, ( err, resp, body ) ->\n        if not err and resp.statusCode is 200\n            mails = JSON.parse( body ).Emails\n            pushEvent mail for mail in mails\n        else\n            log.error 'Error in EmailYak EM newMail: ' + err.message\n\nexports.randomNess = ( pushEvent ) ->\n    console.log 'test runs: ' + params.secondparam\n",
       "public":"true",
       "params":"[\"firstparam\",\"secondparam\"]",
-      "functions":"[\"newEvent\",\"randomNess\"]"
+      "functions":"[\"newEvent\",\"randomNess\"]",
+      "functionArgs":"{\"newEvent\":[\"pushEvent\"],\"randomNess\":[\"pushEvent\"]}"
     }
   },
   "ais": {
@@ -24,7 +26,8 @@
       "data":"exports.printToLog = ( evt ) ->\n\tlog evt.property",
       "public":"false",
       "params":"[\"apikey\"]",
-      "functions":"[\"printToLog\"]"
+      "functions":"[\"printToLog\"]",
+      "functionArgs":"{\"printToLog\":[\"evt\"]}"
     },
     "aiTwo": {
       "id":"aiTwo",

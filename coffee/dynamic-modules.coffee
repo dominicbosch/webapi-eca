@@ -49,33 +49,6 @@ exports = module.exports = ( args ) =>
 exports.getPublicKey = () =>
   @strPublicKey
 
-# We need to wrap the callbacks in try/catch so the token does not get killed and
-# other modules are not called. This will be obsolete as soon as each module
-# runs in a child process
-# FIXME this seems not to achieve what we expected... token gets still lost 
-# -> implement child processes per module. (or better per user?)
-issueNeedleCall = ( logger ) ->
-  ( method, url, data, options, cb ) ->
-    try
-      needle.request method, url, data, options, ( err, resp, body ) =>
-        try
-          cb err, resp, body
-        catch err
-          logger 'Error during needle request! ' + err.message
-    catch err
-      logger 'Error before needle request! ' + err.message
-
-issueRequest = ( logger ) ->
-  ( options, cb ) ->
-    try
-      request options, ( err, resp, body ) =>
-        try
-          cb err, resp, body
-        catch err
-          logger 'Error during request! ' + err.message
-    catch err
-      logger 'Error before request! ' + err.message
-
 logFunction = ( uId, rId, mId ) ->
   ( msg ) ->
     db.appendLog uId, rId, mId, msg
@@ -114,7 +87,6 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
         err.location.first_line
 
   fTryToLoad = ( params ) =>
-
     if params
       try
         oDecrypted = cryptico.decrypt params, @oPrivateRSAkey
@@ -126,12 +98,13 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
     else
       params = {}
 
+
     logFunc = logFunction userId, ruleId, modId
     sandbox = 
       id: userId + '.' + modId + '.vm'
       params: params
-      needlereq: issueNeedleCall logFunc
-      request: issueRequest logFunc
+      needle: needle
+      request: request
       cryptoJS: cryptoJS
       log: logFunc
       debug: console.log
@@ -154,14 +127,33 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
     oFuncParams = {}
     for fName, func of sandbox.exports
       getFunctionParamNames fName, func, oFuncParams
+
+    if dbMod
+      oFuncArgs = {}
+      console.log 'oFuncParams'
+      console.log oFuncParams
+
+      for func of oFuncParams
+        console.log 'fetching ' + func
+        console.log  typeof func
+        dbMod.getUserArguments modId, func, userId, ( err, obj ) =>
+          console.log err, obj
+          try
+            oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
+            oFuncArgs[ func ] = JSON.parse oDecrypted.plaintext
+          catch err
+            @log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+            @log.warn err
     cb
       answ: answ
       module: sandbox.exports
       funcParams: oFuncParams
+      funcArgs: oFuncArgs
       logger: sandbox.log
 
   if dbMod
     dbMod.getUserParams modId, userId, ( err, obj ) ->
       fTryToLoad obj
   else
-    fTryToLoad()
+    fTryToLoad null
+
