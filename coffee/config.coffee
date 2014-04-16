@@ -24,14 +24,14 @@ be generated) and configPath for a custom configuration file path.
 @param {Object} args
 ###
 exports = module.exports = ( args ) =>
-  args = args ? {}
-  if args.nolog
-    @nolog = true
-  if args.configPath
-    loadConfigFile args.configPath
-  else
-    loadConfigFile path.join 'config', 'system.json'
-  module.exports
+	args = args ? {}
+	if args.nolog
+		@nolog = true
+	if args.configPath
+		loadConfigFile args.configPath
+	else
+		loadConfigFile path.join 'config', 'system.json'
+	module.exports
 
 ###
 Tries to load a configuration file from the path relative to this module's parent folder. 
@@ -41,26 +41,26 @@ Reads the config file synchronously from the file system and try to parse it.
 @param {String} configPath
 ###
 loadConfigFile = ( configPath ) =>
-  @config = null
-  confProperties = [
-    'log'
-    'http-port'
-    'db-port'
-  ]
-  try
-    @config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
-    @isReady = true
-    for prop in confProperties
-      if !@config[prop]
-        @isReady = false
-    if not @isReady and not @nolog
-      console.error "Missing property in config file, requires:\n" +
-         " - #{ confProperties.join "\n - " }"
-  catch e
-    @isReady = false
-    if not @nolog
-      console.error "Failed loading config file: #{ e.message }"
-  
+	@config = null
+	confProperties = [
+		'log'
+		'http-port'
+		'db-port'
+	]
+	try
+		@config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
+		@isReady = true
+		for prop in confProperties
+			if !@config[prop]
+				@isReady = false
+		if not @isReady and not @nolog
+			console.error "Missing property in config file, requires:\n" +
+				 " - #{ confProperties.join "\n - " }"
+	catch e
+		@isReady = false
+		if not @nolog
+			console.error "Failed loading config file: #{ e.message }"
+	
 
 ###
 Fetch a property from the configuration
@@ -68,7 +68,7 @@ Fetch a property from the configuration
 @private fetchProp( *prop* )
 @param {String} prop
 ###
-fetchProp = ( prop ) => @config?[prop]
+exports.fetchProp = ( prop ) => @config?[prop]
 
 ###
 ***Returns*** true if the config file is ready, else false
@@ -82,25 +82,25 @@ exports.isReady = => @isReady
 
 @public getHttpPort()
 ###
-exports.getHttpPort = -> fetchProp 'http-port'
+exports.getHttpPort = -> exports.fetchProp 'http-port'
 
 ###
 ***Returns*** the DB port*
 
 @public getDBPort()
 ###
-exports.getDbPort = -> fetchProp 'db-port'
+exports.getDbPort = -> exports.fetchProp 'db-port'
 
 ###
 ***Returns*** the log conf object
 
 @public getLogConf()
 ###
-exports.getLogConf = -> fetchProp 'log'
+exports.getLogConf = -> exports.fetchProp 'log'
 
 ###
 ***Returns*** the crypto key
 
 @public getCryptoKey()
 ###
-exports.getKeygenPassphrase = -> fetchProp 'keygen-passphrase'
+exports.getKeygenPassphrase = -> exports.fetchProp 'keygen-passphrase'

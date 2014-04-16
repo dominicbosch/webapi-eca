@@ -69,7 +69,9 @@ Persistence
       _this.db.on('error', function(err) {
         if (err.message.indexOf('ECONNREFUSED') > -1) {
           _this.connRefused = true;
-          return _this.log.error(err, 'DB | Wrong port?');
+          return _this.log.warn('DB | Wrong port?');
+        } else {
+          return _this.log.error(err);
         }
       });
       exports.eventPollers.setDB(_this.db);
@@ -200,9 +202,9 @@ Persistence
   @private getSetRecords( *set, fSingle, cb* )
   @param {String} set the set name how it is stored in the DB
   @param {function} fSingle a function to retrieve a single data element
-        per set entry
+  			per set entry
   @param {function} cb the callback(err, obj) function that receives all
-        the retrieved data or an error
+  			the retrieved data or an error
    */
 
   getSetRecords = (function(_this) {
@@ -282,11 +284,11 @@ Persistence
 
 
     /*
-    Stores a module and links it to the user.
-    
-    @private storeModule( *userId, oModule* )
-    @param {String} userId
-    @param {object} oModule
+    	Stores a module and links it to the user.
+    	
+    	@private storeModule( *userId, oModule* )
+    	@param {String} userId
+    	@param {object} oModule
      */
 
     IndexedModules.prototype.storeModule = function(userId, oModule) {
@@ -376,13 +378,13 @@ Persistence
 
 
     /*
-    Stores user params for a module. They are expected to be RSA encrypted with helps of
-    the provided cryptico JS library and will only be decrypted right before the module is loaded!
-    
-    @private storeUserParams( *mId, userId, encData* )
-    @param {String} mId
-    @param {String} userId
-    @param {object} encData
+    	Stores user params for a module. They are expected to be RSA encrypted with helps of
+    	the provided cryptico JS library and will only be decrypted right before the module is loaded!
+    	
+    	@private storeUserParams( *mId, userId, encData* )
+    	@param {String} mId
+    	@param {String} userId
+    	@param {object} encData
      */
 
     IndexedModules.prototype.storeUserParams = function(mId, userId, encData) {
@@ -409,13 +411,13 @@ Persistence
 
 
     /*
-    Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
-    the provided cryptico JS library and will only be decrypted right before the module is loaded!
-    
-    @private storeUserArguments( *mId, userId, encData* )
-    @param {String} mId
-    @param {String} userId
-    @param {object} encData
+    	Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
+    	the provided cryptico JS library and will only be decrypted right before the module is loaded!
+    	
+    	@private storeUserArguments( *mId, userId, encData* )
+    	@param {String} mId
+    	@param {String} userId
+    	@param {object} encData
      */
 
     IndexedModules.prototype.storeUserArguments = function(mId, funcId, userId, encData) {

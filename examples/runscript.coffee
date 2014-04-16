@@ -18,26 +18,7 @@ cs = require 'coffee-script'
 needle = require 'needle'
 crypto = require 'crypto-js'
 request = require 'request'
-
-issueApiCall = ( method, url, data, options, cb ) ->
-  try
-    needle.request method, url, data, options, ( err, resp, body ) =>
-      try
-        cb err, resp, body
-      catch err
-        console.log 'Error during needle request! ' + err.message
-  catch err
-    console.log 'Error before needle request! ' + err.message
-
-issueRequest = ( options, cb ) ->
-  try
-    request options, ( err, resp, body ) =>
-      try
-        cb err, resp, body
-      catch err
-        console.log 'Error during request! ' + err.message
-  catch err
-    console.log 'Error before request! ' + err.message
+importio = require( 'import-io' ).client
 
 params = JSON.parse fs.readFileSync 'params.json', 'utf8'
 code = fs.readFileSync process.argv[ 2 ], 'utf8'
@@ -46,9 +27,10 @@ src = cs.compile code
 sandbox = 
   id: 'test.vm'
   params: params.userparams
-  needlereq: issueApiCall
-  request: issueRequest
+  needle: needle
+  request: request
   cryptoJS: crypto
+  importio: importio
   log: console.log
   debug: console.log
   exports: {}

@@ -2,19 +2,19 @@ fs = require 'fs'
 path = require 'path'
 
 try
-  data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
-  try
-    objects = JSON.parse data
-  catch err
-    console.log 'Error parsing standard objects file: ' + err.message
+	data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
+	try
+		objects = JSON.parse data
+	catch err
+		console.log 'Error parsing standard objects file: ' + err.message
 catch err
-  console.log 'Error fetching standard objects file: ' + err.message
+	console.log 'Error fetching standard objects file: ' + err.message
 
 logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
-  nolog: true
+	nolog: true
 opts =
-  logger: log
+	logger: log
 
 engine = require path.join '..', 'js', 'engine'
 engine opts
@@ -25,93 +25,93 @@ db opts
 listRules = engine.getListUserRules()
 
 oUser = objects.users.userOne
-oRuleReal = objects.rules.ruleReal
-oRuleRealTwo = objects.rules.ruleRealTwo
+oRuleOne = objects.rules.ruleOne
+oRuleTwo = objects.rules.ruleTwo
 oAiOne = objects.ais.aiOne
 oAiTwo = objects.ais.aiTwo
 
 exports.setUp = ( cb ) ->
-  engine.startEngine()
-  cb()
-  
+	engine.startEngine()
+	cb()
+	
 exports.tearDown = ( cb ) ->
-  db.deleteRule oRuleReal.id
-  db.actionInvokers.deleteModule oAiOne.id
-  db.actionInvokers.deleteModule oAiTwo.id
-  # TODO if user is deleted all his modules should be unlinked and deleted
-  db.deleteUser oUser.username
+	db.deleteRule oRuleOne.id
+	db.actionInvokers.deleteModule oAiOne.id
+	db.actionInvokers.deleteModule oAiTwo.id
+	# TODO if user is deleted all his modules should be unlinked and deleted
+	db.deleteUser oUser.username
 
-  engine.internalEvent
-    event: 'del'
-    user: oUser.username
-    rule: oRuleReal
+	engine.internalEvent
+		event: 'del'
+		user: oUser.username
+		rule: oRuleOne
 
-  engine.internalEvent
-    event: 'del'
-    user: oUser.username
-    rule: oRuleRealTwo
-  engine.shutDown()
+	engine.internalEvent
+		event: 'del'
+		user: oUser.username
+		rule: oRuleTwo
+	engine.shutDown()
 
-  setTimeout cb, 200
+	setTimeout cb, 200
 
 exports.ruleEvents =
-  testInitAddDeleteMultiple: ( test ) ->
-    test.expect 2 + 2 * oRuleReal.actions.length + oRuleRealTwo.actions.length
+	testInitAddDeleteMultiple: ( test ) ->
+		test.expect 2 + 2 * oRuleOne.actions.length + oRuleTwo.actions.length
 
-    db.storeUser oUser
-    db.storeRule oRuleReal.id, JSON.stringify oRuleReal
-    db.linkRule oRuleReal.id, oUser.username
-    db.activateRule oRuleReal.id, oUser.username
-    db.actionInvokers.storeModule oUser.username, oAiOne
-    db.actionInvokers.storeModule oUser.username, oAiTwo
+		db.storeUser oUser
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.linkRule oRuleOne.id, oUser.username
+		db.activateRule oRuleOne.id, oUser.username
+		db.actionInvokers.storeModule oUser.username, oAiOne
+		db.actionInvokers.storeModule oUser.username, oAiTwo
 
-    test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
+		test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
 
-    engine.internalEvent
-      event: 'new'
-      user: oUser.username
-      rule: oRuleReal
+		engine.internalEvent
+			event: 'new'
+			user: oUser.username
+			rule: oRuleOne
 
-    fWaitForPersistence = () ->
+		fWaitForPersistence = () ->
 
-      for act in oRuleReal.actions
-        mod = ( act.split ' -> ' )[0]
-        test.ok listRules[oUser.username][oRuleReal.id].actions[mod], 'Missing action!'
-  
+			for act in oRuleOne.actions
+				mod = ( act.split ' -> ' )[0]
+				test.ok listRules[oUser.username][oRuleOne.id].actions[mod], 'Missing action!'
+	
 
-      engine.internalEvent
-        event: 'new'
-        user: oUser.username
-        rule: oRuleRealTwo
+			engine.internalEvent
+				event: 'new'
+				user: oUser.username
+				rule: oRuleTwo
 
-      fWaitAgainForPersistence = () ->
+			fWaitAgainForPersistence = () ->
 
-        for act in oRuleRealTwo.actions
-          mod = ( act.split ' -> ' )[0]
-          test.ok listRules[oUser.username][oRuleRealTwo.id].actions[mod], 'Missing action!'
-    
-        engine.internalEvent
-          event: 'del'
-          user: oUser.username
-          rule: null
-          ruleId: oRuleRealTwo.id
+				for act in oRuleTwo.actions
+					mod = ( act.split ' -> ' )[0]
+					test.ok listRules[oUser.username][oRuleTwo.id].actions[mod], 'Missing action!'
+		
+				engine.internalEvent
+					event: 'del'
+					user: oUser.username
+					rule: null
+					ruleId: oRuleTwo.id
 
-        for act in oRuleReal.actions
-          mod = ( act.split ' -> ' )[0]
-          test.ok listRules[oUser.username][oRuleReal.id].actions[mod], 'Missing action!'
-    
-        engine.internalEvent
-          event: 'del'
-          user: oUser.username
-          rule: null
-          ruleId: oRuleReal.id
+				for act in oRuleOne.actions
+					mod = ( act.split ' -> ' )[0]
+					test.ok listRules[oUser.username][oRuleOne.id].actions[mod], 'Missing action!'
+		
+				engine.internalEvent
+					event: 'del'
+					user: oUser.username
+					rule: null
+					ruleId: oRuleOne.id
 
-        test.strictEqual listRules[oUser.username], undefined, 'Final user object exists!?'
-        test.done()
+				test.strictEqual listRules[oUser.username], undefined, 'Final user object exists!?'
+				test.done()
 
-      setTimeout fWaitAgainForPersistence, 200
+			setTimeout fWaitAgainForPersistence, 200
 
-    setTimeout fWaitForPersistence, 200
+		setTimeout fWaitForPersistence, 200
 
 # #TODO
 #   testUpdate: ( test ) ->
@@ -120,9 +120,9 @@ exports.ruleEvents =
 #     test.done()
 
 #     db.storeUser oUser
-#     db.storeRule oRuleReal.id, JSON.stringify oRuleReal
-#     db.linkRule oRuleReal.id, oUser.username
-#     db.activateRule oRuleReal.id, oUser.username
+#     db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+#     db.linkRule oRuleOne.id, oUser.username
+#     db.activateRule oRuleOne.id, oUser.username
 #     db.actionInvokers.storeModule oUser.username, oAiOne
 
 
@@ -133,7 +133,7 @@ exports.ruleEvents =
 #       engine.internalEvent
 #         event: 'init'
 #         user: oUser.username
-#         rule: oRuleReal
+#         rule: oRuleOne
 
 #       fCheckRules = () ->
 #         db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
@@ -143,35 +143,35 @@ exports.ruleEvents =
 #       setTimeout fCheckRules, 500
 
 exports.engine =
-  testMatchingEvent: ( test ) ->
-    test.expect 1
-    db.storeUser oUser
-    db.storeRule oRuleReal.id, JSON.stringify oRuleReal
-    db.linkRule oRuleReal.id, oUser.username
-    db.activateRule oRuleReal.id, oUser.username
-    db.actionInvokers.storeModule oUser.username, oAiOne
+	testMatchingEvent: ( test ) ->
+		test.expect 1
+		db.storeUser oUser
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.linkRule oRuleOne.id, oUser.username
+		db.activateRule oRuleOne.id, oUser.username
+		db.actionInvokers.storeModule oUser.username, oAiOne
 
-    engine.internalEvent
-      event: 'new'
-      user: oUser.username
-      rule: oRuleReal
+		engine.internalEvent
+			event: 'new'
+			user: oUser.username
+			rule: oRuleOne
 
-    fWaitForPersistence = () ->
-      evt = objects.events.eventReal
-      evt.eventid = 'event_testid'
-      db.pushEvent evt
+		fWaitForPersistence = () ->
+			evt = objects.events.eventReal
+			evt.eventid = 'event_testid'
+			db.pushEvent evt
 
-      fWaitAgain = () ->
-        db.getLog oUser.username, oRuleReal.id, ( err, data ) ->
-          try
+			fWaitAgain = () ->
+				db.getLog oUser.username, oRuleOne.id, ( err, data ) ->
+					try
 
-            logged = data.split( '] ' )[1]
-            logged = logged.split( "\n" )[0]
-            test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property, 'Did not log the right thing'
-          catch e
-            test.ok false, 'Parsing log failed'
-          test.done()
+						logged = data.split( '] ' )[1]
+						logged = logged.split( "\n" )[0]
+						test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property, 'Did not log the right thing'
+					catch e
+						test.ok false, 'Parsing log failed'
+					test.done()
 
-      setTimeout fWaitAgain, 200
+			setTimeout fWaitAgain, 200
 
-    setTimeout fWaitForPersistence, 200
+		setTimeout fWaitForPersistence, 200

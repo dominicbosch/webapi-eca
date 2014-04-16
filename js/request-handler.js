@@ -78,28 +78,26 @@ Request Handler
     });
     return req.on('end', function() {
       var answ, err, obj, rand, timestamp;
-      if (req.session && req.session.user) {
-        try {
-          obj = JSON.parse(body);
-        } catch (_error) {
-          err = _error;
-          resp.send(400, 'Badly formed event!');
-        }
-        if (obj && obj.event && !err) {
-          timestamp = (new Date).toISOString();
-          rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
-          obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;
-          answ = {
-            code: 200,
-            message: "Thank you for the event: " + obj.eventid
-          };
-          resp.send(answ.code, answ);
-          return db.pushEvent(obj);
-        } else {
-          return resp.send(400, 'Your event was missing important parameters!');
-        }
+      try {
+        obj = JSON.parse(body);
+        console.log('got foreign event!');
+        console.log(obj);
+      } catch (_error) {
+        err = _error;
+        resp.send(400, 'Badly formed event!');
+      }
+      if (obj && obj.event && !err) {
+        timestamp = (new Date).toISOString();
+        rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+        obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;
+        answ = {
+          code: 200,
+          message: "Thank you for the event: " + obj.eventid
+        };
+        resp.send(answ.code, answ);
+        return db.pushEvent(obj);
       } else {
-        return resp.send(401, 'Please login!');
+        return resp.send(400, 'Your event was missing important parameters!');
       }
     });
   };

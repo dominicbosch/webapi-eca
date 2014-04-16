@@ -103,8 +103,8 @@ Components Manager
   - `user` is the user object as it comes from the DB.
   - `oReq` is the request object that contains:
   
-    - `command` as a string 
-    - `payload` an optional stringified JSON object 
+  	- `command` as a string 
+  	- `payload` an optional stringified JSON object 
   The callback function `callback( obj )` will receive an object
   containing the HTTP response code and a corresponding message.
   
@@ -239,6 +239,7 @@ Components Manager
             src = oPayload.data;
             return dynmod.compileString(src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, function(cm) {
               var funcs, id, name, _ref;
+              console.log(cm);
               answ = cm.answ;
               if (answ.code === 200) {
                 funcs = [];
@@ -250,7 +251,7 @@ Components Manager
                 _this.log.info("CM | Storing new module with functions " + (funcs.join(', ')));
                 answ.message = " Module " + oPayload.id + " successfully stored! Found following function(s): " + funcs;
                 oPayload.functions = JSON.stringify(funcs);
-                oPayload.functionParameters = JSON.stringify(cm.funcParams);
+                oPayload.functionArgs = JSON.stringify(cm.funcParams);
                 dbMod.storeModule(user.username, oPayload);
                 if (oPayload["public"] === 'true') {
                   dbMod.publish(oPayload.id);
@@ -327,7 +328,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.actionInvokers.getModuleField(oPayload.id, 'functionParameters', function(err, obj) {
+        return db.actionInvokers.getModuleField(oPayload.id, 'functionArgs', function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -390,6 +391,7 @@ Components Manager
             rule = {
               id: oPayload.id,
               event: oPayload.event,
+              event_interval: oPayload.event_interval,
               conditions: oPayload.conditions,
               actions: oPayload.actions
             };

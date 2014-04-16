@@ -35,15 +35,17 @@
       "data":"# Send a mail through emailyak\nexports.otherEvent = ( evt ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
       "public":"false",
       "params":"[\"apikey\",\"andmore\"]",
-      "functions":"[\"otherEvent\"]"
+      "functions":"[\"otherEvent\"]",
+      "functionArgs":"{\"otherEvent\":[\"evt\"]}"
     },
     "aiThree": {
       "id":"aiThree",
       "lang":"CoffeeScript",
-      "data":"exports.printUserParamToLog = ( evt ) ->\n\tlog params.password",
+      "data":"exports.printUserParamToLog = ( evt ) ->\n\tdebug 'wow'n\tlog 'wow'\n\tlog params.password",
       "public":"false",
       "params":"[\"password\"]",
-      "functions":"[\"printUserParamToLog\"]"
+      "functions":"[\"printUserParamToLog\"]",
+      "functionArgs":"{\"printUserParamToLog\":[\"evt\"]}"
     }
   },
   "userparams": {
@@ -76,36 +78,18 @@
   },
   "rules": {
     "ruleOne": {
-      "id": "ruleOne_id",
-      "event": "custom-test-1",
-      "conditions": [],
-      "actions": []
-    },
-    "ruleTwo": {
-      "id": "ruleTwo_id",
-      "event": "custom-test-2",
-      "conditions": [],
-      "actions": []
-    },
-    "ruleThree": {
-      "id": "ruleThree_id",
-      "event": "custom-test-3",
-      "conditions": [],
-      "actions": []
-    },
-    "ruleReal": {
       "id": "ruleReal",
-      "event": "epOne -> newMail",
+      "event": "test_1",
       "conditions": [".more:val(\"really nested\")"],
       "actions": ["aiOne -> printToLog"]
     },
-    "ruleRealTwo": {
+    "ruleTwo": {
       "id": "ruleRealTwo",
-      "event": "epOne -> newMail",
+      "event": "test_2",
       "conditions": [],
       "actions": ["aiTwo -> otherEvent"]
     },
-    "ruleRealThree": {
+    "ruleThree": {
       "id": "ruleRealThree",
       "event": "epOne -> newMail",
       "conditions": [],

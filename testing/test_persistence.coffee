@@ -1,20 +1,20 @@
 fs = require 'fs'
 path = require 'path'
 try
-  data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
-  try
-    objects = JSON.parse data
-  catch err
-    console.log 'Error parsing standard objects file: ' + err.message
+	data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
+	try
+		objects = JSON.parse data
+	catch err
+		console.log 'Error parsing standard objects file: ' + err.message
 catch err
-  console.log 'Error fetching standard objects file: ' + err.message
+	console.log 'Error fetching standard objects file: ' + err.message
 
 logger = require path.join '..', 'js', 'logging'
 log = logger.getLogger
-  nolog: true
+	nolog: true
 db = require path.join '..', 'js', 'persistence'
 opts =
-  logger: log
+	logger: log
 opts[ 'db-port' ] = 6379
 db opts
 
@@ -28,114 +28,114 @@ oRuleOne = objects.rules.ruleOne
 oRuleTwo = objects.rules.ruleTwo
 
 exports.tearDown = ( cb ) ->
-  db.deleteUser oUser.username
-  setTimeout cb, 100
+	db.deleteUser oUser.username
+	setTimeout cb, 100
 
 # ###
 # # Test AVAILABILITY
 # ###
 exports.Availability =
-  testRequire: ( test ) ->
-    test.expect 1
-    test.ok db, 'DB interface loaded'
-    test.done()
+	testRequire: ( test ) ->
+		test.expect 1
+		test.ok db, 'DB interface loaded'
+		test.done()
 
-  testConnect: ( test ) ->
-    test.expect 1
-    db.isConnected ( err ) ->
-      test.ifError err, 'Connection failed!'
-      test.done()
+	testConnect: ( test ) ->
+		test.expect 1
+		db.isConnected ( err ) ->
+			test.ifError err, 'Connection failed!'
+			test.done()
 
-  # We cannot test for no db-port, since node-redis then assumes standard port
-  testWrongDbPort: ( test ) ->
-    test.expect 1
-     
-    db.initPort 13410
-    db.isConnected ( err ) ->
-      test.ok err, 'Still connected!?'
-      db.initPort 6379
-      test.done()
+	# We cannot test for no db-port, since node-redis then assumes standard port
+	testWrongDbPort: ( test ) ->
+		test.expect 1
+		 
+		db.initPort 13410
+		db.isConnected ( err ) ->
+			test.ok err, 'Still connected!?'
+			db.initPort 6379
+			test.done()
 
-  testPurgeQueue: ( test ) ->
-    test.expect 2
+	testPurgeQueue: ( test ) ->
+		test.expect 2
 
-    db.pushEvent oEvtOne
-    db.purgeEventQueue()
-    db.popEvent ( err, obj ) ->
-      test.ifError err, 'Error during pop after purging!'
-      test.strictEqual obj, null, 'There was an event in the queue!?'
-      test.done()
+		db.pushEvent oEvtOne
+		db.purgeEventQueue()
+		db.popEvent ( err, obj ) ->
+			test.ifError err, 'Error during pop after purging!'
+			test.strictEqual obj, null, 'There was an event in the queue!?'
+			test.done()
 
 ###
 # Test EVENT QUEUE
 ###
 exports.EventQueue =
 
-  testEmptyPopping: ( test ) ->
-    test.expect 2
-    
-    db.purgeEventQueue()
-    db.popEvent ( err, obj ) ->
-      test.ifError err,
-        'Error during pop after purging!'
-      test.strictEqual obj, null,
-        'There was an event in the queue!?'
-      test.done()
+	testEmptyPopping: ( test ) ->
+		test.expect 2
+		
+		db.purgeEventQueue()
+		db.popEvent ( err, obj ) ->
+			test.ifError err,
+				'Error during pop after purging!'
+			test.strictEqual obj, null,
+				'There was an event in the queue!?'
+			test.done()
 
-  testEmptyPushing: ( test ) ->
-    test.expect 2
+	testEmptyPushing: ( test ) ->
+		test.expect 2
 
-    db.pushEvent null
-    db.popEvent ( err, obj ) ->
-      test.ifError err,
-        'Error during non-empty pushing!'
-      test.strictEqual obj, null,
-        'There was an event in the queue!?'
-      
-      test.done()
+		db.pushEvent null
+		db.popEvent ( err, obj ) ->
+			test.ifError err,
+				'Error during non-empty pushing!'
+			test.strictEqual obj, null,
+				'There was an event in the queue!?'
+			
+			test.done()
 
-  testNonEmptyPopping: ( test ) ->
-    test.expect 3
+	testNonEmptyPopping: ( test ) ->
+		test.expect 3
 
-    db.pushEvent oEvtOne
-    db.popEvent ( err, obj ) ->
-      test.ifError err,
-        'Error during non-empty popping!'
-      test.notStrictEqual obj, null,
-        'There was no event in the queue!'
-      test.deepEqual oEvtOne, obj,
-        'Wrong event in queue!'
-      
-      test.done()
+		db.pushEvent oEvtOne
+		db.popEvent ( err, obj ) ->
+			test.ifError err,
+				'Error during non-empty popping!'
+			test.notStrictEqual obj, null,
+				'There was no event in the queue!'
+			test.deepEqual oEvtOne, obj,
+				'Wrong event in queue!'
+			
+			test.done()
 
-  testMultiplePushAndPops: ( test ) ->
-    test.expect 6
+	testMultiplePushAndPops: ( test ) ->
+		test.expect 6
 
-    semaphore = 2
-    forkEnds = () ->
-      if --semaphore is 0
-        
-        test.done()
+		semaphore = 2
+		forkEnds = () ->
+			if --semaphore is 0
+				
+				test.done()
 
-    db.pushEvent oEvtOne
-    db.pushEvent oEvtTwo
-    # eventually it would be wise to not care about the order of events
-    db.popEvent ( err, obj ) ->
-      test.ifError err,
-        'Error during multiple push and pop!'
-      test.notStrictEqual obj, null,
-        'There was no event in the queue!'
-      test.deepEqual oEvtOne, obj,
-        'Wrong event in queue!'
-      forkEnds()
-    db.popEvent ( err, obj ) ->
-      test.ifError err,
-        'Error during multiple push and pop!'
-      test.notStrictEqual obj, null,
-        'There was no event in the queue!'
-      test.deepEqual oEvtTwo, obj,
-        'Wrong event in queue!'
-      forkEnds()
+		db.pushEvent oEvtOne
+		db.pushEvent oEvtTwo
+		# eventually it would be wise to not care about the order of events
+		db.popEvent ( err, obj ) ->
+			test.ifError err,
+				'Error during multiple push and pop!'
+			test.notStrictEqual obj, null,
+				'There was no event in the queue!'
+			test.deepEqual oEvtOne, obj,
+				'Wrong event in queue!'
+			forkEnds()
+		db.popEvent ( err, obj ) ->
+			test.ifError err,
+				'Error during multiple push and pop!'
+			test.notStrictEqual obj, null,
+				'There was no event in the queue!'
+			test.deepEqual oEvtTwo, obj,
+				'Wrong event in queue!'
+			forkEnds()
 
 
 ###
@@ -144,500 +144,500 @@ exports.EventQueue =
 ###
 exports.EventPoller =
  
-  tearDown: ( cb ) ->
-    # db.eventPollers.unlinkModule oEpOne.id, oUser.username
-    db.eventPollers.deleteModule oEpOne.id
-    # db.eventPollers.unlinkModule oEpTwo.id, oUser.username
-    db.eventPollers.deleteModule oEpTwo.id
-    cb()
+	tearDown: ( cb ) ->
+		# db.eventPollers.unlinkModule oEpOne.id, oUser.username
+		db.eventPollers.deleteModule oEpOne.id
+		# db.eventPollers.unlinkModule oEpTwo.id, oUser.username
+		db.eventPollers.deleteModule oEpTwo.id
+		cb()
 
-  testCreateAndRead: ( test ) ->
-    test.expect 3
-    db.eventPollers.storeModule oUser.username, oEpOne
-    
-        # test that the ID shows up in the set
-    db.eventPollers.getModuleIds ( err , obj ) ->
-      test.ok oEpOne.id in obj,
-        'Expected key not in event-pollers set'
-      
-      # the retrieved object really is the one we expected
-      db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
-        test.deepEqual obj, oEpOne,
-          'Retrieved Event Poller is not what we expected'
-        
-        # Ensure the event poller is in the list of all existing ones
-        db.eventPollers.getModules ( err , obj ) ->
-          test.deepEqual oEpOne, obj[oEpOne.id],
-            'Event Poller ist not in result set'
-          test.done()
-          
-  testUpdate: ( test ) ->
-    test.expect 2
+	testCreateAndRead: ( test ) ->
+		test.expect 3
+		db.eventPollers.storeModule oUser.username, oEpOne
+		
+				# test that the ID shows up in the set
+		db.eventPollers.getModuleIds ( err , obj ) ->
+			test.ok oEpOne.id in obj,
+				'Expected key not in event-pollers set'
+			
+			# the retrieved object really is the one we expected
+			db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
+				test.deepEqual obj, oEpOne,
+					'Retrieved Event Poller is not what we expected'
+				
+				# Ensure the event poller is in the list of all existing ones
+				db.eventPollers.getModules ( err , obj ) ->
+					test.deepEqual oEpOne, obj[oEpOne.id],
+						'Event Poller ist not in result set'
+					test.done()
+					
+	testUpdate: ( test ) ->
+		test.expect 2
 
-    oTmp = {}
-    oTmp[key] = val for key, val of oEpOne
-    oTmp.public = 'true'
+		oTmp = {}
+		oTmp[key] = val for key, val of oEpOne
+		oTmp.public = 'true'
 
-    # store an entry to start with 
-    db.eventPollers.storeModule oUser.username, oEpOne
-    db.eventPollers.storeModule oUser.username, oTmp
+		# store an entry to start with 
+		db.eventPollers.storeModule oUser.username, oEpOne
+		db.eventPollers.storeModule oUser.username, oTmp
 
-    # the retrieved object really is the one we expected
-    db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
-      test.deepEqual obj, oTmp,
-        'Retrieved Event Poller is not what we expected'
-        
-      # Ensure the event poller is in the list of all existing ones
-      db.eventPollers.getModules ( err , obj ) ->
-        test.deepEqual oTmp, obj[oEpOne.id],
-          'Event Poller ist not in result set'
-        
-        test.done()
+		# the retrieved object really is the one we expected
+		db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
+			test.deepEqual obj, oTmp,
+				'Retrieved Event Poller is not what we expected'
+				
+			# Ensure the event poller is in the list of all existing ones
+			db.eventPollers.getModules ( err , obj ) ->
+				test.deepEqual oTmp, obj[oEpOne.id],
+					'Event Poller ist not in result set'
+				
+				test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    # store an entry to start with 
-    db.eventPollers.storeModule oUser.username, oEpOne
+		# store an entry to start with 
+		db.eventPollers.storeModule oUser.username, oEpOne
 
-    # Ensure the event poller has been deleted
-    db.eventPollers.deleteModule oEpOne.id
-    db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
-      test.strictEqual obj, null,
-        'Event Poller still exists'
-      
-      # Ensure the ID has been removed from the set
-      db.eventPollers.getModuleIds ( err , obj ) ->
-        test.ok oEpOne.id not in obj,
-          'Event Poller key still exists in set'
-        
-        test.done()
-  
+		# Ensure the event poller has been deleted
+		db.eventPollers.deleteModule oEpOne.id
+		db.eventPollers.getModule oEpOne.id, ( err , obj ) ->
+			test.strictEqual obj, null,
+				'Event Poller still exists'
+			
+			# Ensure the ID has been removed from the set
+			db.eventPollers.getModuleIds ( err , obj ) ->
+				test.ok oEpOne.id not in obj,
+					'Event Poller key still exists in set'
+				
+				test.done()
+	
 
-  testFetchSeveral: ( test ) ->
-    test.expect 3
-    semaphore = 2
+	testFetchSeveral: ( test ) ->
+		test.expect 3
+		semaphore = 2
 
-    fCheckInvoker = ( modname, mod ) ->
-      myTest = test
-      forkEnds = () ->
-        if --semaphore is 0
-          
-          myTest.done()
-      ( err, obj ) ->
-        myTest.deepEqual mod, obj,
-          "Invoker #{ modname } does not equal the expected one"
-        forkEnds()
+		fCheckInvoker = ( modname, mod ) ->
+			myTest = test
+			forkEnds = () ->
+				if --semaphore is 0
+					
+					myTest.done()
+			( err, obj ) ->
+				myTest.deepEqual mod, obj,
+					"Invoker #{ modname } does not equal the expected one"
+				forkEnds()
 
-    db.eventPollers.storeModule oUser.username, oEpOne
-    db.eventPollers.storeModule oUser.username, oEpTwo
-    db.eventPollers.getModuleIds ( err, obj ) ->
-      test.ok oEpOne.id in obj and oEpTwo.id in obj,
-        'Not all event poller Ids in set'
-      db.eventPollers.getModule oEpOne.id, fCheckInvoker oEpOne.id, oEpOne 
-      db.eventPollers.getModule oEpTwo.id, fCheckInvoker oEpTwo.id, oEpTwo
+		db.eventPollers.storeModule oUser.username, oEpOne
+		db.eventPollers.storeModule oUser.username, oEpTwo
+		db.eventPollers.getModuleIds ( err, obj ) ->
+			test.ok oEpOne.id in obj and oEpTwo.id in obj,
+				'Not all event poller Ids in set'
+			db.eventPollers.getModule oEpOne.id, fCheckInvoker oEpOne.id, oEpOne 
+			db.eventPollers.getModule oEpTwo.id, fCheckInvoker oEpTwo.id, oEpTwo
 
 
 ###
 # Test EVENT POLLER PARAMS
 ###
 exports.EventPollerParams =
-  testCreateAndRead: ( test ) ->
-    test.expect 2
+	testCreateAndRead: ( test ) ->
+		test.expect 2
 
-    userId = 'tester1'
-    eventId = 'test-event-poller_1'
-    params = 'shouldn\'t this be an object?'
+		userId = 'tester1'
+		eventId = 'test-event-poller_1'
+		params = 'shouldn\'t this be an object?'
 
-    # store an entry to start with 
-    db.eventPollers.storeUserParams eventId, userId, params
-    
-    # test that the ID shows up in the set
-    db.eventPollers.getUserParamsIds ( err, obj ) ->
-      test.ok eventId+':'+userId in obj,
-        'Expected key not in event-params set'
-      
-      # the retrieved object really is the one we expected
-      db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
-        test.strictEqual obj, params,
-          'Retrieved event params is not what we expected'
-        db.eventPollers.deleteUserParams eventId, userId
-        test.done()
+		# store an entry to start with 
+		db.eventPollers.storeUserParams eventId, userId, params
+		
+		# test that the ID shows up in the set
+		db.eventPollers.getUserParamsIds ( err, obj ) ->
+			test.ok eventId+':'+userId in obj,
+				'Expected key not in event-params set'
+			
+			# the retrieved object really is the one we expected
+			db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+				test.strictEqual obj, params,
+					'Retrieved event params is not what we expected'
+				db.eventPollers.deleteUserParams eventId, userId
+				test.done()
 
-  testUpdate: ( test ) ->
-    test.expect 1
+	testUpdate: ( test ) ->
+		test.expect 1
 
-    userId = 'tester1'
-    eventId = 'test-event-poller_1'
-    params = 'shouldn\'t this be an object?'
-    paramsNew = 'shouldn\'t this be a new object?'
+		userId = 'tester1'
+		eventId = 'test-event-poller_1'
+		params = 'shouldn\'t this be an object?'
+		paramsNew = 'shouldn\'t this be a new object?'
 
-    # store an entry to start with 
-    db.eventPollers.storeUserParams eventId, userId, params
-    db.eventPollers.storeUserParams eventId, userId, paramsNew
+		# store an entry to start with 
+		db.eventPollers.storeUserParams eventId, userId, params
+		db.eventPollers.storeUserParams eventId, userId, paramsNew
 
-    # the retrieved object really is the one we expected
-    db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
-      test.strictEqual obj, paramsNew,
-        'Retrieved event params is not what we expected'
-      db.eventPollers.deleteUserParams eventId, userId
-      
-      test.done()
+		# the retrieved object really is the one we expected
+		db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+			test.strictEqual obj, paramsNew,
+				'Retrieved event params is not what we expected'
+			db.eventPollers.deleteUserParams eventId, userId
+			
+			test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    userId = 'tester1'
-    eventId = 'test-event-poller_1'
-    params = 'shouldn\'t this be an object?'
+		userId = 'tester1'
+		eventId = 'test-event-poller_1'
+		params = 'shouldn\'t this be an object?'
 
-    # store an entry to start with and delete it right away
-    db.eventPollers.storeUserParams eventId, userId, params
-    db.eventPollers.deleteUserParams eventId, userId
-    
-    # Ensure the event params have been deleted
-    db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
-      test.strictEqual obj, null,
-        'Event params still exists'
-      # Ensure the ID has been removed from the set
-      db.eventPollers.getUserParamsIds ( err, obj ) ->
-        test.ok eventId+':'+userId not in obj,
-          'Event Params key still exists in set'
-        
-        test.done()
+		# store an entry to start with and delete it right away
+		db.eventPollers.storeUserParams eventId, userId, params
+		db.eventPollers.deleteUserParams eventId, userId
+		
+		# Ensure the event params have been deleted
+		db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+			test.strictEqual obj, null,
+				'Event params still exists'
+			# Ensure the ID has been removed from the set
+			db.eventPollers.getUserParamsIds ( err, obj ) ->
+				test.ok eventId+':'+userId not in obj,
+					'Event Params key still exists in set'
+				
+				test.done()
 
 
 ###
 # Test RULES
 ###
 exports.Rules =
-  tearDown: ( cb ) ->
-    db.deleteRule oRuleOne.id
-    cb()
+	tearDown: ( cb ) ->
+		db.deleteRule oRuleOne.id
+		cb()
 
-  testCreateAndRead: ( test ) ->
-    test.expect 3
+	testCreateAndRead: ( test ) ->
+		test.expect 3
 
-    # store an entry to start with 
-    db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-    
-    # test that the ID shows up in the set
-    db.getRuleIds ( err, obj ) ->
-      test.ok oRuleOne.id in obj,
-        'Expected key not in rule key set'
-      
-      # the retrieved object really is the one we expected
-      db.getRule oRuleOne.id, ( err, obj ) ->
-        test.deepEqual JSON.parse(obj), oRuleOne,
-          'Retrieved rule is not what we expected'
+		# store an entry to start with 
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		
+		# test that the ID shows up in the set
+		db.getRuleIds ( err, obj ) ->
+			test.ok oRuleOne.id in obj,
+				'Expected key not in rule key set'
+			
+			# the retrieved object really is the one we expected
+			db.getRule oRuleOne.id, ( err, obj ) ->
+				test.deepEqual JSON.parse(obj), oRuleOne,
+					'Retrieved rule is not what we expected'
 
-        # Ensure the rule is in the list of all existing ones
-        db.getRules ( err , obj ) ->
-          test.deepEqual oRuleOne, JSON.parse( obj[oRuleOne.id] ),
-            'Rule not in result set'
-          
-          test.done()
+				# Ensure the rule is in the list of all existing ones
+				db.getRules ( err , obj ) ->
+					test.deepEqual oRuleOne, JSON.parse( obj[oRuleOne.id] ),
+						'Rule not in result set'
+					
+					test.done()
 
-  testUpdate: ( test ) ->
-    test.expect 1
+	testUpdate: ( test ) ->
+		test.expect 1
 
-    # store an entry to start with 
-    db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-    db.storeRule oRuleOne.id, JSON.stringify oRuleTwo
+		# store an entry to start with 
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.storeRule oRuleOne.id, JSON.stringify oRuleTwo
 
-    # the retrieved object really is the one we expected
-    db.getRule oRuleOne.id, ( err, obj ) ->
-      test.deepEqual JSON.parse(obj), oRuleTwo,
-        'Retrieved rule is not what we expected'
-      
-      test.done()
+		# the retrieved object really is the one we expected
+		db.getRule oRuleOne.id, ( err, obj ) ->
+			test.deepEqual JSON.parse(obj), oRuleTwo,
+				'Retrieved rule is not what we expected'
+			
+			test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    # store an entry to start with and delete it right away
-    db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-    db.deleteRule oRuleOne.id
-    
-    # Ensure the event params have been deleted
-    db.getRule oRuleOne.id, ( err, obj ) ->
-      test.strictEqual obj, null,
-        'Rule still exists'
+		# store an entry to start with and delete it right away
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.deleteRule oRuleOne.id
+		
+		# Ensure the event params have been deleted
+		db.getRule oRuleOne.id, ( err, obj ) ->
+			test.strictEqual obj, null,
+				'Rule still exists'
 
-      # Ensure the ID has been removed from the set
-      db.getRuleIds ( err, obj ) ->
-        test.ok oRuleOne.id not in obj,
-          'Rule key still exists in set'
-        
-        test.done()
+			# Ensure the ID has been removed from the set
+			db.getRuleIds ( err, obj ) ->
+				test.ok oRuleOne.id not in obj,
+					'Rule key still exists in set'
+				
+				test.done()
 
-  testLink: ( test ) ->
-    test.expect 2
+	testLink: ( test ) ->
+		test.expect 2
 
-    # link a rule to the user
-    db.linkRule oRuleOne.id, oUser.username
+		# link a rule to the user
+		db.linkRule oRuleOne.id, oUser.username
 
-      # Ensure the user is linked to the rule
-    db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
-      test.ok oUser.username in obj,
-        "Rule not linked to user #{ oUser.username }"
+			# Ensure the user is linked to the rule
+		db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
+			test.ok oUser.username in obj,
+				"Rule not linked to user #{ oUser.username }"
 
-      # Ensure the rule is linked to the user
-      db.getUserLinkedRules oUser.username, ( err, obj ) ->
-        test.ok oRuleOne.id in obj,
-          "User not linked to rule #{ oRuleOne.id }"
-        
-        test.done()
+			# Ensure the rule is linked to the user
+			db.getUserLinkedRules oUser.username, ( err, obj ) ->
+				test.ok oRuleOne.id in obj,
+					"User not linked to rule #{ oRuleOne.id }"
+				
+				test.done()
 
-  testUnlink: ( test ) ->
-    test.expect 2
+	testUnlink: ( test ) ->
+		test.expect 2
 
-    # link and unlink immediately afterwards
-    db.linkRule oRuleOne.id, oUser.username
-    db.unlinkRule oRuleOne.id, oUser.username
+		# link and unlink immediately afterwards
+		db.linkRule oRuleOne.id, oUser.username
+		db.unlinkRule oRuleOne.id, oUser.username
 
-      # Ensure the user is linked to the rule
-    db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
-      test.ok oUser.username not in obj,
-        "Rule still linked to user #{ oUser.username }"
+			# Ensure the user is linked to the rule
+		db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
+			test.ok oUser.username not in obj,
+				"Rule still linked to user #{ oUser.username }"
 
-      # Ensure the rule is linked to the user
-      db.getUserLinkedRules oUser.username, ( err, obj ) ->
-        test.ok oRuleOne.id not in obj,
-          "User still linked to rule #{ oRuleOne.id }"
-        
-        test.done()
+			# Ensure the rule is linked to the user
+			db.getUserLinkedRules oUser.username, ( err, obj ) ->
+				test.ok oRuleOne.id not in obj,
+					"User still linked to rule #{ oRuleOne.id }"
+				
+				test.done()
 
-  testActivate: ( test ) ->
-    test.expect 4
+	testActivate: ( test ) ->
+		test.expect 4
 
-    usr =
-      username: "tester-1"
-      password: "tester-1"
-    db.storeUser usr
-    db.activateRule oRuleOne.id, oUser.username
-    # activate a rule for a user
+		usr =
+			username: "tester-1"
+			password: "tester-1"
+		db.storeUser usr
+		db.activateRule oRuleOne.id, oUser.username
+		# activate a rule for a user
 
-      # Ensure the user is activated to the rule
-    db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
-      test.ok oUser.username in obj,
-        "Rule not activated for user #{ oUser.username }"
+			# Ensure the user is activated to the rule
+		db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
+			test.ok oUser.username in obj,
+				"Rule not activated for user #{ oUser.username }"
 
-      # Ensure the rule is linked to the user
-      db.getUserActivatedRules oUser.username, ( err, obj ) ->
-        test.ok oRuleOne.id in obj,
-          "User not activated for rule #{ oRuleOne.id }"
+			# Ensure the rule is linked to the user
+			db.getUserActivatedRules oUser.username, ( err, obj ) ->
+				test.ok oRuleOne.id in obj,
+					"User not activated for rule #{ oRuleOne.id }"
 
-        # Ensure the rule is showing up in all active rules
-        db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
-          test.notStrictEqual obj[oUser.username], undefined,
-            "User #{ oUser.username } not in activated rules set"
-          if obj[oUser.username]
-            test.ok oRuleOne.id in obj[oUser.username],
-              "Rule #{ oRuleOne.id } not in activated rules set"
-          # else
-          #   test.ok true,
-          #     "Dummy so we meet the expected num of tests"
-          
-          test.done()
+				# Ensure the rule is showing up in all active rules
+				db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+					test.notStrictEqual obj[oUser.username], undefined,
+						"User #{ oUser.username } not in activated rules set"
+					if obj[oUser.username]
+						test.ok oRuleOne.id in obj[oUser.username],
+							"Rule #{ oRuleOne.id } not in activated rules set"
+					# else
+					#   test.ok true,
+					#     "Dummy so we meet the expected num of tests"
+					
+					test.done()
 
-  testDeactivate: ( test ) ->
-    test.expect 3
+	testDeactivate: ( test ) ->
+		test.expect 3
 
-    # store an entry to start with and link it to te user
-    db.activateRule oRuleOne.id, oUser.username
-    db.deactivateRule oRuleOne.id, oUser.username
+		# store an entry to start with and link it to te user
+		db.activateRule oRuleOne.id, oUser.username
+		db.deactivateRule oRuleOne.id, oUser.username
 
-      # Ensure the user is linked to the rule
-    db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
-      test.ok oUser.username not in obj,
-        "Rule still activated for user #{ oUser.username }"
+			# Ensure the user is linked to the rule
+		db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
+			test.ok oUser.username not in obj,
+				"Rule still activated for user #{ oUser.username }"
 
-      # Ensure the rule is linked to the user
-      db.getUserActivatedRules oUser.username, ( err, obj ) ->
-        test.ok oRuleOne.id not in obj,
-          "User still activated for rule #{ oRuleOne.id }"
+			# Ensure the rule is linked to the user
+			db.getUserActivatedRules oUser.username, ( err, obj ) ->
+				test.ok oRuleOne.id not in obj,
+					"User still activated for rule #{ oRuleOne.id }"
 
-        # Ensure the rule is showing up in all active rules
-        db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
-          if obj[oUser.username]
-            test.ok oRuleOne.id not in obj[oUser.username],
-              "Rule #{ oRuleOne.id } still in activated rules set"
-          else
-            test.ok true,
-              "We are fine since there are no entries for this user anymore"
-          
-          test.done()
+				# Ensure the rule is showing up in all active rules
+				db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+					if obj[oUser.username]
+						test.ok oRuleOne.id not in obj[oUser.username],
+							"Rule #{ oRuleOne.id } still in activated rules set"
+					else
+						test.ok true,
+							"We are fine since there are no entries for this user anymore"
+					
+					test.done()
 
-  testUnlinkAndDeactivateAfterDeletion: ( test ) ->
-    test.expect 2
+	testUnlinkAndDeactivateAfterDeletion: ( test ) ->
+		test.expect 2
 
-    # store an entry to start with and link it to te user
-    db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-    db.linkRule oRuleOne.id, oUser.username
-    db.activateRule oRuleOne.id, oUser.username
+		# store an entry to start with and link it to te user
+		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.linkRule oRuleOne.id, oUser.username
+		db.activateRule oRuleOne.id, oUser.username
 
-    # We need to wait here and there since these calls are asynchronous
-    fWaitForTest = () ->
+		# We need to wait here and there since these calls are asynchronous
+		fWaitForTest = () ->
 
-      # Ensure the user is unlinked to the rule
-      db.getUserLinkedRules oUser.username, ( err, obj ) ->
-        test.ok oRuleOne.id not in obj,
-          "Rule #{ oRuleOne.id } still linked to user #{ oUser.username }"
+			# Ensure the user is unlinked to the rule
+			db.getUserLinkedRules oUser.username, ( err, obj ) ->
+				test.ok oRuleOne.id not in obj,
+					"Rule #{ oRuleOne.id } still linked to user #{ oUser.username }"
 
-        # Ensure the rule is deactivated for the user
-        db.getUserActivatedRules oUser.username, ( err, obj ) ->
-          test.ok oRuleOne.id not in obj,
-            "Rule #{ oRuleOne.id } still activated for user #{ oUser.username }"
-          
-          test.done()
+				# Ensure the rule is deactivated for the user
+				db.getUserActivatedRules oUser.username, ( err, obj ) ->
+					test.ok oRuleOne.id not in obj,
+						"Rule #{ oRuleOne.id } still activated for user #{ oUser.username }"
+					
+					test.done()
 
-    fWaitForDeletion = () ->
-      db.deleteRule oRuleOne.id
-      setTimeout fWaitForTest, 500
+		fWaitForDeletion = () ->
+			db.deleteRule oRuleOne.id
+			setTimeout fWaitForTest, 500
 
-    setTimeout fWaitForDeletion, 100
+		setTimeout fWaitForDeletion, 100
 
 
 ###
 # Test USER
 ###
 exports.User = 
-  testCreateInvalid: ( test ) ->
-    test.expect 4
-    
-    oUserInvOne =
-      username: "tester-1-invalid"
-    oUserInvTwo =
-      password: "password"
+	testCreateInvalid: ( test ) ->
+		test.expect 4
+		
+		oUserInvOne =
+			username: "tester-1-invalid"
+		oUserInvTwo =
+			password: "password"
 
-    # try to store invalid users, ensure they weren't 
-    db.storeUser oUserInvOne
-    db.storeUser oUserInvTwo
+		# try to store invalid users, ensure they weren't 
+		db.storeUser oUserInvOne
+		db.storeUser oUserInvTwo
 
-    db.getUser oUserInvOne.username, ( err, obj ) ->
-      test.strictEqual obj, null,
-        'User One was stored!?'
+		db.getUser oUserInvOne.username, ( err, obj ) ->
+			test.strictEqual obj, null,
+				'User One was stored!?'
 
-      db.getUser oUserInvTwo.username, ( err, obj ) ->
-        test.strictEqual obj, null,
-          'User Two was stored!?'
+			db.getUser oUserInvTwo.username, ( err, obj ) ->
+				test.strictEqual obj, null,
+					'User Two was stored!?'
 
-        db.getUserIds ( err, obj ) ->
-          test.ok oUserInvOne.username not in obj,
-            'User key was stored!?'
-          test.ok oUserInvTwo.username not in obj,
-            'User key was stored!?'
-          test.done()
+				db.getUserIds ( err, obj ) ->
+					test.ok oUserInvOne.username not in obj,
+						'User key was stored!?'
+					test.ok oUserInvTwo.username not in obj,
+						'User key was stored!?'
+					test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    # Store the user
-    db.storeUser oUser
+		# Store the user
+		db.storeUser oUser
 
-    db.getUser oUser.username, ( err, obj ) ->
-      test.deepEqual obj, oUser,
-        "User #{ oUser.username } is not what we expect!"
+		db.getUser oUser.username, ( err, obj ) ->
+			test.deepEqual obj, oUser,
+				"User #{ oUser.username } is not what we expect!"
 
-      db.getUserIds ( err, obj ) ->
-        test.ok oUser.username in obj,
-          'User key was not stored!?'
-        
-        test.done()
+			db.getUserIds ( err, obj ) ->
+				test.ok oUser.username in obj,
+					'User key was not stored!?'
+				
+				test.done()
 
-  testUpdate: ( test ) ->
-    test.expect 2
+	testUpdate: ( test ) ->
+		test.expect 2
 
-    # Store the user
-    db.storeUser oUser
-    oUser.password = "password-update"
-    db.storeUser oUser
+		# Store the user
+		db.storeUser oUser
+		oUser.password = "password-update"
+		db.storeUser oUser
 
-    db.getUser oUser.username, ( err, obj ) ->
-      test.deepEqual obj, oUser,
-        "User #{ oUser.username } is not what we expect!"
+		db.getUser oUser.username, ( err, obj ) ->
+			test.deepEqual obj, oUser,
+				"User #{ oUser.username } is not what we expect!"
 
-      db.getUserIds ( err, obj ) ->
-        test.ok oUser.username in obj,
-          'User key was not stored!?'
-        test.done()
+			db.getUserIds ( err, obj ) ->
+				test.ok oUser.username in obj,
+					'User key was not stored!?'
+				test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    # Wait until the user and his rules and roles are deleted
-    fWaitForDeletion = () ->
-      db.getUserIds ( err, obj ) ->
-        test.ok oUser.username not in obj,
-          'User key still in set!'
+		# Wait until the user and his rules and roles are deleted
+		fWaitForDeletion = () ->
+			db.getUserIds ( err, obj ) ->
+				test.ok oUser.username not in obj,
+					'User key still in set!'
 
-        db.getUser oUser.username, ( err, obj ) ->
-          test.strictEqual obj, null,
-            'User key still exists!'
-          test.done()
+				db.getUser oUser.username, ( err, obj ) ->
+					test.strictEqual obj, null,
+						'User key still exists!'
+					test.done()
 
-    # Store the user and make some links
-    db.storeUser oUser
-    db.deleteUser oUser.username
-    setTimeout fWaitForDeletion, 100
-
-
-  testDeleteLinks: ( test ) ->
-    test.expect 4
-
-    # Wait until the user and his rules and roles are stored
-    fWaitForPersistence = () ->
-      db.deleteUser oUser.username
-      setTimeout fWaitForDeletion, 200
-
-    # Wait until the user and his rules and roles are deleted
-    fWaitForDeletion = () ->
-      db.getRoleUsers 'tester', ( err, obj ) ->
-        test.ok oUser.username not in obj,
-          'User key still in role tester!'
-
-        db.getUserRoles oUser.username, ( err, obj ) ->
-          test.ok obj.length is 0,
-            'User still associated to roles!'
-          
-          db.getUserLinkedRules oUser.username, ( err, obj ) ->
-            test.ok obj.length is 0,
-              'User still associated to rules!'
-            db.getUserActivatedRules oUser.username, ( err, obj ) ->
-              test.ok obj.length is 0,
-                'User still associated to activated rules!'
-              test.done()
-
-    # Store the user and make some links
-    db.storeUser oUser
-    db.linkRule 'rule-1', oUser.username
-    db.linkRule 'rule-2', oUser.username
-    db.linkRule 'rule-3', oUser.username
-    db.activateRule 'rule-1', oUser.username
-    db.storeUserRole oUser.username, 'tester'
-    
-    setTimeout fWaitForPersistence, 100
+		# Store the user and make some links
+		db.storeUser oUser
+		db.deleteUser oUser.username
+		setTimeout fWaitForDeletion, 100
 
 
-  testLogin: ( test ) ->
-    test.expect 3
+	testDeleteLinks: ( test ) ->
+		test.expect 4
 
-    # Store the user and make some links
-    db.storeUser oUser
-    db.loginUser oUser.username, oUser.password, ( err, obj ) ->
-      test.deepEqual obj, oUser,
-        'User not logged in!'
+		# Wait until the user and his rules and roles are stored
+		fWaitForPersistence = () ->
+			db.deleteUser oUser.username
+			setTimeout fWaitForDeletion, 200
 
-      db.loginUser 'dummyname', oUser.password, ( err, obj ) ->
-        test.strictEqual obj, null,
-          'User logged in?!'
+		# Wait until the user and his rules and roles are deleted
+		fWaitForDeletion = () ->
+			db.getRoleUsers 'tester', ( err, obj ) ->
+				test.ok oUser.username not in obj,
+					'User key still in role tester!'
 
-        db.loginUser oUser.username, 'wrongpass', ( err, obj ) ->
-          test.strictEqual obj, null,
-            'User logged in?!'
-          
-          test.done()
+				db.getUserRoles oUser.username, ( err, obj ) ->
+					test.ok obj.length is 0,
+						'User still associated to roles!'
+					
+					db.getUserLinkedRules oUser.username, ( err, obj ) ->
+						test.ok obj.length is 0,
+							'User still associated to rules!'
+						db.getUserActivatedRules oUser.username, ( err, obj ) ->
+							test.ok obj.length is 0,
+								'User still associated to activated rules!'
+							test.done()
+
+		# Store the user and make some links
+		db.storeUser oUser
+		db.linkRule 'rule-1', oUser.username
+		db.linkRule 'rule-2', oUser.username
+		db.linkRule 'rule-3', oUser.username
+		db.activateRule 'rule-1', oUser.username
+		db.storeUserRole oUser.username, 'tester'
+		
+		setTimeout fWaitForPersistence, 100
+
+
+	testLogin: ( test ) ->
+		test.expect 3
+
+		# Store the user and make some links
+		db.storeUser oUser
+		db.loginUser oUser.username, oUser.password, ( err, obj ) ->
+			test.deepEqual obj, oUser,
+				'User not logged in!'
+
+			db.loginUser 'dummyname', oUser.password, ( err, obj ) ->
+				test.strictEqual obj, null,
+					'User logged in?!'
+
+				db.loginUser oUser.username, 'wrongpass', ( err, obj ) ->
+					test.strictEqual obj, null,
+						'User logged in?!'
+					
+					test.done()
 
 
 ###
@@ -645,36 +645,36 @@ exports.User =
 ###
 exports.Roles = 
 
-  testStore: ( test ) ->
-    test.expect 2
+	testStore: ( test ) ->
+		test.expect 2
 
-    db.storeUser oUser
-    db.storeUserRole oUser.username, 'tester'
+		db.storeUser oUser
+		db.storeUserRole oUser.username, 'tester'
 
-    db.getUserRoles oUser.username, ( err, obj ) ->
-      test.ok 'tester' in obj,
-        'User role tester not stored!'
+		db.getUserRoles oUser.username, ( err, obj ) ->
+			test.ok 'tester' in obj,
+				'User role tester not stored!'
 
-      db.getRoleUsers 'tester', ( err, obj ) ->
-        test.ok oUser.username in obj,
-          "User #{ oUser.username } not stored in role tester!"
-        
-        test.done()
+			db.getRoleUsers 'tester', ( err, obj ) ->
+				test.ok oUser.username in obj,
+					"User #{ oUser.username } not stored in role tester!"
+				
+				test.done()
 
-  testDelete: ( test ) ->
-    test.expect 2
+	testDelete: ( test ) ->
+		test.expect 2
 
-    db.storeUser oUser
-    db.storeUserRole oUser.username, 'tester'
-    db.removeUserRole oUser.username, 'tester'
+		db.storeUser oUser
+		db.storeUserRole oUser.username, 'tester'
+		db.removeUserRole oUser.username, 'tester'
 
-    db.getUserRoles oUser.username, ( err, obj ) ->
-      test.ok 'tester' not in obj,
-        'User role tester not stored!'
+		db.getUserRoles oUser.username, ( err, obj ) ->
+			test.ok 'tester' not in obj,
+				'User role tester not stored!'
 
-      db.getRoleUsers 'tester', ( err, obj ) ->
-        test.ok oUser.username not in obj,
-          "User #{ oUser.username } not stored in role tester!"
-        
-        test.done()
-    # store an entry to start with 
+			db.getRoleUsers 'tester', ( err, obj ) ->
+				test.ok oUser.username not in obj,
+					"User #{ oUser.username } not stored in role tester!"
+				
+				test.done()
+		# store an entry to start with 

@@ -10,7 +10,7 @@ Engine
  */
 
 (function() {
-  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, pollQueue, processEvent, semaphore, updateActionModules, validConditions;
+  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, numExecutingFunctions, pollQueue, processEvent, updateActionModules, validConditions;
 
   db = require('./persistence');
 
@@ -23,21 +23,21 @@ Engine
   This is ging to have a structure like:
   An object of users with their active rules and the required action modules
   
-      "user-1":
-        "rule-1":
-          "rule": oRule-1
-          "actions":
-            "action-1": oAction-1
-            "action-2": oAction-2
-        "rule-2":
-          "rule": oRule-2
-          "actions":
-            "action-1": oAction-1
-      "user-2":
-        "rule-3":
-          "rule": oRule-3
-          "actions":
-            "action-3": oAction-3
+  		"user-1":
+  			"rule-1":
+  				"rule": oRule-1
+  				"actions":
+  					"action-1": oAction-1
+  					"action-2": oAction-2
+  			"rule-2":
+  				"rule": oRule-2
+  				"actions":
+  					"action-1": oAction-1
+  		"user-2":
+  			"rule-3":
+  				"rule": oRule-3
+  				"actions":
+  					"action-3": oAction-3
    */
 
   listUserRules = {};
@@ -126,87 +126,92 @@ Engine
   @param {Object} updatedRuleId
    */
 
-  updateActionModules = function(updatedRuleId) {
-    var fAddRequired, fRemoveNotRequired, name, oUser, userName, _results;
-    fRemoveNotRequired = function(oUser) {
-      var action, fRequired, _results;
-      fRequired = function(actionName) {
-        var action, _i, _len, _ref;
-        _ref = oUser[updatedRuleId].rule.actions;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          action = _ref[_i];
-          if ((action.split(' -> '))[0] === actionName) {
-            return true;
+  updateActionModules = (function(_this) {
+    return function(updatedRuleId) {
+      var fAddRequired, fRemoveNotRequired, name, oUser, userName, _results;
+      fRemoveNotRequired = function(oUser) {
+        var action, fRequired, _results;
+        fRequired = function(actionName) {
+          var action, _i, _len, _ref;
+          _ref = oUser[updatedRuleId].rule.actions;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            action = _ref[_i];
+            if ((action.split(' -> '))[0] === actionName) {
+              return true;
+            }
           }
-        }
-        return false;
-      };
-      _results = [];
-      for (action in oUser[updatedRuleId].rule.actions) {
-        if (!fRequired(action)) {
-          _results.push(delete oUser[updatedRuleId].actions[action]);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-    for (name in listUserRules) {
-      oUser = listUserRules[name];
-      fRemoveNotRequired(oUser);
-    }
-    fAddRequired = function(userName, oUser) {
-      var fCheckRules, nmRl, oRl, _results;
-      fCheckRules = function(oMyRule) {
-        var action, fAddIfNewOrNotExisting, _i, _len, _ref, _results;
-        fAddIfNewOrNotExisting = function(actionName) {
-          var moduleName;
-          moduleName = (actionName.split(' -> '))[0];
-          if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
-            return db.actionInvokers.getModule(moduleName, function(err, obj) {
-              return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
-                if (!result.answ === 200) {
-                  this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName);
-                }
-                return oMyRule.actions[moduleName] = result.module;
-              });
-            });
-          }
+          return false;
         };
-        _ref = oMyRule.rule.actions;
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          action = _ref[_i];
-          _results.push(fAddIfNewOrNotExisting(action));
+        for (action in oUser[updatedRuleId].rule.actions) {
+          if (!fRequired(action)) {
+            _results.push(delete oUser[updatedRuleId].actions[action]);
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+      for (name in listUserRules) {
+        oUser = listUserRules[name];
+        fRemoveNotRequired(oUser);
+      }
+      fAddRequired = function(userName, oUser) {
+        var fCheckRules, nmRl, oRl, _results;
+        fCheckRules = function(oMyRule) {
+          var action, fAddIfNewOrNotExisting, _i, _len, _ref, _results;
+          fAddIfNewOrNotExisting = function(actionName) {
+            var moduleName;
+            moduleName = (actionName.split(' -> '))[0];
+            if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
+              return db.actionInvokers.getModule(moduleName, function(err, obj) {
+                if (obj) {
+                  return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
+                    if (!result.answ === 200) {
+                      _this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName);
+                    }
+                    return oMyRule.actions[moduleName] = result.module;
+                  });
+                } else {
+                  return _this.log.warn('EN | #{ moduleName } not found for #{ oMyRule.rule.id }!');
+                }
+              });
+            }
+          };
+          _ref = oMyRule.rule.actions;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            action = _ref[_i];
+            _results.push(fAddIfNewOrNotExisting(action));
+          }
+          return _results;
+        };
+        _results = [];
+        for (nmRl in oUser) {
+          oRl = oUser[nmRl];
+          _results.push(fCheckRules(oRl));
         }
         return _results;
       };
       _results = [];
-      for (nmRl in oUser) {
-        oRl = oUser[nmRl];
-        _results.push(fCheckRules(oRl));
+      for (userName in listUserRules) {
+        oUser = listUserRules[userName];
+        _results.push(fAddRequired(userName, oUser));
       }
       return _results;
     };
-    _results = [];
-    for (userName in listUserRules) {
-      oUser = listUserRules[userName];
-      _results.push(fAddRequired(userName, oUser));
-    }
-    return _results;
-  };
+  })(this);
 
-  semaphore = 0;
+  numExecutingFunctions = 1;
 
   pollQueue = function() {
     if (isRunning) {
       db.popEvent(function(err, obj) {
         if (!err && obj) {
-          processEvent(obj);
+          return processEvent(obj);
         }
-        return semaphore--;
       });
-      return setTimeout(pollQueue, 20 * semaphore);
+      return setTimeout(pollQueue, 20 * numExecutingFunctions);
     }
   };
 
@@ -234,8 +239,6 @@ Engine
     return true;
   };
 
-  semaphore = 0;
-
 
   /*
   Handles retrieved events.
@@ -250,20 +253,22 @@ Engine
       fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
         var err;
         if (!node) {
-          this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ' + " at depth " + depth));
+          _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ' + " at depth " + depth));
           return;
         }
         if (depth === arrPath.length) {
           try {
-            semaphore++;
+            numExecutingFunctions++;
+            _this.log.info("EN | " + funcName + " executes...");
             node[funcName](evt.payload);
+            _this.log.info("EN | " + funcName + " finished execution");
           } catch (_error) {
             err = _error;
-            this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
+            _this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
             node.logger(err.message);
           }
-          if (semaphore-- % 100 === 0) {
-            return this.log.warn("EN | The system is producing too many tokens! Currently: " + semaphore);
+          if (numExecutingFunctions-- % 100 === 0) {
+            return _this.log.warn("EN | The system is producing too many tokens! Currently: " + numExecutingFunctions);
           }
         } else {
           return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);

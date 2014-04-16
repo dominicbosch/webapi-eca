@@ -1,3 +1,5 @@
+
+
 ### 
 ProBinder ACTION INVOKER
 ------------------------
@@ -6,8 +8,6 @@ Global variables
 This module requires user-specific parameters:
 - username
 - password
-- companyId: company where to post the binder entries
-- contextId: context where to post the binder entries
 ###
 urlService = 'https://probinder.com/service/'
 credentials =
@@ -44,50 +44,45 @@ callService = ( args ) ->
 		if not args.callback
 			args.callback = standardCallback 'call'
 		url = urlService + args.service + '/' + args.method
-		needlereq 'post', url, args.data, credentials, args.callback
+		needle.request 'post', url, args.data, credentials, args.callback
 
 
 ###
 Does everything to post something in a binder
 
-@param {Object} args the object containing the content
-@param {String} args.content the content to be posted
+@param {String} companyId the comany associated to the binder
+@param {String} contextId the binder id
+@param {String} content the content to be posted
 ###
-exports.newContent = ( args ) ->
-	if not args.callback
-		args.callback = standardCallback 'newContent'
+exports.newContent = ( companyId, contextId, content ) ->
+	if arguments[ 4 ]
+		callback = arguments[ 4 ]
+	else
+		callback = standardCallback 'newContent'
 	callService
 		service: '27'
 		method: 'save'
 		data:
-			companyId: params.companyId
-			context: params.contextId
-			text: args.content
-		callback: args.callback
+			companyId: companyId
+			context: contextId
+			text: content
+		callback: callback
 
 ###
-Does everything to post a file info in a binder tabe
+Does everything to post a file info in a binder tab
 
-@param {Object} args the object containing the content
-@param {String} args.service the content service
-@param {String} args.id the content id
+@param {String} fromService the content service which grabs the content
+@param {String} fromId the content id from which the information is grabbed
 ###
-exports.makeFileEntry = ( args ) ->
-	if not args.callback
-		args.callback = standardCallback 'makeFileEntry'
+exports.makeFileEntry = ( fromService, fromId, toCompany, toContext ) ->
 	getContent
-		serviceid: args.service
-		contentid: args.id
+		serviceid: fromService
+		contentid: fromId
 		callback: ( err, resp, body ) ->
-			callService
-				service: '27'
-				method: 'save'
-				data:
-					companyId: params.companyId
-					context: params.contextId
-					text: "New file (#{ body.title }) in tab \"#{ body.context[0].name }\",
-					find it <a href=\"https://probinder.com/file/#{ body.fileIds[0] }\">here</a>!'"
-				callback: args.callback
+			content = "New file (#{ body.title }) in tab \"#{ body.context[0].name }\",
+					find it here!'"
+			exports.newContent toCompanyId, toContextId, content, standardCallback 'makeFileEntry'
+
 
 ###
 Calls the content get service with the content id and the service id provided. 
@@ -112,15 +107,12 @@ getContent = ( args ) ->
 ###
 Sets the content as read.
 
-@param {Object} args the object containing the content
-@param {String} args.content the content to be posted
+@param {Object} id the content id to be set to read.
 ###
-exports.setRead = ( args ) ->
-	if not args.callback
-		args.callback = standardCallback 'setRead'
+exports.setRead = ( id ) ->
 	callService
 		service: '2'
 		method: 'setread'
 		data:
-			id: args.id
-		callback: args.callback
+			id: id
+		callback: standardCallback 'setRead'

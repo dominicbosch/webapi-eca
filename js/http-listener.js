@@ -10,7 +10,7 @@ HTTP Listener
  */
 
 (function() {
-  var app, exports, express, initRouting, path, qs, requestHandler;
+  var activateWebHook, app, exports, express, indexEvent, initRouting, path, qs, requestHandler;
 
   requestHandler = require('./request-handler');
 
@@ -34,10 +34,44 @@ HTTP Listener
   exports = module.exports = (function(_this) {
     return function(args) {
       _this.log = args.logger;
+      _this.arrWebhooks = args.webhooks;
       _this.shutDownSystem = args['shutdown-function'];
       requestHandler(args);
       initRouting(args['http-port']);
       return module.exports;
+    };
+  })(this);
+
+  indexEvent = function(event, body, resp) {
+    var err, obj, rand, timestamp;
+    try {
+      obj = JSON.parse(body);
+      timestamp = (new Date).toISOString();
+      rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+      obj.event = event;
+      obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;
+      db.pushEvent(obj);
+      return resp.send(200, "Thank you for the event: " + obj.eventid);
+    } catch (_error) {
+      err = _error;
+      return resp.send(400, 'Badly formed event!');
+    }
+  };
+
+  activateWebHook = (function(_this) {
+    return function(app, name) {
+      _this.log.info("HL | Webhook activated for " + name);
+      return app.post("/webhooks/" + name, function(req, resp) {
+        var body;
+        console.log('something is coming through');
+        body = '';
+        req.on('data', function(data) {
+          return body += data;
+        });
+        return req.on('end', function() {
+          return indexEvent(name, body, resp);
+        });
+      });
     };
   })(this);
 
@@ -51,7 +85,7 @@ HTTP Listener
 
   initRouting = (function(_this) {
     return function(port) {
-      var server, sess_sec;
+      var hookName, server, sess_sec, _i, _len, _ref;
       app.use(express.cookieParser());
       sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
       app.use(express.session({
@@ -66,6 +100,11 @@ HTTP Listener
       app.post('/logout', requestHandler.handleLogout);
       app.post('/usercommand', requestHandler.handleUserCommand);
       app.post('/admincommand', requestHandler.handleAdminCommand);
+      _ref = _this.arrWebhooks;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        hookName = _ref[_i];
+        activateWebHook(app, hookName);
+      }
       server = app.listen(parseInt(port) || 8111);
       server.on('listening', function() {
         var addr;
@@ -77,8 +116,8 @@ HTTP Listener
       return server.on('error', function(err) {
 
         /*
-        Error handling of the express port listener requires special attention,
-        thus we have to catch the error, which is issued if the port is already in use.
+        		Error handling of the express port listener requires special attention,
+        		thus we have to catch the error, which is issued if the port is already in use.
          */
         switch (err.errno) {
           case 'EADDRINUSE':

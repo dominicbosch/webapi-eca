@@ -8,7 +8,7 @@ Configuration
  */
 
 (function() {
-  var exports, fetchProp, fs, loadConfigFile, path;
+  var exports, fs, loadConfigFile, path;
 
   fs = require('fs');
 
@@ -85,7 +85,7 @@ Configuration
   @param {String} prop
    */
 
-  fetchProp = (function(_this) {
+  exports.fetchProp = (function(_this) {
     return function(prop) {
       var _ref;
       return (_ref = _this.config) != null ? _ref[prop] : void 0;
@@ -113,7 +113,7 @@ Configuration
    */
 
   exports.getHttpPort = function() {
-    return fetchProp('http-port');
+    return exports.fetchProp('http-port');
   };
 
 
@@ -124,7 +124,7 @@ Configuration
    */
 
   exports.getDbPort = function() {
-    return fetchProp('db-port');
+    return exports.fetchProp('db-port');
   };
 
 
@@ -135,7 +135,7 @@ Configuration
    */
 
   exports.getLogConf = function() {
-    return fetchProp('log');
+    return exports.fetchProp('log');
   };
 
 
@@ -146,7 +146,7 @@ Configuration
    */
 
   exports.getKeygenPassphrase = function() {
-    return fetchProp('keygen-passphrase');
+    return exports.fetchProp('keygen-passphrase');
   };
 
 }).call(this);

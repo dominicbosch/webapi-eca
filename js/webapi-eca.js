@@ -146,6 +146,7 @@ WebAPI-ECA Engine
       args['http-port'] = parseInt(argv.w || conf.getHttpPort());
       args['db-port'] = parseInt(argv.d || conf.getDbPort());
       args['keygen'] = conf.getKeygenPassphrase();
+      args['webhooks'] = conf.fetchProp('webhooks');
       _this.log.info('RS | Initialzing DB');
       db(args);
       return db.isConnected(function(err) {

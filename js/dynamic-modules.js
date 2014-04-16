@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cryptoJS, cs, db, exports, getFunctionParamNames, logFunction, needle, regexpComments, request, vm;
+  var cryptico, cryptoJS, cs, db, exports, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -24,6 +24,8 @@ Dynamic Modules
   cryptico = require('my-cryptico');
 
   cryptoJS = require('crypto-js');
+
+  importio = require('import-io').client;
 
 
   /*
@@ -89,98 +91,113 @@ Dynamic Modules
 
   exports.compileString = (function(_this) {
     return function(src, userId, ruleId, modId, lang, dbMod, cb) {
-      var answ, err, fTryToLoad;
-      answ = {
-        code: 200,
-        message: 'Successfully compiled'
-      };
+      var err;
       if (lang === 'CoffeeScript') {
         try {
+          _this.log.info("DM | Compiling module '" + modId + "' for user '" + userId + "'");
           src = cs.compile(src);
         } catch (_error) {
           err = _error;
-          answ.code = 400;
-          answ.message = 'Compilation of CoffeeScript failed at line ' + err.location.first_line;
+          cb({
+            code: 400,
+            message: 'Compilation of CoffeeScript failed at line ' + err.location.first_line
+          });
+          return;
         }
       }
-      fTryToLoad = function(params) {
-        var fName, func, logFunc, msg, oDecrypted, oFuncArgs, oFuncParams, sandbox, _ref;
-        if (params) {
+      _this.log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
+      if (dbMod) {
+        return dbMod.getUserParams(modId, userId, function(err, obj) {
+          var oDecrypted;
           try {
-            oDecrypted = cryptico.decrypt(params, _this.oPrivateRSAkey);
-            params = JSON.parse(oDecrypted.plaintext);
+            oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
+            obj = JSON.parse(oDecrypted.plaintext);
+            _this.log.warn("DM | Loaded user defined params for " + userId + ", " + ruleId + ", " + modId);
           } catch (_error) {
             err = _error;
             _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
             _this.log.warn(err);
-            params = {};
           }
-        } else {
-          params = {};
-        }
-        logFunc = logFunction(userId, ruleId, modId);
-        sandbox = {
-          id: userId + '.' + modId + '.vm',
-          params: params,
-          needle: needle,
-          request: request,
-          cryptoJS: cryptoJS,
-          log: logFunc,
-          debug: console.log,
-          exports: {}
-        };
-        try {
-          vm.runInNewContext(src, sandbox, sandbox.id);
-        } catch (_error) {
-          err = _error;
-          answ.code = 400;
-          msg = err.message;
-          if (!msg) {
-            msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number';
-          }
-          answ.message = 'Loading Module failed: ' + msg;
-        }
-        oFuncParams = {};
-        _ref = sandbox.exports;
-        for (fName in _ref) {
-          func = _ref[fName];
-          getFunctionParamNames(fName, func, oFuncParams);
-        }
-        if (dbMod) {
-          oFuncArgs = {};
-          console.log('oFuncParams');
-          console.log(oFuncParams);
-          for (func in oFuncParams) {
-            console.log('fetching ' + func);
-            console.log(typeof func);
-            dbMod.getUserArguments(modId, func, userId, function(err, obj) {
-              console.log(err, obj);
-              try {
-                oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
-                return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
-              } catch (_error) {
-                err = _error;
-                _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
-                return _this.log.warn(err);
-              }
-            });
-          }
-        }
-        return cb({
-          answ: answ,
-          module: sandbox.exports,
-          funcParams: oFuncParams,
-          funcArgs: oFuncArgs,
-          logger: sandbox.log
-        });
-      };
-      if (dbMod) {
-        return dbMod.getUserParams(modId, userId, function(err, obj) {
-          return fTryToLoad(obj);
+          return fTryToLoadModule(userId, ruleId, modId, src, dbMod, obj, cb);
         });
       } else {
-        return fTryToLoad(null);
+        return fTryToLoadModule(userId, ruleId, modId, src, dbMod, null, cb);
       }
+    };
+  })(this);
+
+  fTryToLoadModule = (function(_this) {
+    return function(userId, ruleId, modId, src, dbMod, params, cb) {
+      var answ, err, fName, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
+      if (!params) {
+        params = {};
+        answ = {
+          code: 200,
+          message: 'Successfully compiled'
+        };
+      }
+      _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
+      logFunc = logFunction(userId, ruleId, modId);
+      sandbox = {
+        id: "" + userId + "." + ruleId + "." + modId + ".vm",
+        params: params,
+        needle: needle,
+        importio: importio,
+        request: request,
+        cryptoJS: cryptoJS,
+        log: logFunc,
+        debug: console.log,
+        exports: {}
+      };
+      try {
+        vm.runInNewContext(src, sandbox, sandbox.id);
+      } catch (_error) {
+        err = _error;
+        answ.code = 400;
+        msg = err.message;
+        if (!msg) {
+          msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number';
+        }
+        answ.message = 'Loading Module failed: ' + msg;
+      }
+      _this.log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + ruleId + "'");
+      oFuncParams = {};
+      oFuncArgs = {};
+      _ref = sandbox.exports;
+      for (fName in _ref) {
+        func = _ref[fName];
+        getFunctionParamNames(fName, func, oFuncParams);
+      }
+      if (dbMod) {
+        oFuncArgs = {};
+        console.log('oFuncParams');
+        console.log(oFuncParams);
+        for (func in oFuncParams) {
+          console.log('fetching ' + func);
+          console.log(typeof func);
+          dbMod.getUserArguments(modId, func, userId, function(err, obj) {
+            var oDecrypted;
+            console.log(err, obj);
+            try {
+              oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
+              return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+            } catch (_error) {
+              err = _error;
+              _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+              return _this.log.warn(err);
+            }
+          });
+        }
+      }
+      console.log('answering compile request string');
+      console.log(cb);
+      return cb({
+        answ: answ,
+        module: sandbox.exports,
+        funcParams: oFuncParams,
+        funcArgs: oFuncArgs,
+        logger: sandbox.log
+      });
     };
   })(this);
 
