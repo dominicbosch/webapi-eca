@@ -64,7 +64,6 @@ exports.ruleEvents =
 		db.activateRule oRuleOne.id, oUser.username
 		db.actionInvokers.storeModule oUser.username, oAiOne
 		db.actionInvokers.storeModule oUser.username, oAiTwo
-
 		test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
 
 		engine.internalEvent
@@ -142,36 +141,3 @@ exports.ruleEvents =
 
 #       setTimeout fCheckRules, 500
 
-exports.engine =
-	testMatchingEvent: ( test ) ->
-		test.expect 1
-		db.storeUser oUser
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-		db.linkRule oRuleOne.id, oUser.username
-		db.activateRule oRuleOne.id, oUser.username
-		db.actionInvokers.storeModule oUser.username, oAiOne
-
-		engine.internalEvent
-			event: 'new'
-			user: oUser.username
-			rule: oRuleOne
-
-		fWaitForPersistence = () ->
-			evt = objects.events.eventReal
-			evt.eventid = 'event_testid'
-			db.pushEvent evt
-
-			fWaitAgain = () ->
-				db.getLog oUser.username, oRuleOne.id, ( err, data ) ->
-					try
-
-						logged = data.split( '] ' )[1]
-						logged = logged.split( "\n" )[0]
-						test.strictEqual logged, "{#{ oAiOne.id }} " + evt.payload.property, 'Did not log the right thing'
-					catch e
-						test.ok false, 'Parsing log failed'
-					test.done()
-
-			setTimeout fWaitAgain, 200
-
-		setTimeout fWaitForPersistence, 200

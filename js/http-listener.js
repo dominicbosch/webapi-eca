@@ -63,7 +63,6 @@ HTTP Listener
       _this.log.info("HL | Webhook activated for " + name);
       return app.post("/webhooks/" + name, function(req, resp) {
         var body;
-        console.log('something is coming through');
         body = '';
         req.on('data', function(data) {
           return body += data;

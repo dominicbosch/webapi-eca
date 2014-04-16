@@ -36,10 +36,14 @@ oUser = objects.users.userOne
 oRule = objects.rules.ruleThree
 oAi = objects.ais.aiThree
 
+exports.setUp = ( cb ) ->
+	engine.startEngine()
+	cb()
+
 exports.tearDown = ( cb ) ->
-	db.storeUser oUser
 	db.deleteRule oRule.id
 	db.actionInvokers.deleteModule oAi.id
+	engine.shutDown()
 	setTimeout cb, 200
 
 exports.testCompile = ( test ) ->

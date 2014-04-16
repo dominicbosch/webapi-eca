@@ -427,7 +427,6 @@ Persistence
     };
 
     IndexedModules.prototype.getUserArguments = function(mId, funcId, userId, cb) {
-      console.log('calling ffunct');
       this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + mId + ", " + funcId + ", " + userId + " )");
       return this.db.get("" + this.setname + ":" + mId + ":" + userId + ":function:" + funcId, cb);
     };

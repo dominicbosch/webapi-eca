@@ -57,7 +57,6 @@ indexEvent = ( event, body, resp ) ->
 activateWebHook = ( app, name ) =>
 	@log.info "HL | Webhook activated for #{ name }"
 	app.post "/webhooks/#{ name }", ( req, resp ) ->
-		console.log 'something is coming through'
 		body = ''
 		req.on 'data', ( data ) ->
 			body += data

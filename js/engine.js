@@ -167,13 +167,15 @@ Engine
               return db.actionInvokers.getModule(moduleName, function(err, obj) {
                 if (obj) {
                   return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
-                    if (!result.answ === 200) {
-                      _this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName);
+                    if (result.answ.code === 200) {
+                      _this.log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
+                    } else {
+                      _this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
                     }
                     return oMyRule.actions[moduleName] = result.module;
                   });
                 } else {
-                  return _this.log.warn('EN | #{ moduleName } not found for #{ oMyRule.rule.id }!');
+                  return _this.log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
                 }
               });
             }
@@ -253,7 +255,7 @@ Engine
       fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
         var err;
         if (!node) {
-          _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ' + " at depth " + depth));
+          _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
           return;
         }
         if (depth === arrPath.length) {
@@ -308,7 +310,8 @@ Engine
   })(this);
 
   exports.shutDown = function() {
-    return isRunning = false;
+    isRunning = false;
+    return listUserRules = {};
   };
 
 }).call(this);

@@ -174,7 +174,6 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
 			else
 				src = oPayload.data
 				dynmod.compileString src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, ( cm ) =>
-					console.log cm
 					answ = cm.answ
 					if answ.code is 200
 						funcs = []

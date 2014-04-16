@@ -80,8 +80,6 @@ Request Handler
       var answ, err, obj, rand, timestamp;
       try {
         obj = JSON.parse(body);
-        console.log('got foreign event!');
-        console.log(obj);
       } catch (_error) {
         err = _error;
         resp.send(400, 'Badly formed event!');

@@ -336,7 +336,6 @@ class IndexedModules
 			replyHandler "set user params in '#{ @setname }:#{ mId }:#{ userId }:function:#{ func }'"
 
 	getUserArguments: ( mId, funcId, userId, cb ) =>
-		console.log 'calling ffunct'
 		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ mId }, #{ funcId }, #{ userId } )"
 		@db.get "#{ @setname }:#{ mId }:#{ userId }:function:#{ funcId }", cb
 

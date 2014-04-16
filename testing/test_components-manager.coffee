@@ -18,10 +18,11 @@ catch err
 	console.log 'Error fetching standard objects file: ' + err.message
 
 logger = require path.join '..', 'js', 'logging'
-log = logger.getLogger()
-	# nolog: true
+log = logger.getLogger
+	nolog: true
 opts =
 	logger: log
+	keygen: passPhrase
 
 engine = require path.join '..', 'js', 'engine'
 engine opts
@@ -38,15 +39,30 @@ oUser = objects.users.userOne
 oRuleOne = objects.rules.ruleOne
 oRuleTwo = objects.rules.ruleTwo
 oRuleThree = objects.rules.ruleThree
+oEventOne = objects.events.eventOne
 oEpOne = objects.eps.epOne
 oEpTwo = objects.eps.epTwo
+oAiOne = objects.ais.aiOne
 oAiTwo = objects.ais.aiTwo
 oAiThree = objects.ais.aiThree
 
+exports.setUp = ( cb ) ->
+	engine.startEngine()
+	cb()
+
 exports.tearDown = ( cb ) ->
+	engine.shutDown()
+	db.deleteUser oUser.username
 	db.deleteRule oRuleOne.id
 	db.deleteRule oRuleTwo.id
 	db.deleteRule oRuleThree.id
+	db.eventPollers.deleteModule oEpOne.id
+	db.eventPollers.deleteModule oEpTwo.id
+	db.actionInvokers.deleteModule oAiOne.id
+	db.actionInvokers.deleteModule oAiTwo.id
+	db.actionInvokers.deleteModule oAiThree.id
+	db.actionInvokers.deleteUserParams oAiThree.id, oUser.username
+
 	setTimeout cb, 100
 
 exports.requestProcessing =
@@ -119,12 +135,6 @@ exports.testListener = ( test ) =>
 	setTimeout fWaitForInit, 200
 
 exports.moduleHandling =
-	tearDown: ( cb ) ->
-		db.eventPollers.deleteModule oEpOne.id
-		db.eventPollers.deleteModule oEpTwo.id
-		db.actionInvokers.deleteModule oAiTwo.id
-		setTimeout cb, 100
-
 	testGetModules: ( test ) ->
 		test.expect 2
 
@@ -178,45 +188,87 @@ exports.moduleHandling =
 				test.done()
 
 
-exports.testForgeRule = ( test ) ->
-	test.expect 1
+exports.ruleForge =
+	testUserParams: ( test ) ->
+		test.expect 3
 
-	db.storeUser oUser
-	db.actionInvokers.storeModule oUser.username, oAiThree
+		db.storeUser oUser
+		db.actionInvokers.storeModule oUser.username, oAiThree
 
-	pw = 'This password should come out cleartext'
-	userparams = JSON.stringify password: pw
-	oEncrypted = cryptico.encrypt userparams, strPublicKey
+		pw = 'This password should come out cleartext'
+		userparams = JSON.stringify password: pw
+		oEncrypted = cryptico.encrypt userparams, strPublicKey
 
-	db.actionInvokers.storeUserParams oAiThree.id, oUser.username, oEncrypted.cipher
+		db.actionInvokers.storeUserParams oAiThree.id, oUser.username, oEncrypted.cipher
 
-	request =
-		command: 'forge_rule'
-		payload: JSON.stringify oRuleThree
+		request =
+			command: 'forge_rule'
+			payload: JSON.stringify oRuleThree
 
-	cm.processRequest oUser, request, ( answ ) =>
-		test.strictEqual 200, answ.code, "Forging Rule returned #{ answ.code }: #{ answ.message }"
+		cm.processRequest oUser, request, ( answ ) =>
+			test.strictEqual 200, answ.code, "Forging Rule returned #{ answ.code }: #{ answ.message }"
 
-	fWaitForPersistence = () ->
-		evt = objects.events.eventReal
-		evt.eventid = 'event_testid'
-		db.pushEvent evt
-		console.log 'pushed'
+		fWaitForPersistence = () ->
+			evt = objects.events.eventReal
+			evt.eventid = 'event_testid'
+			db.pushEvent evt
 
-		fWaitAgain = () ->
-			console.log 'waited'
-			db.getLog oUser.username, oRuleThree.id, ( err, data ) ->
-				console.log data
-				try
-					logged = data.split( '] ' )[1]
-					logged = logged.split( "\n" )[0]
-					test.strictEqual logged, "{#{ oAiThree.id }} " + pw, 'Did not log the right thing'
-				catch e
-					test.ok false, 'Parsing log failed'
+			fWaitAgain = () ->
+				db.getLog oUser.username, oRuleThree.id, ( err, data ) ->
+					try
+						arrRows = data.split "\n"
+						logged = arrRows[ 1 ].split( '] ' )[1]
+						test.strictEqual logged, "{#{ oAiThree.id }} " + pw, 'Did not log the right thing'
+					catch e
+						test.ok false, 'Parsing log failed'
 
-				setTimeout test.done, 200
+					request =
+						command: 'delete_rule'
+						payload: JSON.stringify id: oRuleThree.id
 
-		setTimeout fWaitAgain, 200
+					cm.processRequest oUser, request, ( answ ) =>
+						test.strictEqual 200, answ.code, "Deleting Rule returned #{ answ.code }: #{ answ.message }"
+						setTimeout test.done, 200
 
-	setTimeout fWaitForPersistence, 200
+			setTimeout fWaitAgain, 200
 
+		setTimeout fWaitForPersistence, 200
+
+
+	testEvent: ( test ) ->
+		test.expect 3
+
+		db.storeUser oUser
+		db.actionInvokers.storeModule oUser.username, oAiOne
+
+		request =
+			command: 'forge_rule'
+			payload: JSON.stringify oRuleOne
+
+		cm.processRequest oUser, request, ( answ ) =>
+			test.strictEqual 200, answ.code, "Forging Rule returned #{ answ.code }: #{ answ.message }"
+
+		fWaitForPersistence = () ->
+			db.pushEvent oEventOne
+
+			fWaitAgain = () ->
+				db.getLog oUser.username, oRuleOne.id, ( err, data ) ->
+					try
+						arrRows = data.split "\n"
+						logged = arrRows[ 1 ].split( '] ' )[1]
+						test.strictEqual logged, "{#{ oAiOne.id }} " + oEventOne.payload.property,
+							'Did not log the right thing'
+					catch e
+						test.ok false, 'Parsing log failed'
+
+					request =
+						command: 'delete_rule'
+						payload: JSON.stringify id: oRuleOne.id
+
+					cm.processRequest oUser, request, ( answ ) =>
+						test.strictEqual 200, answ.code, "Deleting Rule returned #{ answ.code }: #{ answ.message }"
+						setTimeout test.done, 200
+
+			setTimeout fWaitAgain, 200
+
+		setTimeout fWaitForPersistence, 200

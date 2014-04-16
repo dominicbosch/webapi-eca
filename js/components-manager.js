@@ -239,7 +239,6 @@ Components Manager
             src = oPayload.data;
             return dynmod.compileString(src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, function(cm) {
               var funcs, id, name, _ref;
-              console.log(cm);
               answ = cm.answ;
               if (answ.code === 200) {
                 funcs = [];

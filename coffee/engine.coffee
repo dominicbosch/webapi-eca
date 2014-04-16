@@ -154,12 +154,15 @@ updateActionModules = ( updatedRuleId ) =>
 								obj.lang,                           # script language
 								db.actionInvokers,                   # the DB interface
 								( result ) =>
-									if not result.answ is 200
+									if result.answ.code is 200
+										@log.info "EN | Module '#{ moduleName }' successfully loaded for userName
+											'#{ userName }' in rule '#{ oMyRule.rule.id }'"
+									else
 										@log.error "EN | Compilation of code failed! #{ userName },
-											#{ oMyRule.rule.id }, #{ moduleName }"
+											#{ oMyRule.rule.id }, #{ moduleName }: #{ result.answ.message }"
 									oMyRule.actions[moduleName] = result.module
 						else
-							@log.warn 'EN | #{ moduleName } not found for #{ oMyRule.rule.id }!'
+							@log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
 
 			fAddIfNewOrNotExisting action for action in oMyRule.rule.actions
 
@@ -200,7 +203,7 @@ Handles retrieved events.
 processEvent = ( evt ) =>
 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
 		if not node
-			@log.error "EN | Didn't find property in user rule list: " + arrPath.join ', ' + " at depth " + depth
+			@log.error "EN | Didn't find property in user rule list: " + arrPath.join( ', ' ) + " at depth " + depth
 			return
 		if depth is arrPath.length
 			try
@@ -227,3 +230,5 @@ processEvent = ( evt ) =>
 
 exports.shutDown = () ->
 	isRunning = false
+	listUserRules = {}
+	

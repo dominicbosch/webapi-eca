@@ -73,8 +73,6 @@ exports.handleEvent = ( req, resp ) ->
 		#if req.session and req.session.user
 		try
 			obj = JSON.parse body
-			console.log 'got foreign event!'
-			console.log obj
 		catch err
 			resp.send 400, 'Badly formed event!'
 		# If required event properties are present we process the event #

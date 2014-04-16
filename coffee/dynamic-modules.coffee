@@ -82,9 +82,10 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
 			src = cs.compile src
 		catch err
 			cb
-				code: 400
-				message: 'Compilation of CoffeeScript failed at line ' +
-					err.location.first_line
+				answ:
+					code: 400
+					message: 'Compilation of CoffeeScript failed at line ' +
+						err.location.first_line
 			return
 
 	@log.info "DM | Trying to fetch user specific module '#{ modId }' paramters for user '#{ userId }'"
@@ -94,7 +95,7 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
 			try
 				oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
 				obj = JSON.parse oDecrypted.plaintext
-				@log.warn "DM | Loaded user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+				@log.info "DM | Loaded user defined params for #{ userId }, #{ ruleId }, #{ modId }"
 			catch err
 				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
 				@log.warn err
@@ -107,7 +108,7 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 	if not params
 		params = {}
 
-		answ =
+	answ =
 		code: 200
 		message: 'Successfully compiled'
 
@@ -150,24 +151,16 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 
 	if dbMod
 		oFuncArgs = {}
-		console.log 'oFuncParams'
-		console.log oFuncParams
 
 		for func of oFuncParams
-			console.log 'fetching ' + func
-			console.log  typeof func
 			dbMod.getUserArguments modId, func, userId, ( err, obj ) =>
-				console.log err, obj
-				try
-					oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
-					oFuncArgs[ func ] = JSON.parse oDecrypted.plaintext
-				catch err
-					@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
-					@log.warn err
-	
-	console.log 'answering compile request string'
-	console.log cb
-
+				if obj
+					try
+						oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
+						oFuncArgs[ func ] = JSON.parse oDecrypted.plaintext
+					catch err
+						@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+						@log.warn err
 	cb
 		answ: answ
 		module: sandbox.exports

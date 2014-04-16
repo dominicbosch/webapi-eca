@@ -41,11 +41,11 @@
     "aiThree": {
       "id":"aiThree",
       "lang":"CoffeeScript",
-      "data":"exports.printUserParamToLog = ( evt ) ->\n\tdebug 'wow'n\tlog 'wow'\n\tlog params.password",
+      "data":"exports.printUserParamToLog = () ->\n\tlog params.password",
       "public":"false",
       "params":"[\"password\"]",
       "functions":"[\"printUserParamToLog\"]",
-      "functionArgs":"{\"printUserParamToLog\":[\"evt\"]}"
+      "functionArgs":"{\"printUserParamToLog\":[]}"
     }
   },
   "userparams": {

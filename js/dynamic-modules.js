@@ -99,8 +99,10 @@ Dynamic Modules
         } catch (_error) {
           err = _error;
           cb({
-            code: 400,
-            message: 'Compilation of CoffeeScript failed at line ' + err.location.first_line
+            answ: {
+              code: 400,
+              message: 'Compilation of CoffeeScript failed at line ' + err.location.first_line
+            }
           });
           return;
         }
@@ -112,7 +114,7 @@ Dynamic Modules
           try {
             oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
             obj = JSON.parse(oDecrypted.plaintext);
-            _this.log.warn("DM | Loaded user defined params for " + userId + ", " + ruleId + ", " + modId);
+            _this.log.info("DM | Loaded user defined params for " + userId + ", " + ruleId + ", " + modId);
           } catch (_error) {
             err = _error;
             _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
@@ -131,11 +133,11 @@ Dynamic Modules
       var answ, err, fName, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
       if (!params) {
         params = {};
-        answ = {
-          code: 200,
-          message: 'Successfully compiled'
-        };
       }
+      answ = {
+        code: 200,
+        message: 'Successfully compiled'
+      };
       _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
       logFunc = logFunction(userId, ruleId, modId);
       sandbox = {
@@ -170,27 +172,22 @@ Dynamic Modules
       }
       if (dbMod) {
         oFuncArgs = {};
-        console.log('oFuncParams');
-        console.log(oFuncParams);
         for (func in oFuncParams) {
-          console.log('fetching ' + func);
-          console.log(typeof func);
           dbMod.getUserArguments(modId, func, userId, function(err, obj) {
             var oDecrypted;
-            console.log(err, obj);
-            try {
-              oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
-              return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
-            } catch (_error) {
-              err = _error;
-              _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
-              return _this.log.warn(err);
+            if (obj) {
+              try {
+                oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
+                return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+              } catch (_error) {
+                err = _error;
+                _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+                return _this.log.warn(err);
+              }
             }
           });
         }
       }
-      console.log('answering compile request string');
-      console.log(cb);
       return cb({
         answ: answ,
         module: sandbox.exports,
