@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var db, dynmod, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger;
+  var db, dynmod, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger, pollLoop;
 
   logger = require('./logging');
 
@@ -57,6 +57,7 @@ Dynamic Modules
   });
 
   process.on('message', function(msg) {
+    log.info("EP | Got info about new rule: " + msg.event);
     if (msg.event === 'new' || msg.event === 'init') {
       fLoadModule(msg);
     }
@@ -84,15 +85,15 @@ Dynamic Modules
             if (!listUserModules[msg.user]) {
               listUserModules[msg.user] = {};
             }
-            iv = msg.rule.interval * 60 * 1000;
+            iv = msg.rule.event_interval * 60 * 1000;
             listUserModules[msg.user][msg.rule.id] = {
               id: msg.rule.event,
               pollfunc: arrName[1],
-              interval: iv,
+              event_interval: iv,
               module: result.module,
               logger: result.logger
             };
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", polling every " + iv + " minutes");
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", polling every " + msg.rule.event_interval + " minutes");
             return setTimeout(fCheckAndRun(msg.user, msg.rule.id), iv);
           });
         }
@@ -106,10 +107,11 @@ Dynamic Modules
   fCheckAndRun = function(userId, ruleId) {
     return function() {
       var oRule;
+      log.info("EP | Check and run user " + userId + ", rule " + ruleId);
       if (isRunning && listUserModules[userId] && listUserModules[userId][ruleId]) {
         oRule = listUserModules[userId][ruleId];
         fCallFunction(userId, ruleId, oRule);
-        return setTimeout(fCheckAndRun(userId, ruleId), oRule.interval);
+        return setTimeout(fCheckAndRun(userId, ruleId), oRule.event_interval);
       }
     };
   };
@@ -130,5 +132,20 @@ Dynamic Modules
       return oRule.logger(err.message);
     }
   };
+
+
+  /*
+  This function will loop infinitely every 10 seconds until isRunning is set to false
+  
+  @private pollLoop()
+   */
+
+  pollLoop = function() {
+    if (isRunning) {
+      return setTimeout(pollLoop, 10000);
+    }
+  };
+
+  pollLoop();
 
 }).call(this);

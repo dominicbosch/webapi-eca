@@ -29,11 +29,12 @@ oRuleTwo = objects.rules.ruleTwo
 
 exports.tearDown = ( cb ) ->
 	db.deleteUser oUser.username
+	db.deleteRole 'tester'
 	setTimeout cb, 100
 
-# ###
-# # Test AVAILABILITY
-# ###
+###
+# Test AVAILABILITY
+###
 exports.Availability =
 	testRequire: ( test ) ->
 		test.expect 1
@@ -607,6 +608,7 @@ exports.User =
 						db.getUserActivatedRules oUser.username, ( err, obj ) ->
 							test.ok obj.length is 0,
 								'User still associated to activated rules!'
+							db.deleteRole 'tester'
 							test.done()
 
 		# Store the user and make some links
@@ -616,6 +618,7 @@ exports.User =
 		db.linkRule 'rule-3', oUser.username
 		db.activateRule 'rule-1', oUser.username
 		db.storeUserRole oUser.username, 'tester'
+		# Verify role is deleted
 		
 		setTimeout fWaitForPersistence, 100
 
@@ -644,7 +647,6 @@ exports.User =
 # Test ROLES
 ###
 exports.Roles = 
-
 	testStore: ( test ) ->
 		test.expect 2
 

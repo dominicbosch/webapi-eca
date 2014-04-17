@@ -3,7 +3,7 @@
   var fOnLoad;
 
   fOnLoad = function() {
-    var editor, fChangeInputVisibility;
+    var arrKV, arrParams, editor, fChangeInputVisibility, id, param, _i, _len;
     document.title = 'Forge Action Invoker';
     $('#pagetitle').text("{{{user.username}}}, forge your custom action invoker!");
     editor = ace.edit("editor");
@@ -58,7 +58,7 @@
       }
     });
     fChangeInputVisibility();
-    return $('#but_submit').click(function() {
+    $('#but_submit').click(function() {
       var listParams, obj;
       if ($('#input_id').val() === '') {
         return alert('Please enter an action invoker name!');
@@ -111,6 +111,18 @@
         });
       }
     });
+    arrParams = window.location.search.substring(1).split('&');
+    id = '';
+    for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+      param = arrParams[_i];
+      arrKV = param.split('=');
+      if (arrKV[0] === 'id') {
+        id = decodeURIComponent(arrKV[1]);
+      }
+    }
+    if (id !== '') {
+      return console.log(id);
+    }
   };
 
   window.addEventListener('load', fOnLoad, true);

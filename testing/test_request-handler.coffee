@@ -71,6 +71,7 @@ exports.session =
 
 	tearDown: ( cb ) =>
 		db.deleteUser @oUsr.username
+		db.purgeEventQueue()
 		cb()
 
 	testLoginAndOut: ( test ) =>
@@ -173,34 +174,34 @@ exports.events =
 		setTimeout fPopEvent, 200 # try to fetch the db entry
 
 exports.testLoginOrPage = ( test ) ->
-		test.expect 3
+	test.expect 3
 
-		req = createRequest()
+	req = createRequest()
+	req.query =
+		page: 'forge_event'
+	resp = createResponse ( code, msg ) ->
+		 
+		# Ensure we have to login first
+		test.ok msg.indexOf( 'document.title = \'Login\'' ) > 0, 'Didn\'t get login page?'
+		req = createLoggedInRequest()
 		req.query =
 			page: 'forge_event'
 		resp = createResponse ( code, msg ) ->
-			 
-			# Ensure we have to login first
-			test.ok msg.indexOf( 'document.title = \'Login\'' ) > 0, 'Didn\'t get login page?'
+
+			# After being logged in we should get the expected page
+			test.ok msg.indexOf( 'document.title = \'Event Forge!\'' ) > 0, 'Didn\' get forge page?'
 			req = createLoggedInRequest()
 			req.query =
-				page: 'forge_event'
+				page: 'wrongpage'
 			resp = createResponse ( code, msg ) ->
 
-				# After being logged in we should get the expected page
-				test.ok msg.indexOf( 'document.title = \'Event Forge!\'' ) > 0, 'Didn\' get forge page?'
-				req = createLoggedInRequest()
-				req.query =
-					page: 'wrongpage'
-				resp = createResponse ( code, msg ) ->
+				# A wrong page request should give back an error page
+				test.ok msg.indexOf( 'document.title = \'Error!\'' ) > 0, 'Didn\' get forge page?'
+				test.done()
 
-					# A wrong page request should give back an error page
-					test.ok msg.indexOf( 'document.title = \'Error!\'' ) > 0, 'Didn\' get forge page?'
-					test.done()
-
-				rh.handleForge req, resp # set the handler to listening
 			rh.handleForge req, resp # set the handler to listening
 		rh.handleForge req, resp # set the handler to listening
+	rh.handleForge req, resp # set the handler to listening
 
 
 exports.testUserCommandsNoLogin = ( test ) ->

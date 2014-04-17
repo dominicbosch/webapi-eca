@@ -37,5 +37,5 @@ exports.sendMail = ( sender, receipient, subject, content ) ->
 		ToAddress: receipient
 		Subject: subject
 		TextBody: content
-	needlereq 'post', url, data, json: true, standardCallback 'sendMail'
+	needle.request 'post', url, data, json: true, standardCallback 'sendMail'
 

@@ -411,7 +411,7 @@ Components Manager
             for (id in oParams) {
               params = oParams[id];
               arr = id.split(' -> ');
-              db.actionInvokers.storeUserArguments(arr[0], arr[1], user.username, JSON.stringify(params));
+              db.actionInvokers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(params));
             }
             db.resetLog(user.username, rule.id);
             db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized");

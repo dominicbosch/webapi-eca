@@ -272,3 +272,5 @@ exports.ruleForge =
 			setTimeout fWaitAgain, 200
 
 		setTimeout fWaitForPersistence, 200
+
+# TODO we have to implement a lot of extensive testing for the component manager since it is a core feature

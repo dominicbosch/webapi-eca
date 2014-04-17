@@ -3,48 +3,34 @@
   var fOnLoad;
 
   fOnLoad = function() {
-    var editor, fErrHandler, fFetchModules, fUpdateModuleList, moduleType;
+    var fErrHandler, fFetchModules, fUpdateModuleList;
     document.title = 'Edit Modules';
     $('#pagetitle').text("{{{user.username}}}, edit your Modules!");
-    moduleType = $('#module_type').val();
     $('#module_type').change(function() {
-      moduleType = $(this).val();
-      console.log(moduleType);
       return fFetchModules();
     });
-    editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.setReadOnly(true);
-    editor.setShowPrintMargin(false);
     fErrHandler = function(errMsg) {
       return function(err) {
-        var fDelayed;
+        var msg, oErr;
         if (err.status === 401) {
           return window.location.href = 'forge?page=edit_modules';
         } else {
-          $('#moduleName').html("<h2>&nbsp;</h2>");
-          $('#moduleLanguage').html("<b>&nbsp;</b>");
-          editor.setValue("");
-          fDelayed = function() {
-            var msg, oErr;
-            if (err.responseText === '') {
-              msg = 'No Response from Server!';
-            } else {
-              try {
-                oErr = JSON.parse(err.responseText);
-                msg = oErr.message;
-              } catch (_error) {}
-            }
-            $('#info').text(errMsg + msg);
-            return $('#info').attr('class', 'error');
-          };
-          return setTimeout(fDelayed, 500);
+          if (err.responseText === '') {
+            msg = 'No Response from Server!';
+          } else {
+            try {
+              oErr = JSON.parse(err.responseText);
+              msg = oErr.message;
+            } catch (_error) {}
+          }
+          $('#info').text(errMsg + msg);
+          return $('#info').attr('class', 'error');
         }
       };
     };
     fFetchModules = function() {
       var cmd;
-      if (moduleType === 'Event Poller') {
+      if ($('#module_type').val() === 'Event Poller') {
         cmd = 'get_event_pollers';
       } else {
         cmd = 'get_action_invokers';
@@ -75,10 +61,7 @@
       var cmd, data, modName;
       modName = $('div', $(this).closest('tr')).text();
       if (confirm("Do you really want to delete the Module '" + modName + "'? The module might still be active in some of your rules!")) {
-        $('#moduleName').html("<h2>&nbsp;</h2>");
-        $('#moduleLanguage').html("<b>&nbsp;</b>");
-        editor.setValue("");
-        if (moduleType === 'Event Poller') {
+        if ($('#module_type').val() === 'Event Poller') {
           cmd = 'delete_event_poller';
         } else {
           cmd = 'delete_action_invoker';
@@ -94,39 +77,13 @@
       }
     });
     return $('#tableModules').on('click', 'img.log', function() {
-      var cmd, data, modName;
-      modName = $('div', $(this).closest('tr')).text();
-      if (moduleType === 'Event Poller') {
-        cmd = 'get_full_event_poller';
+      var modName;
+      modName = encodeURIComponent($('div', $(this).closest('tr')).text());
+      if ($('#module_type').val() === 'Event Poller') {
+        return window.location.href = 'forge?page=forge_event_poller&id=' + modName;
       } else {
-        cmd = 'get_full_action_invoker';
+        return window.location.href = 'forge?page=forge_action_invoker&id=' + modName;
       }
-      data = {
-        command: cmd,
-        payload: {
-          id: modName
-        }
-      };
-      data.payload = JSON.stringify(data.payload);
-      return $.post('/usercommand', data).done(function(data) {
-        var err, oMod;
-        try {
-          oMod = JSON.parse(data.message);
-        } catch (_error) {
-          err = _error;
-          fErrHandler(err.message);
-        }
-        if (oMod.lang === 'CoffeeScript') {
-          editor.getSession().setMode("ace/mode/coffee");
-        } else {
-          editor.getSession().setMode("ace/mode/javascript");
-        }
-        editor.setValue(oMod.data);
-        editor.gotoLine(1, 1);
-        editor.scrollToRow(1);
-        $('#moduleName').html("<h2>" + oMod.id + "</h2>");
-        return $('#moduleLanguage').html("<b>" + oMod.lang + "</b>");
-      }).fail(fErrHandler('Could not get module! '));
     });
   };
 

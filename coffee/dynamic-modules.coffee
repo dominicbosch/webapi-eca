@@ -153,13 +153,14 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 		oFuncArgs = {}
 
 		for func of oFuncParams
-			dbMod.getUserArguments modId, func, userId, ( err, obj ) =>
+			dbMod.getUserArguments userId, ruleId, modId, func, ( err, obj ) =>
 				if obj
 					try
 						oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
 						oFuncArgs[ func ] = JSON.parse oDecrypted.plaintext
+						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ ruleId }, #{ modId }"
 					catch err
-						@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ ruleId }, #{ modId }"
 						@log.warn err
 	cb
 		answ: answ

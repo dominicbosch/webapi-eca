@@ -217,45 +217,45 @@ class IndexedModules
 	storeModule: ( userId, oModule ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
 		@db.sadd "#{ @setname }s", oModule.id,
-			replyHandler "sadd '#{ oModule.id }' to '#{ @setname }'"
+			replyHandler "sadd '#{ @setname }s' -> '#{ oModule.id }'"
 		@db.hmset "#{ @setname }:#{ oModule.id }", oModule,
-			replyHandler "hmset properties in hash '#{ @setname }:#{ oModule.id }'"
+			replyHandler "hmset '#{ @setname }:#{ oModule.id }' -> [oModule]"
 		@linkModule oModule.id, userId
 
 	#TODO add testing
 	linkModule: ( mId, userId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.linkModule( #{ mId }, #{ userId } )"
 		@db.sadd "#{ @setname }:#{ mId }:users", userId,
-			replyHandler "sadd #{ userId } to '#{ @setname }:#{ mId }:users'"
+			replyHandler "sadd '#{ @setname }:#{ mId }:users' -> '#{ userId }'"
 		@db.sadd "user:#{ userId }:#{ @setname }s", mId,
-			replyHandler "sadd #{ mId } to 'user:#{ userId }:#{ @setname }s'"
+			replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
 
 	#TODO add testing
 	unlinkModule: ( mId, userId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.unlinkModule( #{ mId }, #{ userId } )"
 		@db.srem "#{ @setname }:#{ mId }:users", userId,
-			replyHandler "srem #{ userId } from '#{ @setname }:#{ mId }:users'"
+			replyHandler "srem '#{ @setname }:#{ mId }:users' -> #{ userId }"
 		@db.srem "user:#{ userId }:#{ @setname }s", mId,
-			replyHandler "srem #{ mId } from 'user:#{ userId }:#{ @setname }s'"
+			replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
 
 	#TODO add testing
 	publish: ( mId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.publish( #{ mId } )"
 		@db.sadd "public-#{ @setname }s", mId,
-			replyHandler "sadd '#{ mId }' to 'public-#{ @setname }s'"
+			replyHandler "sadd 'public-#{ @setname }s' -> '#{ mId }'"
 
 	#TODO add testing
 	unpublish: ( mId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.unpublish( #{ mId } )"
 		@db.srem "public-#{ @setname }s", mId,
-			replyHandler "srem '#{ mId }' from 'public-#{ @setname }s'"
+			replyHandler "srem 'public-#{ @setname }s' -> '#{ mId }'"
 
 	getModule: ( mId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
 		@db.hgetall "#{ @setname }:#{ mId }", cb
 
 	getModuleField: ( mId, field, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
+		@log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ mId }, #{ field } )"
 		@db.hget "#{ @setname }:#{ mId }", field, cb
 
 	#TODO add testing
@@ -265,7 +265,7 @@ class IndexedModules
 
 	#TODO add testing
 	getAvailableModuleIds: ( userId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getPublicModuleIds( #{ userId } )"
+		@log.info "DB | (IdxedMods) #{ @setname }.getAvailableModuleIds( #{ userId } )"
 		@db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 
 	getModuleIds: ( cb ) =>
@@ -279,14 +279,18 @@ class IndexedModules
 	deleteModule: ( mId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ mId } )"
 		@db.srem "#{ @setname }s", mId,
-			replyHandler "srem '#{ mId }' from #{ @setname }s"
+			replyHandler "srem '#{ @setname }s' -> '#{ mId }'"
 		@db.del "#{ @setname }:#{ mId }",
-			replyHandler "del of '#{ @setname }:#{ mId }'"
+			replyHandler "del '#{ @setname }:#{ mId }'"
 		@unpublish mId
 		@db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
-			@unlinkModule mId, userId for userId in obj
-			@deleteUserParams mId, userId for userId in obj
-			@deleteUserArguments mId, userId for userId in obj
+			for userId in obj
+				@unlinkModule mId, userId
+				@deleteUserParams mId, userId
+				exports.getUserLinkedRules userId, ( err, obj ) =>
+					for rule in obj
+						@getUserArgumentsFunctions userId, rule, mId, ( err, obj ) =>
+							@deleteUserArguments userId, rule, mId
 
 	###
 	Stores user params for a module. They are expected to be RSA encrypted with helps of
@@ -300,9 +304,9 @@ class IndexedModules
 	storeUserParams: ( mId, userId, encData ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.storeUserParams( #{ mId }, #{ userId }, encData )"
 		@db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
-			replyHandler "sadd '#{ mId }:#{ userId }' to '#{ @setname }-params'"
+			replyHandler "sadd '#{ @setname }-params' -> '#{ mId }:#{ userId }'"
 		@db.set "#{ @setname }-params:#{ mId }:#{ userId }", encData,
-			replyHandler "set user params in '#{ @setname }-params:#{ mId }:#{ userId }'"
+			replyHandler "set '#{ @setname }-params:#{ mId }:#{ userId }' -> [encData]"
 
 	getUserParams: ( mId, userId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
@@ -313,9 +317,9 @@ class IndexedModules
 		@db.smembers "#{ @setname }-params", cb
 
 	deleteUserParams: ( mId, userId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserParams(#{ mId }, #{ userId } )"
+		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserParams( #{ mId }, #{ userId } )"
 		@db.srem "#{ @setname }-params", "#{ mId }:#{ userId }",
-			replyHandler "srem '#{ mId }:#{ userId }' from '#{ @setname }-params'"
+			replyHandler "srem '#{ @setname }-params' -> '#{ mId }:#{ userId }'"
 		@db.del "#{ @setname }-params:#{ mId }:#{ userId }",
 			replyHandler "del '#{ @setname }-params:#{ mId }:#{ userId }'"
 
@@ -323,28 +327,34 @@ class IndexedModules
 	Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
 	the provided cryptico JS library and will only be decrypted right before the module is loaded!
 	
-	@private storeUserArguments( *mId, userId, encData* )
-	@param {String} mId
+	@private storeUserArguments( *userId, ruleId, mId, funcId, encData* )
 	@param {String} userId
+	@param {String} ruleId
+	@param {String} mId
+	@param {String} funcId
 	@param {object} encData
 	###
-	storeUserArguments: ( mId, funcId, userId, encData ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ mId }, #{ funcId }, #{ userId }, encData )"
-		@db.sadd "#{ @setname }:#{ mId }:#{ userId }:functions", funcId,
-			replyHandler "sadd '#{ funcId }' to '#{ @setname }:#{ mId }:#{ userId }:functions'"
-		@db.set "#{ @setname }:#{ mId }:#{ userId }:function:#{ funcId }", encData,
-			replyHandler "set user params in '#{ @setname }:#{ mId }:#{ userId }:function:#{ func }'"
+	storeUserArguments: ( userId, ruleId, mId, funcId, encData ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId }, encData )"
+		@db.sadd "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", funcId,
+			replyHandler "sadd '#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions' -> '#{ funcId }'"
+		@db.set "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }", encData,
+			replyHandler "set '#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }' -> [encData]"
 
-	getUserArguments: ( mId, funcId, userId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ mId }, #{ funcId }, #{ userId } )"
-		@db.get "#{ @setname }:#{ mId }:#{ userId }:function:#{ funcId }", cb
+	getUserArgumentsFunctions: ( userId, ruleId, mId, cb ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.getUserArgumentsFunctions( #{ userId }, #{ ruleId }, #{ mId } )"
+		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", cb
 
-	deleteUserArguments: ( mId, userId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserArguments(#{ mId }, #{ userId } )"
-		@db.smembers "#{ @setname }:#{ mId }:#{ userId }:functions", ( err, obj ) =>
+	getUserArguments: ( userId, ruleId, mId, funcId, cb ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId } )"
+		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }", cb
+
+	deleteUserArguments: ( userId, ruleId, mId ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
+		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
 			for func in obj
-				@db.del "#{ @setname }:#{ mId }:#{ userId }:function:#{ func }",
-				replyHandler "del '#{ @setname }:#{ mId }:#{ userId }:function:#{ func }'"
+				@db.del "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }",
+					replyHandler "del '#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }'"
 
 
 ###
@@ -394,7 +404,7 @@ Query the DB for a rule and pass it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRule = ( ruleId, cb ) =>
-	@log.info "DB | get: 'rule:#{ ruleId }'"
+	@log.info "DB | getRule( '#{ ruleId }' )"
 	@db.get "rule:#{ ruleId }", cb
 
 ###
@@ -425,11 +435,11 @@ Store a string representation of a rule in the DB.
 @param {String} data
 ###
 exports.storeRule = ( ruleId, data ) =>
-	@log.info "DB | storeRule: '#{ ruleId }'"
+	@log.info "DB | storeRule( '#{ ruleId }' )"
 	@db.sadd 'rules', "#{ ruleId }",
-		replyHandler "sadd rules: '#{ ruleId }'"
+		replyHandler "sadd 'rules' -> '#{ ruleId }'"
 	@db.set "rule:#{ ruleId }", data,
-		replyHandler "set 'rule:#{ ruleId }': data"
+		replyHandler "set 'rule:#{ ruleId }' -> [data]"
 
 ###
 Delete a string representation of a rule.
@@ -439,26 +449,27 @@ Delete a string representation of a rule.
 @param {String} userId
 ###
 exports.deleteRule = ( ruleId ) =>
-	@log.info "DB | deleteRule: '#{ ruleId }'"
-	@db.srem "rules", ruleId, replyHandler "srem 'rules': '#{ ruleId }'"
-	@db.del "rule:#{ ruleId }", replyHandler "del: 'rule:#{ ruleId }'"
+	@log.info "DB | deleteRule( '#{ ruleId }' )"
+	@db.srem "rules", ruleId, replyHandler "srem 'rules' -> '#{ ruleId }'"
+	@db.del "rule:#{ ruleId }", replyHandler "del 'rule:#{ ruleId }'"
 
 	# We also need to delete all references in linked and active users
 	@db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
 		delLinkedUserRule = ( userId ) =>
 			exports.resetLog userId, ruleId
 			@db.srem "user:#{ userId }:rules", ruleId,
-				replyHandler "srem 'user:#{ userId }:rules': '#{ ruleId }'"
+				replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
 		delLinkedUserRule id  for id in obj
 	@db.del "rule:#{ ruleId }:users", replyHandler "del 'rule:#{ ruleId }:users'"
 
 	@db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
 		delActiveUserRule = ( userId ) =>
 			@db.srem "user:#{ userId }:active-rules", ruleId,
-				replyHandler "srem 'user:#{ userId }:active-rules': '#{ ruleId }'"
+				replyHandler "srem 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
 		delActiveUserRule id  for id in obj
 	@db.del "rule:#{ ruleId }:active-users", 
 		replyHandler "del 'rule:#{ ruleId }:active-users'"
+		#TODO remove module links and params and arguments
 
 ###
 Associate a rule to a user.
@@ -470,9 +481,9 @@ Associate a rule to a user.
 exports.linkRule = ( ruleId, userId ) =>
 	@log.info "DB | linkRule: '#{ ruleId }' to user '#{ userId }'"
 	@db.sadd "rule:#{ ruleId }:users", userId,
-		replyHandler "sadd 'rule:#{ ruleId }:users': '#{ userId }'"
+		replyHandler "sadd 'rule:#{ ruleId }:users' -> '#{ userId }'"
 	@db.sadd "user:#{ userId }:rules", ruleId,
-		replyHandler "sadd 'user:#{ userId }:rules': '#{ ruleId }'"
+		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
 
 ###
 Get rules linked to a user and hand it to cb(err, obj).
@@ -482,7 +493,7 @@ Get rules linked to a user and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getUserLinkedRules = ( userId, cb ) =>
-	@log.info "DB | getUserLinkedRules: 'user:#{ userId }:rules'"
+	@log.info "DB | getUserLinkedRules: smembers 'user:#{ userId }:rules'"
 	@db.smembers "user:#{ userId }:rules", cb
 
 ###
@@ -493,7 +504,7 @@ Get users linked to a rule and hand it to cb(err, obj).
 @param {function} cb
 ###
 exports.getRuleLinkedUsers = ( ruleId, cb ) =>
-	@log.info "DB | getRuleLinkedUsers: 'rule:#{ ruleId }:users'"
+	@log.info "DB | getRuleLinkedUsers: smembers 'rule:#{ ruleId }:users'"
 	@db.smembers "rule:#{ ruleId }:users", cb
 
 ###
@@ -506,9 +517,9 @@ Delete an association of a rule to a user.
 exports.unlinkRule = ( ruleId, userId ) =>
 	@log.info "DB | unlinkRule: '#{ ruleId }:#{ userId }'"
 	@db.srem "rule:#{ ruleId }:users", userId,
-		replyHandler "srem 'rule:#{ ruleId }:users': '#{ userId }'"
+		replyHandler "srem 'rule:#{ ruleId }:users' -> '#{ userId }'"
 	@db.srem "user:#{ userId }:rules", ruleId,
-		replyHandler "srem 'user:#{ userId }:rules': '#{ ruleId }'"
+		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
 
 ###
 Activate a rule.
@@ -520,9 +531,9 @@ Activate a rule.
 exports.activateRule = ( ruleId, userId ) =>
 	@log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
 	@db.sadd "rule:#{ ruleId }:active-users", userId,
-		replyHandler "sadd 'rule:#{ ruleId }:active-users': '#{ userId }'"
+		replyHandler "sadd 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
 	@db.sadd "user:#{ userId }:active-rules", ruleId,
-		replyHandler "sadd 'user:#{ userId }:active-rules': '#{ ruleId }'"
+		replyHandler "sadd 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
 
 ###
 Get rules activated for a user and hand it to cb(err, obj).
@@ -556,7 +567,7 @@ Deactivate a rule.
 exports.deactivateRule = ( ruleId, userId ) =>
 	@log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
 	@db.srem "rule:#{ ruleId }:active-users", userId,
-		replyHandler "srem 'rule:#{ ruleId }:active-users': '#{ userId }'"
+		replyHandler "srem 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
 	@db.srem "user:#{ userId }:active-rules", ruleId,
 		replyHandler "srem 'user:#{ userId }:active-rules' '#{ ruleId }'"
 
@@ -598,10 +609,10 @@ exports.storeUser = ( objUser ) =>
 	@log.info "DB | storeUser: '#{ objUser.username }'"
 	if objUser and objUser.username and objUser.password
 		@db.sadd 'users', objUser.username,
-			replyHandler "storing user key '#{ objUser.username }'"
+			replyHandler "sadd 'users' -> '#{ objUser.username }'"
 		objUser.password = objUser.password
 		@db.hmset "user:#{ objUser.username }", objUser,
-			replyHandler "storing user properties '#{ objUser.username }'"
+			replyHandler "hmset 'user:#{ objUser.username }' -> [objUser]"
 	else
 		@log.warn new Error 'DB | username or password was missing'
 
@@ -634,35 +645,34 @@ Deletes a user and all his associated linked and active rules.
 ###
 exports.deleteUser = ( userId ) =>
 	@log.info "DB | deleteUser: '#{ userId }'"
-	@db.srem "users", userId, replyHandler "Deleting user key '#{ userId }'"
-	@db.del "user:#{ userId }", replyHandler "Deleting user '#{ userId }'"
+	@db.srem "users", userId, replyHandler "srem 'users' -> '#{ userId }'"
+	@db.del "user:#{ userId }", replyHandler "del 'user:#{ userId }'"
 
 	# We also need to delete all linked rules
 	@db.smembers "user:#{ userId }:rules", ( err, obj ) =>
 		delLinkedRuleUser = ( ruleId ) =>
 			@db.srem "rule:#{ ruleId }:users", userId,
-				replyHandler "Deleting user key '#{ userId }' in linked rule '#{ ruleId }'"
+				replyHandler "srem 'rule:#{ ruleId }:users' -> '#{ userId }'"
 		delLinkedRuleUser id for id in obj
 	@db.del "user:#{ userId }:rules",
-		replyHandler "Deleting user '#{ userId }' rules"
+		replyHandler "del 'user:#{ userId }:rules'"
 
 	# We also need to delete all active rules
 	@db.smembers "user:#{ userId }:active-rules", ( err, obj ) =>
 		delActivatedRuleUser = ( ruleId ) =>
 			@db.srem "rule:#{ ruleId }:active-users", userId,
-				replyHandler "Deleting user key '#{ userId }' in active rule '#{ ruleId }'"
+				replyHandler "srem 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
 		delActivatedRuleUser id for id in obj
 	@db.del "user:#{ userId }:active-rules",
-		replyHandler "Deleting user '#{ userId }' rules"
+		replyHandler "del user:#{ userId }:active-rules"
 
 	# We also need to delete all associated roles
 	@db.smembers "user:#{ userId }:roles", ( err, obj ) =>
 		delRoleUser = ( roleId ) =>
 			@db.srem "role:#{ roleId }:users", userId,
-				replyHandler "Deleting user key '#{ userId }' in role '#{ roleId }'"
+				replyHandler "srem 'role:#{ roleId }:users' -> '#{ userId }'"
 		delRoleUser id for id in obj
-	@db.del "user:#{ userId }:roles",
-		replyHandler "Deleting user '#{ userId }' roles"
+	@db.del "user:#{ userId }:roles", replyHandler "del 'user:#{ userId }:roles'"
 
 ###
 Checks the credentials and on success returns the user object to the
@@ -707,11 +717,28 @@ Associate a role with a user.
 ###
 exports.storeUserRole = ( userId, role ) =>
 	@log.info "DB | storeUserRole: '#{ userId }:#{ role }'"
-	@db.sadd 'roles', role, replyHandler "adding role '#{ role }' to role index set"
+	@db.sadd 'roles', role, replyHandler "sadd '#{ role }' to 'roles'"
 	@db.sadd "user:#{ userId }:roles", role,
-		replyHandler "adding role '#{ role }' to user '#{ userId }'"
+		replyHandler "sadd 'user:#{ userId }:roles' -> '#{ role }'"
 	@db.sadd "role:#{ role }:users", userId,
-		replyHandler "adding user '#{ userId }' to role '#{ role }'"
+		replyHandler "sadd 'role:#{ role }:users' -> '#{ userId }'"
+
+###
+Associate a role with a user.
+
+@public storeUserRole( *userId, role* )
+@param {String} userId
+@param {String} role
+###
+exports.deleteRole = ( role ) =>
+	@log.info "DB | deleteRole: '#{ role }'"
+	@db.smembers "role:#{ role }:users", ( err, obj ) =>
+		delUserRole = ( userId ) =>
+			@db.srem "user:#{ userId }:roles", role,
+				replyHandler "srem 'user:#{ userId }:roles' -> '#{ role }'"
+		delUserRole id for id in obj
+	@db.srem "roles", role,
+		replyHandler "srem 'roles' -> '#{ role }'"
 
 ###
 Fetch all roles of a user and pass them to cb(err, obj).
@@ -745,9 +772,9 @@ Remove a role from a user.
 exports.removeUserRole = ( userId, role ) =>
 	@log.info "DB | removeRoleFromUser: role '#{ role }', user '#{ userId }'"
 	@db.srem "user:#{ userId }:roles", role,
-		replyHandler "Removing role '#{ role }' from user '#{ userId }'"
+		replyHandler "srem 'user:#{ userId }:roles' -> '#{ role }'"
 	@db.srem "role:#{ role }:users", userId,
-		replyHandler "Removing user '#{ userId }' from role '#{ role }'"
+		replyHandler "srem 'role:#{ role }:users' -> '#{ userId }'"
 
 
 ###

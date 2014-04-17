@@ -173,15 +173,16 @@ Dynamic Modules
       if (dbMod) {
         oFuncArgs = {};
         for (func in oFuncParams) {
-          dbMod.getUserArguments(modId, func, userId, function(err, obj) {
+          dbMod.getUserArguments(userId, ruleId, modId, func, function(err, obj) {
             var oDecrypted;
             if (obj) {
               try {
                 oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
-                return oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+                oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+                return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + ruleId + ", " + modId);
               } catch (_error) {
                 err = _error;
-                _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+                _this.log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + ruleId + ", " + modId);
                 return _this.log.warn(err);
               }
             }

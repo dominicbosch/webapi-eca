@@ -3,38 +3,25 @@ fOnLoad = () ->
 	document.title = 'Edit Modules'
 	$( '#pagetitle' ).text "{{{user.username}}}, edit your Modules!"
 
-	moduleType = $( '#module_type' ).val()
 	$( '#module_type' ).change () ->
-		moduleType = $( this ).val()
-		console.log moduleType
 		fFetchModules()
-
-	editor = ace.edit "editor"
-	editor.setTheme "ace/theme/monokai"
-	editor.setReadOnly true
-	editor.setShowPrintMargin false
 
 	fErrHandler = ( errMsg ) ->
 		( err ) ->
 			if err.status is 401
 				window.location.href = 'forge?page=edit_modules'
 			else
-				$( '#moduleName' ).html "<h2>&nbsp;</h2>"
-				$( '#moduleLanguage' ).html "<b>&nbsp;</b>"
-				editor.setValue ""
-				fDelayed = () ->
-					if err.responseText is ''
-						msg = 'No Response from Server!'
-					else
-						try
-							oErr = JSON.parse err.responseText
-							msg = oErr.message
-					$( '#info' ).text errMsg + msg
-					$( '#info' ).attr 'class', 'error'
-				setTimeout fDelayed, 500
+				if err.responseText is ''
+					msg = 'No Response from Server!'
+				else
+					try
+						oErr = JSON.parse err.responseText
+						msg = oErr.message
+				$( '#info' ).text errMsg + msg
+				$( '#info' ).attr 'class', 'error'
 
 	fFetchModules = () ->
-		if moduleType is 'Event Poller'
+		if $( '#module_type' ).val() is 'Event Poller'
 			cmd = 'get_event_pollers'
 		else
 			cmd = 'get_action_invokers'
@@ -63,10 +50,7 @@ fOnLoad = () ->
 		modName = $( 'div', $( this ).closest( 'tr' )).text()
 		if confirm  "Do you really want to delete the Module '#{ modName }'?
 				The module might still be active in some of your rules!"
-			$( '#moduleName' ).html "<h2>&nbsp;</h2>"
-			$( '#moduleLanguage' ).html "<b>&nbsp;</b>"
-			editor.setValue ""
-			if moduleType is 'Event Poller'
+			if $( '#module_type' ).val() is 'Event Poller'
 				cmd = 'delete_event_poller'
 			else
 				cmd = 'delete_action_invoker'
@@ -80,32 +64,10 @@ fOnLoad = () ->
 				.fail fErrHandler 'Could not delete module! '
 
 	$( '#tableModules' ).on 'click', 'img.log', () ->
-		modName = $( 'div', $( this ).closest( 'tr' )).text()
-		if moduleType is 'Event Poller'
-			cmd = 'get_full_event_poller'
+		modName = encodeURIComponent $( 'div', $( this ).closest( 'tr' )).text()
+		if $( '#module_type' ).val() is 'Event Poller'
+			window.location.href = 'forge?page=forge_event_poller&id=' + modName
 		else
-			cmd = 'get_full_action_invoker'
-		data =
-			command: cmd
-			payload:
-				id: modName
-		data.payload = JSON.stringify data.payload
-		$.post( '/usercommand', data )
-			.done ( data ) ->
-				try
-					oMod = JSON.parse data.message
-				catch err
-					fErrHandler err.message
-				if oMod.lang is 'CoffeeScript'
-					editor.getSession().setMode "ace/mode/coffee"
-				else
-					editor.getSession().setMode "ace/mode/javascript"
-				editor.setValue oMod.data
-				editor.gotoLine 1, 1
-				editor.scrollToRow 1
-				$( '#moduleName' ).html "<h2>#{ oMod.id }</h2>"
-				$( '#moduleLanguage' ).html "<b>#{ oMod.lang }</b>"
-
-			.fail fErrHandler 'Could not get module! '
+			window.location.href = 'forge?page=forge_action_invoker&id=' + modName
 
 window.addEventListener 'load', fOnLoad, true

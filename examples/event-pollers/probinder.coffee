@@ -42,7 +42,7 @@ callService = ( args ) ->
 		if not args.callback
 			args.callback = standardCallback 'call'
 		url = urlService + args.service + '/' + args.method
-		needlereq 'post', url, args.data, credentials, args.callback
+		needle.request 'post', url, args.data, credentials, args.callback
 
 ###
 Calls the user's unread content service.

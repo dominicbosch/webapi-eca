@@ -24,7 +24,7 @@ exports.newMail = ( pushEvent ) ->
 	# 
 	# Syntax: needle.request method, url, data, [options], callback
 	#
-	needlereq 'get', url, null, null, ( err, resp, body ) ->
+	needle.request 'get', url, null, null, ( err, resp, body ) ->
 		if err
 			log 'Error in EmailYak EM newMail: ' + err.message
 		else

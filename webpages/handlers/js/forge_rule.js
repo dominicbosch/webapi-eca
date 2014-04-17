@@ -276,7 +276,7 @@
       return $(this).closest('tr').remove();
     });
     $('#but_submit').click(function() {
-      var actParams, acts, ap, arrInp, conds, d, encryptedParams, ep, err, fParseTime, mins;
+      var actParams, acts, ap, arrInp, conds, d, encryptedParams, ep, err, fParseTime, mins, txtInterval;
       window.scrollTo(0, 0);
       $('#info').text('');
       try {
@@ -333,7 +333,8 @@
               value: $('input[type=text]', this).val(),
               regexp: $('input[type=checkbox]', this).is(':checked')
             };
-            return actParams[actionName] = cryptico.encrypt(JSON.stringify(tmp), strPublicKey);
+            tmp = cryptico.encrypt(JSON.stringify(tmp), strPublicKey);
+            return actParams[actionName] = tmp.cipher;
           });
         });
         try {
@@ -348,7 +349,7 @@
         fParseTime = function(str, hasDay) {
           var arrTime, h, time;
           arrTime = str.split(':');
-          if (arrTime.length = 1) {
+          if (arrTime.length === 1) {
             time = parseInt(str) || 10;
             if (hasDay) {
               return time * 60;
@@ -360,13 +361,15 @@
             return h * 60 + (parseInt(arrTime[1]) || 10);
           }
         };
-        arrInp = $('#event_interval').text().split(' ');
-        if (arrInp.length = 1) {
-          mins = fParseTime(arrInp[0]);
+        txtInterval = $('#event_interval').val();
+        arrInp = txtInterval.split(' ');
+        if (arrInp.length === 1) {
+          mins = fParseTime(txtInterval);
         } else {
           d = parseInt(arrInp[0]) || 0;
           mins = d * 24 * 60 + fParseTime(arrInp[1], true);
         }
+        mins = Math.min(mins, 35700);
         encryptedParams = cryptico.encrypt(JSON.stringify(ep), strPublicKey);
         obj = {
           command: 'forge_rule',

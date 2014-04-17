@@ -257,6 +257,7 @@ Persistence
       this.log = log;
       this.deleteUserArguments = __bind(this.deleteUserArguments, this);
       this.getUserArguments = __bind(this.getUserArguments, this);
+      this.getUserArgumentsFunctions = __bind(this.getUserArgumentsFunctions, this);
       this.storeUserArguments = __bind(this.storeUserArguments, this);
       this.deleteUserParams = __bind(this.deleteUserParams, this);
       this.getUserParamsIds = __bind(this.getUserParamsIds, this);
@@ -293,31 +294,31 @@ Persistence
 
     IndexedModules.prototype.storeModule = function(userId, oModule) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
-      this.db.sadd("" + this.setname + "s", oModule.id, replyHandler("sadd '" + oModule.id + "' to '" + this.setname + "'"));
-      this.db.hmset("" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset properties in hash '" + this.setname + ":" + oModule.id + "'"));
+      this.db.sadd("" + this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> '" + oModule.id + "'"));
+      this.db.hmset("" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
       return this.linkModule(oModule.id, userId);
     };
 
     IndexedModules.prototype.linkModule = function(mId, userId) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".linkModule( " + mId + ", " + userId + " )");
-      this.db.sadd("" + this.setname + ":" + mId + ":users", userId, replyHandler("sadd " + userId + " to '" + this.setname + ":" + mId + ":users'"));
-      return this.db.sadd("user:" + userId + ":" + this.setname + "s", mId, replyHandler("sadd " + mId + " to 'user:" + userId + ":" + this.setname + "s'"));
+      this.db.sadd("" + this.setname + ":" + mId + ":users", userId, replyHandler("sadd '" + this.setname + ":" + mId + ":users' -> '" + userId + "'"));
+      return this.db.sadd("user:" + userId + ":" + this.setname + "s", mId, replyHandler("sadd 'user:" + userId + ":" + this.setname + "s' -> " + mId));
     };
 
     IndexedModules.prototype.unlinkModule = function(mId, userId) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".unlinkModule( " + mId + ", " + userId + " )");
-      this.db.srem("" + this.setname + ":" + mId + ":users", userId, replyHandler("srem " + userId + " from '" + this.setname + ":" + mId + ":users'"));
-      return this.db.srem("user:" + userId + ":" + this.setname + "s", mId, replyHandler("srem " + mId + " from 'user:" + userId + ":" + this.setname + "s'"));
+      this.db.srem("" + this.setname + ":" + mId + ":users", userId, replyHandler("srem '" + this.setname + ":" + mId + ":users' -> " + userId));
+      return this.db.srem("user:" + userId + ":" + this.setname + "s", mId, replyHandler("srem 'user:" + userId + ":" + this.setname + "s' -> " + mId));
     };
 
     IndexedModules.prototype.publish = function(mId) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".publish( " + mId + " )");
-      return this.db.sadd("public-" + this.setname + "s", mId, replyHandler("sadd '" + mId + "' to 'public-" + this.setname + "s'"));
+      return this.db.sadd("public-" + this.setname + "s", mId, replyHandler("sadd 'public-" + this.setname + "s' -> '" + mId + "'"));
     };
 
     IndexedModules.prototype.unpublish = function(mId) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".unpublish( " + mId + " )");
-      return this.db.srem("public-" + this.setname + "s", mId, replyHandler("srem '" + mId + "' from 'public-" + this.setname + "s'"));
+      return this.db.srem("public-" + this.setname + "s", mId, replyHandler("srem 'public-" + this.setname + "s' -> '" + mId + "'"));
     };
 
     IndexedModules.prototype.getModule = function(mId, cb) {
@@ -326,7 +327,7 @@ Persistence
     };
 
     IndexedModules.prototype.getModuleField = function(mId, field, cb) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + mId + " )");
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + mId + ", " + field + " )");
       return this.db.hget("" + this.setname + ":" + mId, field, cb);
     };
 
@@ -336,7 +337,7 @@ Persistence
     };
 
     IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".getPublicModuleIds( " + userId + " )");
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
       return this.db.sunion("public-" + this.setname + "s", "user:" + userId + ":" + this.setname + "s", cb);
     };
 
@@ -352,24 +353,28 @@ Persistence
 
     IndexedModules.prototype.deleteModule = function(mId) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + mId + " )");
-      this.db.srem("" + this.setname + "s", mId, replyHandler("srem '" + mId + "' from " + this.setname + "s"));
-      this.db.del("" + this.setname + ":" + mId, replyHandler("del of '" + this.setname + ":" + mId + "'"));
+      this.db.srem("" + this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
+      this.db.del("" + this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
       this.unpublish(mId);
       return this.db.smembers("" + this.setname + ":" + mId + ":users", (function(_this) {
         return function(err, obj) {
-          var userId, _i, _j, _k, _len, _len1, _len2, _results;
+          var userId, _i, _len, _results;
+          _results = [];
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
             userId = obj[_i];
             _this.unlinkModule(mId, userId);
-          }
-          for (_j = 0, _len1 = obj.length; _j < _len1; _j++) {
-            userId = obj[_j];
             _this.deleteUserParams(mId, userId);
-          }
-          _results = [];
-          for (_k = 0, _len2 = obj.length; _k < _len2; _k++) {
-            userId = obj[_k];
-            _results.push(_this.deleteUserArguments(mId, userId));
+            _results.push(exports.getUserLinkedRules(userId, function(err, obj) {
+              var rule, _j, _len1, _results1;
+              _results1 = [];
+              for (_j = 0, _len1 = obj.length; _j < _len1; _j++) {
+                rule = obj[_j];
+                _results1.push(_this.getUserArgumentsFunctions(userId, rule, mId, function(err, obj) {
+                  return _this.deleteUserArguments(userId, rule, mId);
+                }));
+              }
+              return _results1;
+            }));
           }
           return _results;
         };
@@ -389,8 +394,8 @@ Persistence
 
     IndexedModules.prototype.storeUserParams = function(mId, userId, encData) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserParams( " + mId + ", " + userId + ", encData )");
-      this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("sadd '" + mId + ":" + userId + "' to '" + this.setname + "-params'"));
-      return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set user params in '" + this.setname + "-params:" + mId + ":" + userId + "'"));
+      this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("sadd '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
+      return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set '" + this.setname + "-params:" + mId + ":" + userId + "' -> [encData]"));
     };
 
     IndexedModules.prototype.getUserParams = function(mId, userId, cb) {
@@ -404,8 +409,8 @@ Persistence
     };
 
     IndexedModules.prototype.deleteUserParams = function(mId, userId) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams(" + mId + ", " + userId + " )");
-      this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("srem '" + mId + ":" + userId + "' from '" + this.setname + "-params'"));
+      this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams( " + mId + ", " + userId + " )");
+      this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("srem '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
       return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
     };
 
@@ -414,32 +419,39 @@ Persistence
     	Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
     	the provided cryptico JS library and will only be decrypted right before the module is loaded!
     	
-    	@private storeUserArguments( *mId, userId, encData* )
-    	@param {String} mId
+    	@private storeUserArguments( *userId, ruleId, mId, funcId, encData* )
     	@param {String} userId
+    	@param {String} ruleId
+    	@param {String} mId
+    	@param {String} funcId
     	@param {object} encData
      */
 
-    IndexedModules.prototype.storeUserArguments = function(mId, funcId, userId, encData) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + mId + ", " + funcId + ", " + userId + ", encData )");
-      this.db.sadd("" + this.setname + ":" + mId + ":" + userId + ":functions", funcId, replyHandler("sadd '" + funcId + "' to '" + this.setname + ":" + mId + ":" + userId + ":functions'"));
-      return this.db.set("" + this.setname + ":" + mId + ":" + userId + ":function:" + funcId, encData, replyHandler("set user params in '" + this.setname + ":" + mId + ":" + userId + ":function:" + func + "'"));
+    IndexedModules.prototype.storeUserArguments = function(userId, ruleId, mId, funcId, encData) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + ", encData )");
+      this.db.sadd("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", funcId, replyHandler("sadd '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions' -> '" + funcId + "'"));
+      return this.db.set("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, encData, replyHandler("set '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId + "' -> [encData]"));
     };
 
-    IndexedModules.prototype.getUserArguments = function(mId, funcId, userId, cb) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + mId + ", " + funcId + ", " + userId + " )");
-      return this.db.get("" + this.setname + ":" + mId + ":" + userId + ":function:" + funcId, cb);
+    IndexedModules.prototype.getUserArgumentsFunctions = function(userId, ruleId, mId, cb) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
+      return this.db.get("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
     };
 
-    IndexedModules.prototype.deleteUserArguments = function(mId, userId) {
-      this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments(" + mId + ", " + userId + " )");
-      return this.db.smembers("" + this.setname + ":" + mId + ":" + userId + ":functions", (function(_this) {
+    IndexedModules.prototype.getUserArguments = function(userId, ruleId, mId, funcId, cb) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + " )");
+      return this.db.get("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, cb);
+    };
+
+    IndexedModules.prototype.deleteUserArguments = function(userId, ruleId, mId) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+      return this.db.smembers("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
         return function(err, obj) {
           var func, _i, _len, _results;
           _results = [];
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
             func = obj[_i];
-            _results.push(_this.db.del("" + _this.setname + ":" + mId + ":" + userId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + mId + ":" + userId + ":function:" + func + "'")));
+            _results.push(_this.db.del("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func + "'")));
           }
           return _results;
         };
@@ -513,7 +525,7 @@ Persistence
 
   exports.getRule = (function(_this) {
     return function(ruleId, cb) {
-      _this.log.info("DB | get: 'rule:" + ruleId + "'");
+      _this.log.info("DB | getRule( '" + ruleId + "' )");
       return _this.db.get("rule:" + ruleId, cb);
     };
   })(this);
@@ -559,9 +571,9 @@ Persistence
 
   exports.storeRule = (function(_this) {
     return function(ruleId, data) {
-      _this.log.info("DB | storeRule: '" + ruleId + "'");
-      _this.db.sadd('rules', "" + ruleId, replyHandler("sadd rules: '" + ruleId + "'"));
-      return _this.db.set("rule:" + ruleId, data, replyHandler("set 'rule:" + ruleId + "': data"));
+      _this.log.info("DB | storeRule( '" + ruleId + "' )");
+      _this.db.sadd('rules', "" + ruleId, replyHandler("sadd 'rules' -> '" + ruleId + "'"));
+      return _this.db.set("rule:" + ruleId, data, replyHandler("set 'rule:" + ruleId + "' -> [data]"));
     };
   })(this);
 
@@ -576,14 +588,14 @@ Persistence
 
   exports.deleteRule = (function(_this) {
     return function(ruleId) {
-      _this.log.info("DB | deleteRule: '" + ruleId + "'");
-      _this.db.srem("rules", ruleId, replyHandler("srem 'rules': '" + ruleId + "'"));
-      _this.db.del("rule:" + ruleId, replyHandler("del: 'rule:" + ruleId + "'"));
+      _this.log.info("DB | deleteRule( '" + ruleId + "' )");
+      _this.db.srem("rules", ruleId, replyHandler("srem 'rules' -> '" + ruleId + "'"));
+      _this.db.del("rule:" + ruleId, replyHandler("del 'rule:" + ruleId + "'"));
       _this.db.smembers("rule:" + ruleId + ":users", function(err, obj) {
         var delLinkedUserRule, id, _i, _len, _results;
         delLinkedUserRule = function(userId) {
           exports.resetLog(userId, ruleId);
-          return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules': '" + ruleId + "'"));
+          return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules' -> '" + ruleId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -596,7 +608,7 @@ Persistence
       _this.db.smembers("rule:" + ruleId + ":active-users", function(err, obj) {
         var delActiveUserRule, id, _i, _len, _results;
         delActiveUserRule = function(userId) {
-          return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("srem 'user:" + userId + ":active-rules': '" + ruleId + "'"));
+          return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("srem 'user:" + userId + ":active-rules' -> '" + ruleId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -621,8 +633,8 @@ Persistence
   exports.linkRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | linkRule: '" + ruleId + "' to user '" + userId + "'");
-      _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("sadd 'rule:" + ruleId + ":users': '" + userId + "'"));
-      return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("sadd 'user:" + userId + ":rules': '" + ruleId + "'"));
+      _this.db.sadd("rule:" + ruleId + ":users", userId, replyHandler("sadd 'rule:" + ruleId + ":users' -> '" + userId + "'"));
+      return _this.db.sadd("user:" + userId + ":rules", ruleId, replyHandler("sadd 'user:" + userId + ":rules' -> '" + ruleId + "'"));
     };
   })(this);
 
@@ -637,7 +649,7 @@ Persistence
 
   exports.getUserLinkedRules = (function(_this) {
     return function(userId, cb) {
-      _this.log.info("DB | getUserLinkedRules: 'user:" + userId + ":rules'");
+      _this.log.info("DB | getUserLinkedRules: smembers 'user:" + userId + ":rules'");
       return _this.db.smembers("user:" + userId + ":rules", cb);
     };
   })(this);
@@ -653,7 +665,7 @@ Persistence
 
   exports.getRuleLinkedUsers = (function(_this) {
     return function(ruleId, cb) {
-      _this.log.info("DB | getRuleLinkedUsers: 'rule:" + ruleId + ":users'");
+      _this.log.info("DB | getRuleLinkedUsers: smembers 'rule:" + ruleId + ":users'");
       return _this.db.smembers("rule:" + ruleId + ":users", cb);
     };
   })(this);
@@ -670,8 +682,8 @@ Persistence
   exports.unlinkRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | unlinkRule: '" + ruleId + ":" + userId + "'");
-      _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users': '" + userId + "'"));
-      return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules': '" + ruleId + "'"));
+      _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users' -> '" + userId + "'"));
+      return _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules' -> '" + ruleId + "'"));
     };
   })(this);
 
@@ -687,8 +699,8 @@ Persistence
   exports.activateRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | activateRule: '" + ruleId + "' for '" + userId + "'");
-      _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("sadd 'rule:" + ruleId + ":active-users': '" + userId + "'"));
-      return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("sadd 'user:" + userId + ":active-rules': '" + ruleId + "'"));
+      _this.db.sadd("rule:" + ruleId + ":active-users", userId, replyHandler("sadd 'rule:" + ruleId + ":active-users' -> '" + userId + "'"));
+      return _this.db.sadd("user:" + userId + ":active-rules", ruleId, replyHandler("sadd 'user:" + userId + ":active-rules' -> '" + ruleId + "'"));
     };
   })(this);
 
@@ -736,7 +748,7 @@ Persistence
   exports.deactivateRule = (function(_this) {
     return function(ruleId, userId) {
       _this.log.info("DB | deactivateRule: '" + ruleId + "' for '" + userId + "'");
-      _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users': '" + userId + "'"));
+      _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users' -> '" + userId + "'"));
       return _this.db.srem("user:" + userId + ":active-rules", ruleId, replyHandler("srem 'user:" + userId + ":active-rules' '" + ruleId + "'"));
     };
   })(this);
@@ -798,9 +810,9 @@ Persistence
     return function(objUser) {
       _this.log.info("DB | storeUser: '" + objUser.username + "'");
       if (objUser && objUser.username && objUser.password) {
-        _this.db.sadd('users', objUser.username, replyHandler("storing user key '" + objUser.username + "'"));
+        _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
         objUser.password = objUser.password;
-        return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("storing user properties '" + objUser.username + "'"));
+        return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
       } else {
         return _this.log.warn(new Error('DB | username or password was missing'));
       }
@@ -849,12 +861,12 @@ Persistence
   exports.deleteUser = (function(_this) {
     return function(userId) {
       _this.log.info("DB | deleteUser: '" + userId + "'");
-      _this.db.srem("users", userId, replyHandler("Deleting user key '" + userId + "'"));
-      _this.db.del("user:" + userId, replyHandler("Deleting user '" + userId + "'"));
+      _this.db.srem("users", userId, replyHandler("srem 'users' -> '" + userId + "'"));
+      _this.db.del("user:" + userId, replyHandler("del 'user:" + userId + "'"));
       _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
         var delLinkedRuleUser, id, _i, _len, _results;
         delLinkedRuleUser = function(ruleId) {
-          return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in linked rule '" + ruleId + "'"));
+          return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users' -> '" + userId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -863,11 +875,11 @@ Persistence
         }
         return _results;
       });
-      _this.db.del("user:" + userId + ":rules", replyHandler("Deleting user '" + userId + "' rules"));
+      _this.db.del("user:" + userId + ":rules", replyHandler("del 'user:" + userId + ":rules'"));
       _this.db.smembers("user:" + userId + ":active-rules", function(err, obj) {
         var delActivatedRuleUser, id, _i, _len, _results;
         delActivatedRuleUser = function(ruleId) {
-          return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("Deleting user key '" + userId + "' in active rule '" + ruleId + "'"));
+          return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users' -> '" + userId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -876,11 +888,11 @@ Persistence
         }
         return _results;
       });
-      _this.db.del("user:" + userId + ":active-rules", replyHandler("Deleting user '" + userId + "' rules"));
+      _this.db.del("user:" + userId + ":active-rules", replyHandler("del user:" + userId + ":active-rules"));
       _this.db.smembers("user:" + userId + ":roles", function(err, obj) {
         var delRoleUser, id, _i, _len, _results;
         delRoleUser = function(roleId) {
-          return _this.db.srem("role:" + roleId + ":users", userId, replyHandler("Deleting user key '" + userId + "' in role '" + roleId + "'"));
+          return _this.db.srem("role:" + roleId + ":users", userId, replyHandler("srem 'role:" + roleId + ":users' -> '" + userId + "'"));
         };
         _results = [];
         for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -889,7 +901,7 @@ Persistence
         }
         return _results;
       });
-      return _this.db.del("user:" + userId + ":roles", replyHandler("Deleting user '" + userId + "' roles"));
+      return _this.db.del("user:" + userId + ":roles", replyHandler("del 'user:" + userId + ":roles'"));
     };
   })(this);
 
@@ -947,9 +959,37 @@ Persistence
   exports.storeUserRole = (function(_this) {
     return function(userId, role) {
       _this.log.info("DB | storeUserRole: '" + userId + ":" + role + "'");
-      _this.db.sadd('roles', role, replyHandler("adding role '" + role + "' to role index set"));
-      _this.db.sadd("user:" + userId + ":roles", role, replyHandler("adding role '" + role + "' to user '" + userId + "'"));
-      return _this.db.sadd("role:" + role + ":users", userId, replyHandler("adding user '" + userId + "' to role '" + role + "'"));
+      _this.db.sadd('roles', role, replyHandler("sadd '" + role + "' to 'roles'"));
+      _this.db.sadd("user:" + userId + ":roles", role, replyHandler("sadd 'user:" + userId + ":roles' -> '" + role + "'"));
+      return _this.db.sadd("role:" + role + ":users", userId, replyHandler("sadd 'role:" + role + ":users' -> '" + userId + "'"));
+    };
+  })(this);
+
+
+  /*
+  Associate a role with a user.
+  
+  @public storeUserRole( *userId, role* )
+  @param {String} userId
+  @param {String} role
+   */
+
+  exports.deleteRole = (function(_this) {
+    return function(role) {
+      _this.log.info("DB | deleteRole: '" + role + "'");
+      _this.db.smembers("role:" + role + ":users", function(err, obj) {
+        var delUserRole, id, _i, _len, _results;
+        delUserRole = function(userId) {
+          return _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
+        };
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          id = obj[_i];
+          _results.push(delUserRole(id));
+        }
+        return _results;
+      });
+      return _this.db.srem("roles", role, replyHandler("srem 'roles' -> '" + role + "'"));
     };
   })(this);
 
@@ -997,8 +1037,8 @@ Persistence
   exports.removeUserRole = (function(_this) {
     return function(userId, role) {
       _this.log.info("DB | removeRoleFromUser: role '" + role + "', user '" + userId + "'");
-      _this.db.srem("user:" + userId + ":roles", role, replyHandler("Removing role '" + role + "' from user '" + userId + "'"));
-      return _this.db.srem("role:" + role + ":users", userId, replyHandler("Removing user '" + userId + "' from role '" + role + "'"));
+      _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
+      return _this.db.srem("role:" + role + ":users", userId, replyHandler("srem 'role:" + role + ":users' -> '" + userId + "'"));
     };
   })(this);
 

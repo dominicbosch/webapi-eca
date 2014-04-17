@@ -92,4 +92,19 @@ fOnLoad = () ->
 							$( '#info' ).attr 'class', 'error'
 						setTimeout fDelayed, 500
 
+	
+	# EDIT MODULES
+
+	arrParams = window.location.search.substring(1).split '&'
+	id = ''
+	for param in arrParams
+		arrKV = param.split '='
+		if arrKV[ 0 ] is 'id'
+			id = decodeURIComponent arrKV[ 1 ]
+	if id isnt ''
+		# TODO we have an idea so we want to edit this module!
+		console.log id
+
+
+
 window.addEventListener 'load', fOnLoad, true

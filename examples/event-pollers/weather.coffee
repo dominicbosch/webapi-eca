@@ -32,7 +32,7 @@ Fetches the temperature
 ###
 getTemperature = ( cb ) ->
 	url = urlService + '?APPID=' + params.openweatherKey + '&q=' + params.city
-	needlereq 'get', url, null, null, cb
+	needle.request 'get', url, null, null, cb
 
 ###
 Emits one event per day if the temperature today raises above user defined threshold

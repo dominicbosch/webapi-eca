@@ -49,6 +49,7 @@ process.on 'disconnect', () ->
 
 # If the process receives a message it is concerning the rules
 process.on 'message', ( msg ) ->
+	log.info "EP | Got info about new rule: #{ msg.event }"
 
 	# Let's split the event string to find module and function in an array
 
@@ -87,17 +88,17 @@ fLoadModule = ( msg ) ->
 						if not listUserModules[msg.user]
 							listUserModules[msg.user] = {}
 						
-						iv = msg.rule.interval * 60 * 1000
+						iv = msg.rule.event_interval * 60 * 1000
 						# We open up a new object for the rule it
 						listUserModules[msg.user][msg.rule.id] =
 							id: msg.rule.event
 							pollfunc: arrName[1]
-							interval: iv
+							event_interval: iv
 							module: result.module
 							logger: result.logger
 
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
-							in rule #{ msg.rule.id }, polling every #{ iv } minutes"
+							in rule #{ msg.rule.id }, polling every #{ msg.rule.event_interval } minutes"
 						setTimeout fCheckAndRun( msg.user, msg.rule.id ), iv
 
 	if msg.event is 'new' or
@@ -107,12 +108,13 @@ fLoadModule = ( msg ) ->
 
 fCheckAndRun = ( userId, ruleId ) ->
 	() ->
+		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"
 		if isRunning and 
 				listUserModules[userId] and 
 				listUserModules[userId][ruleId]
 			oRule = listUserModules[userId][ruleId]
 			fCallFunction userId, ruleId, oRule
-			setTimeout fCheckAndRun( userId, ruleId ), oRule.interval
+			setTimeout fCheckAndRun( userId, ruleId ), oRule.event_interval
 
 # We have to register the poll function in belows anonymous function
 # because we're fast iterating through the listUserModules and references will
@@ -127,26 +129,30 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		oRule.logger err.message
-# ###
-# This function will loop infinitely every 10 seconds until isRunning is set to false
+###
+This function will loop infinitely every 10 seconds until isRunning is set to false
 
-# @private pollLoop()
-# ###
-# pollLoop = () ->
-#   # We only loop if we're running
-#   if isRunning
+@private pollLoop()
+###
+pollLoop = () ->
+  # We only loop if we're running
+  if isRunning
 
-#     # Go through all users
-#     for userName, oRules of listUserModules
-
-#       # Go through each of the users modules
-#       for ruleName, myRule of oRules
-
-#         # Call the event poller module function
-#         fCallFunction myRule, ruleName, userName
-
-#     setTimeout pollLoop, 10000
+  	#FIXME a scheduler should go here because we are limited in setTimeout
+  	# to an integer value -> ~24 days at maximum!
 
 
-# # Finally if everything initialized we start polling for new events
-# pollLoop()
+    # # Go through all users
+    # for userName, oRules of listUserModules
+
+    #   # Go through each of the users modules
+    #   for ruleName, myRule of oRules
+
+    #     # Call the event poller module function
+    #     fCallFunction myRule, ruleName, userName
+
+    setTimeout pollLoop, 10000
+
+
+# Finally if everything initialized we start polling for new events
+pollLoop()

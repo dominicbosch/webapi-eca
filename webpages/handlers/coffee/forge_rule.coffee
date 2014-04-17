@@ -257,7 +257,8 @@ fOnLoad = () ->
 						argument: $( 'div.funcarg', this ).val()
 						value: $( 'input[type=text]', this ).val()
 						regexp: $( 'input[type=checkbox]', this ).is( ':checked' )
-					actParams[ actionName ] = cryptico.encrypt JSON.stringify( tmp ), strPublicKey
+					tmp = cryptico.encrypt JSON.stringify( tmp ), strPublicKey
+					actParams[ actionName ] = tmp.cipher
 			
 			try
 				conds = JSON.parse editor.getValue()
@@ -271,7 +272,7 @@ fOnLoad = () ->
 			fParseTime = ( str, hasDay ) ->
 				arrTime = str.split ':'
 				# If there's only one entry, this is the amount of minutes
-				if arrTime.length = 1
+				if arrTime.length is 1
 					time = parseInt( str ) || 10
 					if hasDay
 						time * 60
@@ -282,14 +283,18 @@ fOnLoad = () ->
 					h * 60 + ( parseInt( arrTime[ 1 ] ) || 10 )
 
 
-			arrInp = $( '#event_interval' ).text().split ' '
+			txtInterval = $( '#event_interval' ).val()
+			arrInp = txtInterval.split ' '
 			# There's only one string entered, either day or hour
-			if arrInp.length = 1
-				mins = fParseTime arrInp[ 0 ]
+			if arrInp.length is 1
+				mins = fParseTime txtInterval
 			else
 				d = parseInt( arrInp[ 0 ] ) || 0
 				mins = d * 24 * 60 + fParseTime arrInp[ 1 ], true
 
+			# We have to limit this to 24 days because setTimeout only takes integer values
+			# until we implement a scheduler that deals with larger intervals
+			mins = Math.min mins, 35700
 			encryptedParams = cryptico.encrypt JSON.stringify( ep ), strPublicKey
 			obj =
 				command: 'forge_rule'

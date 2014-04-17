@@ -318,12 +318,13 @@ commandFunctions =
 					
 					# if action module params were send, store them
 					oParams = oPayload.action_params
-					db.actionInvokers.storeUserParams id, user.username, JSON.stringify params for id, params of oParams
+					for id, params of oParams
+						db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
 					oParams = oPayload.action_functions
 					# if action function arguments were send, store them
 					for id, params of oParams
 						arr = id.split ' -> '
-						db.actionInvokers.storeUserArguments arr[ 0 ], arr[ 1 ], user.username, JSON.stringify params 
+						db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify params 
 					
 					# Initialize the rule log
 					db.resetLog user.username, rule.id

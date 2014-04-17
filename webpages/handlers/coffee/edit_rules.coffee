@@ -1,15 +1,3 @@
- 
-
-
-
-
-
-
- # encodeURIComponent(url); -> Rule Name to be passed to forge_rule
-
-
-
-
 
 fOnLoad = () ->
 	document.title = 'Edit Rules'
