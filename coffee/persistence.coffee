@@ -349,8 +349,6 @@ class IndexedModules
 		@log.info "DB | (IdxedMods) #{ @setname }.getAllModuleUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
 		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
 			sem = obj.length
-			console.log 'getAllModuleUserArguments'
-			console.log obj
 			oAnswer = {}
 			for func in obj
 				fRegisterFunction = ( func ) =>
@@ -388,7 +386,7 @@ Appends a log entry.
 ###
 exports.appendLog = ( userId, ruleId, moduleId, message ) =>
 	@db.append "#{ userId }:#{ ruleId }:log", 
-		"[#{ ( new Date ).toISOString() }] {#{ moduleId }} #{ message }\n"
+		"[#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message }\n"
 
 ###
 Retrieves a log entry.

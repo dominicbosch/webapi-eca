@@ -311,7 +311,7 @@ Components Manager
 
   storeRule = (function(_this) {
     return function(user, oPayload, callback) {
-      var arr, epModId, id, oParams, params, rule, strRule;
+      var args, arr, epModId, id, oFuncArgs, oParams, params, rule, strRule;
       rule = {
         id: oPayload.id,
         event: oPayload.event,
@@ -332,11 +332,11 @@ Components Manager
         params = oParams[id];
         db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
       }
-      oParams = oPayload.action_functions;
-      for (id in oParams) {
-        params = oParams[id];
+      oFuncArgs = oPayload.action_functions;
+      for (id in oFuncArgs) {
+        args = oFuncArgs[id];
         arr = id.split(' -> ');
-        db.actionInvokers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(params));
+        db.actionInvokers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(args));
       }
       db.resetLog(user.username, rule.id);
       db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized");

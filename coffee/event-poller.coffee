@@ -93,33 +93,40 @@ fLoadModule = ( msg ) ->
 						if not listUserModules[msg.user]
 							listUserModules[msg.user] = {}
 						
-						iv = msg.rule.event_interval * 60 * 1000
+						ts = new Date()
 						# We open up a new object for the rule it
 						listUserModules[msg.user][msg.rule.id] =
 							id: msg.rule.event
 							pollfunc: arrName[1]
-							event_interval: iv
+							event_interval: msg.rule.event_interval * 60 * 1000
 							module: result.module
 							logger: result.logger
+							timestamp: ts
 
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
-							in rule #{ msg.rule.id }, polling every #{ msg.rule.event_interval } minutes"
-						setTimeout fCheckAndRun( msg.user, msg.rule.id ), iv
+							in rule #{ msg.rule.id }, starting at #{ ts.toISOString() }
+							and polling every #{ msg.rule.event_interval } minutes"
+						fCheckAndRun( msg.user, msg.rule.id, ts )()
 
 	if msg.event is 'new' or
 			not listUserModules[msg.user] or 
 			not listUserModules[msg.user][msg.rule.id]
 		fAnonymous()
 
-fCheckAndRun = ( userId, ruleId ) ->
+fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
 		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"
 		if isRunning and 
 				listUserModules[userId] and 
 				listUserModules[userId][ruleId]
-			oRule = listUserModules[userId][ruleId]
-			fCallFunction userId, ruleId, oRule
-			setTimeout fCheckAndRun( userId, ruleId ), oRule.event_interval
+			# If there was a rule update we only continue the latest setTimeout execution
+			if listUserModules[userId][ruleId].timestamp is timestamp	
+				oRule = listUserModules[userId][ruleId]
+				fCallFunction userId, ruleId, oRule
+				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.event_interval
+			else
+				log.info "EP | We found a newer polling interval and discontinue this one which
+						was created at #{ timestamp.toISOString() }"
 
 # We have to register the poll function in belows anonymous function
 # because we're fast iterating through the listUserModules and references will
@@ -129,7 +136,7 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 		oRule.module[oRule.pollfunc] ( obj ) ->
 			db.pushEvent
 				event: oRule.id
-				eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date ).toISOString() }"
+				eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date() ).toISOString() }"
 				payload: obj
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"

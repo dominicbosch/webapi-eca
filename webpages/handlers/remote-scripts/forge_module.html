@@ -18,14 +18,40 @@ exports.newMail = ( pushEvent ) ->
 	# Syntax: needle.request method, url, data, [options], callback
 	#
 	needle.request 'get', url, null, null, ( err, resp, body ) ->
+		log 'Poll function executed'
 		if err
 			log 'Error in EmailYak EM newMail: ' + err.message
 		else
 			if resp.statusCode is 200
-				for mail in body.Emails
-					pushEvent 
-						subject: mail.Subject
-						content: mail.TextBody
+				if body.Emails.length > 0
+					log JSON.stringify body.Emails[0]
+				log 'Poll function executed'
+				pushEvent mail for mail in body.Emails
+
+				###
+				This will emit events of the form:
+				( Refer to http://docs.emailyak.com/get-new-email.html for more information. )
+
+				{
+					"EmailID": "xquukd5z",
+					"Received": "2014-04-19T11:27:11",
+					"ToAddress": "test@mscliveweb.simpleyak.com",
+					"ParsedData": [
+						{
+							"Data": "Best Regards\nTest User",
+							"Part": 0,
+							"Type": "Email"
+						}
+					],
+					"FromName": "Test User",
+					"ToAddressList": "test@mscliveweb.simpleyak.com",
+					"FromAddress": "test.address@provider.com",
+					"HtmlBody": "Best Regards\nTest User",
+					"CcAddressList": "",
+					"TextBody": "Best Regards\nTest User",
+					"Subject": "test subject"
+				}
+				###
 </script>
 <script id="template_action_invoker" type="text/template">
 ### 
@@ -72,6 +98,7 @@ callService = ( args ) ->
 		if not args.callback
 			args.callback = standardCallback 'call'
 		url = urlService + args.service + '/' + args.method
+		log 'call service executed: ' + url
 		needle.request 'post', url, args.data, credentials, args.callback
 
 
@@ -116,7 +143,7 @@ exports.makeFileEntry = ( fromService, fromId, toCompany, toContext ) ->
 Calls the content get service with the content id and the service id provided. 
 
 @param {Object} args the object containing the service id and the content id,
-   success and error callback methods
+	 success and error callback methods
 @param {String} args.serviceid the service id that is able to process this content
 @param {String} args.contentid the content id
 @param {function} [args.callback] receives the needle answer from the "call" function

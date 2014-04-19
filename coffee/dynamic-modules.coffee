@@ -141,15 +141,17 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 	if dbMod
 		oFuncArgs = {}
 
-		for func of oFuncParams
-			dbMod.getUserArguments userId, ruleId, modId, func, ( err, obj ) =>
+		fRegisterArguments = ( fName ) =>
+			( err, obj ) =>
 				if obj
 					try
-						oFuncArgs[ func ] = JSON.parse encryption.decrypt obj
-						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ ruleId }, #{ modId }"
+						oFuncArgs[ fName ] = JSON.parse obj
+						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ ruleId }, #{ modId }: #{ obj }"
 					catch err
 						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ ruleId }, #{ modId }"
 						@log.warn err
+		for func of oFuncParams
+			dbMod.getUserArguments userId, ruleId, modId, func, fRegisterArguments func
 	cb
 		answ: answ
 		module: sandbox.exports

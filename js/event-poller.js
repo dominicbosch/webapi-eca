@@ -84,23 +84,24 @@ Dynamic Modules
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
           return dynmod.compileString(obj.data, msg.user, msg.rule.id, arrName[0], obj.lang, db.eventPollers, function(result) {
-            var iv;
+            var ts;
             if (!result.answ === 200) {
               log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
             }
             if (!listUserModules[msg.user]) {
               listUserModules[msg.user] = {};
             }
-            iv = msg.rule.event_interval * 60 * 1000;
+            ts = new Date();
             listUserModules[msg.user][msg.rule.id] = {
               id: msg.rule.event,
               pollfunc: arrName[1],
-              event_interval: iv,
+              event_interval: msg.rule.event_interval * 60 * 1000,
               module: result.module,
-              logger: result.logger
+              logger: result.logger,
+              timestamp: ts
             };
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", polling every " + msg.rule.event_interval + " minutes");
-            return setTimeout(fCheckAndRun(msg.user, msg.rule.id), iv);
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", starting at " + (ts.toISOString()) + " and polling every " + msg.rule.event_interval + " minutes");
+            return fCheckAndRun(msg.user, msg.rule.id, ts)();
           });
         }
       });
@@ -110,14 +111,18 @@ Dynamic Modules
     }
   };
 
-  fCheckAndRun = function(userId, ruleId) {
+  fCheckAndRun = function(userId, ruleId, timestamp) {
     return function() {
       var oRule;
       log.info("EP | Check and run user " + userId + ", rule " + ruleId);
       if (isRunning && listUserModules[userId] && listUserModules[userId][ruleId]) {
-        oRule = listUserModules[userId][ruleId];
-        fCallFunction(userId, ruleId, oRule);
-        return setTimeout(fCheckAndRun(userId, ruleId), oRule.event_interval);
+        if (listUserModules[userId][ruleId].timestamp === timestamp) {
+          oRule = listUserModules[userId][ruleId];
+          fCallFunction(userId, ruleId, oRule);
+          return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.event_interval);
+        } else {
+          return log.info("EP | We found a newer polling interval and discontinue this one which was created at " + (timestamp.toISOString()));
+        }
       }
     };
   };
@@ -128,7 +133,7 @@ Dynamic Modules
       return oRule.module[oRule.pollfunc](function(obj) {
         return db.pushEvent({
           event: oRule.id,
-          eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date).toISOString()),
+          eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date()).toISOString()),
           payload: obj
         });
       });

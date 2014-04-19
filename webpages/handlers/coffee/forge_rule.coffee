@@ -42,35 +42,7 @@ fOnLoad = () ->
 	editor.setShowPrintMargin false
 	# editor.session.setUseSoftTabs false 
 
-	# Fetch Event Poller user-specific parameters
-	fFetchEventParams = ( name ) ->
-		$( '#event_poller_params *' ).remove()
-		if name
-			arr = name.split ' -> '
-			obj =
-				command: 'get_event_poller_params'
-				payload: JSON.stringify
-					id: arr[ 0 ]
-			$.post( '/usercommand', obj )
-				.done ( data ) ->
-					if data.message
-						oParams = JSON.parse data.message
-						$( '#event_poller_params' ).html '<br><b>Required Parameters:</b>'
-						table = $ '<table>'
-						$( '#event_poller_params' ).append table
-						fAppendParam = ( name, shielded ) ->
-							tr = $( '<tr>' )
-							tr.append $( '<td>' ).css 'width', '20px'
-							tr.append $( '<td>' ).attr( 'class', 'key' ).text name
-							inp = $( '<input>' )
-							if shielded
-								inp.attr( 'type', 'password' )
-							tr.append $( '<td>' ).text( ' : ' ).append inp
-							table.append tr
-						fAppendParam name, shielded for name, shielded of oParams
-				.fail fFailedRequest 'Error fetching event poller params'
-
-	# Init Event Pollers
+# EVENT
 	$.post( '/usercommand', command: 'get_event_pollers' )
 		.done ( data ) ->
 			try
@@ -89,12 +61,13 @@ fOnLoad = () ->
 		.fail fFailedRequest 'Error fetching event poller'
 
 	$( '#select_event' ).change () ->
-		if $( this ).val() is ''
+		evtFunc = $( this ).val()
+		if evtFunc is ''
 			$( '#input_interval' ).html ''
 		else
 			fPlaceAndPaintInterval()
-		$( '#input_event' ).val $( this ).val()
-		fFetchEventParams $( this ).val()
+		$( '#input_event' ).val evtFunc
+		fFetchEventParams evtFunc
 
 	$( '#input_event' ).change () ->
 		$( '#select_event' ).val ''
@@ -105,8 +78,54 @@ fOnLoad = () ->
 		else
 			fPlaceAndPaintInterval()
 
+	fFetchEventParams = ( name ) ->
+		$( '#event_poller_params *' ).remove()
+		if name
+			arr = name.split ' -> '
+			obj =
+				command: 'get_event_poller_params'
+				payload: JSON.stringify
+					id: arr[ 0 ]
+			$.post( '/usercommand', obj )
+				.done fAddEventParams arr[ 0 ]
+				.fail fFailedRequest 'Error fetching event poller params'
 
-	# Init Action Invoker
+	fAddEventParams = ( id ) ->
+		( data ) ->
+			if data.message
+				oParams = JSON.parse data.message
+				$( '#event_poller_params' ).html '<br><b>Required Parameters:</b>'
+				table = $ '<table>'
+				$( '#event_poller_params' ).append table
+				fAppendParam = ( name, shielded ) ->
+					tr = $( '<tr>' )
+					tr.append $( '<td>' ).css 'width', '20px'
+					tr.append $( '<td>' ).attr( 'class', 'key' ).text name
+					inp = $( '<input>' )
+					if shielded
+						inp.attr( 'type', 'password' )
+					tr.append $( '<td>' ).text( ' : ' ).append inp
+					table.append tr
+				fAppendParam name, shielded for name, shielded of oParams
+				fFillEventParams id
+
+	fFillEventParams = ( moduleId ) ->
+		obj =
+			command: 'get_event_poller_user_params'
+			payload: JSON.stringify
+				id: moduleId
+		$.post( '/usercommand', obj )
+			.done ( data ) ->
+				oParams = JSON.parse data.message
+				for param, oParam of oParams
+					par = $( "#event_poller_params tr" ).filter () ->
+						$( 'td.key', this ).text() is param
+					$( 'input', par ).val oParam.value
+					$( 'input', par ).attr 'unchanged', 'true'
+					$( 'input', par ).change () ->
+						$( this ).attr 'unchanged', 'false'
+
+# ACTIONS
 	obj =
 		command: 'get_action_invokers'
 	$.post( '/usercommand', obj )
@@ -119,10 +138,36 @@ fOnLoad = () ->
 				return
 			fAppendActions = ( module, actions ) ->
 				for act in actions
-					if $( "#action_params div:contains(#{ module } -> #{ act })" ).length is 0
+					arrEls = $( "#action_params div" ).filter () ->
+						$( this ).text() is "#{ module } -> #{ act }"
+					# It could have been loaded async before through the rules ito the action params
+					if arrEls.length is 0
 						$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
 			fAppendActions module, actions for module, actions of oAis
 		.fail fFailedRequest 'Error fetching event poller'
+
+	fAddSelectedAction = ( name ) ->
+		arrName = name.split ' -> '
+		arrEls = $( "#action_params div.modName" ).map( () ->
+			$( this ).text()
+		).get()
+		table = $( '#selected_actions' )
+		tr = $( '<tr>' ).appendTo table
+		img = $( '<img>' ).attr 'src', 'red_cross_small.png'
+		tr.append $( '<td>' ).css( 'width', '20px' ).append img
+		tr.append $( '<td>' ).attr( 'class', 'title').text name 
+		td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
+		fFetchActionFunctionArgs td, arrName
+		if arrName[ 0 ] not in arrEls
+			div = $( '<div>' ).appendTo $( '#action_params' )
+			subdiv = $( '<div> ').appendTo div 
+			subdiv.append $( '<div>' )
+				.attr( 'class', 'modName underlined' ).text arrName[ 0 ]
+			fFetchActionParams div, arrName[ 0 ]
+		$( "#select_actions option" ).each () ->
+			if $( this ).text() is name
+				$( this ).remove()
+		fFillActionFunction arrName[ 0 ]
 
 	fFetchActionParams = ( div, modName ) ->
 		obj =
@@ -149,7 +194,7 @@ fOnLoad = () ->
 					fAppendActionParam name, sh for name, sh of oParams
 			.fail fFailedRequest 'Error fetching action invoker params'
 
-	fFetchActionFunctionParams = ( tag, arrName ) ->
+	fFetchActionFunctionArgs = ( tag, arrName ) ->
 		obj =
 			command: 'get_action_invoker_function_arguments'
 			payload: JSON.stringify
@@ -174,25 +219,44 @@ fOnLoad = () ->
 								.attr 'title', 'js-select expression to be resolved on event?'
 			.fail fFailedRequest 'Error fetching action invoker function params'
 
-	fAddSelectedAction = ( name ) ->
-		arrName = name.split ' -> '
-		arrEls = $( "#action_params div.modName" ).map( () ->
-			$( this ).text()
-		).get()
-		table = $( '#selected_actions' )
-		tr = $( '<tr>' ).appendTo table
-		img = $( '<img>' ).attr 'src', 'red_cross_small.png'
-		tr.append $( '<td>' ).css( 'width', '20px' ).append img
-		tr.append $( '<td>' ).attr( 'class', 'title').text name 
-		td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
-		fFetchActionFunctionParams td, arrName
-		if arrName[ 0 ] not in arrEls
-			div = $( '<div>' ).appendTo $( '#action_params' )
-			subdiv = $( '<div> ').appendTo div 
-			subdiv.append $( '<div>' )
-				.attr( 'class', 'modName underlined' ).text arrName[ 0 ]
-			fFetchActionParams div, arrName[ 0 ]
-		$( "#select_actions option:contains(#{ name })" ).remove()
+	fFillActionFunction = ( name ) ->
+		obj =
+			command: 'get_action_invoker_user_params'
+			payload: JSON.stringify
+				id: name
+		$.post( '/usercommand', obj )
+			.done fAddActionUserParams name
+		
+		obj.command = 'get_action_invoker_user_arguments'
+		obj.payload = JSON.stringify
+			ruleId: $( '#input_id' ).val()
+			moduleId: name
+		$.post( '/usercommand', obj )
+			.done fAddActionUserArgs name
+
+	fAddActionUserParams = ( name ) ->
+		( data ) ->
+			oParams = JSON.parse data.message
+			domMod = $( "#action_params div" ).filter () ->
+				$( 'div.modName', this ).text() is name
+			for param, oParam of oParams
+				par = $( "tr", domMod ).filter () ->
+					$( 'td.key', this ).text() is param
+				$( 'input', par ).val oParam.value
+				$( 'input', par ).attr 'unchanged', 'true'
+				$( 'input', par ).change () ->
+					$( this ).attr 'unchanged', 'false'
+
+	fAddActionUserArgs = ( name ) ->
+		( data ) ->
+			for key, arrFuncs of data.message
+				par = $( "#selected_actions tr" ).filter () ->
+					$( 'td.title', this ).text() is "#{ name } -> #{ key }"
+				for oFunc in JSON.parse arrFuncs
+					tr = $( "tr", par ).filter () ->
+						$( '.funcarg', this ).text() is "#{ oFunc.argument }"
+					$( "input[type=text]", tr ).val oFunc.value
+					$( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
 
 	$( '#select_actions' ).on 'change', () ->
 		opt = $ 'option:selected', this
@@ -217,6 +281,8 @@ fOnLoad = () ->
 		$( this ).closest( 'tr' ).remove()
 
 
+# SUBMIT
+
 	$( '#but_submit' ).click () ->
 		window.scrollTo 0, 0
 		$( '#info' ).text ''
@@ -240,11 +306,12 @@ fOnLoad = () ->
 				shielded = $( 'input', this ).attr( 'type' ) is 'password'
 				ep[ key ] =
 					shielded: shielded
-				if $( 'input', this ).attr( 'unchanged' ) is 'true'
-					ep[ key ].value = val
-				else
+				if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
 					encryptedParam = cryptico.encrypt val, strPublicKey
-					ep[ key ].value = encryptedParam.cipher
+					ep[ key ].value = encryptedParam.cipher 
+				else
+					ep[ key ].value = val
+
 			if $( '#selected_actions tr' ).length is 0
 				throw new Error 'Please select at least one action or create one!'
 
@@ -262,11 +329,12 @@ fOnLoad = () ->
 						throw new Error "'#{ key }' missing for '#{ modName }'"
 					params[ key ] =
 						shielded: shielded
-					if $( 'input', this ).attr( 'unchanged' ) is 'true'
-						params[ key ].value = val
-					else
+
+					if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
 						encryptedParam = cryptico.encrypt val, strPublicKey
-						params[ key ].value = encryptedParam.cipher
+						params[ key ].value = encryptedParam.cipher 
+					else
+						params[ key ].value = val
 				ap[ modName ] = params
 			acts = []
 			actParams = {}
@@ -286,7 +354,7 @@ fOnLoad = () ->
 					actParams[ actionName ].push
 						argument: $( 'div.funcarg', this ).text()
 						value: $( 'input[type=text]', this ).val()
-						regexp: $( 'input[type=checkbox]', this ).is( ':checked' )
+						jsselector: $( 'input[type=checkbox]', this ).is( ':checked' )
 			
 			try
 				conds = JSON.parse editor.getValue()
@@ -379,19 +447,7 @@ fOnLoad = () ->
 					if $( '#select_event' ).val() isnt ''
 						fFetchEventParams oRule.event
 						fPlaceAndPaintInterval()
-						obj =
-							command: 'get_event_poller_user_params'
-							payload: JSON.stringify
-								id: oRule.event.split( ' -> ' )[ 0 ]
-						$.post( '/usercommand', obj )
-							.done ( data ) ->
-								oParams = JSON.parse data.message
-								for param, oParam of oParams
-									par = $( "#event_poller_params tr:contains(#{ param })" ).parent()
-									$( 'input', par ).val oParam.value
-									$( 'input', par ).attr 'unchanged', 'true'
-								$( 'input', par ).change () ->
-									$( this ).attr 'unchanged', 'false'
+
 					$( '#input_event' ).val oRule.event
 					$( '#event_interval' ).val oRule.event_interval
 
@@ -399,47 +455,9 @@ fOnLoad = () ->
 					editor.setValue JSON.stringify oRule.conditions
 
 					# Actions
-					oActions = {}
 					for action in oRule.actions
-						fAddSelectedAction action
 						arrName = action.split ' -> '
-						if not oActions[ arrName[ 0 ] ]
-							oActions[ arrName[ 0 ] ] = []
-						oActions[ arrName[ 0 ] ].push arrName[ 1 ]
-					fAddActionModuleParams = ( name ) ->
-						( data ) ->
-							oParams = JSON.parse data.message
-							domMod = $( "#action_params div.modName:contains(#{ name })" ).parent()
-							for param, oParam of oParams
-								par = $( "td.key:contains(#{ param })", domMod ).parent()
-								$( 'input', par ).val oParam.value
-								$( 'input', par ).attr 'unchanged', 'true'
-							$( 'input', par ).change () ->
-								$( this ).attr 'unchanged', 'false'
-
-					fAddActionModuleArgs = ( name ) ->
-						( data ) ->
-							for key, arrFuncs of data.message
-								par = $( "#selected_actions td.title:contains(#{ name } -> #{ key })" ).parent()
-								for oFunc in JSON.parse arrFuncs
-									tr = $( ".funcarg:contains(#{ oFunc.argument })", par ).parent().parent()
-									$( "input[type=text]", tr ).val oFunc.value
-									$( "input[type=checkbox]", tr ).prop 'checked', oFunc.regexp
-
-					for mod, arrMod of oActions
-						obj =
-							command: 'get_action_invoker_user_params'
-							payload: JSON.stringify
-								id: mod
-						$.post( '/usercommand', obj )
-							.done fAddActionModuleParams mod
-						
-						obj.command = 'get_action_invoker_user_arguments'
-						obj.payload = JSON.stringify
-							ruleId: oRule.id
-							moduleId: mod
-						$.post( '/usercommand', obj )
-							.done fAddActionModuleArgs mod
+						fAddSelectedAction action
 
 			.fail ( err ) ->
 				if err.responseText is ''

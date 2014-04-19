@@ -120,7 +120,7 @@ Dynamic Modules
 
   fTryToLoadModule = (function(_this) {
     return function(userId, ruleId, modId, src, dbMod, params, cb) {
-      var answ, err, fName, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
+      var answ, err, fName, fRegisterArguments, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
       if (!params) {
         params = {};
       }
@@ -162,19 +162,22 @@ Dynamic Modules
       }
       if (dbMod) {
         oFuncArgs = {};
-        for (func in oFuncParams) {
-          dbMod.getUserArguments(userId, ruleId, modId, func, function(err, obj) {
+        fRegisterArguments = function(fName) {
+          return function(err, obj) {
             if (obj) {
               try {
-                oFuncArgs[func] = JSON.parse(encryption.decrypt(obj));
-                return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + ruleId + ", " + modId);
+                oFuncArgs[fName] = JSON.parse(obj);
+                return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + ruleId + ", " + modId + ": " + obj);
               } catch (_error) {
                 err = _error;
                 _this.log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + ruleId + ", " + modId);
                 return _this.log.warn(err);
               }
             }
-          });
+          };
+        };
+        for (func in oFuncParams) {
+          dbMod.getUserArguments(userId, ruleId, modId, func, fRegisterArguments(func));
         }
       }
       return cb({

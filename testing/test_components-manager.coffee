@@ -35,6 +35,9 @@ cm.addRuleListener engine.internalEvent
 db = require path.join '..', 'js', 'persistence'
 db opts
 
+encryption = require path.join '..', 'js', 'encryption'
+encryption opts
+
 oUser = objects.users.userOne
 oRuleOne = objects.rules.ruleOne
 oRuleTwo = objects.rules.ruleTwo
@@ -196,10 +199,12 @@ exports.ruleForge =
 		db.actionInvokers.storeModule oUser.username, oAiThree
 
 		pw = 'This password should come out cleartext'
-		userparams = JSON.stringify password: pw
-		oEncrypted = cryptico.encrypt userparams, strPublicKey
+		oEncrypted = cryptico.encrypt pw, strPublicKey
+		userparams = JSON.stringify password:
+			shielded: false
+			value: oEncrypted.cipher
 
-		db.actionInvokers.storeUserParams oAiThree.id, oUser.username, oEncrypted.cipher
+		db.actionInvokers.storeUserParams oAiThree.id, oUser.username, userparams
 
 		request =
 			command: 'forge_rule'
@@ -230,7 +235,7 @@ exports.ruleForge =
 						test.strictEqual 200, answ.code, "Deleting Rule returned #{ answ.code }: #{ answ.message }"
 						setTimeout test.done, 200
 
-			setTimeout fWaitAgain, 200
+			setTimeout fWaitAgain, 500
 
 		setTimeout fWaitForPersistence, 200
 

@@ -48,53 +48,13 @@
   });
 
   fOnLoad = function() {
-    var editor, fAddSelectedAction, fFetchActionFunctionParams, fFetchActionParams, fFetchEventParams, obj;
+    var editor, fAddActionUserArgs, fAddActionUserParams, fAddEventParams, fAddSelectedAction, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventParams, fFillActionFunction, fFillEventParams, obj;
     document.title = 'Rule Forge!';
     $('#pagetitle').text('{{{user.username}}}, forge your ECA Rule!');
     editor = ace.edit("editor_conditions");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
-    fFetchEventParams = function(name) {
-      var arr, obj;
-      $('#event_poller_params *').remove();
-      if (name) {
-        arr = name.split(' -> ');
-        obj = {
-          command: 'get_event_poller_params',
-          payload: JSON.stringify({
-            id: arr[0]
-          })
-        };
-        return $.post('/usercommand', obj).done(function(data) {
-          var fAppendParam, shielded, table, _results;
-          if (data.message) {
-            oParams = JSON.parse(data.message);
-            $('#event_poller_params').html('<br><b>Required Parameters:</b>');
-            table = $('<table>');
-            $('#event_poller_params').append(table);
-            fAppendParam = function(name, shielded) {
-              var inp, tr;
-              tr = $('<tr>');
-              tr.append($('<td>').css('width', '20px'));
-              tr.append($('<td>').attr('class', 'key').text(name));
-              inp = $('<input>');
-              if (shielded) {
-                inp.attr('type', 'password');
-              }
-              tr.append($('<td>').text(' : ').append(inp));
-              return table.append(tr);
-            };
-            _results = [];
-            for (name in oParams) {
-              shielded = oParams[name];
-              _results.push(fAppendParam(name, shielded));
-            }
-            return _results;
-          }
-        }).fail(fFailedRequest('Error fetching event poller params'));
-      }
-    };
     $.post('/usercommand', {
       command: 'get_event_pollers'
     }).done(function(data) {
@@ -126,13 +86,15 @@
       return fFetchEventParams($('#select_event option:selected').text());
     }).fail(fFailedRequest('Error fetching event poller'));
     $('#select_event').change(function() {
-      if ($(this).val() === '') {
+      var evtFunc;
+      evtFunc = $(this).val();
+      if (evtFunc === '') {
         $('#input_interval').html('');
       } else {
         fPlaceAndPaintInterval();
       }
-      $('#input_event').val($(this).val());
-      return fFetchEventParams($(this).val());
+      $('#input_event').val(evtFunc);
+      return fFetchEventParams(evtFunc);
     });
     $('#input_event').change(function() {
       $('#select_event').val('');
@@ -144,6 +106,74 @@
         return fPlaceAndPaintInterval();
       }
     });
+    fFetchEventParams = function(name) {
+      var arr, obj;
+      $('#event_poller_params *').remove();
+      if (name) {
+        arr = name.split(' -> ');
+        obj = {
+          command: 'get_event_poller_params',
+          payload: JSON.stringify({
+            id: arr[0]
+          })
+        };
+        return $.post('/usercommand', obj).done(fAddEventParams(arr[0])).fail(fFailedRequest('Error fetching event poller params'));
+      }
+    };
+    fAddEventParams = function(id) {
+      return function(data) {
+        var fAppendParam, name, shielded, table;
+        if (data.message) {
+          oParams = JSON.parse(data.message);
+          $('#event_poller_params').html('<br><b>Required Parameters:</b>');
+          table = $('<table>');
+          $('#event_poller_params').append(table);
+          fAppendParam = function(name, shielded) {
+            var inp, tr;
+            tr = $('<tr>');
+            tr.append($('<td>').css('width', '20px'));
+            tr.append($('<td>').attr('class', 'key').text(name));
+            inp = $('<input>');
+            if (shielded) {
+              inp.attr('type', 'password');
+            }
+            tr.append($('<td>').text(' : ').append(inp));
+            return table.append(tr);
+          };
+          for (name in oParams) {
+            shielded = oParams[name];
+            fAppendParam(name, shielded);
+          }
+          return fFillEventParams(id);
+        }
+      };
+    };
+    fFillEventParams = function(moduleId) {
+      var obj;
+      obj = {
+        command: 'get_event_poller_user_params',
+        payload: JSON.stringify({
+          id: moduleId
+        })
+      };
+      return $.post('/usercommand', obj).done(function(data) {
+        var oParam, par, _results;
+        oParams = JSON.parse(data.message);
+        _results = [];
+        for (param in oParams) {
+          oParam = oParams[param];
+          par = $("#event_poller_params tr").filter(function() {
+            return $('td.key', this).text() === param;
+          });
+          $('input', par).val(oParam.value);
+          $('input', par).attr('unchanged', 'true');
+          _results.push($('input', par).change(function() {
+            return $(this).attr('unchanged', 'false');
+          }));
+        }
+        return _results;
+      });
+    };
     obj = {
       command: 'get_action_invokers'
     };
@@ -157,11 +187,14 @@
         return;
       }
       fAppendActions = function(module, actions) {
-        var act, _j, _len1, _results;
+        var act, arrEls, _j, _len1, _results;
         _results = [];
         for (_j = 0, _len1 = actions.length; _j < _len1; _j++) {
           act = actions[_j];
-          if ($("#action_params div:contains(" + module + " -> " + act + ")").length === 0) {
+          arrEls = $("#action_params div").filter(function() {
+            return $(this).text() === ("" + module + " -> " + act);
+          });
+          if (arrEls.length === 0) {
             _results.push($('#select_actions').append($('<option>').text(module + ' -> ' + act)));
           } else {
             _results.push(void 0);
@@ -176,6 +209,32 @@
       }
       return _results;
     }).fail(fFailedRequest('Error fetching event poller'));
+    fAddSelectedAction = function(name) {
+      var arrEls, arrName, div, img, subdiv, table, td, tr, _ref;
+      arrName = name.split(' -> ');
+      arrEls = $("#action_params div.modName").map(function() {
+        return $(this).text();
+      }).get();
+      table = $('#selected_actions');
+      tr = $('<tr>').appendTo(table);
+      img = $('<img>').attr('src', 'red_cross_small.png');
+      tr.append($('<td>').css('width', '20px').append(img));
+      tr.append($('<td>').attr('class', 'title').text(name));
+      td = $('<td>').attr('class', 'funcMappings').appendTo(tr);
+      fFetchActionFunctionArgs(td, arrName);
+      if (_ref = arrName[0], __indexOf.call(arrEls, _ref) < 0) {
+        div = $('<div>').appendTo($('#action_params'));
+        subdiv = $('<div> ').appendTo(div);
+        subdiv.append($('<div>')).attr('class', 'modName underlined').text(arrName[0]);
+        fFetchActionParams(div, arrName[0]);
+      }
+      $("#select_actions option").each(function() {
+        if ($(this).text() === name) {
+          return $(this).remove();
+        }
+      });
+      return fFillActionFunction(arrName[0]);
+    };
     fFetchActionParams = function(div, modName) {
       obj = {
         command: 'get_action_invoker_params',
@@ -212,7 +271,7 @@
         }
       }).fail(fFailedRequest('Error fetching action invoker params'));
     };
-    fFetchActionFunctionParams = function(tag, arrName) {
+    fFetchActionFunctionArgs = function(tag, arrName) {
       obj = {
         command: 'get_action_invoker_function_arguments',
         payload: JSON.stringify({
@@ -245,26 +304,70 @@
         }
       }).fail(fFailedRequest('Error fetching action invoker function params'));
     };
-    fAddSelectedAction = function(name) {
-      var arrEls, arrName, div, img, subdiv, table, td, tr, _ref;
-      arrName = name.split(' -> ');
-      arrEls = $("#action_params div.modName").map(function() {
-        return $(this).text();
-      }).get();
-      table = $('#selected_actions');
-      tr = $('<tr>').appendTo(table);
-      img = $('<img>').attr('src', 'red_cross_small.png');
-      tr.append($('<td>').css('width', '20px').append(img));
-      tr.append($('<td>').attr('class', 'title').text(name));
-      td = $('<td>').attr('class', 'funcMappings').appendTo(tr);
-      fFetchActionFunctionParams(td, arrName);
-      if (_ref = arrName[0], __indexOf.call(arrEls, _ref) < 0) {
-        div = $('<div>').appendTo($('#action_params'));
-        subdiv = $('<div> ').appendTo(div);
-        subdiv.append($('<div>')).attr('class', 'modName underlined').text(arrName[0]);
-        fFetchActionParams(div, arrName[0]);
-      }
-      return $("#select_actions option:contains(" + name + ")").remove();
+    fFillActionFunction = function(name) {
+      obj = {
+        command: 'get_action_invoker_user_params',
+        payload: JSON.stringify({
+          id: name
+        })
+      };
+      $.post('/usercommand', obj).done(fAddActionUserParams(name));
+      obj.command = 'get_action_invoker_user_arguments';
+      obj.payload = JSON.stringify({
+        ruleId: $('#input_id').val(),
+        moduleId: name
+      });
+      return $.post('/usercommand', obj).done(fAddActionUserArgs(name));
+    };
+    fAddActionUserParams = function(name) {
+      return function(data) {
+        var domMod, oParam, par, _results;
+        oParams = JSON.parse(data.message);
+        domMod = $("#action_params div").filter(function() {
+          return $('div.modName', this).text() === name;
+        });
+        _results = [];
+        for (param in oParams) {
+          oParam = oParams[param];
+          par = $("tr", domMod).filter(function() {
+            return $('td.key', this).text() === param;
+          });
+          $('input', par).val(oParam.value);
+          $('input', par).attr('unchanged', 'true');
+          _results.push($('input', par).change(function() {
+            return $(this).attr('unchanged', 'false');
+          }));
+        }
+        return _results;
+      };
+    };
+    fAddActionUserArgs = function(name) {
+      return function(data) {
+        var arrFuncs, key, oFunc, par, tr, _ref, _results;
+        _ref = data.message;
+        _results = [];
+        for (key in _ref) {
+          arrFuncs = _ref[key];
+          par = $("#selected_actions tr").filter(function() {
+            return $('td.title', this).text() === ("" + name + " -> " + key);
+          });
+          _results.push((function() {
+            var _j, _len1, _ref1, _results1;
+            _ref1 = JSON.parse(arrFuncs);
+            _results1 = [];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              oFunc = _ref1[_j];
+              tr = $("tr", par).filter(function() {
+                return $('.funcarg', this).text() === ("" + oFunc.argument);
+              });
+              $("input[type=text]", tr).val(oFunc.value);
+              _results1.push($("input[type=checkbox]", tr).prop('checked', oFunc.jsselector));
+            }
+            return _results1;
+          })());
+        }
+        return _results;
+      };
     };
     $('#select_actions').on('change', function() {
       var opt;
@@ -320,11 +423,11 @@
           ep[key] = {
             shielded: shielded
           };
-          if ($('input', this).attr('unchanged') === 'true') {
-            return ep[key].value = val;
-          } else {
+          if (!shielded || $('input', this).attr('unchanged') !== 'true') {
             encryptedParam = cryptico.encrypt(val, strPublicKey);
             return ep[key].value = encryptedParam.cipher;
+          } else {
+            return ep[key].value = val;
           }
         });
         if ($('#selected_actions tr').length === 0) {
@@ -347,11 +450,11 @@
             params[key] = {
               shielded: shielded
             };
-            if ($('input', this).attr('unchanged') === 'true') {
-              return params[key].value = val;
-            } else {
+            if (!shielded || $('input', this).attr('unchanged') !== 'true') {
               encryptedParam = cryptico.encrypt(val, strPublicKey);
               return params[key].value = encryptedParam.cipher;
+            } else {
+              return params[key].value = val;
             }
           });
           return ap[modName] = params;
@@ -368,7 +471,7 @@
             return actParams[actionName].push({
               argument: $('div.funcarg', this).text(),
               value: $('input[type=text]', this).val(),
-              regexp: $('input[type=checkbox]', this).is(':checked')
+              jsselector: $('input[type=checkbox]', this).is(':checked')
             });
           });
         });
@@ -461,7 +564,7 @@
         })
       };
       return $.post('/usercommand', obj).done(function(data) {
-        var action, arrMod, arrName, fAddActionModuleArgs, fAddActionModuleParams, mod, oActions, oRule, _j, _len1, _ref, _results;
+        var action, arrName, oRule, _j, _len1, _ref, _results;
         oRule = JSON.parse(data.message);
         if (oRule) {
           $('#input_id').val(oRule.id);
@@ -469,96 +572,16 @@
           if ($('#select_event').val() !== '') {
             fFetchEventParams(oRule.event);
             fPlaceAndPaintInterval();
-            obj = {
-              command: 'get_event_poller_user_params',
-              payload: JSON.stringify({
-                id: oRule.event.split(' -> ')[0]
-              })
-            };
-            $.post('/usercommand', obj).done(function(data) {
-              var oParam, par;
-              oParams = JSON.parse(data.message);
-              for (param in oParams) {
-                oParam = oParams[param];
-                par = $("#event_poller_params tr:contains(" + param + ")").parent();
-                $('input', par).val(oParam.value);
-                $('input', par).attr('unchanged', 'true');
-              }
-              return $('input', par).change(function() {
-                return $(this).attr('unchanged', 'false');
-              });
-            });
           }
           $('#input_event').val(oRule.event);
           $('#event_interval').val(oRule.event_interval);
           editor.setValue(JSON.stringify(oRule.conditions));
-          oActions = {};
           _ref = oRule.actions;
+          _results = [];
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             action = _ref[_j];
-            fAddSelectedAction(action);
             arrName = action.split(' -> ');
-            if (!oActions[arrName[0]]) {
-              oActions[arrName[0]] = [];
-            }
-            oActions[arrName[0]].push(arrName[1]);
-          }
-          fAddActionModuleParams = function(name) {
-            return function(data) {
-              var domMod, oParam, par;
-              oParams = JSON.parse(data.message);
-              domMod = $("#action_params div.modName:contains(" + name + ")").parent();
-              for (param in oParams) {
-                oParam = oParams[param];
-                par = $("td.key:contains(" + param + ")", domMod).parent();
-                $('input', par).val(oParam.value);
-                $('input', par).attr('unchanged', 'true');
-              }
-              return $('input', par).change(function() {
-                return $(this).attr('unchanged', 'false');
-              });
-            };
-          };
-          fAddActionModuleArgs = function(name) {
-            return function(data) {
-              var arrFuncs, key, oFunc, par, tr, _ref1, _results;
-              _ref1 = data.message;
-              _results = [];
-              for (key in _ref1) {
-                arrFuncs = _ref1[key];
-                par = $("#selected_actions td.title:contains(" + name + " -> " + key + ")").parent();
-                _results.push((function() {
-                  var _k, _len2, _ref2, _results1;
-                  _ref2 = JSON.parse(arrFuncs);
-                  _results1 = [];
-                  for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-                    oFunc = _ref2[_k];
-                    tr = $(".funcarg:contains(" + oFunc.argument + ")", par).parent().parent();
-                    $("input[type=text]", tr).val(oFunc.value);
-                    _results1.push($("input[type=checkbox]", tr).prop('checked', oFunc.regexp));
-                  }
-                  return _results1;
-                })());
-              }
-              return _results;
-            };
-          };
-          _results = [];
-          for (mod in oActions) {
-            arrMod = oActions[mod];
-            obj = {
-              command: 'get_action_invoker_user_params',
-              payload: JSON.stringify({
-                id: mod
-              })
-            };
-            $.post('/usercommand', obj).done(fAddActionModuleParams(mod));
-            obj.command = 'get_action_invoker_user_arguments';
-            obj.payload = JSON.stringify({
-              ruleId: oRule.id,
-              moduleId: mod
-            });
-            _results.push($.post('/usercommand', obj).done(fAddActionModuleArgs(mod)));
+            _results.push(fAddSelectedAction(action));
           }
           return _results;
         }

@@ -77,7 +77,7 @@ exports.handleEvent = ( req, resp ) ->
 			resp.send 400, 'Badly formed event!'
 		# If required event properties are present we process the event #
 		if obj and obj.event and not err
-			timestamp = ( new Date ).toISOString()
+			timestamp = ( new Date() ).toISOString()
 			rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
 			obj.eventid = "#{ obj.event }_#{ timestamp }_#{ rand }"
 			answ =

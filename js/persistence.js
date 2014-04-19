@@ -445,8 +445,6 @@ Persistence
         return function(err, obj) {
           var fRegisterFunction, func, oAnswer, sem, _i, _len, _results;
           sem = obj.length;
-          console.log('getAllModuleUserArguments');
-          console.log(obj);
           oAnswer = {};
           _results = [];
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
@@ -509,7 +507,7 @@ Persistence
 
   exports.appendLog = (function(_this) {
     return function(userId, ruleId, moduleId, message) {
-      return _this.db.append("" + userId + ":" + ruleId + ":log", "[" + ((new Date).toISOString()) + "] {" + moduleId + "} " + message + "\n");
+      return _this.db.append("" + userId + ":" + ruleId + ":log", "[" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + message + "\n");
     };
   })(this);
 

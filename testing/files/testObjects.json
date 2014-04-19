@@ -80,18 +80,30 @@
     "ruleOne": {
       "id": "ruleReal",
       "event": "test_1",
+      "event_interval": 1,
       "conditions": [".more:val(\"really nested\")"],
-      "actions": ["aiOne -> printToLog"]
+      "actions": ["aiOne -> printToLog"],
+      "action_functions": {
+        "aiOne -> printToLog": [
+          {
+            "argument": "evt",
+            "value": "*",
+            "jsselector": true
+          }
+        ]
+      }
     },
     "ruleTwo": {
       "id": "ruleRealTwo",
       "event": "test_2",
+      "event_interval": 1,
       "conditions": [],
       "actions": ["aiTwo -> otherEvent"]
     },
     "ruleThree": {
       "id": "ruleRealThree",
       "event": "epOne -> newMail",
+      "event_interval": 1,
       "conditions": [],
       "actions": ["aiThree -> printUserParamToLog"]
     }

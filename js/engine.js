@@ -172,7 +172,7 @@ Engine
                     } else {
                       _this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
                     }
-                    return oMyRule.actions[moduleName] = result.module;
+                    return oMyRule.actions[moduleName] = result;
                   });
                 } else {
                   return _this.log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
@@ -253,7 +253,7 @@ Engine
     return function(evt) {
       var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleName, userName, _results;
       fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
-        var err;
+        var arrArgs, err, oArg, _i, _len, _ref;
         if (!node) {
           _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
           return;
@@ -262,7 +262,21 @@ Engine
           try {
             numExecutingFunctions++;
             _this.log.info("EN | " + funcName + " executes...");
-            node[funcName](evt.payload);
+            arrArgs = [];
+            if (node.funcArgs[funcName]) {
+              _ref = node.funcArgs[funcName];
+              for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                oArg = _ref[_i];
+                if (oArg.jsselector) {
+                  arrArgs.push(jsonQuery(evt.payload, oArg.value).nodes()[0]);
+                } else {
+                  arrArgs.push(oArg.value);
+                }
+              }
+            } else {
+              _this.log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
+            }
+            node.module[funcName].apply(null, arrArgs);
             _this.log.info("EN | " + funcName + " finished execution");
           } catch (_error) {
             err = _error;

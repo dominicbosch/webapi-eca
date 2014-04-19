@@ -240,11 +240,11 @@ storeRule = ( user, oPayload, callback ) =>
 		oParams = oPayload.action_params
 		for id, params of oParams
 			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
-		oParams = oPayload.action_functions
+		oFuncArgs = oPayload.action_functions
 		# if action function arguments were send, store them
-		for id, params of oParams
+		for id, args of oFuncArgs
 			arr = id.split ' -> '
-			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify params 
+			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		# Initialize the rule log
 		db.resetLog user.username, rule.id

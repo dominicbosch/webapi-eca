@@ -160,7 +160,7 @@ updateActionModules = ( updatedRuleId ) =>
 									else
 										@log.error "EN | Compilation of code failed! #{ userName },
 											#{ oMyRule.rule.id }, #{ moduleName }: #{ result.answ.message }"
-									oMyRule.actions[moduleName] = result.module
+									oMyRule.actions[moduleName] = result
 						else
 							@log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
 
@@ -209,7 +209,16 @@ processEvent = ( evt ) =>
 			try
 				numExecutingFunctions++
 				@log.info "EN | #{ funcName } executes..."
-				node[funcName] evt.payload
+				arrArgs = []
+				if node.funcArgs[ funcName ]
+					for oArg in node.funcArgs[ funcName ]
+						if oArg.jsselector
+							arrArgs.push jsonQuery( evt.payload, oArg.value ).nodes()[ 0 ]
+						else
+							arrArgs.push oArg.value
+				else
+					@log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
+				node.module[ funcName ].apply null, arrArgs
 				@log.info "EN | #{ funcName } finished execution"
 			catch err
 				@log.info "EN | ERROR IN ACTION INVOKER: " + err.message
