@@ -13,7 +13,7 @@ WebAPI-ECA Engine
  */
 
 (function() {
-  var argv, cm, conf, cp, db, engine, fs, http, init, logconf, logger, nameEP, opt, optimist, path, procCmds, shutDown, usage;
+  var argv, cm, conf, cp, db, encryption, engine, fs, http, init, logconf, logger, nameEP, opt, optimist, path, procCmds, shutDown, usage;
 
   logger = require('./logging');
 
@@ -26,6 +26,8 @@ WebAPI-ECA Engine
   engine = require('./engine');
 
   http = require('./http-listener');
+
+  encryption = require('./encryption');
 
   nameEP = 'event-poller';
 
@@ -147,6 +149,7 @@ WebAPI-ECA Engine
       args['db-port'] = parseInt(argv.d || conf.getDbPort());
       args['keygen'] = conf.getKeygenPassphrase();
       args['webhooks'] = conf.fetchProp('webhooks');
+      encryption(args);
       _this.log.info('RS | Initialzing DB');
       db(args);
       return db.isConnected(function(err) {

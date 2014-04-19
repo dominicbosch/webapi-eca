@@ -14,6 +14,8 @@ Components Manager
 db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
 dynmod = require './dynamic-modules'
+# - [Encryption](encryption.html)
+encryption = require './encryption'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
@@ -159,40 +161,109 @@ getModuleParams = ( user, oPayload, dbMod, callback ) ->
 			answ.message = oPayload
 			callback answ
 
+getModuleUserParams = ( user, oPayload, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'id' ], oPayload
+	if answ.code isnt 200
+		callback answ
+	else
+		dbMod.getUserParams oPayload.id, user.username, ( err, str ) ->
+			oParams = JSON.parse str
+			for name, oParam of oParams
+				if not oParam.shielded
+					oParam.value = encryption.decrypt oParam.value
+			answ.message = JSON.stringify oParams
+			callback answ
+
+getModuleUserArguments = ( user, oPayload, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'ruleId' ,'moduleId' ], oPayload
+	if answ.code isnt 200
+		callback answ
+	else
+		dbMod.getAllModuleUserArguments user.username, oPayload.ruleId, oPayload.moduleId, ( err, oPayload ) ->
+			answ.message = oPayload
+			callback answ
 
 forgeModule = ( user, oPayload, dbMod, callback ) =>
 	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oPayload
 	if answ.code isnt 200
 		callback answ
 	else
-		i = 0
-		dbMod.getModule oPayload.id, ( err, mod ) =>
-			if mod
-				answ.code = 409
-				answ.message = 'Module name already existing: ' + oPayload.id
-				callback answ
-			else
-				src = oPayload.data
-				dynmod.compileString src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, ( cm ) =>
-					answ = cm.answ
-					if answ.code is 200
-						funcs = []
-						funcs.push name for name, id of cm.module
-						@log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
-						answ.message = 
-							" Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
-						oPayload.functions = JSON.stringify funcs
-						oPayload.functionArgs = JSON.stringify cm.funcParams
-						dbMod.storeModule user.username, oPayload
-						if oPayload.public is 'true'
-							dbMod.publish oPayload.id
+		if oPayload.overwrite
+			storeModule user, oPayload, dbMod, callback
+		else
+			dbMod.getModule oPayload.id, ( err, mod ) =>
+				if mod
+					answ.code = 409
+					answ.message = 'Module name already existing: ' + oPayload.id
 					callback answ
+				else
+					storeModule user, oPayload, dbMod, callback
+
+storeModule = ( user, oPayload, dbMod, callback ) =>
+	src = oPayload.data
+	dynmod.compileString src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, ( cm ) =>
+		answ = cm.answ
+		if answ.code is 200
+			funcs = []
+			funcs.push name for name, id of cm.module
+			@log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
+			answ.message = 
+				" Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
+			oPayload.functions = JSON.stringify funcs
+			oPayload.functionArgs = JSON.stringify cm.funcParams
+			dbMod.storeModule user.username, oPayload
+			if oPayload.public is 'true'
+				dbMod.publish oPayload.id
+		callback answ
+
+storeRule = ( user, oPayload, callback ) =>
+	# This is how a rule is stored in the database
+		rule =
+			id: oPayload.id
+			event: oPayload.event
+			event_interval: oPayload.event_interval
+			conditions: oPayload.conditions
+			actions: oPayload.actions
+		strRule = JSON.stringify rule
+		# store the rule
+		db.storeRule rule.id, strRule
+		# link the rule to the user
+		db.linkRule rule.id, user.username
+		# activate the rule
+		db.activateRule rule.id, user.username
+		# if event module parameters were send, store them
+		if oPayload.event_params
+			epModId = rule.event.split( ' -> ' )[ 0 ]
+			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oPayload.event_params
+		
+		# if action module params were send, store them
+		oParams = oPayload.action_params
+		for id, params of oParams
+			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
+		oParams = oPayload.action_functions
+		# if action function arguments were send, store them
+		for id, params of oParams
+			arr = id.split ' -> '
+			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify params 
+		
+		# Initialize the rule log
+		db.resetLog user.username, rule.id
+		db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
+		
+		# Inform everbody about the new rule
+		eventEmitter.emit 'rule',
+			event: 'new'
+			user: user.username
+			rule: rule
+		callback
+			code: 200
+			message: "Rule '#{ rule.id }' stored and activated!"
 
 commandFunctions =
 	get_public_key: ( user, oPayload, callback ) ->
 		callback
 			code: 200
-			message: dynmod.getPublicKey()
+			message: encryption.getPublicKey()
 
 # EVENT POLLERS
 # -------------
@@ -207,6 +278,12 @@ commandFunctions =
 	
 	get_event_poller_params: ( user, oPayload, callback ) ->
 		getModuleParams user, oPayload, db.eventPollers, callback
+
+	get_event_poller_user_params: ( user, oPayload, callback ) ->
+		getModuleUserParams user, oPayload, db.eventPollers, callback
+
+	get_event_poller_user_arguments: ( user, oPayload, callback ) ->
+		getModuleUserArguments user, oPayload, db.eventPollers, callback
 
 	forge_event_poller: ( user, oPayload, callback ) ->
 		forgeModule user, oPayload, db.eventPollers, callback
@@ -239,7 +316,13 @@ commandFunctions =
 	get_action_invoker_params: ( user, oPayload, callback ) ->
 		getModuleParams user, oPayload, db.actionInvokers, callback
 
-	get_action_invoker_function_params: ( user, oPayload, callback ) ->
+	get_action_invoker_user_params: ( user, oPayload, callback ) ->
+		getModuleUserParams user, oPayload, db.actionInvokers, callback
+
+	get_action_invoker_user_arguments: ( user, oPayload, callback ) ->
+		getModuleUserArguments user, oPayload, db.actionInvokers, callback
+
+	get_action_invoker_function_arguments: ( user, oPayload, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oPayload
 		if answ.code isnt 200
 			callback answ
@@ -270,6 +353,16 @@ commandFunctions =
 				code: 200
 				message: obj
 
+	get_rule: ( user, oPayload, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oPayload
+		if answ.code isnt 200
+			callback answ
+		else
+			db.getRule oPayload.id, ( err, obj ) ->
+				callback
+					code: 200
+					message: obj
+
 	get_rule_log: ( user, oPayload, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oPayload
 		if answ.code isnt 200
@@ -291,54 +384,16 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getRule oPayload.id, ( err, oExisting ) ->
-				if oExisting isnt null
-					answ =
-						code: 409
-						message: 'Rule name already existing!'
-				else
-				# This is how a rule is stored in the database
-					rule =
-						id: oPayload.id
-						event: oPayload.event
-						event_interval: oPayload.event_interval
-						conditions: oPayload.conditions
-						actions: oPayload.actions
-					strRule = JSON.stringify rule
-					# store the rule
-					db.storeRule rule.id, strRule
-					# link the rule to the user
-					db.linkRule rule.id, user.username
-					# activate the rule
-					db.activateRule rule.id, user.username
-					# if event module parameters were send, store them
-					if oPayload.event_params
-						epModId = rule.event.split( ' -> ' )[0]
-						db.eventPollers.storeUserParams epModId, user.username, oPayload.event_params
-					
-					# if action module params were send, store them
-					oParams = oPayload.action_params
-					for id, params of oParams
-						db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
-					oParams = oPayload.action_functions
-					# if action function arguments were send, store them
-					for id, params of oParams
-						arr = id.split ' -> '
-						db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify params 
-					
-					# Initialize the rule log
-					db.resetLog user.username, rule.id
-					db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
-					
-					# Inform everbody about the new rule
-					eventEmitter.emit 'rule',
-						event: 'new'
-						user: user.username
-						rule: rule
-					answ =
-						code: 200
-						message: "Rule '#{ rule.id }' stored and activated!"
-				callback answ
+			if oPayload.overwrite
+				storeRule user, oPayload, callback
+			else
+				db.getRule oPayload.id, ( err, mod ) =>
+					if mod
+						answ.code = 409
+						answ.message = 'Rule name already existing: ' + oPayload.id
+						callback answ
+					else
+						storeRule user, oPayload, callback
 
 	delete_rule: ( user, oPayload, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oPayload

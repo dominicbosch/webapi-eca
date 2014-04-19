@@ -257,6 +257,7 @@ Persistence
       this.log = log;
       this.deleteUserArguments = __bind(this.deleteUserArguments, this);
       this.getUserArguments = __bind(this.getUserArguments, this);
+      this.getAllModuleUserArguments = __bind(this.getAllModuleUserArguments, this);
       this.getUserArgumentsFunctions = __bind(this.getUserArgumentsFunctions, this);
       this.storeUserArguments = __bind(this.storeUserArguments, this);
       this.deleteUserParams = __bind(this.deleteUserParams, this);
@@ -436,6 +437,35 @@ Persistence
     IndexedModules.prototype.getUserArgumentsFunctions = function(userId, ruleId, mId, cb) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
       return this.db.get("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
+    };
+
+    IndexedModules.prototype.getAllModuleUserArguments = function(userId, ruleId, mId, cb) {
+      this.log.info("DB | (IdxedMods) " + this.setname + ".getAllModuleUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+      return this.db.smembers("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
+        return function(err, obj) {
+          var fRegisterFunction, func, oAnswer, sem, _i, _len, _results;
+          sem = obj.length;
+          console.log('getAllModuleUserArguments');
+          console.log(obj);
+          oAnswer = {};
+          _results = [];
+          for (_i = 0, _len = obj.length; _i < _len; _i++) {
+            func = obj[_i];
+            fRegisterFunction = function(func) {
+              return function(err, obj) {
+                if (obj) {
+                  oAnswer[func] = obj;
+                }
+                if (--sem === 0) {
+                  return cb(null, oAnswer);
+                }
+              };
+            };
+            _results.push(_this.db.get("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
+          }
+          return _results;
+        };
+      })(this));
     };
 
     IndexedModules.prototype.getUserArguments = function(userId, ruleId, mId, funcId, cb) {

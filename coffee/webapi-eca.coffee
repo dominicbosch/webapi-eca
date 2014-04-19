@@ -30,6 +30,9 @@ engine = require './engine'
 # - [HTTP Listener](http-listener.html)
 http = require './http-listener'
 
+# - [Encryption](encryption.html)
+encryption = require './encryption'
+
 # - [Event Poller](event-poller.html) *(will be forked into a child process)*
 nameEP = 'event-poller'
 
@@ -134,6 +137,8 @@ init = =>
 	#FIXME this has to come from user input for security reasons:
 	args[ 'keygen' ] = conf.getKeygenPassphrase()
 	args[ 'webhooks' ] = conf.fetchProp 'webhooks'
+
+	encryption args
 	
 	@log.info 'RS | Initialzing DB'
 	db args

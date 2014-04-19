@@ -345,6 +345,22 @@ class IndexedModules
 		@log.info "DB | (IdxedMods) #{ @setname }.getUserArgumentsFunctions( #{ userId }, #{ ruleId }, #{ mId } )"
 		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", cb
 
+	getAllModuleUserArguments: ( userId, ruleId, mId, cb ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.getAllModuleUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
+		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
+			sem = obj.length
+			console.log 'getAllModuleUserArguments'
+			console.log obj
+			oAnswer = {}
+			for func in obj
+				fRegisterFunction = ( func ) =>
+					( err, obj ) =>
+						if obj
+							oAnswer[ func ] = obj
+						if --sem is 0
+							cb null, oAnswer
+				@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }", fRegisterFunction func
+
 	getUserArguments: ( userId, ruleId, mId, funcId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId } )"
 		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }", cb

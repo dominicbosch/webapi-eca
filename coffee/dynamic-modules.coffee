@@ -10,6 +10,8 @@ Dynamic Modules
 
 # - [Persistence](persistence.html)
 db = require './persistence'
+# - [Encryption](encryption.html)
+encryption = require './encryption'
 
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 #   [events](http://nodejs.org/api/events.html)
@@ -18,11 +20,9 @@ needle = require 'needle'
 request = require 'request'
 
 # - External Modules: [coffee-script](http://coffeescript.org/),
-#       [cryptico](https://github.com/wwwtyro/cryptico),
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
-cryptico = require 'my-cryptico'
 cryptoJS = require 'crypto-js'
 importio = require( 'import-io' ).client
 
@@ -37,20 +37,8 @@ Initializes the dynamic module handler.
 ###
 exports = module.exports = ( args ) =>
 	@log = args.logger
-	# FIXME this can't come through the arguments
-	if not @strPublicKey and args[ 'keygen' ]
-		db args
-		passPhrase = args[ 'keygen' ]
-		numBits = 1024
-		@oPrivateRSAkey = cryptico.generateRSAKey passPhrase, numBits
-		@strPublicKey = cryptico.publicKeyString @oPrivateRSAkey
-		@log.info "DM | Public Key generated: #{ @strPublicKey }"
-
+	db args
 	module.exports
-
-
-exports.getPublicKey = () =>
-	@strPublicKey
 
 logFunction = ( uId, rId, mId ) ->
 	( msg ) ->
@@ -61,7 +49,7 @@ getFunctionParamNames = ( fName, func, oFuncs ) ->
 	fnStr = func.toString().replace regexpComments, ''
 	result = fnStr.slice( fnStr.indexOf( '(' ) + 1, fnStr.indexOf( ')' ) ).match /([^\s,]+)/g
 	if not result
-		 result = []
+		result = []
 	oFuncs[fName] = result
 
 ###
@@ -93,13 +81,14 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
 	if dbMod
 		dbMod.getUserParams modId, userId, ( err, obj ) =>
 			try
-				oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
-				obj = JSON.parse oDecrypted.plaintext
+				oParams = {}
+				for name, oParam of JSON.parse obj
+					oParams[ name ] = encryption.decrypt oParam.value
 				@log.info "DM | Loaded user defined params for #{ userId }, #{ ruleId }, #{ modId }"
 			catch err
 				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
 				@log.warn err
-			fTryToLoadModule userId, ruleId, modId, src, dbMod, obj, cb
+			fTryToLoadModule userId, ruleId, modId, src, dbMod, oParams, cb
 	else
 		fTryToLoadModule userId, ruleId, modId, src, dbMod, null, cb
 
@@ -156,8 +145,7 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 			dbMod.getUserArguments userId, ruleId, modId, func, ( err, obj ) =>
 				if obj
 					try
-						oDecrypted = cryptico.decrypt obj, @oPrivateRSAkey
-						oFuncArgs[ func ] = JSON.parse oDecrypted.plaintext
+						oFuncArgs[ func ] = JSON.parse encryption.decrypt obj
 						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ ruleId }, #{ modId }"
 					catch err
 						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ ruleId }, #{ modId }"

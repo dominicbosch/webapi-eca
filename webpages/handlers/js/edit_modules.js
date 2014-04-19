@@ -11,20 +11,24 @@
     });
     fErrHandler = function(errMsg) {
       return function(err) {
-        var msg, oErr;
+        var fDelayed;
         if (err.status === 401) {
           return window.location.href = 'forge?page=edit_modules';
         } else {
-          if (err.responseText === '') {
-            msg = 'No Response from Server!';
-          } else {
-            try {
-              oErr = JSON.parse(err.responseText);
-              msg = oErr.message;
-            } catch (_error) {}
-          }
-          $('#info').text(errMsg + msg);
-          return $('#info').attr('class', 'error');
+          fDelayed = function() {
+            var msg, oErr;
+            if (err.responseText === '') {
+              msg = 'No Response from Server!';
+            } else {
+              try {
+                oErr = JSON.parse(err.responseText);
+                msg = oErr.message;
+              } catch (_error) {}
+            }
+            $('#info').text(errMsg + msg);
+            return $('#info').attr('class', 'error');
+          };
+          return setTimeout(fDelayed, 500);
         }
       };
     };
@@ -68,11 +72,10 @@
         }
         data = {
           command: cmd,
-          payload: {
+          payload: JSON.stringify({
             id: modName
-          }
+          })
         };
-        data.payload = JSON.stringify(data.payload);
         return $.post('/usercommand', data).done(fFetchModules).fail(fErrHandler('Could not delete module! '));
       }
     });
@@ -80,9 +83,9 @@
       var modName;
       modName = encodeURIComponent($('div', $(this).closest('tr')).text());
       if ($('#module_type').val() === 'Event Poller') {
-        return window.location.href = 'forge?page=forge_event_poller&id=' + modName;
+        return window.location.href = 'forge?page=forge_module&type=event_poller&id=' + modName;
       } else {
-        return window.location.href = 'forge?page=forge_action_invoker&id=' + modName;
+        return window.location.href = 'forge?page=forge_module&type=action_invoker&id=' + modName;
       }
     });
   };

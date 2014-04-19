@@ -9,13 +9,15 @@ Dynamic Modules
  */
 
 (function() {
-  var db, dynmod, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger, pollLoop;
+  var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger, pollLoop;
 
   logger = require('./logging');
 
   db = require('./persistence');
 
   dynmod = require('./dynamic-modules');
+
+  encryption = require('./encryption');
 
   if (process.argv.length < 8) {
     console.error('Not all arguments have been passed!');
@@ -42,6 +44,10 @@ Dynamic Modules
   });
 
   dynmod({
+    logger: log
+  });
+
+  encryption({
     logger: log,
     keygen: process.argv[7]
   });

@@ -8,11 +8,13 @@ Dynamic Modules
 
 # **Loads Modules:**
 
-# - [Logging](logging.html), [Persistence](persistence.html)
+# - [Logging](logging.html), [Persistence](persistence.html),
+# [Encryption](encryption.html)
 # and [Dynamic Modules](dynamic-modules.html)
 logger = require './logging'
 db = require './persistence'
 dynmod = require './dynamic-modules'
+encryption = require './encryption'
 
 # If we do not receive all required arguments we shut down immediately
 if process.argv.length < 8
@@ -32,6 +34,9 @@ log.info 'EP | Event Poller starts up'
 # Initialize required modules (should be in cache already)
 db logger: log
 dynmod
+	logger: log
+	
+encryption
 	logger: log
 	keygen: process.argv[ 7 ]
 

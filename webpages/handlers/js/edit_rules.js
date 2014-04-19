@@ -3,7 +3,7 @@
   var fOnLoad;
 
   fOnLoad = function() {
-    var fChangeInputVisibility, fErrHandler, fFetchRules, fUpdateRuleList;
+    var fErrHandler, fFetchRules, fUpdateRuleList;
     document.title = 'Edit Rules';
     $('#pagetitle').text("{{{user.username}}}, edit your Rules!");
     fErrHandler = function(errMsg) {
@@ -63,11 +63,10 @@
         $('#log_col').text("");
         data = {
           command: 'delete_rule',
-          payload: {
+          payload: JSON.stringify({
             id: ruleName
-          }
+          })
         };
-        data.payload = JSON.stringify(data.payload);
         return $.post('/usercommand', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
       }
     });
@@ -76,62 +75,21 @@
       ruleName = $('div', $(this).closest('tr')).text();
       return window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent(ruleName);
     });
-    $('#tableRules').on('click', 'img.log', function() {
+    return $('#tableRules').on('click', 'img.log', function() {
       var data, ruleName;
       ruleName = $('div', $(this).closest('tr')).text();
       data = {
         command: 'get_rule_log',
-        payload: {
+        payload: JSON.stringify({
           id: ruleName
-        }
+        })
       };
-      data.payload = JSON.stringify(data.payload);
       return $.post('/usercommand', data).done(function(data) {
         var log;
         log = data.message.replace(new RegExp("\n", 'g'), "<br>");
         return $('#log_col').html("<h3>" + ruleName + " Log:</h3>" + log);
       }).fail(fErrHandler('Could not get rule log! '));
     });
-    fChangeInputVisibility = function() {
-      return $('#tableParams tr').each(function(id) {
-        if ($(this).is(':last-child' || $(this).is(':only-child'))) {
-          $('img', this).hide();
-          return $('input[type=checkbox]', this).hide();
-        } else {
-          $('img', this).show();
-          return $('input[type=checkbox]', this).show();
-        }
-      });
-    };
-    $('#tableParams').on('click', 'img', function() {
-      var par;
-      par = $(this).closest('tr');
-      if (!par.is(':last-child')) {
-        par.remove();
-      }
-      return fChangeInputVisibility();
-    });
-    $('#tableParams').on('keyup', 'input', function(e) {
-      var cb, code, img, inp, par, tr;
-      code = e.keyCode || e.which;
-      if (code !== 9) {
-        par = $(this).closest('tr');
-        if (par.is(':last-child')) {
-          tr = $('<tr>');
-          img = $('<img>').attr('title', 'Remove?').attr('src', 'red_cross_small.png');
-          cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
-          inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
-          tr.append($('<td>').append(img));
-          tr.append($('<td>').append(cb));
-          tr.append($('<td>').append(inp));
-          par.parent().append(tr);
-          return fChangeInputVisibility();
-        } else if ($(this).val() === '' && !par.is(':only-child')) {
-          return par.remove();
-        }
-      }
-    });
-    return fChangeInputVisibility();
   };
 
   window.addEventListener('load', fOnLoad, true);

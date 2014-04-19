@@ -11,14 +11,16 @@ fOnLoad = () ->
 			if err.status is 401
 				window.location.href = 'forge?page=edit_modules'
 			else
-				if err.responseText is ''
-					msg = 'No Response from Server!'
-				else
-					try
-						oErr = JSON.parse err.responseText
-						msg = oErr.message
-				$( '#info' ).text errMsg + msg
-				$( '#info' ).attr 'class', 'error'
+				fDelayed = () ->
+					if err.responseText is ''
+						msg = 'No Response from Server!'
+					else
+						try
+							oErr = JSON.parse err.responseText
+							msg = oErr.message
+					$( '#info' ).text errMsg + msg
+					$( '#info' ).attr 'class', 'error'
+				setTimeout fDelayed, 500
 
 	fFetchModules = () ->
 		if $( '#module_type' ).val() is 'Event Poller'
@@ -56,9 +58,8 @@ fOnLoad = () ->
 				cmd = 'delete_action_invoker'
 			data =
 				command: cmd
-				payload:
+				payload: JSON.stringify
 					id: modName
-			data.payload = JSON.stringify data.payload
 			$.post( '/usercommand', data )
 				.done fFetchModules
 				.fail fErrHandler 'Could not delete module! '
@@ -66,8 +67,8 @@ fOnLoad = () ->
 	$( '#tableModules' ).on 'click', 'img.log', () ->
 		modName = encodeURIComponent $( 'div', $( this ).closest( 'tr' )).text()
 		if $( '#module_type' ).val() is 'Event Poller'
-			window.location.href = 'forge?page=forge_event_poller&id=' + modName
+			window.location.href = 'forge?page=forge_module&type=event_poller&id=' + modName
 		else
-			window.location.href = 'forge?page=forge_action_invoker&id=' + modName
+			window.location.href = 'forge?page=forge_module&type=action_invoker&id=' + modName
 
 window.addEventListener 'load', fOnLoad, true

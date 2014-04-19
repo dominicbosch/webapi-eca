@@ -9,9 +9,11 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptico, cryptoJS, cs, db, exports, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
+  var cryptoJS, cs, db, encryption, exports, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
+
+  encryption = require('./encryption');
 
   vm = require('vm');
 
@@ -20,8 +22,6 @@ Dynamic Modules
   request = require('request');
 
   cs = require('coffee-script');
-
-  cryptico = require('my-cryptico');
 
   cryptoJS = require('crypto-js');
 
@@ -38,23 +38,9 @@ Dynamic Modules
 
   exports = module.exports = (function(_this) {
     return function(args) {
-      var numBits, passPhrase;
       _this.log = args.logger;
-      if (!_this.strPublicKey && args['keygen']) {
-        db(args);
-        passPhrase = args['keygen'];
-        numBits = 1024;
-        _this.oPrivateRSAkey = cryptico.generateRSAKey(passPhrase, numBits);
-        _this.strPublicKey = cryptico.publicKeyString(_this.oPrivateRSAkey);
-        _this.log.info("DM | Public Key generated: " + _this.strPublicKey);
-      }
+      db(args);
       return module.exports;
-    };
-  })(this);
-
-  exports.getPublicKey = (function(_this) {
-    return function() {
-      return _this.strPublicKey;
     };
   })(this);
 
@@ -110,17 +96,21 @@ Dynamic Modules
       _this.log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
       if (dbMod) {
         return dbMod.getUserParams(modId, userId, function(err, obj) {
-          var oDecrypted;
+          var name, oParam, oParams, _ref;
           try {
-            oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
-            obj = JSON.parse(oDecrypted.plaintext);
+            oParams = {};
+            _ref = JSON.parse(obj);
+            for (name in _ref) {
+              oParam = _ref[name];
+              oParams[name] = encryption.decrypt(oParam.value);
+            }
             _this.log.info("DM | Loaded user defined params for " + userId + ", " + ruleId + ", " + modId);
           } catch (_error) {
             err = _error;
             _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
             _this.log.warn(err);
           }
-          return fTryToLoadModule(userId, ruleId, modId, src, dbMod, obj, cb);
+          return fTryToLoadModule(userId, ruleId, modId, src, dbMod, oParams, cb);
         });
       } else {
         return fTryToLoadModule(userId, ruleId, modId, src, dbMod, null, cb);
@@ -174,11 +164,9 @@ Dynamic Modules
         oFuncArgs = {};
         for (func in oFuncParams) {
           dbMod.getUserArguments(userId, ruleId, modId, func, function(err, obj) {
-            var oDecrypted;
             if (obj) {
               try {
-                oDecrypted = cryptico.decrypt(obj, _this.oPrivateRSAkey);
-                oFuncArgs[func] = JSON.parse(oDecrypted.plaintext);
+                oFuncArgs[func] = JSON.parse(encryption.decrypt(obj));
                 return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + ruleId + ", " + modId);
               } catch (_error) {
                 err = _error;

@@ -1,13 +1,33 @@
-Action Invoker Name: <input id="input_id" type="text" />
-<select id="editor_mode">
-	<option>CoffeeScript</option>
-	<option>JavaScript</option>
-</select> is public: <input type="checkbox" id="is_public" />
-<table id="editor_table">
-	<tr>
-		<td id="editor_col" valign="top">
-<div id="editor">
+<script src="js/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script id="template_event_poller" type="text/template">
+#
+# EmailYak EVENT POLLER
+# ---------------------
+#
+# Requires user params:
+#  - apikey: The user's EmailYak API key
+#
 
+url = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'
+
+exports.newMail = ( pushEvent ) ->
+
+	# needlereq allows the user to make calls to API's
+	# Refer to https://github.com/tomas/needle for more information
+	# 
+	# Syntax: needle.request method, url, data, [options], callback
+	#
+	needle.request 'get', url, null, null, ( err, resp, body ) ->
+		if err
+			log 'Error in EmailYak EM newMail: ' + err.message
+		else
+			if resp.statusCode is 200
+				for mail in body.Emails
+					pushEvent 
+						subject: mail.Subject
+						content: mail.TextBody
+</script>
+<script id="template_action_invoker" type="text/template">
 ### 
 ProBinder ACTION INVOKER
 ------------------------
@@ -124,28 +144,4 @@ exports.setRead = ( id ) ->
 		data:
 			id: id
 		callback: standardCallback 'setRead'
-</div>
-  <button id="but_submit">save</button>
-		</td>
-		<td id="params_col" valign="top">
-This action invoker requires user-specific properties:
-<table id="tableParams">
-	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="checkbox" title="Password shielded input?" /></td>
-		<td><input type="text" class="textinput" value="username" /></td>
-	</tr>
-	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="checkbox" title="Password shielded input?" checked="true" /></td>
-		<td><input type="text" class="textinput" value="password" /></td>
-	</tr>
-	<tr>
-		<td><img src="red_cross_small.png"></td>
-		<td><input type="checkbox" title="Password shielded input?" /></td>
-		<td><input type="text" class="textinput" /></td>
-	</tr>
-</table>
-		</td>
-	</tr>
-</table>
+</script>
