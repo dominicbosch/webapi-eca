@@ -368,20 +368,26 @@ fOnLoad = () ->
 			fParseTime = ( str, hasDay ) ->
 				arrTime = str.split ':'
 				# If there's only one entry, this is the amount of minutes
+				if hasDay
+					def = 0
+				else
+					def = 10
 				if arrTime.length is 1
-					time = parseInt( str ) || 10
+					time = parseInt( str ) || def
 					if hasDay
 						time * 60
 					else
 						time
 				else
 					h = parseInt( arrTime[ 0 ] ) || 0
-					h * 60 + ( parseInt( arrTime[ 1 ] ) || 10 )
+					if h > 0
+						def = 0
+					h * 60 + ( parseInt( arrTime[ 1 ] ) || def )
 
 
 			txtInterval = $( '#event_interval' ).val()
 			if not txtInterval
-				mins = 1
+				mins = 10
 			else
 				arrInp = txtInterval.split ' '
 				# There's only one string entered, either day or hour
@@ -394,6 +400,7 @@ fOnLoad = () ->
 			# We have to limit this to 24 days because setTimeout only takes integer values
 			# until we implement a scheduler that deals with larger intervals
 			mins = Math.min mins, 35700
+			mins = Math.max 1, mins
 			fCheckOverwrite = ( obj ) ->
 				( err ) ->
 					if err.status is 409

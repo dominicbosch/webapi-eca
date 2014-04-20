@@ -62,7 +62,8 @@ exports.addRuleListener = ( eh ) =>
 						try 
 							oRule = JSON.parse strRule
 							db.resetLog userName, oRule.id
-							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized"
+							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized.
+								Interval set to #{ oRule.event_interval } minutes"
 
 							eventEmitter.emit 'rule',
 								event: 'init'
@@ -248,7 +249,8 @@ storeRule = ( user, oPayload, callback ) =>
 		
 		# Initialize the rule log
 		db.resetLog user.username, rule.id
-		db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized"
+		db.appendLog user.username, rule.id, "INIT",
+			"Rule '#{ rule.id }' initialized. Interval set to #{ rule.event_interval } minutes"
 		
 		# Inform everbody about the new rule
 		eventEmitter.emit 'rule',

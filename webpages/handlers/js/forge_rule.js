@@ -485,10 +485,15 @@
           throw new Error("Conditions Invalid! Needs to be an Array of Strings!");
         }
         fParseTime = function(str, hasDay) {
-          var arrTime, h, time;
+          var arrTime, def, h, time;
           arrTime = str.split(':');
+          if (hasDay) {
+            def = 0;
+          } else {
+            def = 10;
+          }
           if (arrTime.length === 1) {
-            time = parseInt(str) || 10;
+            time = parseInt(str) || def;
             if (hasDay) {
               return time * 60;
             } else {
@@ -496,12 +501,15 @@
             }
           } else {
             h = parseInt(arrTime[0]) || 0;
-            return h * 60 + (parseInt(arrTime[1]) || 10);
+            if (h > 0) {
+              def = 0;
+            }
+            return h * 60 + (parseInt(arrTime[1]) || def);
           }
         };
         txtInterval = $('#event_interval').val();
         if (!txtInterval) {
-          mins = 1;
+          mins = 10;
         } else {
           arrInp = txtInterval.split(' ');
           if (arrInp.length === 1) {
@@ -512,6 +520,7 @@
           }
         }
         mins = Math.min(mins, 35700);
+        mins = Math.max(1, mins);
         fCheckOverwrite = function(obj) {
           return function(err) {
             var payl;
