@@ -68,8 +68,9 @@ fOnLoad = () ->
 				id: ruleName
 		$.post( '/usercommand', data )
 			.done ( data ) ->
+				ts = ( new Date() ).toISOString()
 				log = data.message.replace new RegExp("\n", 'g'), "<br>"
-				$( '#log_col' ).html "<h3>#{ ruleName } Log:</h3>#{ log }"
+				$( '#log_col' ).html "<h3>#{ ruleName } Log ( #{ ts } ):</h3>#{ log }"
 			.fail fErrHandler 'Could not get rule log! '
 
 window.addEventListener 'load', fOnLoad, true

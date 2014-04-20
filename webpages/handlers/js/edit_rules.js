@@ -85,9 +85,10 @@
         })
       };
       return $.post('/usercommand', data).done(function(data) {
-        var log;
+        var log, ts;
+        ts = (new Date()).toISOString();
         log = data.message.replace(new RegExp("\n", 'g'), "<br>");
-        return $('#log_col').html("<h3>" + ruleName + " Log:</h3>" + log);
+        return $('#log_col').html("<h3>" + ruleName + " Log ( " + ts + " ):</h3>" + log);
       }).fail(fErrHandler('Could not get rule log! '));
     });
   };
