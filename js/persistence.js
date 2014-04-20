@@ -507,7 +507,7 @@ Persistence
 
   exports.appendLog = (function(_this) {
     return function(userId, ruleId, moduleId, message) {
-      return _this.db.append("" + userId + ":" + ruleId + ":log", "[" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + message + "\n");
+      return _this.db.append("" + userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + message + "\n");
     };
   })(this);
 

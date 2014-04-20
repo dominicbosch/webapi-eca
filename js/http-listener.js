@@ -49,7 +49,7 @@ HTTP Listener
       timestamp = (new Date()).toISOString();
       rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
       obj.event = event;
-      obj.eventid = "" + obj.event + "_" + timestamp + "_" + rand;
+      obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
       db.pushEvent(obj);
       return resp.send(200, "Thank you for the event: " + obj.eventid);
     } catch (_error) {

@@ -386,7 +386,7 @@ Appends a log entry.
 ###
 exports.appendLog = ( userId, ruleId, moduleId, message ) =>
 	@db.append "#{ userId }:#{ ruleId }:log", 
-		"[#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message }\n"
+		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message }\n"
 
 ###
 Retrieves a log entry.

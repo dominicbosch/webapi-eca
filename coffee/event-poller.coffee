@@ -108,7 +108,7 @@ fLoadModule = ( msg ) ->
 
 
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
-							in rule #{ msg.rule.id }, starting at #{ ts.toISOString() }
+							in rule #{ msg.rule.id }, starting at UTC|#{ ts.toISOString() }
 							and polling every #{ msg.rule.event_interval } minutes"
 						setTimeout fCheckAndRun( msg.user, msg.rule.id, ts ), 1000
 
@@ -121,7 +121,7 @@ fPushEvent = ( userId, ruleId, oRule ) ->
 	( obj ) ->
 		db.pushEvent
 			event: oRule.id
-			eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date() ).toISOString() }"
+			eventid: "polled #{ oRule.id } #{ userId }_UTC|#{ ( new Date() ).toISOString() }"
 			payload: obj
 
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
@@ -137,7 +137,7 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.event_interval
 			else
 				log.info "EP | We found a newer polling interval and discontinue this one which
-						was created at #{ timestamp.toISOString() }"
+						was created at UTC|#{ timestamp.toISOString() }"
 
 # We have to register the poll function in belows anonymous function
 # because we're fast iterating through the listUserModules and references will

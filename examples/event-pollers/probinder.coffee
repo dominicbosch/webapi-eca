@@ -47,27 +47,27 @@ callService = ( args ) ->
 ###
 Calls the user's unread content service.
 ###
-exports.unreadContentInfo = ( pushEvent ) ->
+exports.unreadContentInfo = () ->
 	callService
 		service: '36'
 		method: 'unreadcontent'
 		callback: ( err, resp, body ) ->
 			if not err and resp.statusCode is 200
-				pushEvent oEntry for oEntry in body
+				exports.pushEvent oEntry for oEntry in body
 			else
 				log 'Error: ' + body.error.message
 
 ###
 Fetches unread contents
 ###
-exports.unreadContent = ( pushEvent ) ->
+exports.unreadContent = () ->
 	exports.unreadContentInfo ( evt ) ->
 		getContent
 			contentId: evt.id
 			contentServiceId: evt.serviceId
 			callback: ( err, resp, body ) ->
 				if not err and resp.statusCode is 200
-					pushEvent
+					exports.pushEvent
 						id: body.id
 						content: body.text
 						object: body

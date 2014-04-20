@@ -26,7 +26,7 @@ src = cs.compile code
 
 sandbox = 
   id: 'test.vm'
-  params: params.userparams
+  params: params
   needle: needle
   request: request
   cryptoJS: crypto
@@ -35,13 +35,12 @@ sandbox =
   debug: console.log
   exports: {}
 
+sandbox.exports.pushEvent = ( obj ) ->
+  console.log obj
+
 vm.runInNewContext src, sandbox, sandbox.id
 
-if process.argv[ 3 ] is 'ep'
-  sandbox.exports[ process.argv[ 4 ] ] ( evt ) ->
-    console.log evt
-else
-  sandbox.exports[ process.argv[ 3 ] ] params.event
+sandbox.exports[ process.argv[ 3 ] ].apply null, [ "param1", "param2", "param3", "param4" ]
 
 console.log "If no error happened until here it seems the script
   compiled and ran correctly! Congrats!"

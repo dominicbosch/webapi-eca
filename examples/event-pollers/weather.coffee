@@ -20,24 +20,24 @@ getWeatherData = ( cb ) ->
 ###
 Pushes the current weather data into the system
 ###
-exports.currentData = ( pushEvent ) ->
+exports.currentData = () ->
 	getWeatherData ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
 			log JSON.stringify body
 		else
-			pushEvent body
+			exports.pushEvent body
 
 ###
 Emits one event per day if the temperature today raises above user defined threshold
 ###
-exports.temperatureOverThreshold = ( pushEvent ) ->
+exports.temperatureOverThreshold = () ->
 	getWeatherData ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
 			log JSON.stringify body
 		else
 			#If temperature is above threshold
 			if body.main.temp_max - 272.15 > params.tempThreshold
-				pushEvent
+				exports.pushEvent
 					threshold: params.tempThreshold
 					measured: body.main.temp_max - 272.15
 

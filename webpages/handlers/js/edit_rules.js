@@ -88,7 +88,7 @@
         var log, ts;
         ts = (new Date()).toISOString();
         log = data.message.replace(new RegExp("\n", 'g'), "<br>");
-        return $('#log_col').html("<h3>" + ruleName + " Log ( " + ts + " ):</h3>" + log);
+        return $('#log_col').html("<h3>" + ruleName + " Log:</h3> <i>( updated UTC|" + ts + " )</i><br/><br/>" + log);
       }).fail(fErrHandler('Could not get rule log! '));
     });
   };

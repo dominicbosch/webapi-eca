@@ -103,7 +103,7 @@ Dynamic Modules
               timestamp: ts
             };
             oUser[msg.rule.id].module.pushEvent = fPushEvent(msg.user, msg.rule.id, oUser[msg.rule.id]);
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", starting at " + (ts.toISOString()) + " and polling every " + msg.rule.event_interval + " minutes");
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", starting at UTC|" + (ts.toISOString()) + " and polling every " + msg.rule.event_interval + " minutes");
             return setTimeout(fCheckAndRun(msg.user, msg.rule.id, ts), 1000);
           });
         }
@@ -118,7 +118,7 @@ Dynamic Modules
     return function(obj) {
       return db.pushEvent({
         event: oRule.id,
-        eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date()).toISOString()),
+        eventid: "polled " + oRule.id + " " + userId + "_UTC|" + ((new Date()).toISOString()),
         payload: obj
       });
     };
@@ -134,7 +134,7 @@ Dynamic Modules
           fCallFunction(userId, ruleId, oRule);
           return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.event_interval);
         } else {
-          return log.info("EP | We found a newer polling interval and discontinue this one which was created at " + (timestamp.toISOString()));
+          return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + (timestamp.toISOString()));
         }
       }
     };

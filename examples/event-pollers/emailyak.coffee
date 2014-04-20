@@ -8,7 +8,7 @@
 
 url = 'https://api.emailyak.com/v1/' + params.apikey + '/json/get/new/email/'
 
-exports.newMail = ( pushEvent ) ->
+exports.newMail = () ->
 
 	# needlereq allows the user to make calls to API's
 	# Refer to https://github.com/tomas/needle for more information
@@ -23,7 +23,7 @@ exports.newMail = ( pushEvent ) ->
 			if resp.statusCode is 200
 				if body.Emails.length > 0
 					log "#{ body.Emails.length } mail events pushed into the system"
-				pushEvent mail for mail in body.Emails
+				exports.pushEvent mail for mail in body.Emails
 
 				###
 				This will emit events of the form:
