@@ -327,6 +327,12 @@ Components Manager
         epModId = rule.event.split(' -> ')[0];
         db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oPayload.event_params));
       }
+      oFuncArgs = oPayload.event_functions;
+      for (id in oFuncArgs) {
+        args = oFuncArgs[id];
+        arr = id.split(' -> ');
+        db.eventPollers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(args));
+      }
       oParams = oPayload.action_params;
       for (id in oParams) {
         params = oParams[id];
@@ -378,6 +384,20 @@ Components Manager
     },
     get_event_poller_user_arguments: function(user, oPayload, callback) {
       return getModuleUserArguments(user, oPayload, db.eventPollers, callback);
+    },
+    get_event_poller_function_arguments: function(user, oPayload, callback) {
+      var answ;
+      answ = hasRequiredParams(['id'], oPayload);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.eventPollers.getModuleField(oPayload.id, 'functionArgs', function(err, obj) {
+          return callback({
+            code: 200,
+            message: obj
+          });
+        });
+      }
     },
     forge_event_poller: function(user, oPayload, callback) {
       return forgeModule(user, oPayload, db.eventPollers, callback);

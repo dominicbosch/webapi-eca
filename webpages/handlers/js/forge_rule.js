@@ -48,7 +48,7 @@
   });
 
   fOnLoad = function() {
-    var editor, fAddActionUserArgs, fAddActionUserParams, fAddEventParams, fAddSelectedAction, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventParams, fFillActionFunction, fFillEventParams, obj;
+    var editor, fAddActionUserArgs, fAddActionUserParams, fAddEventParams, fAddEventUserArgs, fAddSelectedAction, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, obj;
     document.title = 'Rule Forge!';
     $('#pagetitle').text('{{{user.username}}}, forge your ECA Rule!');
     editor = ace.edit("editor_conditions");
@@ -117,19 +117,56 @@
             id: arr[0]
           })
         };
-        return $.post('/usercommand', obj).done(fAddEventParams(arr[0])).fail(fFailedRequest('Error fetching event poller params'));
+        $.post('/usercommand', obj).done(fAddEventParams(arr[0])).fail(fFailedRequest('Error fetching event poller params'));
+        return fFetchEventFunctionArgs(arr);
       }
+    };
+    fFetchEventFunctionArgs = function(arrName) {
+      var obj;
+      obj = {
+        command: 'get_event_poller_function_arguments',
+        payload: JSON.stringify({
+          id: arrName[0]
+        })
+      };
+      return $.post('/usercommand', obj).done(function(data) {
+        var functionArgument, table, td, tr, _j, _len1, _ref, _results;
+        if (data.message) {
+          oParams = JSON.parse(data.message);
+          if (oParams[arrName[1]]) {
+            if (oParams[arrName[1]].length > 0) {
+              $('#event_poller_params').append($("<b>").text('Required Function Parameters:'));
+            }
+            table = $('<table>').appendTo($('#event_poller_params'));
+            _ref = oParams[arrName[1]];
+            _results = [];
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              functionArgument = _ref[_j];
+              tr = $('<tr>').attr('class', 'funcMappings').appendTo(table);
+              tr.append($('<td>').css('width', '20px'));
+              td = $('<td>').appendTo(tr);
+              td.append($('<div>').attr('class', 'funcarg').text(functionArgument));
+              tr.append(td);
+              tr.append($('<td>').text(' : '));
+              td = $('<td>').appendTo(tr);
+              td.append($('<input>').attr('type', 'text'));
+              _results.push(tr.append(td));
+            }
+            return _results;
+          }
+        }
+      }).fail(fFailedRequest('Error fetching action invoker function params'));
     };
     fAddEventParams = function(id) {
       return function(data) {
-        var fAppendParam, name, shielded, table;
+        var fAppendParam, i, name, shielded, table;
         if (data.message) {
           oParams = JSON.parse(data.message);
-          $('#event_poller_params').html('<br><b>Required Parameters:</b>');
           table = $('<table>');
-          $('#event_poller_params').append(table);
+          i = 0;
           fAppendParam = function(name, shielded) {
             var inp, tr;
+            i++;
             tr = $('<tr>');
             tr.append($('<td>').css('width', '20px'));
             tr.append($('<td>').attr('class', 'key').text(name));
@@ -144,6 +181,10 @@
             shielded = oParams[name];
             fAppendParam(name, shielded);
           }
+          if (i > 0) {
+            $('#event_poller_params').html('<b>Required Global Parameters:</b>');
+            $('#event_poller_params').append(table);
+          }
           return fFillEventParams(id);
         }
       };
@@ -156,7 +197,7 @@
           id: moduleId
         })
       };
-      return $.post('/usercommand', obj).done(function(data) {
+      $.post('/usercommand', obj).done(function(data) {
         var oParam, par, _results;
         oParams = JSON.parse(data.message);
         _results = [];
@@ -173,6 +214,38 @@
         }
         return _results;
       });
+      obj.command = 'get_event_poller_user_arguments';
+      obj.payload = JSON.stringify({
+        ruleId: $('#input_id').val(),
+        moduleId: moduleId
+      });
+      return $.post('/usercommand', obj).done(fAddEventUserArgs(moduleId));
+    };
+    fAddEventUserArgs = function(name) {
+      return function(data) {
+        var arrFuncs, key, oFunc, par, tr, _ref, _results;
+        _ref = data.message;
+        _results = [];
+        for (key in _ref) {
+          arrFuncs = _ref[key];
+          par = $("#event_poller_params");
+          _results.push((function() {
+            var _j, _len1, _ref1, _results1;
+            _ref1 = JSON.parse(arrFuncs);
+            _results1 = [];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              oFunc = _ref1[_j];
+              tr = $("tr", par).filter(function() {
+                return $('.funcarg', this).text() === ("" + oFunc.argument);
+              });
+              $("input[type=text]", tr).val(oFunc.value);
+              _results1.push($("input[type=checkbox]", tr).prop('checked', oFunc.jsselector));
+            }
+            return _results1;
+          })());
+        }
+        return _results;
+      };
     };
     obj = {
       command: 'get_action_invokers'
@@ -295,7 +368,6 @@
               td = $('<td>').appendTo(tr);
               td.append($('<input>').attr('type', 'text'));
               tr.append(td);
-              tr.append(td);
               td = $('<td>').appendTo(tr);
               _results.push(td.append($('<input>').attr('type', 'checkbox')).attr('title', 'js-select expression to be resolved on event?'));
             }
@@ -398,7 +470,7 @@
       return $(this).closest('tr').remove();
     });
     $('#but_submit').click(function() {
-      var actParams, acts, ap, arrInp, conds, d, ep, err, fCheckOverwrite, fParseTime, mins, txtInterval;
+      var actFuncs, acts, ap, arrInp, conds, d, ep, err, eventId, evtFuncs, fCheckOverwrite, fParseTime, mins, txtInterval;
       window.scrollTo(0, 0);
       $('#info').text('');
       try {
@@ -406,7 +478,8 @@
           $('#input_id').focus();
           throw new Error('Please enter a rule name!');
         }
-        if ($('#input_event').val() === '') {
+        eventId = $('#input_event').val();
+        if (eventId === '') {
           $('#input_event').focus();
           throw new Error('Please assign an event!');
         }
@@ -429,6 +502,14 @@
           } else {
             return ep[key].value = val;
           }
+        });
+        evtFuncs = {};
+        evtFuncs[eventId] = [];
+        $('#event_poller_params tr.funcMappings').each(function() {
+          return evtFuncs[eventId].push({
+            argument: $('div.funcarg', this).text(),
+            value: $('input[type=text]', this).val()
+          });
         });
         if ($('#selected_actions tr').length === 0) {
           throw new Error('Please select at least one action or create one!');
@@ -460,15 +541,15 @@
           return ap[modName] = params;
         });
         acts = [];
-        actParams = {};
+        actFuncs = {};
         $('#selected_actions td.title').each(function() {
           var actionName, par;
           actionName = $(this).text();
-          actParams[actionName] = [];
+          actFuncs[actionName] = [];
           acts.push(actionName);
           par = $(this).parent();
           return $('.funcMappings tr', par).each(function() {
-            return actParams[actionName].push({
+            return actFuncs[actionName].push({
               argument: $('div.funcarg', this).text(),
               value: $('input[type=text]', this).val(),
               jsselector: $('input[type=checkbox]', this).is(':checked')
@@ -543,13 +624,14 @@
           command: 'forge_rule',
           payload: JSON.stringify({
             id: $('#input_id').val(),
-            event: $('#input_event').val(),
+            event: eventId,
             event_params: ep,
             event_interval: mins,
+            event_functions: evtFuncs,
             conditions: conds,
             actions: acts,
             action_params: ap,
-            action_functions: actParams
+            action_functions: actFuncs
           })
         };
         return $.post('/usercommand', obj).done(function(data) {

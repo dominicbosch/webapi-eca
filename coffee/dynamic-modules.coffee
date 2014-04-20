@@ -158,3 +158,4 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 		funcParams: oFuncParams
 		funcArgs: oFuncArgs
 		logger: sandbox.log
+

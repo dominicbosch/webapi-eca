@@ -92,26 +92,37 @@ fLoadModule = ( msg ) ->
 						# If user is not yet stored, we open a new object
 						if not listUserModules[msg.user]
 							listUserModules[msg.user] = {}
-						
+
+						oUser = listUserModules[msg.user]
 						ts = new Date()
 						# We open up a new object for the rule it
-						listUserModules[msg.user][msg.rule.id] =
+						oUser[msg.rule.id] =
 							id: msg.rule.event
 							pollfunc: arrName[1]
+							funcArgs: result.funcArgs
 							event_interval: msg.rule.event_interval * 60 * 1000
 							module: result.module
 							logger: result.logger
 							timestamp: ts
+						oUser[msg.rule.id].module.pushEvent = fPushEvent msg.user, msg.rule.id, oUser[msg.rule.id]
+
 
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
 							in rule #{ msg.rule.id }, starting at #{ ts.toISOString() }
 							and polling every #{ msg.rule.event_interval } minutes"
-						fCheckAndRun( msg.user, msg.rule.id, ts )()
+						setTimeout fCheckAndRun( msg.user, msg.rule.id, ts ), 1000
 
 	if msg.event is 'new' or
 			not listUserModules[msg.user] or 
 			not listUserModules[msg.user][msg.rule.id]
 		fAnonymous()
+
+fPushEvent = ( userId, ruleId, oRule ) ->
+	( obj ) ->
+		db.pushEvent
+			event: oRule.id
+			eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date() ).toISOString() }"
+			payload: obj
 
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
@@ -133,11 +144,11 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 # eventually not be what they are expected to be
 fCallFunction = ( userId, ruleId, oRule ) ->
 	try
-		oRule.module[oRule.pollfunc] ( obj ) ->
-			db.pushEvent
-				event: oRule.id
-				eventid: "polled #{ oRule.id } #{ userId }_#{ ( new Date() ).toISOString() }"
-				payload: obj
+		arrArgs = []		
+		if oRule.funcArgs
+			for oArg in oRule.funcArgs[oRule.pollfunc]
+				arrArgs.push oArg.value
+		oRule.module[oRule.pollfunc].apply null, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		oRule.logger err.message

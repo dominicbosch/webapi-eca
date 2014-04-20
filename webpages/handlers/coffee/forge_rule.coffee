@@ -89,15 +89,41 @@ fOnLoad = () ->
 			$.post( '/usercommand', obj )
 				.done fAddEventParams arr[ 0 ]
 				.fail fFailedRequest 'Error fetching event poller params'
+			fFetchEventFunctionArgs arr
+
+	fFetchEventFunctionArgs = ( arrName ) ->
+		obj =
+			command: 'get_event_poller_function_arguments'
+			payload: JSON.stringify
+				id: arrName[ 0 ]
+		$.post( '/usercommand', obj )
+			.done ( data ) ->
+				if data.message
+					oParams = JSON.parse data.message
+					if oParams[ arrName[ 1 ] ]
+						if oParams[ arrName[ 1 ] ].length > 0
+							$( '#event_poller_params' ).append $( "<b>" ).text 'Required Function Parameters:'
+						table = $( '<table>' ).appendTo $( '#event_poller_params' )
+						for functionArgument in oParams[ arrName[ 1 ] ]
+							tr = $( '<tr>' ).attr( 'class', 'funcMappings' ).appendTo table
+							tr.append $( '<td>' ).css 'width', '20px'
+							td = $( '<td>' ).appendTo tr
+							td.append $( '<div>' ).attr( 'class', 'funcarg' ).text functionArgument
+							tr.append td
+							tr.append $( '<td>' ).text ' : '
+							td = $( '<td>' ).appendTo tr
+							td.append $( '<input>' ).attr 'type', 'text'
+							tr.append td
+			.fail fFailedRequest 'Error fetching action invoker function params'
 
 	fAddEventParams = ( id ) ->
 		( data ) ->
 			if data.message
 				oParams = JSON.parse data.message
-				$( '#event_poller_params' ).html '<br><b>Required Parameters:</b>'
 				table = $ '<table>'
-				$( '#event_poller_params' ).append table
+				i = 0
 				fAppendParam = ( name, shielded ) ->
+					i++
 					tr = $( '<tr>' )
 					tr.append $( '<td>' ).css 'width', '20px'
 					tr.append $( '<td>' ).attr( 'class', 'key' ).text name
@@ -107,6 +133,10 @@ fOnLoad = () ->
 					tr.append $( '<td>' ).text( ' : ' ).append inp
 					table.append tr
 				fAppendParam name, shielded for name, shielded of oParams
+				if i > 0
+					$( '#event_poller_params' ).html '<b>Required Global Parameters:</b>'
+					$( '#event_poller_params' ).append table
+
 				fFillEventParams id
 
 	fFillEventParams = ( moduleId ) ->
@@ -124,6 +154,23 @@ fOnLoad = () ->
 					$( 'input', par ).attr 'unchanged', 'true'
 					$( 'input', par ).change () ->
 						$( this ).attr 'unchanged', 'false'
+
+		obj.command = 'get_event_poller_user_arguments'
+		obj.payload = JSON.stringify
+			ruleId: $( '#input_id' ).val()
+			moduleId: moduleId
+		$.post( '/usercommand', obj )
+			.done fAddEventUserArgs moduleId
+
+	fAddEventUserArgs = ( name ) ->
+		( data ) ->
+			for key, arrFuncs of data.message
+				par = $ "#event_poller_params"
+				for oFunc in JSON.parse arrFuncs
+					tr = $( "tr", par ).filter () ->
+						$( '.funcarg', this ).text() is "#{ oFunc.argument }"
+					$( "input[type=text]", tr ).val oFunc.value
+					$( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
 
 # ACTIONS
 	obj =
@@ -213,7 +260,6 @@ fOnLoad = () ->
 							td = $( '<td>' ).appendTo tr
 							td.append $( '<input>' ).attr 'type', 'text'
 							tr.append td
-							tr.append td
 							td = $( '<td>' ).appendTo tr
 							td.append $( '<input>' ).attr( 'type', 'checkbox' )
 								.attr 'title', 'js-select expression to be resolved on event?'
@@ -292,7 +338,8 @@ fOnLoad = () ->
 				$( '#input_id' ).focus()
 				throw new Error 'Please enter a rule name!'
 
-			if $( '#input_event' ).val() is ''
+			eventId = $( '#input_event' ).val()
+			if eventId is ''
 				$( '#input_event' ).focus()
 				throw new Error 'Please assign an event!'
 
@@ -311,6 +358,13 @@ fOnLoad = () ->
 					ep[ key ].value = encryptedParam.cipher 
 				else
 					ep[ key ].value = val
+
+			evtFuncs = {}
+			evtFuncs[ eventId ] = []
+			$( '#event_poller_params tr.funcMappings' ).each () ->
+				evtFuncs[ eventId ].push
+					argument: $( 'div.funcarg', this ).text()
+					value: $( 'input[type=text]', this ).val()
 
 			if $( '#selected_actions tr' ).length is 0
 				throw new Error 'Please select at least one action or create one!'
@@ -337,10 +391,10 @@ fOnLoad = () ->
 						params[ key ].value = val
 				ap[ modName ] = params
 			acts = []
-			actParams = {}
+			actFuncs = {}
 			$( '#selected_actions td.title' ).each () ->
 				actionName = $( this ).text()
-				actParams[ actionName ] = []
+				actFuncs[ actionName ] = []
 				acts.push actionName
 				par = $( this ).parent()
 				$( '.funcMappings tr', par ).each () ->
@@ -350,8 +404,8 @@ fOnLoad = () ->
 					# 	value: $( 'input[type=text]', this ).val()
 					# 	regexp: $( 'input[type=checkbox]', this ).is( ':checked' )
 					# tmp = cryptico.encrypt JSON.stringify( tmp ), strPublicKey
-					# actParams[ actionName ] = tmp.cipher
-					actParams[ actionName ].push
+					# actFuncs[ actionName ] = tmp.cipher
+					actFuncs[ actionName ].push
 						argument: $( 'div.funcarg', this ).text()
 						value: $( 'input[type=text]', this ).val()
 						jsselector: $( 'input[type=checkbox]', this ).is( ':checked' )
@@ -419,13 +473,14 @@ fOnLoad = () ->
 				command: 'forge_rule'
 				payload: JSON.stringify
 					id: $( '#input_id' ).val()
-					event: $( '#input_event' ).val()
+					event: eventId
 					event_params: ep
 					event_interval: mins
+					event_functions: evtFuncs
 					conditions: conds
 					actions: acts
 					action_params: ap
-					action_functions: actParams
+					action_functions: actFuncs
 			$.post( '/usercommand', obj )
 				.done ( data ) ->
 					$( '#info' ).text data.message

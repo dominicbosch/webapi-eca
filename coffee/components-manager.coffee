@@ -236,6 +236,11 @@ storeRule = ( user, oPayload, callback ) =>
 		if oPayload.event_params
 			epModId = rule.event.split( ' -> ' )[ 0 ]
 			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oPayload.event_params
+		oFuncArgs = oPayload.event_functions
+		# if event function arguments were send, store them
+		for id, args of oFuncArgs
+			arr = id.split ' -> '
+			db.eventPollers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		# if action module params were send, store them
 		oParams = oPayload.action_params
@@ -287,6 +292,16 @@ commandFunctions =
 	get_event_poller_user_arguments: ( user, oPayload, callback ) ->
 		getModuleUserArguments user, oPayload, db.eventPollers, callback
 
+	get_event_poller_function_arguments: ( user, oPayload, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oPayload
+		if answ.code isnt 200
+			callback answ
+		else
+			db.eventPollers.getModuleField oPayload.id, 'functionArgs', ( err, obj ) ->
+				callback
+					code: 200
+					message: obj
+	
 	forge_event_poller: ( user, oPayload, callback ) ->
 		forgeModule user, oPayload, db.eventPollers, callback
  

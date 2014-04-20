@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger, pollLoop;
+  var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, fPushEvent, isRunning, listUserModules, log, logconf, logger, pollLoop;
 
   logger = require('./logging');
 
@@ -84,24 +84,27 @@ Dynamic Modules
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
           return dynmod.compileString(obj.data, msg.user, msg.rule.id, arrName[0], obj.lang, db.eventPollers, function(result) {
-            var ts;
+            var oUser, ts;
             if (!result.answ === 200) {
               log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
             }
             if (!listUserModules[msg.user]) {
               listUserModules[msg.user] = {};
             }
+            oUser = listUserModules[msg.user];
             ts = new Date();
-            listUserModules[msg.user][msg.rule.id] = {
+            oUser[msg.rule.id] = {
               id: msg.rule.event,
               pollfunc: arrName[1],
+              funcArgs: result.funcArgs,
               event_interval: msg.rule.event_interval * 60 * 1000,
               module: result.module,
               logger: result.logger,
               timestamp: ts
             };
+            oUser[msg.rule.id].module.pushEvent = fPushEvent(msg.user, msg.rule.id, oUser[msg.rule.id]);
             log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", starting at " + (ts.toISOString()) + " and polling every " + msg.rule.event_interval + " minutes");
-            return fCheckAndRun(msg.user, msg.rule.id, ts)();
+            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, ts), 1000);
           });
         }
       });
@@ -109,6 +112,16 @@ Dynamic Modules
     if (msg.event === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
       return fAnonymous();
     }
+  };
+
+  fPushEvent = function(userId, ruleId, oRule) {
+    return function(obj) {
+      return db.pushEvent({
+        event: oRule.id,
+        eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date()).toISOString()),
+        payload: obj
+      });
+    };
   };
 
   fCheckAndRun = function(userId, ruleId, timestamp) {
@@ -128,15 +141,17 @@ Dynamic Modules
   };
 
   fCallFunction = function(userId, ruleId, oRule) {
-    var err;
+    var arrArgs, err, oArg, _i, _len, _ref;
     try {
-      return oRule.module[oRule.pollfunc](function(obj) {
-        return db.pushEvent({
-          event: oRule.id,
-          eventid: "polled " + oRule.id + " " + userId + "_" + ((new Date()).toISOString()),
-          payload: obj
-        });
-      });
+      arrArgs = [];
+      if (oRule.funcArgs) {
+        _ref = oRule.funcArgs[oRule.pollfunc];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          oArg = _ref[_i];
+          arrArgs.push(oArg.value);
+        }
+      }
+      return oRule.module[oRule.pollfunc].apply(null, arrArgs);
     } catch (_error) {
       err = _error;
       log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
