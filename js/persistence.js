@@ -79,6 +79,12 @@ Persistence
     };
   })(this);
 
+  exports.selectDatabase = (function(_this) {
+    return function(id) {
+      return _this.db.select(id);
+    };
+  })(this);
+
 
   /*
   Checks whether the db is connected and passes either an error on failure after

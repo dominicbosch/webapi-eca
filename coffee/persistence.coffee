@@ -63,6 +63,9 @@ exports.initPort = ( port ) =>
 	exports.eventPollers.setDB @db
 	exports.actionInvokers.setDB @db
 
+exports.selectDatabase = ( id ) =>
+	@db.select id
+
 ###
 Checks whether the db is connected and passes either an error on failure after
 ten attempts within five seconds, or nothing on success to the callback(err).

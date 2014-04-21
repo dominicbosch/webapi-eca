@@ -57,35 +57,48 @@ opt =
 	'h':
 		alias : 'help',
 		describe: 'Display this'
+
 #  `-c`, `--config-path`: Specify a path to a custom configuration file, other than "config/config.json"
 	'c':
 		alias : 'config-path',
 		describe: 'Specify a path to a custom configuration file, other than "config/config.json"'
+
 #  `-w`, `--http-port`: Specify a HTTP port for the web server 
 	'w':
 		alias : 'http-port',
 		describe: 'Specify a HTTP port for the web server'
+
 #  `-d`, `--db-port`: Specify a port for the redis DB
 	'd':
 		alias : 'db-port',
 		describe: 'Specify a port for the redis DB'
+
+#  `-s`, `--db-select`: Specify a database
+	's':
+		alias : 'db-select',
+		describe: 'Specify a database identifier'
+
 #  `-m`, `--log-mode`: Specify a log mode: [development|productive]
 	'm':
 		alias : 'log-mode',
 		describe: 'Specify a log mode: [development|productive]'
+
 #  `-i`, `--log-io-level`: Specify the log level for the I/O. in development expensive origin
 #                           lookups are made and added to the log entries
 	'i':
 		alias : 'log-io-level',
 		describe: 'Specify the log level for the I/O'
+
 #  `-f`, `--log-file-level`: Specify the log level for the log file
 	'f':
 		alias : 'log-file-level',
 		describe: 'Specify the log level for the log file'
+
 #  `-p`, `--log-file-path`: Specify the path to the log file within the "logs" folder
 	'p':
 		alias : 'log-file-path',
 		describe: 'Specify the path to the log file within the "logs" folder'
+
 #  `-n`, `--nolog`: Set this true if no output shall be generated
 	'n':
 		alias : 'nolog',
@@ -133,6 +146,7 @@ init = =>
 	# > Fetch the `http-port` argument
 	args[ 'http-port' ] = parseInt argv.w || conf.getHttpPort()
 	args[ 'db-port' ] = parseInt argv.d || conf.getDbPort()
+	args[ 'db-select' ] = parseInt argv.s || conf.fetchProp 'db-select'
 
 	#FIXME this has to come from user input for security reasons:
 	args[ 'keygen' ] = conf.getKeygenPassphrase()
@@ -146,6 +160,7 @@ init = =>
 	#TODO eventually we shouldn't let each module load its own persistence
 	#module, but hand this one through them via the args...
 	db.isConnected ( err ) =>
+		db.selectDatabase parseInt( args[ 'db-select' ] ) || 0
 		if err
 			@log.error 'RS | No DB connection, shutting down system!'
 			shutDown()

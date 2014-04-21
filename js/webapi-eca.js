@@ -65,6 +65,10 @@ WebAPI-ECA Engine
       alias: 'db-port',
       describe: 'Specify a port for the redis DB'
     },
+    's': {
+      alias: 'db-select',
+      describe: 'Specify a database identifier'
+    },
     'm': {
       alias: 'log-mode',
       describe: 'Specify a log mode: [development|productive]'
@@ -147,6 +151,7 @@ WebAPI-ECA Engine
       };
       args['http-port'] = parseInt(argv.w || conf.getHttpPort());
       args['db-port'] = parseInt(argv.d || conf.getDbPort());
+      args['db-select'] = parseInt(argv.s || conf.fetchProp('db-select'));
       args['keygen'] = conf.getKeygenPassphrase();
       args['webhooks'] = conf.fetchProp('webhooks');
       encryption(args);
@@ -154,6 +159,7 @@ WebAPI-ECA Engine
       db(args);
       return db.isConnected(function(err) {
         var cliArgs, poller;
+        db.selectDatabase(parseInt(args['db-select']) || 0);
         if (err) {
           _this.log.error('RS | No DB connection, shutting down system!');
           return shutDown();
