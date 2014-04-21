@@ -5,8 +5,8 @@
   "log": {
   	"nolog": "false",
     "mode": "productive",
-    "io-level": "fatal",
-    "file-level": "warn",
+    "io-level": "info",
+    "file-level": "info",
     "file-path": "logs/server.log"
   },
   "webhooks": [

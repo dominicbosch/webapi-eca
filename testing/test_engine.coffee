@@ -36,8 +36,8 @@ exports.setUp = ( cb ) ->
 	
 exports.tearDown = ( cb ) ->
 	db.deleteRule oRuleOne.id
-	db.actionInvokers.deleteModule oAiOne.id
-	db.actionInvokers.deleteModule oAiTwo.id
+	db.actionInvokers.deleteModule oUser.username, oAiOne.id
+	db.actionInvokers.deleteModule oUser.username, oAiTwo.id
 	# TODO if user is deleted all his modules should be unlinked and deleted
 	db.deleteUser oUser.username
 

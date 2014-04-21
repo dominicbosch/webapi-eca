@@ -166,7 +166,7 @@ Engine
             var moduleName;
             moduleName = (actionName.split(' -> '))[0];
             if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
-              return db.actionInvokers.getModule(moduleName, function(err, obj) {
+              return db.actionInvokers.getModule(userName, moduleName, function(err, obj) {
                 if (obj) {
                   return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
                     if (result.answ.code === 200) {

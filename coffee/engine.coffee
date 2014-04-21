@@ -145,7 +145,7 @@ updateActionModules = ( updatedRuleId ) =>
 			fAddIfNewOrNotExisting = ( actionName ) =>
 				moduleName = (actionName.split ' -> ')[ 0 ]
 				if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
-					db.actionInvokers.getModule moduleName, ( err, obj ) =>
+					db.actionInvokers.getModule userName, moduleName, ( err, obj ) =>
 						if obj
 							# we compile the module and pass: 
 							dynmod.compileString obj.data,  # code

@@ -135,30 +135,33 @@ Fetches all available modules and return them together with the available functi
 @param {function} callback
 ###
 getModules = ( user, oPayload, dbMod, callback ) ->
-	dbMod.getAvailableModuleIds user.username, ( err, arrNames ) ->
-		oRes = {}
-		answReq = () ->
-			callback
-				code: 200
-				message: JSON.stringify oRes
-		sem = arrNames.length
-		if sem is 0
-			answReq()
-		else
-			fGetFunctions = ( id ) =>
-				dbMod.getModule id, ( err, oModule ) =>
-					if oModule
-						oRes[id] = JSON.parse oModule.functions
-					if --sem is 0
-						answReq()
-			fGetFunctions id for id in arrNames
+	fProcessIds = ( userName ) ->
+		( err, arrNames ) ->
+			oRes = {}
+			answReq = () ->
+				callback
+					code: 200
+					message: JSON.stringify oRes
+			sem = arrNames.length
+			if sem is 0
+				answReq()
+			else
+				fGetFunctions = ( id ) =>
+					dbMod.getModule userName, id, ( err, oModule ) =>
+						if oModule
+							oRes[id] = JSON.parse oModule.functions
+						if --sem is 0
+							answReq()
+				fGetFunctions id for id in arrNames
+
+	dbMod.getAvailableModuleIds user.username, fProcessIds user.username
 
 getModuleParams = ( user, oPayload, dbMod, callback ) ->
 	answ = hasRequiredParams [ 'id' ], oPayload
 	if answ.code isnt 200
 		callback answ
 	else
-		dbMod.getModuleParams oPayload.id, ( err, oPayload ) ->
+		dbMod.getModuleField user.username, oPayload.id, "params", ( err, oPayload ) ->
 			answ.message = oPayload
 			callback answ
 
@@ -192,7 +195,7 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
 		if oPayload.overwrite
 			storeModule user, oPayload, dbMod, callback
 		else
-			dbMod.getModule oPayload.id, ( err, mod ) =>
+			dbMod.getModule user.username, oPayload.id, ( err, mod ) =>
 				if mod
 					answ.code = 409
 					answ.message = 'Module name already existing: ' + oPayload.id
@@ -213,8 +216,8 @@ storeModule = ( user, oPayload, dbMod, callback ) =>
 			oPayload.functions = JSON.stringify funcs
 			oPayload.functionArgs = JSON.stringify cm.funcParams
 			dbMod.storeModule user.username, oPayload
-			if oPayload.public is 'true'
-				dbMod.publish oPayload.id
+			# if oPayload.public is 'true'
+			# 	dbMod.publish oPayload.id
 		callback answ
 
 storeRule = ( user, oPayload, callback ) =>
@@ -278,7 +281,7 @@ commandFunctions =
 		getModules  user, oPayload, db.eventPollers, callback
 	
 	get_full_event_poller: ( user, oPayload, callback ) ->
-		db.eventPollers.getModule oPayload.id, ( err, obj ) ->
+		db.eventPollers.getModule user.username, oPayload.id, ( err, obj ) ->
 			callback
 				code: 200
 				message: JSON.stringify obj
@@ -297,7 +300,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.getModuleField oPayload.id, 'functionArgs', ( err, obj ) ->
+			db.eventPollers.getModuleField user.username, oPayload.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
@@ -310,7 +313,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.deleteModule oPayload.id
+			db.eventPollers.deleteModule user.username, oPayload.id
 			callback
 				code: 200
 				message: 'OK!'
@@ -325,7 +328,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModule oPayload.id, ( err, obj ) ->
+			db.actionInvokers.getModule user.username, oPayload.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: JSON.stringify obj
@@ -344,7 +347,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModuleField oPayload.id, 'functionArgs', ( err, obj ) ->
+			db.actionInvokers.getModuleField user.username, oPayload.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
@@ -357,7 +360,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.deleteModule oPayload.id
+			db.actionInvokers.deleteModule user.username, oPayload.id
 			callback
 				code: 200
 				message: 'OK!'

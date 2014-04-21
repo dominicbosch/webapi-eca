@@ -173,39 +173,43 @@ Components Manager
    */
 
   getModules = function(user, oPayload, dbMod, callback) {
-    return dbMod.getAvailableModuleIds(user.username, function(err, arrNames) {
-      var answReq, fGetFunctions, id, oRes, sem, _i, _len, _results;
-      oRes = {};
-      answReq = function() {
-        return callback({
-          code: 200,
-          message: JSON.stringify(oRes)
-        });
-      };
-      sem = arrNames.length;
-      if (sem === 0) {
-        return answReq();
-      } else {
-        fGetFunctions = (function(_this) {
-          return function(id) {
-            return dbMod.getModule(id, function(err, oModule) {
-              if (oModule) {
-                oRes[id] = JSON.parse(oModule.functions);
-              }
-              if (--sem === 0) {
-                return answReq();
-              }
-            });
-          };
-        })(this);
-        _results = [];
-        for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
-          id = arrNames[_i];
-          _results.push(fGetFunctions(id));
+    var fProcessIds;
+    fProcessIds = function(userName) {
+      return function(err, arrNames) {
+        var answReq, fGetFunctions, id, oRes, sem, _i, _len, _results;
+        oRes = {};
+        answReq = function() {
+          return callback({
+            code: 200,
+            message: JSON.stringify(oRes)
+          });
+        };
+        sem = arrNames.length;
+        if (sem === 0) {
+          return answReq();
+        } else {
+          fGetFunctions = (function(_this) {
+            return function(id) {
+              return dbMod.getModule(userName, id, function(err, oModule) {
+                if (oModule) {
+                  oRes[id] = JSON.parse(oModule.functions);
+                }
+                if (--sem === 0) {
+                  return answReq();
+                }
+              });
+            };
+          })(this);
+          _results = [];
+          for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+            id = arrNames[_i];
+            _results.push(fGetFunctions(id));
+          }
+          return _results;
         }
-        return _results;
-      }
-    });
+      };
+    };
+    return dbMod.getAvailableModuleIds(user.username, fProcessIds(user.username));
   };
 
   getModuleParams = function(user, oPayload, dbMod, callback) {
@@ -214,7 +218,7 @@ Components Manager
     if (answ.code !== 200) {
       return callback(answ);
     } else {
-      return dbMod.getModuleParams(oPayload.id, function(err, oPayload) {
+      return dbMod.getModuleField(user.username, oPayload.id, "params", function(err, oPayload) {
         answ.message = oPayload;
         return callback(answ);
       });
@@ -265,7 +269,7 @@ Components Manager
         if (oPayload.overwrite) {
           return storeModule(user, oPayload, dbMod, callback);
         } else {
-          return dbMod.getModule(oPayload.id, function(err, mod) {
+          return dbMod.getModule(user.username, oPayload.id, function(err, mod) {
             if (mod) {
               answ.code = 409;
               answ.message = 'Module name already existing: ' + oPayload.id;
@@ -298,9 +302,6 @@ Components Manager
           oPayload.functions = JSON.stringify(funcs);
           oPayload.functionArgs = JSON.stringify(cm.funcParams);
           dbMod.storeModule(user.username, oPayload);
-          if (oPayload["public"] === 'true') {
-            dbMod.publish(oPayload.id);
-          }
         }
         return callback(answ);
       });
@@ -367,7 +368,7 @@ Components Manager
       return getModules(user, oPayload, db.eventPollers, callback);
     },
     get_full_event_poller: function(user, oPayload, callback) {
-      return db.eventPollers.getModule(oPayload.id, function(err, obj) {
+      return db.eventPollers.getModule(user.username, oPayload.id, function(err, obj) {
         return callback({
           code: 200,
           message: JSON.stringify(obj)
@@ -389,7 +390,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.eventPollers.getModuleField(oPayload.id, 'functionArgs', function(err, obj) {
+        return db.eventPollers.getModuleField(user.username, oPayload.id, 'functionArgs', function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -406,7 +407,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.eventPollers.deleteModule(oPayload.id);
+        db.eventPollers.deleteModule(user.username, oPayload.id);
         return callback({
           code: 200,
           message: 'OK!'
@@ -422,7 +423,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.actionInvokers.getModule(oPayload.id, function(err, obj) {
+        return db.actionInvokers.getModule(user.username, oPayload.id, function(err, obj) {
           return callback({
             code: 200,
             message: JSON.stringify(obj)
@@ -445,7 +446,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.actionInvokers.getModuleField(oPayload.id, 'functionArgs', function(err, obj) {
+        return db.actionInvokers.getModuleField(user.username, oPayload.id, 'functionArgs', function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -462,7 +463,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.actionInvokers.deleteModule(oPayload.id);
+        db.actionInvokers.deleteModule(user.username, oPayload.id);
         return callback({
           code: 200,
           message: 'OK!'

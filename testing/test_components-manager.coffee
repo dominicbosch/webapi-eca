@@ -59,11 +59,11 @@ exports.tearDown = ( cb ) ->
 	db.deleteRule oRuleOne.id
 	db.deleteRule oRuleTwo.id
 	db.deleteRule oRuleThree.id
-	db.eventPollers.deleteModule oEpOne.id
-	db.eventPollers.deleteModule oEpTwo.id
-	db.actionInvokers.deleteModule oAiOne.id
-	db.actionInvokers.deleteModule oAiTwo.id
-	db.actionInvokers.deleteModule oAiThree.id
+	db.eventPollers.deleteModule oUser.username, oEpOne.id
+	db.eventPollers.deleteModule oUser.username, oEpTwo.id
+	db.actionInvokers.deleteModule oUser.username, oAiOne.id
+	db.actionInvokers.deleteModule oUser.username, oAiTwo.id
+	db.actionInvokers.deleteModule oUser.username, oAiThree.id
 	db.actionInvokers.deleteUserParams oAiThree.id, oUser.username
 
 	setTimeout cb, 100
@@ -186,7 +186,7 @@ exports.moduleHandling =
 		cm.processRequest oUser, request, ( answ ) =>
 			test.strictEqual 200, answ.code, 'Forging Module did not return 200'
 
-			db.actionInvokers.getModule oAiTwo.id, ( err, obj ) ->
+			db.actionInvokers.getModule oUser.username, oAiTwo.id, ( err, obj ) ->
 				test.deepEqual obj, oAiTwo, 'Forged Module is not what we expected'
 				test.done()
 

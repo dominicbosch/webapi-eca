@@ -219,81 +219,74 @@ class IndexedModules
 	###
 	storeModule: ( userId, oModule ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
-		@db.sadd "#{ @setname }s", oModule.id,
-			replyHandler "sadd '#{ @setname }s' -> '#{ oModule.id }'"
-		@db.hmset "#{ @setname }:#{ oModule.id }", oModule,
-			replyHandler "hmset '#{ @setname }:#{ oModule.id }' -> [oModule]"
-		@linkModule oModule.id, userId
+		@db.sadd "user:#{ userId }:#{ @setname }s", oModule.id,
+			replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ oModule.id }"
+		@db.hmset "user:#{ userId }:#{ @setname }:#{ oModule.id }", oModule,
+			replyHandler "hmset 'user:#{ userId }:#{ @setname }:#{ oModule.id }' -> [oModule]"
+		# @linkModule oModule.id, userId
 
-	#TODO add testing
-	linkModule: ( mId, userId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.linkModule( #{ mId }, #{ userId } )"
-		@db.sadd "#{ @setname }:#{ mId }:users", userId,
-			replyHandler "sadd '#{ @setname }:#{ mId }:users' -> '#{ userId }'"
-		@db.sadd "user:#{ userId }:#{ @setname }s", mId,
-			replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
+	# #TODO add testing
+	# linkModule: ( mId, userId ) =>
+	# 	@log.info "DB | (IdxedMods) #{ @setname }.linkModule( #{ mId }, #{ userId } )"
+	# 	@db.sadd "#{ @setname }:#{ mId }:users", userId,
+	# 		replyHandler "sadd '#{ @setname }:#{ mId }:users' -> '#{ userId }'"
+	# 	@db.sadd "user:#{ userId }:#{ @setname }s", mId,
+	# 		replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
 
-	#TODO add testing
-	unlinkModule: ( mId, userId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.unlinkModule( #{ mId }, #{ userId } )"
-		@db.srem "#{ @setname }:#{ mId }:users", userId,
-			replyHandler "srem '#{ @setname }:#{ mId }:users' -> #{ userId }"
-		@db.srem "user:#{ userId }:#{ @setname }s", mId,
-			replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
+	# #TODO add testing
+	# unlinkModule: ( mId, userId ) =>
+	# 	@log.info "DB | (IdxedMods) #{ @setname }.unlinkModule( #{ mId }, #{ userId } )"
+	# 	@db.srem "#{ @setname }:#{ mId }:users", userId,
+	# 		replyHandler "srem '#{ @setname }:#{ mId }:users' -> #{ userId }"
+	# 	@db.srem "user:#{ userId }:#{ @setname }s", mId,
+	# 		replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
 
-	#TODO add testing
-	publish: ( mId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.publish( #{ mId } )"
-		@db.sadd "public-#{ @setname }s", mId,
-			replyHandler "sadd 'public-#{ @setname }s' -> '#{ mId }'"
+	# #TODO add testing
+	# publish: ( mId ) =>
+	# 	@log.info "DB | (IdxedMods) #{ @setname }.publish( #{ mId } )"
+	# 	@db.sadd "public-#{ @setname }s", mId,
+	# 		replyHandler "sadd 'public-#{ @setname }s' -> '#{ mId }'"
 
-	#TODO add testing
-	unpublish: ( mId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.unpublish( #{ mId } )"
-		@db.srem "public-#{ @setname }s", mId,
-			replyHandler "srem 'public-#{ @setname }s' -> '#{ mId }'"
+	# #TODO add testing
+	# unpublish: ( mId ) =>
+	# 	@log.info "DB | (IdxedMods) #{ @setname }.unpublish( #{ mId } )"
+	# 	@db.srem "public-#{ @setname }s", mId,
+	# 		replyHandler "srem 'public-#{ @setname }s' -> '#{ mId }'"
 
-	getModule: ( mId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ mId } )"
-		@db.hgetall "#{ @setname }:#{ mId }", cb
+	getModule: ( userId, mId, cb ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
+		@db.hgetall "user:#{ userId }:#{ @setname }:#{ mId }", cb
 
-	getModuleField: ( mId, field, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ mId }, #{ field } )"
-		@db.hget "#{ @setname }:#{ mId }", field, cb
-
-	#TODO add testing
-	getModuleParams: ( mId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModuleParams( #{ mId } )"
-		@db.hget "#{ @setname }:#{ mId }", "params", cb
+	getModuleField: ( userId, mId, field, cb ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
+		@db.hget "user:#{ userId }:#{ @setname }:#{ mId }", field, cb
 
 	#TODO add testing
 	getAvailableModuleIds: ( userId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getAvailableModuleIds( #{ userId } )"
 		@db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 
-	getModuleIds: ( cb ) =>
+	getModuleIds: ( userId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getModuleIds()"
-		@db.smembers "#{ @setname }s", cb
+		@db.smembers "user:#{ userId }:#{ @setname }s", cb
 
-	getModules: ( cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModules()"
-		getSetRecords "#{ @setname }s", @getModule, cb
+	# getModules: ( cb ) =>
+	# 	@log.info "DB | (IdxedMods) #{ @setname }.getModules()"
+	# 	getSetRecords "#{ @setname }s", @getModule, cb
 
-	deleteModule: ( mId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ mId } )"
-		@db.srem "#{ @setname }s", mId,
-			replyHandler "srem '#{ @setname }s' -> '#{ mId }'"
-		@db.del "#{ @setname }:#{ mId }",
-			replyHandler "del '#{ @setname }:#{ mId }'"
-		@unpublish mId
-		@db.smembers "#{ @setname }:#{ mId }:users", ( err, obj ) =>
-			for userId in obj
-				@unlinkModule mId, userId
-				@deleteUserParams mId, userId
-				exports.getUserLinkedRules userId, ( err, obj ) =>
-					for rule in obj
-						@getUserArgumentsFunctions userId, rule, mId, ( err, obj ) =>
-							@deleteUserArguments userId, rule, mId
+	deleteModule: ( userId, mId ) =>
+		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ userId }, #{ mId } )"
+		@db.srem "user:#{ userId }:#{ @setname }s", mId,
+			replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> '#{ mId }'"
+		@db.del "user:#{ userId }:#{ @setname }:#{ mId }",
+			replyHandler "del 'user:#{ userId }:#{ @setname }:#{ mId }'"
+		# @unpublish mId
+		# @unlinkModule mId, userId
+		@deleteUserParams mId, userId
+		exports.getUserLinkedRules userId, ( err, obj ) =>
+			for rule in obj
+				@getUserArgumentsFunctions userId, rule, mId, ( err, obj ) =>
+					@deleteUserArguments userId, rule, mId
 
 	###
 	Stores user params for a module. They are expected to be RSA encrypted with helps of
@@ -694,6 +687,7 @@ exports.deleteUser = ( userId ) =>
 				replyHandler "srem 'role:#{ roleId }:users' -> '#{ userId }'"
 		delRoleUser id for id in obj
 	@db.del "user:#{ userId }:roles", replyHandler "del 'user:#{ userId }:roles'"
+	# TODO we also need to delete this user's modules
 
 ###
 Checks the credentials and on success returns the user object to the

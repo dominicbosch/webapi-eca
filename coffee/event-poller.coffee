@@ -73,7 +73,7 @@ process.on 'message', ( msg ) ->
 fLoadModule = ( msg ) ->
 	arrName = msg.rule.event.split ' -> '
 	fAnonymous = () ->
-		db.eventPollers.getModule arrName[ 0 ], ( err, obj ) ->
+		db.eventPollers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
 				log.warn "EP | Strange... no module retrieved: #{ arrName[0] }"
 			else

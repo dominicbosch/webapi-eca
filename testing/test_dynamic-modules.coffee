@@ -42,7 +42,7 @@ exports.setUp = ( cb ) ->
 
 exports.tearDown = ( cb ) ->
 	db.deleteRule oRule.id
-	db.actionInvokers.deleteModule oAi.id
+	db.actionInvokers.deleteModule oUser.username, oAi.id
 	engine.shutDown()
 	setTimeout cb, 200
 

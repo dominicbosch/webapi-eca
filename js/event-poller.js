@@ -79,7 +79,7 @@ Dynamic Modules
     var arrName, fAnonymous;
     arrName = msg.rule.event.split(' -> ');
     fAnonymous = function() {
-      return db.eventPollers.getModule(arrName[0], function(err, obj) {
+      return db.eventPollers.getModule(msg.user, arrName[0], function(err, obj) {
         if (!obj) {
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
