@@ -4,9 +4,9 @@
   "db-select": 0,
   "log": {
   	"nolog": "false",
-    "mode": "development",
-    "io-level": "info",
-    "file-level": "info",
+    "mode": "productive",
+    "io-level": "fatal",
+    "file-level": "warn",
     "file-path": "logs/server.log"
   },
   "webhooks": [
