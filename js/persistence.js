@@ -839,8 +839,8 @@ Persistence
       _this.log.info("DB | storeUser: '" + objUser.username + "'");
       if (objUser && objUser.username && objUser.password) {
         _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
-        objUser.password = objUser.password;
-        return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
+        _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
+        return _this.db.hset("user:" + objUser.username, "roles", JSON.stringify(objUser.roles), replyHandler("hset 'user:" + objUser.username + "' field 'roles' -> [objUser]"));
       } else {
         return _this.log.warn(new Error('DB | username or password was missing'));
       }
@@ -874,7 +874,12 @@ Persistence
   exports.getUser = (function(_this) {
     return function(userId, cb) {
       _this.log.info("DB | getUser: '" + userId + "'");
-      return _this.db.hgetall("user:" + userId, cb);
+      return _this.db.hgetall("user:" + userId, function(err, obj) {
+        try {
+          obj.roles = JSON.parse(obj.roles);
+        } catch (_error) {}
+        return cb(err, obj);
+      });
     };
   })(this);
 
@@ -957,6 +962,7 @@ Persistence
           } else if (obj && obj.password) {
             if (pw === obj.password) {
               _this.log.info("DB | User '" + obj.username + "' logged in!");
+              obj.roles = JSON.parse(obj.roles);
               return cb(null, obj);
             } else {
               return cb(new Error('Wrong credentials!'), null);

@@ -11,7 +11,7 @@ Request Handler
  */
 
 (function() {
-  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, qs, renderPage;
+  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, pathUsers, qs, renderPage;
 
   db = require('./persistence');
 
@@ -24,6 +24,8 @@ Request Handler
   mustache = require('mustache');
 
   crypto = require('crypto-js');
+
+  pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
 
   dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
 
@@ -41,10 +43,57 @@ Request Handler
           };
           setTimeout(args['shutdown-function'], 500);
           return cb(null, data);
+        },
+        newuser: function(obj, cb) {
+          var data, err, fPersistNewUser, oUser, roles;
+          data = {
+            code: 200,
+            message: 'User stored thank you!'
+          };
+          if (obj.username && obj.password) {
+            if (obj.roles) {
+              try {
+                roles = JSON.parse(obj.roles);
+              } catch (_error) {
+                err = _error;
+                this.log('RH | error parsing newuser roles: ' + err.message);
+                roles = [];
+              }
+            } else {
+              roles = [];
+            }
+            oUser = {
+              username: obj.username,
+              password: obj.password,
+              roles: roles
+            };
+            db.storeUser(oUser);
+            fPersistNewUser = function(username, password, roles) {
+              return function(err, data) {
+                var users;
+                users = JSON.parse(data);
+                users[username] = {
+                  password: password,
+                  roles: roles
+                };
+                return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
+                  if (err) {
+                    this.log.error("RH | Unable to write new user file! ");
+                    return this.log.error(err);
+                  }
+                });
+              };
+            };
+            fs.readFile(pathUsers, 'utf8', fPersistNewUser(obj.username, obj.password, roles));
+          } else {
+            data.code = 401;
+            data.message = 'Missing parameter for this command';
+          }
+          return cb(null, data);
         }
       };
       db(args);
-      users = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'users.json')));
+      users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
       fStoreUser = function(username, oUser) {
         oUser.username = username;
         return db.storeUser(oUser);
@@ -329,9 +378,9 @@ Request Handler
     var msg, page;
     if (!req.session.user) {
       page = 'login';
-    } else if (req.session.user.isAdmin !== "true") {
+    } else if (req.session.user.roles.indexOf("admin") === -1) {
       page = 'login';
-      msg = 'You need to be admin!';
+      msg = 'You need to be admin for this page!';
     } else {
       page = 'admin';
     }
@@ -353,21 +402,31 @@ Request Handler
   exports.handleAdminCommand = (function(_this) {
     return function(req, resp) {
       var body;
-      if (req.session && req.session.user && req.session.user.isAdmin === "true") {
+      if (req.session && req.session.user && req.session.user.roles.indexOf("admin") > -1) {
         body = '';
         req.on('data', function(data) {
           return body += data;
         });
         return req.on('end', function() {
-          var obj;
+          var arrCmd, arrKV, arrParams, keyVal, oParams, obj, _i, _len;
           obj = qs.parse(body);
           _this.log.info('RH | Received admin request: ' + obj.command);
-          if (obj.command && _this.objAdminCmds[obj.command]) {
-            return _this.objAdminCmds[obj.command](obj, function(err, obj) {
+          arrCmd = obj.command.split(' ');
+          if (!arrCmd[0] || !_this.objAdminCmds[arrCmd[0]]) {
+            return resp.send(404, 'Command unknown!');
+          } else {
+            arrParams = arrCmd.slice(1);
+            oParams = {};
+            for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+              keyVal = arrParams[_i];
+              arrKV = keyVal.split(":");
+              if (arrKV.length === 2) {
+                oParams[arrKV[0]] = arrKV[1];
+              }
+            }
+            return _this.objAdminCmds[arrCmd[0]](oParams, function(err, obj) {
               return resp.send(obj.code, obj);
             });
-          } else {
-            return resp.send(404, 'Command unknown!');
           }
         });
       } else {

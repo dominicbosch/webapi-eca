@@ -666,7 +666,7 @@
           }
           $('#input_event').val(oRule.event);
           $('#event_interval').val(oRule.event_interval);
-          editor.setValue(JSON.stringify(oRule.conditions));
+          editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
           _ref = oRule.actions;
           _results = [];
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {

@@ -142,15 +142,17 @@ Engine
           }
           return false;
         };
-        _results = [];
-        for (action in oUser[updatedRuleId].rule.actions) {
-          if (!fRequired(action)) {
-            _results.push(delete oUser[updatedRuleId].actions[action]);
-          } else {
-            _results.push(void 0);
+        if (oUser[updatedRuleId]) {
+          _results = [];
+          for (action in oUser[updatedRuleId].rule.actions) {
+            if (!fRequired(action)) {
+              _results.push(delete oUser[updatedRuleId].actions[action]);
+            } else {
+              _results.push(void 0);
+            }
           }
+          return _results;
         }
-        return _results;
       };
       for (name in listUserRules) {
         oUser = listUserRules[name];

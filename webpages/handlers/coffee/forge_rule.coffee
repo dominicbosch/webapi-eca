@@ -514,7 +514,7 @@ fOnLoad = () ->
 					$( '#event_interval' ).val oRule.event_interval
 
 					# Conditions
-					editor.setValue JSON.stringify oRule.conditions
+					editor.setValue JSON.stringify oRule.conditions, undefined, 2
 
 					# Actions
 					for action in oRule.actions

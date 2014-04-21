@@ -61,24 +61,22 @@ Components Manager
           var fFetchRule, rule, _i, _len, _results;
           fFetchRule = function(userName) {
             return function(rule) {
-              return db.getRule(rule, (function(_this) {
-                return function(err, strRule) {
-                  var oRule;
-                  try {
-                    oRule = JSON.parse(strRule);
-                    db.resetLog(userName, oRule.id);
-                    db.appendLog(userName, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. Interval set to " + oRule.event_interval + " minutes");
-                    return eventEmitter.emit('rule', {
-                      event: 'init',
-                      user: userName,
-                      rule: oRule
-                    });
-                  } catch (_error) {
-                    err = _error;
-                    return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
-                  }
-                };
-              })(this));
+              return db.getRule(rule, function(err, strRule) {
+                var oRule;
+                try {
+                  oRule = JSON.parse(strRule);
+                  db.resetLog(userName, oRule.id);
+                  db.appendLog(userName, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. Interval set to " + oRule.event_interval + " minutes");
+                  return eventEmitter.emit('rule', {
+                    event: 'init',
+                    user: userName,
+                    rule: oRule
+                  });
+                } catch (_error) {
+                  err = _error;
+                  return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
+                }
+              });
             };
           };
           _results = [];

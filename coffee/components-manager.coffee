@@ -50,14 +50,14 @@ exports.addRuleListener = ( eh ) =>
 	eventEmitter.addListener 'rule', eh
 
 	# Fetch all active rules per user
-	db.getAllActivatedRuleIdsPerUser ( err, objUsers ) ->
+	db.getAllActivatedRuleIdsPerUser ( err, objUsers ) =>
 
 		# Go through all rules of each user
-		fGoThroughUsers = ( user, rules ) ->
+		fGoThroughUsers = ( user, rules ) =>
 
 			# Fetch the rules object for each rule in each user
-			fFetchRule = ( userName ) ->
-				( rule ) ->
+			fFetchRule = ( userName ) =>
+				( rule ) =>
 					db.getRule rule, ( err, strRule ) =>
 						try 
 							oRule = JSON.parse strRule

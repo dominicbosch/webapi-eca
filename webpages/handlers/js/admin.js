@@ -5,7 +5,11 @@
   fOnLoad = function() {
     document.title = 'Administrate';
     $('#pagetitle').text('Hi {{{user.username}}}, issue your commands please:');
-    return $('#but_submit').click(function() {
+    if (!window.CryptoJS) {
+      $('#info').attr('class', 'error');
+      $('#info').text('CryptoJS library missing! Are you connected to the internet?');
+    }
+    $('#but_submit').click(function() {
       var data;
       data = {
         command: $('#inp_command').val()
@@ -27,6 +31,13 @@
         };
         return setTimeout(fDelayed, 500);
       });
+    });
+    return $('#inp_password').keyup(function() {
+      var hp;
+      hp = CryptoJS.SHA3($(this).val(), {
+        outputLength: 512
+      });
+      return $('#display_hash').text(hp.toString());
     });
   };
 

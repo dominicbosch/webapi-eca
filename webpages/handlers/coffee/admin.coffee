@@ -2,6 +2,11 @@
 fOnLoad = () ->
 	document.title = 'Administrate'
 	$( '#pagetitle' ).text 'Hi {{{user.username}}}, issue your commands please:'
+	
+	if not window.CryptoJS
+		$( '#info' ).attr 'class', 'error'
+		$( '#info' ).text 'CryptoJS library missing! Are you connected to the internet?'
+
 	$( '#but_submit' ).click () ->
 		data = 
 			command: $( '#inp_command' ).val()
@@ -18,5 +23,10 @@ fOnLoad = () ->
 					if err.status is 401
 						window.location.href = 'admin'
 				setTimeout fDelayed, 500
+
+	$( '#inp_password' ).keyup () ->
+		hp = CryptoJS.SHA3 $( this ).val(),
+			outputLength: 512
+		$( '#display_hash' ).text hp.toString()
 
 window.addEventListener 'load', fOnLoad, true

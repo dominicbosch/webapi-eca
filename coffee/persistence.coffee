@@ -624,9 +624,10 @@ exports.storeUser = ( objUser ) =>
 	if objUser and objUser.username and objUser.password
 		@db.sadd 'users', objUser.username,
 			replyHandler "sadd 'users' -> '#{ objUser.username }'"
-		objUser.password = objUser.password
 		@db.hmset "user:#{ objUser.username }", objUser,
 			replyHandler "hmset 'user:#{ objUser.username }' -> [objUser]"
+		@db.hset "user:#{ objUser.username }", "roles", JSON.stringify( objUser.roles ),
+			replyHandler "hset 'user:#{ objUser.username }' field 'roles' -> [objUser]"
 	else
 		@log.warn new Error 'DB | username or password was missing'
 
@@ -649,7 +650,10 @@ Fetch a user by id and pass it to cb(err, obj).
 ###
 exports.getUser = ( userId, cb ) =>
 	@log.info "DB | getUser: '#{ userId }'"
-	@db.hgetall "user:#{ userId }", cb
+	@db.hgetall "user:#{ userId }", ( err, obj ) =>
+		try
+			obj.roles = JSON.parse obj.roles
+		cb err, obj
 	
 ###
 Deletes a user and all his associated linked and active rules.
@@ -708,6 +712,7 @@ exports.loginUser = ( userId, password, cb ) =>
 			else if obj and obj.password
 				if pw is obj.password
 					@log.info "DB | User '#{ obj.username }' logged in!" 
+					obj.roles = JSON.parse obj.roles
 					cb null, obj
 				else
 					cb (new Error 'Wrong credentials!'), null

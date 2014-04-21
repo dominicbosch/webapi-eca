@@ -124,13 +124,14 @@ updateActionModules = ( updatedRuleId ) =>
 		fRequired = ( actionName ) ->
 			for action in oUser[updatedRuleId].rule.actions
 				# Since the event is in the format 'module -> function' we need to split the string
-				if (action.split ' -> ')[0] is actionName
+				if (action.split ' -> ')[ 0 ] is actionName
 					return true
 			false
 
 		# Go thorugh all loaded action modules and check whether the action is still required
-		for action of oUser[updatedRuleId].rule.actions 
-			delete oUser[updatedRuleId].actions[action] if not fRequired action
+		if oUser[updatedRuleId]
+			for action of oUser[updatedRuleId].rule.actions 
+				delete oUser[updatedRuleId].actions[action] if not fRequired action
 
 	fRemoveNotRequired oUser for name, oUser of listUserRules
 
@@ -142,7 +143,7 @@ updateActionModules = ( updatedRuleId ) =>
 
 			# Load the action invoker module if it was part of the updated rule or if it's new
 			fAddIfNewOrNotExisting = ( actionName ) =>
-				moduleName = (actionName.split ' -> ')[0]
+				moduleName = (actionName.split ' -> ')[ 0 ]
 				if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
 					db.actionInvokers.getModule moduleName, ( err, obj ) =>
 						if obj

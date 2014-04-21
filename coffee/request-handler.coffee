@@ -25,7 +25,9 @@ qs = require 'querystring'
 #   [crypto-js](https://github.com/evanvosberg/crypto-js)
 mustache = require 'mustache'
 crypto = require 'crypto-js'
-	
+
+pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
+
 # Prepare the user command handlers which are invoked via HTTP requests.
 dirHandlers = path.resolve __dirname, '..', 'webpages', 'handlers'
 exports = module.exports = ( args ) => 
@@ -42,10 +44,53 @@ exports = module.exports = ( args ) =>
 				message: 'Shutting down... BYE!'
 			setTimeout args[ 'shutdown-function' ], 500
 			cb null, data
+
+		newuser: ( obj, cb ) ->
+			data =
+				code: 200
+				message: 'User stored thank you!'
+			if obj.username and obj.password
+				if obj.roles
+					try
+						roles = JSON.parse obj.roles
+					catch err
+						@log 'RH | error parsing newuser roles: ' + err.message
+						roles = []
+				else
+					roles = []
+				oUser = 
+					username: obj.username
+					password: obj.password
+					roles: roles
+				db.storeUser oUser
+
+				fPersistNewUser = ( username, password, roles ) ->
+					( err, data ) -> 
+						users = JSON.parse data
+						users[ username ] =
+							password: password
+							roles: roles
+						fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
+							if err
+								@log.error "RH | Unable to write new user file! "
+								@log.error err
+# {
+# 	"admin": {
+# 		"password": "7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764",
+# 		"roles": ["admin"]
+# 	}
+# }
+# {"admin":{"password":"7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764","roles":["admin"]},"dominic":{"password":"2d51496fbe5b6d3e98e22d68140609eaedd64de457b2f75c346a4a98f87928eac11ea2be747709ae7a2f5b177af09a60a8dbf14bf703e0cb9b147fc0a3e3a064","roles":[]}}
+				fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
+			else
+				data.code = 401
+				data.message = 'Missing parameter for this command' 
+			cb null, data
+			
 	db args
 
 	# Load the standard users from the user config file
-	users = JSON.parse fs.readFileSync path.resolve __dirname, '..', 'config', 'users.json'
+	users = JSON.parse fs.readFileSync pathUsers, 'utf8'
 	fStoreUser = ( username, oUser ) ->
 		oUser.username = username
 		db.storeUser oUser
@@ -280,9 +325,9 @@ exports.handleAdmin = ( req, resp ) ->
 	if not req.session.user
 		page = 'login'
 	#TODO isAdmin should come from the db role
-	else if req.session.user.isAdmin isnt "true"
+	else if req.session.user.roles.indexOf( "admin" ) is -1
 		page = 'login'
-		msg = 'You need to be admin!'
+		msg = 'You need to be admin for this page!'
 	else
 		page = 'admin'
 	renderPage page, req, resp, msg
@@ -299,19 +344,26 @@ objects.*
 ###
 exports.handleAdminCommand = ( req, resp ) =>
 	if req.session and
-	req.session.user and
-	req.session.user.isAdmin is "true"
+			req.session.user and
+			req.session.user.roles.indexOf( "admin" ) > -1
 		body = ''
 		req.on 'data', ( data ) ->
 			body += data
 		req.on 'end', =>
 			obj = qs.parse body
 			@log.info 'RH | Received admin request: ' + obj.command
-			if obj.command and @objAdminCmds[obj.command]
-				@objAdminCmds[obj.command] obj, ( err, obj ) ->
-					resp.send obj.code, obj
-			else
+			arrCmd = obj.command.split( ' ' )
+			if not arrCmd[ 0 ] or not @objAdminCmds[ arrCmd[ 0 ] ]
 				resp.send 404, 'Command unknown!'
+			else
+				arrParams = arrCmd.slice 1
+				oParams = {}
+				for keyVal in arrParams
+					arrKV = keyVal.split ":"
+					if arrKV.length is 2
+						oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
+				@objAdminCmds[ arrCmd[ 0 ] ] oParams, ( err, obj ) ->
+					resp.send obj.code, obj
 	else
 		resp.send 401, 'You need to be logged in as admin!'
 	

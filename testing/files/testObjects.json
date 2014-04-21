@@ -111,17 +111,18 @@
   "users": {
     "userOne": {
       "username": "tester-1",
-      "password": "password-1"
+      "password": "password-1",
+      "roles": []
     },
     "userTwo": {
       "username": "tester-2",
-      "password": "password-2"
+      "password": "password-2",
+      "roles": []
     },
     "userAdmin": {
       "username": "tester-admin",
       "password": "password-admin",
-      "roles": [ "admin" ],
-      "isAdmin": true
+      "roles": [ "admin" ]
     }
   }
 
