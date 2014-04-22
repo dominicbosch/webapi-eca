@@ -84,7 +84,7 @@ Dynamic Modules
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
           return dynmod.compileString(obj.data, msg.user, msg.rule.id, arrName[0], obj.lang, db.eventPollers, function(result) {
-            var oUser, ts;
+            var nd, oUser, start, ts;
             if (!result.answ === 200) {
               log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
             }
@@ -103,8 +103,18 @@ Dynamic Modules
               timestamp: ts
             };
             oUser[msg.rule.id].module.pushEvent = fPushEvent(msg.user, msg.rule.id, oUser[msg.rule.id]);
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", starting at UTC|" + (ts.toISOString()) + " and polling every " + msg.rule.event_interval + " minutes");
-            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, ts), 1000);
+            start = new Date(msg.rule.event_start);
+            nd = new Date();
+            if (start < nd) {
+              start.setYear(nd.getYear());
+              start.setMonth(nd.getMonth());
+              start.setDate(nd.getDate());
+              if (start < nd) {
+                start.setDate(nd.getDate() + 1);
+              }
+            }
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + (ts.toISOString()) + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((start - nd) / 1000 / 60) + " minutes ) and polling every " + msg.rule.event_interval + " minutes");
+            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, ts), start - nd);
           });
         }
       });

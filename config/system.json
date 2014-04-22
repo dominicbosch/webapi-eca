@@ -1,7 +1,7 @@
 {
   "http-port": 8125,
   "db-port": 6379,
-  "db-select": 0,
+  "db-select": 1,
   "log": {
   	"nolog": "false",
     "mode": "productive",

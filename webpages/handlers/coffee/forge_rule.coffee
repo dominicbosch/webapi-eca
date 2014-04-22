@@ -10,8 +10,11 @@ if oParams.id
 
 strPublicKey = ''
 fPlaceAndPaintInterval = () ->
-	$( '#input_interval' ).html 'Interval:
-		<input id="event_interval" type="text" />
+	$( '#event_start' ).html 'Start Time:
+		<input id="input_start" type="text" />
+		<b>"hh:mm"</b>, default = 12:00'
+	$( '#event_interval' ).html 'Interval:
+		<input id="input_interval" type="text" />
 		<b>"days hours:minutes"</b>, default = 10 minutes'
 
 fFailedRequest = ( msg ) ->
@@ -63,7 +66,8 @@ fOnLoad = () ->
 	$( '#select_event' ).change () ->
 		evtFunc = $( this ).val()
 		if evtFunc is ''
-			$( '#input_interval' ).html ''
+			$( '#event_start' ).html ''
+			$( '#event_interval' ).html ''
 		else
 			fPlaceAndPaintInterval()
 		$( '#input_event' ).val evtFunc
@@ -74,7 +78,8 @@ fOnLoad = () ->
 		$( '#select_event' ).val $( this ).val()
 		fFetchEventParams $( '#select_event' ).val()
 		if $( '#select_event' ).val() is ''
-			$( '#input_interval' ).html ''
+			$( '#event_start' ).html ''
+			$( '#event_interval' ).html ''
 		else
 			fPlaceAndPaintInterval()
 
@@ -418,6 +423,34 @@ fOnLoad = () ->
 			if conds not instanceof Array
 				throw new Error "Conditions Invalid! Needs to be an Array of Strings!"
 
+
+			txtStart = $( '#input_start' ).val()
+			start = new Date()
+			if not txtStart
+				start.setHours 12
+				start.setMinutes 0
+				console.log 'setting to 12:00: ' + start.toString()
+			else
+				arrInp = txtStart.split ':'
+				# There's only one string entered: hour
+				if arrInp.length is 1
+					txtHr = txtStart
+					start.setMinutes 0
+				else
+					txtHr = arrInp[ 0 ]
+					intMin = parseInt( arrInp[ 1 ] ) || 0
+					m = Math.max 0, Math.min intMin, 59
+					start.setMinutes m
+			
+			intHour = parseInt( txtHr ) || 12
+			h = Math.max 0, Math.min intHour, 12
+			start.setHours h
+
+			start.setSeconds 0
+			start.setMilliseconds 0
+			if start < new Date()
+				start.setDate start.getDate() + 1
+
 			# Parse a time string
 			fParseTime = ( str, hasDay ) ->
 				arrTime = str.split ':'
@@ -438,8 +471,7 @@ fOnLoad = () ->
 						def = 0
 					h * 60 + ( parseInt( arrTime[ 1 ] ) || def )
 
-
-			txtInterval = $( '#event_interval' ).val()
+			txtInterval = $( '#input_interval' ).val()
 			if not txtInterval
 				mins = 10
 			else
@@ -475,6 +507,7 @@ fOnLoad = () ->
 					id: $( '#input_id' ).val()
 					event: eventId
 					event_params: ep
+					event_start: start.toISOString()
 					event_interval: mins
 					event_functions: evtFuncs
 					conditions: conds
@@ -511,7 +544,12 @@ fOnLoad = () ->
 						fPlaceAndPaintInterval()
 
 					$( '#input_event' ).val oRule.event
-					$( '#event_interval' ).val oRule.event_interval
+					d = new Date oRule.event_start 
+					mins = d.getMinutes()
+					if mins.toString().length is 1
+							mins = '0' + mins
+					$( '#input_start' ).val d.getHours() + ':' + mins
+					$( '#input_interval' ).val oRule.event_interval
 
 					# Conditions
 					editor.setValue JSON.stringify oRule.conditions, undefined, 2

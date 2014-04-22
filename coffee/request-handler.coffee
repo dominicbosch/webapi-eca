@@ -74,13 +74,7 @@ exports = module.exports = ( args ) =>
 							if err
 								@log.error "RH | Unable to write new user file! "
 								@log.error err
-# {
-# 	"admin": {
-# 		"password": "7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764",
-# 		"roles": ["admin"]
-# 	}
-# }
-# {"admin":{"password":"7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764","roles":["admin"]},"dominic":{"password":"2d51496fbe5b6d3e98e22d68140609eaedd64de457b2f75c346a4a98f87928eac11ea2be747709ae7a2f5b177af09a60a8dbf14bf703e0cb9b147fc0a3e3a064","roles":[]}}
+
 				fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
 			else
 				data.code = 401

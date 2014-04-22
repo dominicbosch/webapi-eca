@@ -20,7 +20,8 @@
   strPublicKey = '';
 
   fPlaceAndPaintInterval = function() {
-    return $('#input_interval').html('Interval: <input id="event_interval" type="text" /> <b>"days hours:minutes"</b>, default = 10 minutes');
+    $('#event_start').html('Start Time: <input id="input_start" type="text" /> <b>"hh:mm"</b>, default = 12:00');
+    return $('#event_interval').html('Interval: <input id="input_interval" type="text" /> <b>"days hours:minutes"</b>, default = 10 minutes');
   };
 
   fFailedRequest = function(msg) {
@@ -89,7 +90,8 @@
       var evtFunc;
       evtFunc = $(this).val();
       if (evtFunc === '') {
-        $('#input_interval').html('');
+        $('#event_start').html('');
+        $('#event_interval').html('');
       } else {
         fPlaceAndPaintInterval();
       }
@@ -101,7 +103,8 @@
       $('#select_event').val($(this).val());
       fFetchEventParams($('#select_event').val());
       if ($('#select_event').val() === '') {
-        return $('#input_interval').html('');
+        $('#event_start').html('');
+        return $('#event_interval').html('');
       } else {
         return fPlaceAndPaintInterval();
       }
@@ -470,7 +473,7 @@
       return $(this).closest('tr').remove();
     });
     $('#but_submit').click(function() {
-      var actFuncs, acts, ap, arrInp, conds, d, ep, err, eventId, evtFuncs, fCheckOverwrite, fParseTime, mins, txtInterval;
+      var actFuncs, acts, ap, arrInp, conds, d, ep, err, eventId, evtFuncs, fCheckOverwrite, fParseTime, h, intHour, intMin, m, mins, start, txtHr, txtInterval, txtStart;
       window.scrollTo(0, 0);
       $('#info').text('');
       try {
@@ -565,8 +568,34 @@
         if (!(conds instanceof Array)) {
           throw new Error("Conditions Invalid! Needs to be an Array of Strings!");
         }
+        txtStart = $('#input_start').val();
+        start = new Date();
+        if (!txtStart) {
+          start.setHours(12);
+          start.setMinutes(0);
+          console.log('setting to 12:00: ' + start.toString());
+        } else {
+          arrInp = txtStart.split(':');
+          if (arrInp.length === 1) {
+            txtHr = txtStart;
+            start.setMinutes(0);
+          } else {
+            txtHr = arrInp[0];
+            intMin = parseInt(arrInp[1]) || 0;
+            m = Math.max(0, Math.min(intMin, 59));
+            start.setMinutes(m);
+          }
+        }
+        intHour = parseInt(txtHr) || 12;
+        h = Math.max(0, Math.min(intHour, 12));
+        start.setHours(h);
+        start.setSeconds(0);
+        start.setMilliseconds(0);
+        if (start < new Date()) {
+          start.setDate(start.getDate() + 1);
+        }
         fParseTime = function(str, hasDay) {
-          var arrTime, def, h, time;
+          var arrTime, def, time;
           arrTime = str.split(':');
           if (hasDay) {
             def = 0;
@@ -588,7 +617,7 @@
             return h * 60 + (parseInt(arrTime[1]) || def);
           }
         };
-        txtInterval = $('#event_interval').val();
+        txtInterval = $('#input_interval').val();
         if (!txtInterval) {
           mins = 10;
         } else {
@@ -626,6 +655,7 @@
             id: $('#input_id').val(),
             event: eventId,
             event_params: ep,
+            event_start: start.toISOString(),
             event_interval: mins,
             event_functions: evtFuncs,
             conditions: conds,
@@ -655,7 +685,7 @@
         })
       };
       return $.post('/usercommand', obj).done(function(data) {
-        var action, arrName, oRule, _j, _len1, _ref, _results;
+        var action, arrName, d, mins, oRule, _j, _len1, _ref, _results;
         oRule = JSON.parse(data.message);
         if (oRule) {
           $('#input_id').val(oRule.id);
@@ -665,7 +695,13 @@
             fPlaceAndPaintInterval();
           }
           $('#input_event').val(oRule.event);
-          $('#event_interval').val(oRule.event_interval);
+          d = new Date(oRule.event_start);
+          mins = d.getMinutes();
+          if (mins.toString().length === 1) {
+            mins = '0' + mins;
+          }
+          $('#input_start').val(d.getHours() + ':' + mins);
+          $('#input_interval').val(oRule.event_interval);
           editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
           _ref = oRule.actions;
           _results = [];

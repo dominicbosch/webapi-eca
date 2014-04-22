@@ -106,11 +106,22 @@ fLoadModule = ( msg ) ->
 							timestamp: ts
 						oUser[msg.rule.id].module.pushEvent = fPushEvent msg.user, msg.rule.id, oUser[msg.rule.id]
 
-
+						start = new Date msg.rule.event_start
+						nd = new Date()
+						if start < nd
+							# If the engine restarts start could be from last year even 
+							start.setYear nd.getYear()
+							start.setMonth nd.getMonth()
+							start.setDate nd.getDate()
+							# if it's still smaller we add one day
+							if start < nd
+								start.setDate nd.getDate() + 1
+								
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
-							in rule #{ msg.rule.id }, starting at UTC|#{ ts.toISOString() }
+							in rule #{ msg.rule.id }, registered at UTC|#{ ts.toISOString() },
+							starting at UTC|#{ start.toISOString() } ( which is in #{ ( start - nd ) / 1000 / 60 } minutes )
 							and polling every #{ msg.rule.event_interval } minutes"
-						setTimeout fCheckAndRun( msg.user, msg.rule.id, ts ), 1000
+						setTimeout fCheckAndRun( msg.user, msg.rule.id, ts ), start - nd
 
 	if msg.event is 'new' or
 			not listUserModules[msg.user] or 

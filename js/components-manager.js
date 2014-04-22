@@ -314,6 +314,7 @@ Components Manager
       rule = {
         id: oPayload.id,
         event: oPayload.event,
+        event_start: oPayload.event_start,
         event_interval: oPayload.event_interval,
         conditions: oPayload.conditions,
         actions: oPayload.actions
