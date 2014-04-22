@@ -81,13 +81,21 @@
       "id": "ruleReal",
       "event": "test_1",
       "event_interval": 1,
-      "conditions": [".more:val(\"really nested\")"],
+      "conditions": 
+        [
+          {
+              "selector": ".more",
+              "type": "string",
+              "operator": "instr",
+              "compare": "really nested"
+          }
+        ],
       "actions": ["aiOne -> printToLog"],
       "action_functions": {
         "aiOne -> printToLog": [
           {
             "argument": "evt",
-            "value": "*",
+            "value": "#{*}",
             "jsselector": true
           }
         ]

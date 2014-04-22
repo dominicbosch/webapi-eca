@@ -255,6 +255,7 @@ class IndexedModules
 
 	getModule: ( userId, mId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
+		@log.info "hgetall user:#{ userId }:#{ @setname }:#{ mId }"
 		@db.hgetall "user:#{ userId }:#{ @setname }:#{ mId }", cb
 
 	getModuleField: ( userId, mId, field, cb ) =>

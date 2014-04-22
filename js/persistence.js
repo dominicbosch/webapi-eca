@@ -301,6 +301,7 @@ Persistence
 
     IndexedModules.prototype.getModule = function(userId, mId, cb) {
       this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
+      this.log.info("hgetall user:" + userId + ":" + this.setname + ":" + mId);
       return this.db.hgetall("user:" + userId + ":" + this.setname + ":" + mId, cb);
     };
 

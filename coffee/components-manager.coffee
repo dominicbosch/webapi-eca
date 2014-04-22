@@ -229,6 +229,8 @@ storeRule = ( user, oPayload, callback ) =>
 			event_interval: oPayload.event_interval
 			conditions: oPayload.conditions
 			actions: oPayload.actions
+		if oPayload.event_start
+			rule.timestamp = (new Date()).toISOString()
 		strRule = JSON.stringify rule
 		# store the rule
 		db.storeRule rule.id, strRule

@@ -47,9 +47,11 @@ Dynamic Modules
     logger: log
   });
 
+  db.selectDatabase(parseInt(process.argv[7]) || 0);
+
   encryption({
     logger: log,
-    keygen: process.argv[7]
+    keygen: process.argv[8]
   });
 
   listUserModules = {};
@@ -84,7 +86,7 @@ Dynamic Modules
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
           return dynmod.compileString(obj.data, msg.user, msg.rule.id, arrName[0], obj.lang, db.eventPollers, function(result) {
-            var nd, oUser, start, ts;
+            var nd, now, oUser, start;
             if (!result.answ === 200) {
               log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
             }
@@ -92,29 +94,32 @@ Dynamic Modules
               listUserModules[msg.user] = {};
             }
             oUser = listUserModules[msg.user];
-            ts = new Date();
             oUser[msg.rule.id] = {
               id: msg.rule.event,
+              timestamp: msg.rule.timestamp,
               pollfunc: arrName[1],
               funcArgs: result.funcArgs,
               event_interval: msg.rule.event_interval * 60 * 1000,
               module: result.module,
-              logger: result.logger,
-              timestamp: ts
+              logger: result.logger
             };
             oUser[msg.rule.id].module.pushEvent = fPushEvent(msg.user, msg.rule.id, oUser[msg.rule.id]);
             start = new Date(msg.rule.event_start);
             nd = new Date();
+            now = new Date();
             if (start < nd) {
-              start.setYear(nd.getYear());
-              start.setMonth(nd.getMonth());
-              start.setDate(nd.getDate());
-              if (start < nd) {
-                start.setDate(nd.getDate() + 1);
+              nd.setMilliseconds(0);
+              nd.setSeconds(0);
+              nd.setMinutes(start.getMinutes());
+              nd.setHours(start.getHours());
+              if (nd < now) {
+                nd.setDate(nd.getDate() + 1);
               }
+            } else {
+              nd = start;
             }
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + (ts.toISOString()) + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((start - nd) / 1000 / 60) + " minutes ) and polling every " + msg.rule.event_interval + " minutes");
-            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, ts), start - nd);
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.event_interval + " minutes");
+            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp), nd - now);
           });
         }
       });
@@ -127,7 +132,7 @@ Dynamic Modules
   fPushEvent = function(userId, ruleId, oRule) {
     return function(obj) {
       return db.pushEvent({
-        event: oRule.id,
+        event: oRule.id + '_created:' + oRule.timestamp,
         eventid: "polled " + oRule.id + " " + userId + "_UTC|" + ((new Date()).toISOString()),
         payload: obj
       });
@@ -144,7 +149,7 @@ Dynamic Modules
           fCallFunction(userId, ruleId, oRule);
           return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.event_interval);
         } else {
-          return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + (timestamp.toISOString()));
+          return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + timestamp);
         }
       }
     };
@@ -154,7 +159,7 @@ Dynamic Modules
     var arrArgs, err, oArg, _i, _len, _ref;
     try {
       arrArgs = [];
-      if (oRule.funcArgs) {
+      if (oRule.funcArgs && oRule.funcArgs[oRule.pollfunc]) {
         _ref = oRule.funcArgs[oRule.pollfunc];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           oArg = _ref[_i];
@@ -165,6 +170,7 @@ Dynamic Modules
     } catch (_error) {
       err = _error;
       log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
+      throw err;
       return oRule.logger(err.message);
     }
   };

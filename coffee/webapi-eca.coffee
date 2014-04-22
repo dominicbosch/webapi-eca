@@ -187,6 +187,8 @@ init = =>
 				args.logconf[ 'file-path' ]
 				# - whether a log file shall be written at all [true|false]
 				args.logconf[ 'nolog' ]
+				# - The selected database
+				args[ 'db-select' ]
 				# - The keygen phrase, this has to be handled differently in the future!
 				args[ 'keygen' ]
 			]

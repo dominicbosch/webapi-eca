@@ -241,8 +241,7 @@
               tr = $("tr", par).filter(function() {
                 return $('.funcarg', this).text() === ("" + oFunc.argument);
               });
-              $("input[type=text]", tr).val(oFunc.value);
-              _results1.push($("input[type=checkbox]", tr).prop('checked', oFunc.jsselector));
+              _results1.push($("input[type=text]", tr).val(oFunc.value));
             }
             return _results1;
           })());
@@ -370,9 +369,7 @@
               tr.append(td);
               td = $('<td>').appendTo(tr);
               td.append($('<input>').attr('type', 'text'));
-              tr.append(td);
-              td = $('<td>').appendTo(tr);
-              _results.push(td.append($('<input>').attr('type', 'checkbox')).attr('title', 'js-select expression to be resolved on event?'));
+              _results.push(tr.append(td));
             }
             return _results;
           }
@@ -435,8 +432,7 @@
               tr = $("tr", par).filter(function() {
                 return $('.funcarg', this).text() === ("" + oFunc.argument);
               });
-              $("input[type=text]", tr).val(oFunc.value);
-              _results1.push($("input[type=checkbox]", tr).prop('checked', oFunc.jsselector));
+              _results1.push($("input[type=text]", tr).val(oFunc.value));
             }
             return _results1;
           })());
@@ -554,8 +550,7 @@
           return $('.funcMappings tr', par).each(function() {
             return actFuncs[actionName].push({
               argument: $('div.funcarg', this).text(),
-              value: $('input[type=text]', this).val(),
-              jsselector: $('input[type=checkbox]', this).is(':checked')
+              value: $('input[type=text]', this).val()
             });
           });
         });
@@ -573,7 +568,6 @@
         if (!txtStart) {
           start.setHours(12);
           start.setMinutes(0);
-          console.log('setting to 12:00: ' + start.toString());
         } else {
           arrInp = txtStart.split(':');
           if (arrInp.length === 1) {
@@ -587,7 +581,7 @@
           }
         }
         intHour = parseInt(txtHr) || 12;
-        h = Math.max(0, Math.min(intHour, 12));
+        h = Math.max(0, Math.min(intHour, 24));
         start.setHours(h);
         start.setSeconds(0);
         start.setMilliseconds(0);

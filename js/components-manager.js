@@ -319,6 +319,9 @@ Components Manager
         conditions: oPayload.conditions,
         actions: oPayload.actions
       };
+      if (oPayload.event_start) {
+        rule.timestamp = (new Date()).toISOString();
+      }
       strRule = JSON.stringify(rule);
       db.storeRule(rule.id, strRule);
       db.linkRule(rule.id, user.username);

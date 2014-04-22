@@ -175,7 +175,7 @@ fOnLoad = () ->
 					tr = $( "tr", par ).filter () ->
 						$( '.funcarg', this ).text() is "#{ oFunc.argument }"
 					$( "input[type=text]", tr ).val oFunc.value
-					$( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
+					# $( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
 
 # ACTIONS
 	obj =
@@ -265,9 +265,9 @@ fOnLoad = () ->
 							td = $( '<td>' ).appendTo tr
 							td.append $( '<input>' ).attr 'type', 'text'
 							tr.append td
-							td = $( '<td>' ).appendTo tr
-							td.append $( '<input>' ).attr( 'type', 'checkbox' )
-								.attr 'title', 'js-select expression to be resolved on event?'
+							# td = $( '<td>' ).appendTo tr
+							# td.append $( '<input>' ).attr( 'type', 'checkbox' )
+							# 	.attr 'title', 'js-select expression to be resolved on event?'
 			.fail fFailedRequest 'Error fetching action invoker function params'
 
 	fFillActionFunction = ( name ) ->
@@ -307,7 +307,7 @@ fOnLoad = () ->
 					tr = $( "tr", par ).filter () ->
 						$( '.funcarg', this ).text() is "#{ oFunc.argument }"
 					$( "input[type=text]", tr ).val oFunc.value
-					$( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
+					# $( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
 
 	$( '#select_actions' ).on 'change', () ->
 		opt = $ 'option:selected', this
@@ -413,7 +413,7 @@ fOnLoad = () ->
 					actFuncs[ actionName ].push
 						argument: $( 'div.funcarg', this ).text()
 						value: $( 'input[type=text]', this ).val()
-						jsselector: $( 'input[type=checkbox]', this ).is( ':checked' )
+						# jsselector: $( 'input[type=checkbox]', this ).is( ':checked' )
 			
 			try
 				conds = JSON.parse editor.getValue()
@@ -429,7 +429,6 @@ fOnLoad = () ->
 			if not txtStart
 				start.setHours 12
 				start.setMinutes 0
-				console.log 'setting to 12:00: ' + start.toString()
 			else
 				arrInp = txtStart.split ':'
 				# There's only one string entered: hour
@@ -443,7 +442,7 @@ fOnLoad = () ->
 					start.setMinutes m
 			
 			intHour = parseInt( txtHr ) || 12
-			h = Math.max 0, Math.min intHour, 12
+			h = Math.max 0, Math.min intHour, 24
 			start.setHours h
 
 			start.setSeconds 0

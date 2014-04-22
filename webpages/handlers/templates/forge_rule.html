@@ -12,7 +12,12 @@ Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors
 <tr><td>
 	<div id="editor_conditions">
 [
-	".nested_property:val(\"has this value\")"
+	{
+	    "selector": ".nested_property",
+	    "type": "string",
+	    "operator": "<=",
+	    "compare": "has this value"
+	}
 ]
 	</div>
 </td></tr>

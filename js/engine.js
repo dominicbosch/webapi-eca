@@ -10,7 +10,7 @@ Engine
  */
 
 (function() {
-  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, numExecutingFunctions, pollQueue, processEvent, updateActionModules, validConditions;
+  var db, dynmod, exports, isRunning, jsonQuery, listUserRules, numExecutingFunctions, oOperators, pollQueue, processEvent, updateActionModules, validConditions;
 
   db = require('./persistence');
 
@@ -219,6 +219,27 @@ Engine
     }
   };
 
+  oOperators = {
+    '<': function(x, y) {
+      return x < y;
+    },
+    '<=': function(x, y) {
+      return x <= y;
+    },
+    '>': function(x, y) {
+      return x > y;
+    },
+    '>=': function(x, y) {
+      return x >= y;
+    },
+    '==': function(x, y) {
+      return x === y;
+    },
+    'instr': function(x, y) {
+      return x.indexOf(y) > -1;
+    }
+  };
+
 
   /*
   Checks whether all conditions of the rule are met by the event.
@@ -228,16 +249,36 @@ Engine
   @param {Object} rule
    */
 
-  validConditions = function(evt, rule) {
-    var prop, _i, _len, _ref;
+  validConditions = function(evt, rule, userId, ruleId) {
+    var cond, err, op, selectedProperty, val, _i, _len, _ref;
     if (rule.conditions.length === 0) {
       return true;
     }
     _ref = rule.conditions;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      prop = _ref[_i];
-      if (jsonQuery(evt, prop).nodes().length === 0) {
+      cond = _ref[_i];
+      selectedProperty = jsonQuery(evt, cond.selector).nodes();
+      if (selectedProperty.length === 0) {
+        db.appendLog(userId, ruleId, 'Condition', "Node not found in event: " + cond.selector);
         return false;
+      }
+      op = oOperators[cond.operator];
+      if (!op) {
+        db.appendLog(userId, ruleId, 'Condition', "Unknown operator: " + cond.operator + ". Use one of " + (Object.keys(oOperators).join(', ')));
+        return false;
+      }
+      try {
+        if (cond.type === 'string') {
+          val = selectedProperty[0];
+        } else if (cond.type === 'value') {
+          val = parseFloat(selectedProperty[0]) || 0;
+        }
+        if (!op(val, cond.compare)) {
+          return false;
+        }
+      } catch (_error) {
+        err = _error;
+        db.appendLog(userId, ruleId, 'Condition', "Error: Selector '" + cond.selector + "', Operator " + cond.operator + ", Compare: " + cond.compare);
       }
     }
     return true;
@@ -253,9 +294,9 @@ Engine
 
   processEvent = (function(_this) {
     return function(evt) {
-      var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleName, userName, _results;
+      var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleEvent, ruleName, userName, _results;
       fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
-        var arrArgs, err, oArg, _i, _len, _ref;
+        var argument, arrArgs, arrSelectors, data, err, oArg, sel, selector, _i, _j, _len, _len1, _ref;
         if (!node) {
           _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
           return;
@@ -269,11 +310,18 @@ Engine
               _ref = node.funcArgs[funcName];
               for (_i = 0, _len = _ref.length; _i < _len; _i++) {
                 oArg = _ref[_i];
-                if (oArg.jsselector) {
-                  arrArgs.push(jsonQuery(evt.payload, oArg.value).nodes()[0]);
-                } else {
-                  arrArgs.push(oArg.value);
+                arrSelectors = oArg.value.match(/#\{(.*?)\}/g);
+                argument = oArg.value;
+                for (_j = 0, _len1 = arrSelectors.length; _j < _len1; _j++) {
+                  sel = arrSelectors[_j];
+                  selector = sel.substring(2, sel.length - 1);
+                  data = jsonQuery(evt.payload, selector).nodes()[0];
+                  argument = argument.replace(sel, data);
+                  if (oArg.value === sel) {
+                    argument = data;
+                  }
                 }
+                arrArgs.push(argument);
               }
             } else {
               _this.log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
@@ -301,7 +349,11 @@ Engine
           _results1 = [];
           for (ruleName in oUser) {
             oMyRule = oUser[ruleName];
-            if (evt.event === oMyRule.rule.event && validConditions(evt, oMyRule.rule)) {
+            ruleEvent = oMyRule.rule.event;
+            if (oMyRule.rule.timestamp) {
+              ruleEvent += '_created:' + oMyRule.rule.timestamp;
+            }
+            if (evt.event === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
               this.log.info('EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName);
               _results1.push((function() {
                 var _i, _len, _ref, _results2;

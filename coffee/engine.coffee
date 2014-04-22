@@ -181,6 +181,14 @@ pollQueue = () ->
 				processEvent obj
 		setTimeout pollQueue, 20 * numExecutingFunctions #FIXME right way to adapt to load?
 
+oOperators =
+	'<': ( x, y ) -> x < y
+	'<=': ( x, y ) -> x <= y
+	'>': ( x, y ) -> x > y
+	'>=': ( x, y ) -> x >= y
+	'==': ( x, y ) -> x is y
+	'instr': ( x, y ) -> x.indexOf( y ) > -1
+
 ###
 Checks whether all conditions of the rule are met by the event.
 
@@ -188,11 +196,33 @@ Checks whether all conditions of the rule are met by the event.
 @param {Object} evt
 @param {Object} rule
 ###
-validConditions = ( evt, rule ) ->
+validConditions = ( evt, rule, userId, ruleId ) ->
 	if rule.conditions.length is 0
 		return true
-	for prop in rule.conditions
-		return false if jsonQuery( evt, prop ).nodes().length is 0
+	for cond in rule.conditions
+		selectedProperty = jsonQuery( evt, cond.selector ).nodes()
+		if selectedProperty.length is 0
+			db.appendLog userId, ruleId, 'Condition', "Node not found in event: #{ cond.selector }"
+			return false 
+
+		op = oOperators[ cond.operator ]
+		if not op
+			db.appendLog userId, ruleId, 'Condition', "Unknown operator: #{ cond.operator }.
+				Use one of #{ Object.keys( oOperators ).join ', ' }"
+			return false
+
+		try
+			if cond.type is 'string'
+				val = selectedProperty[ 0 ]
+			else if cond.type is 'value'
+				val = parseFloat( selectedProperty[ 0 ] ) || 0
+
+			if not op val, cond.compare
+				return false
+		catch err
+			db.appendLog userId, ruleId, 'Condition', "Error: Selector '#{ cond.selector }',
+				Operator #{ cond.operator }, Compare: #{ cond.compare }"
+			
 	return true
 
 ###
@@ -213,10 +243,18 @@ processEvent = ( evt ) =>
 				arrArgs = []
 				if node.funcArgs[ funcName ]
 					for oArg in node.funcArgs[ funcName ]
-						if oArg.jsselector
-							arrArgs.push jsonQuery( evt.payload, oArg.value ).nodes()[ 0 ]
-						else
-							arrArgs.push oArg.value
+						arrSelectors = oArg.value.match /#\{(.*?)\}/g
+						argument = oArg.value
+						for sel in arrSelectors
+							selector = sel.substring 2, sel.length - 1
+							data = jsonQuery( evt.payload, selector ).nodes()[ 0 ]
+							argument = argument.replace sel, data
+							if oArg.value is sel
+								argument = data # if the user wants to pass an object, we allow him to do so
+						# if oArg.jsselector
+						arrArgs.push argument #jsonQuery( evt.payload, oArg.value ).nodes()[ 0 ]
+						# else
+						# 	arrArgs.push oArg.value
 				else
 					@log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
 				node.module[ funcName ].apply null, arrArgs
@@ -232,7 +270,10 @@ processEvent = ( evt ) =>
 	@log.info 'EN | processing event: ' + evt.event + '(' + evt.eventid + ')'
 	for userName, oUser of listUserRules
 		for ruleName, oMyRule of oUser
-			if evt.event is oMyRule.rule.event and validConditions evt, oMyRule.rule
+			ruleEvent = oMyRule.rule.event
+			if oMyRule.rule.timestamp
+				ruleEvent += '_created:' + oMyRule.rule.timestamp
+			if evt.event is ruleEvent and validConditions evt, oMyRule.rule, userName, ruleName
 				@log.info 'EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName
 				for action in oMyRule.rule.actions
 					arr = action.split ' -> '

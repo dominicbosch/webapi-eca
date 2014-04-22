@@ -35,10 +35,12 @@ log.info 'EP | Event Poller starts up'
 db logger: log
 dynmod
 	logger: log
+
+db.selectDatabase parseInt( process.argv[ 7 ] ) || 0
 	
 encryption
 	logger: log
-	keygen: process.argv[ 7 ]
+	keygen: process.argv[ 8 ]
 
 # Initialize module local variables and 
 listUserModules = {}
@@ -94,34 +96,37 @@ fLoadModule = ( msg ) ->
 							listUserModules[msg.user] = {}
 
 						oUser = listUserModules[msg.user]
-						ts = new Date()
 						# We open up a new object for the rule it
 						oUser[msg.rule.id] =
 							id: msg.rule.event
+							timestamp: msg.rule.timestamp
 							pollfunc: arrName[1]
 							funcArgs: result.funcArgs
 							event_interval: msg.rule.event_interval * 60 * 1000
 							module: result.module
 							logger: result.logger
-							timestamp: ts
 						oUser[msg.rule.id].module.pushEvent = fPushEvent msg.user, msg.rule.id, oUser[msg.rule.id]
 
 						start = new Date msg.rule.event_start
 						nd = new Date()
+						now = new Date()
 						if start < nd
 							# If the engine restarts start could be from last year even 
-							start.setYear nd.getYear()
-							start.setMonth nd.getMonth()
-							start.setDate nd.getDate()
+							nd.setMilliseconds 0
+							nd.setSeconds 0
+							nd.setMinutes start.getMinutes()
+							nd.setHours start.getHours()
 							# if it's still smaller we add one day
-							if start < nd
-								start.setDate nd.getDate() + 1
+							if nd < now
+								nd.setDate nd.getDate() + 1
+						else
+							nd = start
 								
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
-							in rule #{ msg.rule.id }, registered at UTC|#{ ts.toISOString() },
-							starting at UTC|#{ start.toISOString() } ( which is in #{ ( start - nd ) / 1000 / 60 } minutes )
+							in rule #{ msg.rule.id }, registered at UTC|#{ msg.rule.timestamp },
+							starting at UTC|#{ start.toISOString() } ( which is in #{ ( nd - now ) / 1000 / 60 } minutes )
 							and polling every #{ msg.rule.event_interval } minutes"
-						setTimeout fCheckAndRun( msg.user, msg.rule.id, ts ), start - nd
+						setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
 
 	if msg.event is 'new' or
 			not listUserModules[msg.user] or 
@@ -130,11 +135,10 @@ fLoadModule = ( msg ) ->
 
 fPushEvent = ( userId, ruleId, oRule ) ->
 	( obj ) ->
-		db.pushEvent
-			event: oRule.id
-			eventid: "polled #{ oRule.id } #{ userId }_UTC|#{ ( new Date() ).toISOString() }"
-			payload: obj
-
+			db.pushEvent
+				event: oRule.id + '_created:' + oRule.timestamp
+				eventid: "polled #{ oRule.id } #{ userId }_UTC|#{ ( new Date() ).toISOString() }"
+				payload: obj
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
 		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"
@@ -148,20 +152,21 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.event_interval
 			else
 				log.info "EP | We found a newer polling interval and discontinue this one which
-						was created at UTC|#{ timestamp.toISOString() }"
+						was created at UTC|#{ timestamp }"
 
 # We have to register the poll function in belows anonymous function
 # because we're fast iterating through the listUserModules and references will
 # eventually not be what they are expected to be
 fCallFunction = ( userId, ruleId, oRule ) ->
 	try
-		arrArgs = []		
-		if oRule.funcArgs
+		arrArgs = []
+		if oRule.funcArgs and oRule.funcArgs[oRule.pollfunc]
 			for oArg in oRule.funcArgs[oRule.pollfunc]
 				arrArgs.push oArg.value
 		oRule.module[oRule.pollfunc].apply null, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
+		throw err
 		oRule.logger err.message
 ###
 This function will loop infinitely every 10 seconds until isRunning is set to false
