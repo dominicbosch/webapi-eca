@@ -256,10 +256,12 @@ storeRule = ( user, oPayload, callback ) =>
 			arr = id.split ' -> '
 			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
+		eventInfo = ''
+		if rule.event_start
+			eventInfo = "Starting at #{ new Date( rule.event_start ) }, Interval set to #{ rule.event_interval } minutes"
 		# Initialize the rule log
 		db.resetLog user.username, rule.id
-		db.appendLog user.username, rule.id, "INIT",
-			"Rule '#{ rule.id }' initialized. Interval set to #{ rule.event_interval } minutes"
+		db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized. #{ eventInfo }"
 		
 		# Inform everbody about the new rule
 		eventEmitter.emit 'rule',

@@ -501,13 +501,18 @@ fOnLoad = () ->
 								.fail fFailedRequest "#{ obj.id } not stored!"
 					else
 						fFailedRequest( "#{ obj.id } not stored!" ) err
+			if $( '#select_event' ).val() is ''
+				start = null
+				mins = null
+			else 
+				start = start.toISOString()
 			obj =
 				command: 'forge_rule'
 				payload: JSON.stringify
 					id: $( '#input_id' ).val()
 					event: eventId
 					event_params: ep
-					event_start: start.toISOString()
+					event_start: start
 					event_interval: mins
 					event_functions: evtFuncs
 					conditions: conds
