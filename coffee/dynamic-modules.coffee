@@ -27,7 +27,6 @@ cryptoJS = require 'crypto-js'
 importio = require( 'import-io' ).client
 
 
-
 ###
 Module call
 -----------
@@ -63,7 +62,7 @@ compile it first into JS.
 @param {Object} params
 @param {String} lang
 ###
-exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
+exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) =>
 	if lang is 'CoffeeScript'
 		try
 			@log.info "DM | Compiling module '#{ modId }' for user '#{ userId }'"
@@ -84,16 +83,30 @@ exports.compileString = ( src, userId, ruleId, modId, lang, dbMod, cb ) =>
 				oParams = {}
 				for name, oParam of JSON.parse obj
 					oParams[ name ] = encryption.decrypt oParam.value
-				@log.info "DM | Loaded user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+				@log.info "DM | Loaded user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
 			catch err
-				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ ruleId }, #{ modId }"
+				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
 				@log.warn err
-			fTryToLoadModule userId, ruleId, modId, src, dbMod, oParams, cb
+			fTryToLoadModule userId, oRule, modId, src, modType, dbMod, oParams, cb
 	else
-		fTryToLoadModule userId, ruleId, modId, src, dbMod, null, cb
+		fTryToLoadModule userId, oRule, modId, src, modType, dbMod, null, cb
 
 
-fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
+fPushEvent = ( userId, oRule, modType ) ->
+	( obj ) ->
+		timestamp = ( new Date() ).toISOString()
+		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
+		if modType is 'eventpoller'
+			db.pushEvent
+				event: oRule.event + '_created:' + oRule.timestamp
+				eventid: "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"
+				payload: obj
+
+		else
+			obj.eventid = "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"
+			db.pushEvent obj
+
+fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 	if not params
 		params = {}
 
@@ -103,10 +116,10 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 
 	@log.info "DM | Running module '#{ modId }' for user '#{ userId }'"
 	# The function used to provide logging mechanisms on a per rule basis
-	logFunc = logFunction userId, ruleId, modId
+	logFunc = logFunction userId, oRule.id, modId
 	# The sandbox contains the objects that are accessible to the user. Eventually they need to be required from a vm themselves 
 	sandbox = 
-		id: "#{ userId }.#{ ruleId }.#{ modId }.vm"
+		id: "#{ userId }.#{ oRule.id }.#{ modId }.vm"
 		params: params
 		needle: needle
 		importio: importio
@@ -115,6 +128,8 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 		log: logFunc
 		debug: console.log
 		exports: {}
+		pushEvent: fPushEvent userId, oRule, modType
+
 
 	#TODO child_process to run module!
 	#Define max runtime per function call as 10 seconds, after that the child will be killed
@@ -132,7 +147,7 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 			msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number'
 		answ.message = 'Loading Module failed: ' + msg
 
-	@log.info "DM | Module '#{ modId }' ran successfully for user '#{ userId }' in rule '#{ ruleId }'"
+	@log.info "DM | Module '#{ modId }' ran successfully for user '#{ userId }' in rule '#{ oRule.id }'"
 	oFuncParams = {}
 	oFuncArgs = {}
 	for fName, func of sandbox.exports
@@ -146,12 +161,12 @@ fTryToLoadModule = ( userId, ruleId, modId, src, dbMod, params, cb ) =>
 				if obj
 					try
 						oFuncArgs[ fName ] = JSON.parse obj
-						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ ruleId }, #{ modId }: #{ obj }"
+						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ oRule.id }, #{ modId }: #{ obj }"
 					catch err
-						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ ruleId }, #{ modId }"
+						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ oRule.id }, #{ modId }"
 						@log.warn err
 		for func of oFuncParams
-			dbMod.getUserArguments userId, ruleId, modId, func, fRegisterArguments func
+			dbMod.getUserArguments userId, oRule.id, modId, func, fRegisterArguments func
 	cb
 		answ: answ
 		module: sandbox.exports

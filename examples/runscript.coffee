@@ -34,9 +34,8 @@ sandbox =
   log: console.log
   debug: console.log
   exports: {}
-
-sandbox.exports.pushEvent = ( obj ) ->
-  console.log obj
+  pushEvent: ( obj ) ->
+    console.log obj
 
 vm.runInNewContext src, sandbox, sandbox.id
 

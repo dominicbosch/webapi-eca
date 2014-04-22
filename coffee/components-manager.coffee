@@ -62,8 +62,11 @@ exports.addRuleListener = ( eh ) =>
 						try 
 							oRule = JSON.parse strRule
 							db.resetLog userName, oRule.id
-							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized.
-								Interval set to #{ oRule.event_interval } minutes"
+
+              eventInfo = ''
+              if oRule.event_start
+                eventInfo = "Starting at #{ new Date( oRule.event_start ) }, Interval set to #{ oRule.event_interval } minutes"
+							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
 							eventEmitter.emit 'rule',
 								event: 'init'
@@ -187,13 +190,13 @@ getModuleUserArguments = ( user, oPayload, dbMod, callback ) ->
 			answ.message = oPayload
 			callback answ
 
-forgeModule = ( user, oPayload, dbMod, callback ) =>
+forgeModule = ( user, oPayload, modType, dbMod, callback ) =>
 	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oPayload
 	if answ.code isnt 200
 		callback answ
 	else
 		if oPayload.overwrite
-			storeModule user, oPayload, dbMod, callback
+			storeModule user, oPayload, modType, dbMod, callback
 		else
 			dbMod.getModule user.username, oPayload.id, ( err, mod ) =>
 				if mod
@@ -201,11 +204,11 @@ forgeModule = ( user, oPayload, dbMod, callback ) =>
 					answ.message = 'Module name already existing: ' + oPayload.id
 					callback answ
 				else
-					storeModule user, oPayload, dbMod, callback
+					storeModule user, oPayload, modType, dbMod, callback
 
-storeModule = ( user, oPayload, dbMod, callback ) =>
+storeModule = ( user, oPayload, modType, dbMod, callback ) =>
 	src = oPayload.data
-	dynmod.compileString src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, ( cm ) =>
+	dynmod.compileString src, user.username, id: 'dummyRule' , oPayload.id, oPayload.lang, modType, null, ( cm ) =>
 		answ = cm.answ
 		if answ.code is 200
 			funcs = []
@@ -311,7 +314,7 @@ commandFunctions =
 					message: obj
 	
 	forge_event_poller: ( user, oPayload, callback ) ->
-		forgeModule user, oPayload, db.eventPollers, callback
+		forgeModule user, oPayload, "eventpoller", db.eventPollers, callback
  
 	delete_event_poller: ( user, oPayload, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oPayload
@@ -358,7 +361,7 @@ commandFunctions =
 					message: obj
 	
 	forge_action_invoker: ( user, oPayload, callback ) ->
-		forgeModule user, oPayload, db.actionInvokers, callback
+		forgeModule user, oPayload, "actioninvoker", db.actionInvokers, callback
 
 	delete_action_invoker: ( user, oPayload, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oPayload

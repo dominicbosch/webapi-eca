@@ -260,14 +260,14 @@ Components Manager
   };
 
   forgeModule = (function(_this) {
-    return function(user, oPayload, dbMod, callback) {
+    return function(user, oPayload, modType, dbMod, callback) {
       var answ;
       answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oPayload);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
         if (oPayload.overwrite) {
-          return storeModule(user, oPayload, dbMod, callback);
+          return storeModule(user, oPayload, modType, dbMod, callback);
         } else {
           return dbMod.getModule(user.username, oPayload.id, function(err, mod) {
             if (mod) {
@@ -275,7 +275,7 @@ Components Manager
               answ.message = 'Module name already existing: ' + oPayload.id;
               return callback(answ);
             } else {
-              return storeModule(user, oPayload, dbMod, callback);
+              return storeModule(user, oPayload, modType, dbMod, callback);
             }
           });
         }
@@ -284,10 +284,12 @@ Components Manager
   })(this);
 
   storeModule = (function(_this) {
-    return function(user, oPayload, dbMod, callback) {
+    return function(user, oPayload, modType, dbMod, callback) {
       var src;
       src = oPayload.data;
-      return dynmod.compileString(src, user.username, 'dummyRule', oPayload.id, oPayload.lang, null, function(cm) {
+      return dynmod.compileString(src, user.username, {
+        id: 'dummyRule'
+      }, oPayload.id, oPayload.lang, modType, null, function(cm) {
         var answ, funcs, id, name, _ref;
         answ = cm.answ;
         if (answ.code === 200) {
@@ -407,7 +409,7 @@ Components Manager
       }
     },
     forge_event_poller: function(user, oPayload, callback) {
-      return forgeModule(user, oPayload, db.eventPollers, callback);
+      return forgeModule(user, oPayload, "eventpoller", db.eventPollers, callback);
     },
     delete_event_poller: function(user, oPayload, callback) {
       var answ;
@@ -463,7 +465,7 @@ Components Manager
       }
     },
     forge_action_invoker: function(user, oPayload, callback) {
-      return forgeModule(user, oPayload, db.actionInvokers, callback);
+      return forgeModule(user, oPayload, "actioninvoker", db.actionInvokers, callback);
     },
     delete_action_invoker: function(user, oPayload, callback) {
       var answ;

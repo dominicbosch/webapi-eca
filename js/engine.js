@@ -168,7 +168,7 @@ Engine
             if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
               return db.actionInvokers.getModule(userName, moduleName, function(err, obj) {
                 if (obj) {
-                  return dynmod.compileString(obj.data, userName, oMyRule.rule.id, moduleName, obj.lang, db.actionInvokers, function(result) {
+                  return dynmod.compileString(obj.data, userName, oMyRule.rule, moduleName, obj.lang, "actioninvoker", db.actionInvokers, function(result) {
                     if (result.answ.code === 200) {
                       _this.log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
                     } else {
@@ -312,13 +312,15 @@ Engine
                 oArg = _ref[_i];
                 arrSelectors = oArg.value.match(/#\{(.*?)\}/g);
                 argument = oArg.value;
-                for (_j = 0, _len1 = arrSelectors.length; _j < _len1; _j++) {
-                  sel = arrSelectors[_j];
-                  selector = sel.substring(2, sel.length - 1);
-                  data = jsonQuery(evt.payload, selector).nodes()[0];
-                  argument = argument.replace(sel, data);
-                  if (oArg.value === sel) {
-                    argument = data;
+                if (arrSelectors) {
+                  for (_j = 0, _len1 = arrSelectors.length; _j < _len1; _j++) {
+                    sel = arrSelectors[_j];
+                    selector = sel.substring(2, sel.length - 1);
+                    data = jsonQuery(evt.payload, selector).nodes()[0];
+                    argument = argument.replace(sel, data);
+                    if (oArg.value === sel) {
+                      argument = data;
+                    }
                   }
                 }
                 arrArgs.push(argument);

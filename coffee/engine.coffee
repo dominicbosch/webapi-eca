@@ -150,10 +150,11 @@ updateActionModules = ( updatedRuleId ) =>
 							# we compile the module and pass: 
 							dynmod.compileString obj.data,  # code
 								userName,                           # userId
-								oMyRule.rule.id,                    # ruleId
+								oMyRule.rule,                    	# oRule
 								moduleName,                         # moduleId
 								obj.lang,                           # script language
-								db.actionInvokers,                   # the DB interface
+								"actioninvoker",                    # module type
+								db.actionInvokers,                  # the DB interface
 								( result ) =>
 									if result.answ.code is 200
 										@log.info "EN | Module '#{ moduleName }' successfully loaded for userName
@@ -245,12 +246,13 @@ processEvent = ( evt ) =>
 					for oArg in node.funcArgs[ funcName ]
 						arrSelectors = oArg.value.match /#\{(.*?)\}/g
 						argument = oArg.value
-						for sel in arrSelectors
-							selector = sel.substring 2, sel.length - 1
-							data = jsonQuery( evt.payload, selector ).nodes()[ 0 ]
-							argument = argument.replace sel, data
-							if oArg.value is sel
-								argument = data # if the user wants to pass an object, we allow him to do so
+						if arrSelectors
+							for sel in arrSelectors
+								selector = sel.substring 2, sel.length - 1
+								data = jsonQuery( evt.payload, selector ).nodes()[ 0 ]
+								argument = argument.replace sel, data
+								if oArg.value is sel
+									argument = data # if the user wants to pass an object, we allow him to do so
 						# if oArg.jsselector
 						arrArgs.push argument #jsonQuery( evt.payload, oArg.value ).nodes()[ 0 ]
 						# else

@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptoJS, cs, db, encryption, exports, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
+  var cryptoJS, cs, db, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -76,7 +76,7 @@ Dynamic Modules
    */
 
   exports.compileString = (function(_this) {
-    return function(src, userId, ruleId, modId, lang, dbMod, cb) {
+    return function(src, userId, oRule, modId, lang, modType, dbMod, cb) {
       var err;
       if (lang === 'CoffeeScript') {
         try {
@@ -104,22 +104,40 @@ Dynamic Modules
               oParam = _ref[name];
               oParams[name] = encryption.decrypt(oParam.value);
             }
-            _this.log.info("DM | Loaded user defined params for " + userId + ", " + ruleId + ", " + modId);
+            _this.log.info("DM | Loaded user defined params for " + userId + ", " + oRule.id + ", " + modId);
           } catch (_error) {
             err = _error;
-            _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + ruleId + ", " + modId);
+            _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
             _this.log.warn(err);
           }
-          return fTryToLoadModule(userId, ruleId, modId, src, dbMod, oParams, cb);
+          return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, oParams, cb);
         });
       } else {
-        return fTryToLoadModule(userId, ruleId, modId, src, dbMod, null, cb);
+        return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, null, cb);
       }
     };
   })(this);
 
+  fPushEvent = function(userId, oRule, modType) {
+    return function(obj) {
+      var rand, timestamp;
+      timestamp = (new Date()).toISOString();
+      rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+      if (modType === 'eventpoller') {
+        return db.pushEvent({
+          event: oRule.event + '_created:' + oRule.timestamp,
+          eventid: "" + userId + "_" + oRule.event + "_UTC|" + timestamp + "_" + rand,
+          payload: obj
+        });
+      } else {
+        obj.eventid = "" + userId + "_" + oRule.event + "_UTC|" + timestamp + "_" + rand;
+        return db.pushEvent(obj);
+      }
+    };
+  };
+
   fTryToLoadModule = (function(_this) {
-    return function(userId, ruleId, modId, src, dbMod, params, cb) {
+    return function(userId, oRule, modId, src, modType, dbMod, params, cb) {
       var answ, err, fName, fRegisterArguments, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
       if (!params) {
         params = {};
@@ -129,9 +147,9 @@ Dynamic Modules
         message: 'Successfully compiled'
       };
       _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
-      logFunc = logFunction(userId, ruleId, modId);
+      logFunc = logFunction(userId, oRule.id, modId);
       sandbox = {
-        id: "" + userId + "." + ruleId + "." + modId + ".vm",
+        id: "" + userId + "." + oRule.id + "." + modId + ".vm",
         params: params,
         needle: needle,
         importio: importio,
@@ -139,7 +157,8 @@ Dynamic Modules
         cryptoJS: cryptoJS,
         log: logFunc,
         debug: console.log,
-        exports: {}
+        exports: {},
+        pushEvent: fPushEvent(userId, oRule, modType)
       };
       try {
         vm.runInNewContext(src, sandbox, sandbox.id);
@@ -152,7 +171,7 @@ Dynamic Modules
         }
         answ.message = 'Loading Module failed: ' + msg;
       }
-      _this.log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + ruleId + "'");
+      _this.log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
       oFuncParams = {};
       oFuncArgs = {};
       _ref = sandbox.exports;
@@ -167,17 +186,17 @@ Dynamic Modules
             if (obj) {
               try {
                 oFuncArgs[fName] = JSON.parse(obj);
-                return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + ruleId + ", " + modId + ": " + obj);
+                return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + oRule.id + ", " + modId + ": " + obj);
               } catch (_error) {
                 err = _error;
-                _this.log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + ruleId + ", " + modId);
+                _this.log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + oRule.id + ", " + modId);
                 return _this.log.warn(err);
               }
             }
           };
         };
         for (func in oFuncParams) {
-          dbMod.getUserArguments(userId, ruleId, modId, func, fRegisterArguments(func));
+          dbMod.getUserArguments(userId, oRule.id, modId, func, fRegisterArguments(func));
         }
       }
       return cb({

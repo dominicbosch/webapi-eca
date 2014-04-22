@@ -25,7 +25,7 @@ exports.currentData = () ->
 		if err or resp.statusCode isnt 200
 			log JSON.stringify body
 		else
-			exports.pushEvent body
+			pushEvent body
 
 ###
 Emits one event per day if the temperature today raises above user defined threshold
@@ -37,7 +37,7 @@ exports.temperatureOverThreshold = () ->
 		else
 			#If temperature is above threshold
 			if body.main.temp_max - 272.15 > params.tempThreshold
-				exports.pushEvent
+				pushEvent
 					threshold: params.tempThreshold
 					measured: body.main.temp_max - 272.15
 

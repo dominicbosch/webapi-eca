@@ -82,9 +82,10 @@ fLoadModule = ( msg ) ->
 				 # we compile the module and pass: 
 				dynmod.compileString obj.data,  # code
 					msg.user,                     # userId
-					msg.rule.id,                  # ruleId
+					msg.rule,                  	  # oRule
 					arrName[0],                   # moduleId
 					obj.lang,                     # script language
+					"eventpoller",                # the module type
 					db.eventPollers,              # the DB interface
 					( result ) ->
 						if not result.answ is 200
@@ -105,7 +106,6 @@ fLoadModule = ( msg ) ->
 							event_interval: msg.rule.event_interval * 60 * 1000
 							module: result.module
 							logger: result.logger
-						oUser[msg.rule.id].module.pushEvent = fPushEvent msg.user, msg.rule.id, oUser[msg.rule.id]
 
 						start = new Date msg.rule.event_start
 						nd = new Date()
@@ -133,12 +133,6 @@ fLoadModule = ( msg ) ->
 			not listUserModules[msg.user][msg.rule.id]
 		fAnonymous()
 
-fPushEvent = ( userId, ruleId, oRule ) ->
-	( obj ) ->
-			db.pushEvent
-				event: oRule.id + '_created:' + oRule.timestamp
-				eventid: "polled #{ oRule.id } #{ userId }_UTC|#{ ( new Date() ).toISOString() }"
-				payload: obj
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
 		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"

@@ -51,14 +51,14 @@ exports.testCompile = ( test ) ->
 
 	paramOne = 'First Test'
 	code = "exports.testFunc = () ->\n\t'#{ paramOne }'"
-	dm.compileString code, 'userOne', 'ruleOne', 'moduleOne', 'CoffeeScript', null, ( result ) ->
+	dm.compileString code, 'userOne', 'ruleOne', 'moduleOne', 'CoffeeScript', 'eventpoller', null, ( result ) ->
 		test.strictEqual 200, result.answ.code
 		moduleOne = result.module
 		test.strictEqual paramOne, moduleOne.testFunc(), "Other result expected"
 
 	paramTwo = 'Second Test'
 	code = "exports.testFunc = () ->\n\t'#{ paramTwo }'"
-	dm.compileString code, 'userOne', 'ruleOne', 'moduleOne', 'CoffeeScript', null, ( result ) ->
+	dm.compileString code, 'userOne', 'ruleOne', 'moduleOne', 'CoffeeScript', 'eventpoller', null, ( result ) ->
 		test.strictEqual 200, result.answ.code
 		moduleTwo = result.module
 		test.strictEqual paramTwo, moduleTwo.testFunc(), "Other result expected"

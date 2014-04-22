@@ -53,7 +53,7 @@ exports.unreadContentInfo = () ->
 		method: 'unreadcontent'
 		callback: ( err, resp, body ) ->
 			if not err and resp.statusCode is 200
-				exports.pushEvent oEntry for oEntry in body
+				pushEvent oEntry for oEntry in body
 			else
 				log 'Error: ' + body.error.message
 
@@ -67,7 +67,7 @@ exports.unreadContent = () ->
 			contentServiceId: evt.serviceId
 			callback: ( err, resp, body ) ->
 				if not err and resp.statusCode is 200
-					exports.pushEvent
+					pushEvent
 						id: body.id
 						content: body.text
 						object: body

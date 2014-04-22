@@ -49,7 +49,7 @@ queryService = ( inputParams ) ->
 					data = data.concat msg.data.results
 				if finished
 					log JSON.stringify data
-					exports.pushEvent data
+					pushEvent data
 
 exports.meteoblueWeekData = ( idCity ) ->
 	params =

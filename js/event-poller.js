@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, fPushEvent, isRunning, listUserModules, log, logconf, logger, pollLoop;
+  var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, isRunning, listUserModules, log, logconf, logger, pollLoop;
 
   logger = require('./logging');
 
@@ -85,7 +85,7 @@ Dynamic Modules
         if (!obj) {
           return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
         } else {
-          return dynmod.compileString(obj.data, msg.user, msg.rule.id, arrName[0], obj.lang, db.eventPollers, function(result) {
+          return dynmod.compileString(obj.data, msg.user, msg.rule, arrName[0], obj.lang, "eventpoller", db.eventPollers, function(result) {
             var nd, now, oUser, start;
             if (!result.answ === 200) {
               log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
@@ -103,7 +103,6 @@ Dynamic Modules
               module: result.module,
               logger: result.logger
             };
-            oUser[msg.rule.id].module.pushEvent = fPushEvent(msg.user, msg.rule.id, oUser[msg.rule.id]);
             start = new Date(msg.rule.event_start);
             nd = new Date();
             now = new Date();
@@ -127,16 +126,6 @@ Dynamic Modules
     if (msg.event === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
       return fAnonymous();
     }
-  };
-
-  fPushEvent = function(userId, ruleId, oRule) {
-    return function(obj) {
-      return db.pushEvent({
-        event: oRule.id + '_created:' + oRule.timestamp,
-        eventid: "polled " + oRule.id + " " + userId + "_UTC|" + ((new Date()).toISOString()),
-        payload: obj
-      });
-    };
   };
 
   fCheckAndRun = function(userId, ruleId, timestamp) {
