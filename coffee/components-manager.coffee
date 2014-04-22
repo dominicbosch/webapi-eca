@@ -62,9 +62,8 @@ exports.addRuleListener = ( eh ) =>
 						try 
 							oRule = JSON.parse strRule
 							db.resetLog userName, oRule.id
-
-              eventInfo = ''
-              if oRule.event_start
+							eventInfo = ''
+							if oRule.event_start
                 eventInfo = "Starting at #{ new Date( oRule.event_start ) }, Interval set to #{ oRule.event_interval } minutes"
 							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
