@@ -12,6 +12,8 @@ HTTP Listener
 
 # - [Request Handler](request-handler.html)
 requestHandler = require './request-handler'
+# - [Persistence](persistence.html)
+db = require './persistence'
 
 # - Node.js Modules: [path](http://nodejs.org/api/path.html) and
 #   [querystring](http://nodejs.org/api/querystring.html)
@@ -67,8 +69,8 @@ activateWebHook = ( app, name ) =>
 			indexEvent name, body, resp
 			# This is a hack to quickly allow storing of public accessible data
 			if name is 'uptimestatistics'
-				path = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-				fs.writeFile pathUsers, JSON.stringify( body, undefined, 2 ), 'utf8', ( err ) ->
+				fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
+				fs.writeFile fPath, JSON.stringify( JSON.parse( body ), undefined, 2 ), 'utf8'
 
 ###
 Initializes the request routing and starts listening on the given port.

@@ -1,15 +1,20 @@
 fs = require 'fs'
 # libnmap = require 'node-libnmap'
 ping = require 'net-ping'
-request = require 'request'
+# request = require 'request'
+needle = require 'needle'
+		
 
 try
 	arrHosts = JSON.parse fs.readFileSync 'hostlist.json', 'utf8'
+	histData = JSON.parse fs.readFileSync 'histochart.json', 'utf8'
 catch err
+	console.error err
 	console.error "Error reading host list file"
 	process.exit()
 
 remoteUrl = "http://ec2-54-226-188-9.compute-1.amazonaws.com:8126"
+# remoteUrl = "localhost:8125"
 
 # console.log arrHosts
 # libnmap.nmap 'scan',
@@ -25,6 +30,9 @@ session = ping.createSession()
 everyMins = 10
 oHosts = {}
 oPings = {}
+if histData
+	oHosts = histData.hosts
+	oPings = histData.pingtimes
 fPollHosts = () ->
 	semaphore = arrHosts.length
 	pingTime = (new Date()).toISOString()
@@ -36,14 +44,16 @@ fPollHosts = () ->
 					oHosts[ target ] = {}
 				oHosts[ target ][ pingTime ] = (new Date( rcvd - sent )).getTime()
 				oPings[ pingTime ].ips.push target
-				
+
 			if --semaphore is 0
 				console.log 'All ping requests returned, pushing event into the system'
 				oPings[ pingTime ].sum = oPings[ pingTime ].ips.length
-				fPushEvent
+				evt = 
 					currentlyon: oPings[ pingTime ].ips.length
 					pingtimes: oPings
 					hosts: oHosts
+				fPushEvent evt
+				fs.writeFile 'histochart.json', JSON.stringify( evt, undefined, 2 ), 'utf8'
 
 				console.log "Pinging again in #{ everyMins } minutes"
 				setTimeout fPollHosts, everyMins * 60 * 1000
@@ -51,15 +61,8 @@ fPollHosts = () ->
 fPollHosts()
 
 
-options =
-	method: 'POST'
-	json: true
-	jar: true
-
 fPushEvent = ( evt ) ->
-	options.url = remoteUrl + '/webhooks/uptimestatistics'
-	options.body = JSON.stringify evt
-	request options, ( err, resp, body ) ->
+	needle.post remoteUrl + '/webhooks/uptimestatistics', JSON.stringify( evt ), ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
 			console.log 'Error in pushing event!'
 		else

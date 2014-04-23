@@ -10,13 +10,19 @@ HTTP Listener
  */
 
 (function() {
-  var activateWebHook, app, exports, express, indexEvent, initRouting, path, qs, requestHandler;
+  var activateWebHook, app, db, exports, express, fs, indexEvent, initRouting, path, qs, requestHandler;
 
   requestHandler = require('./request-handler');
+
+  db = require('./persistence');
 
   path = require('path');
 
   qs = require('querystring');
+
+  fs = require('fs');
+
+  path = require('path');
 
   express = require('express');
 
@@ -68,7 +74,12 @@ HTTP Listener
           return body += data;
         });
         return req.on('end', function() {
-          return indexEvent(name, body, resp);
+          var fPath;
+          indexEvent(name, body, resp);
+          if (name === 'uptimestatistics') {
+            fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
+            return fs.writeFile(fPath, JSON.stringify(JSON.parse(body), void 0, 2), 'utf8');
+          }
         });
       });
     };

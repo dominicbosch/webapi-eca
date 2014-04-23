@@ -1,0 +1,39 @@
+
+<html>
+<head>
+
+    <script type="text/javascript"
+            src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}"></script>
+
+    <script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+</head>
+<body>
+    <script>
+    google.setOnLoadCallback(drawChart);
+    function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Time');
+        data.addColumn('number', '#Online');
+
+        var options_lines = {
+            title: 'Online statistics',
+            curveType:'function',
+            lineWidth: 2,
+            intervals: { 'style':'line' },
+            legend: 'none',
+        };
+
+        var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));
+
+        $.getJSON('data/histochart.json', function(d) {
+            var dat = d.pingtimes;
+            for(var prop in dat) {
+                data.addRow([new Date(prop), dat[prop].sum ]);
+            }
+            chart_lines.draw(data, options_lines);
+        });
+    }
+    </script>
+    <div id="chart_lines" style="width: 900px; height: 500px;"></div>
+</body>
+</html>

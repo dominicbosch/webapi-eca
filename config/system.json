@@ -10,7 +10,8 @@
     "file-path": "logs/server.log"
   },
   "webhooks": [
-    "github"
+    "github",
+    "uptimestatistics"
   ],
   "keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
 }
