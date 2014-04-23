@@ -1,6 +1,9 @@
 #
 # Pushes an event into the system each time the function is polled
 #
-exports.push = () ->
-    pushEvent
-        content: "This is an event that will be sent again and again every ten seconds"
+
+# Requires the content to be posted
+exports.push = ( content ) ->
+	log 'Posting event with content: ' + content
+	pushEvent
+		content: content

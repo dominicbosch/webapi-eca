@@ -59,7 +59,7 @@ parseAnswer = ( body ) ->
 # - idVoice: index of the voice used for conversion from the arrVoices array.
 # - idAudioFormat: index of the voice used for conversion from the arrVoices array.
 # - sampleRate: 8 or 16 kHz rate
-exports.convertTextToSpeech = ( text, idVoice, idAudioFormat, sampleRate ) ->
+exports.convertTextToSpeech = ( text, idVoice, idAudioFormat, sampleRate, infoEvent ) ->
 	idVoice = parseInt( idVoice ) || 0
 	if idVoice > arrVoices.length - 1 or idVoice < 0
 		idVoice = 0
@@ -87,9 +87,9 @@ exports.convertTextToSpeech = ( text, idVoice, idAudioFormat, sampleRate ) ->
 		oAnsw = parseAnswer body
 		log 'Conversion order: ' + oAnsw.resultString
 		if oAnsw.resultCode is '0'
-			pollUntilDone oAnsw.resultCode, params.emailaccount, params.accountid
+			pollUntilDone oAnsw.resultCode, params.emailaccount, params.accountid, infoEvent
 
-pollUntilDone = ( conversionNumber, email, accountid ) ->
+pollUntilDone = ( conversionNumber, email, accountid, infoEvent ) ->
 	oPost =
 		method: "GetConversionStatus"
 		email: email
@@ -101,11 +101,11 @@ pollUntilDone = ( conversionNumber, email, accountid ) ->
 		if oAnsw.resultCode is '0'
 			if oAnsw.statusCode is '4' or oAnsw.statusCode is '5'
 				pushEvent
-					event: "NeospeechConversionCompleted"
+					event: infoEvent
 					payload:
 						accountid: accountid
 						downloadUrl: oAnsw.downloadUrl
 			else
-				pollUntilDone conversionNumber, email, accountid
+				pollUntilDone conversionNumber, email, accountid, infoEvent
 		else
 			log 'Request failed: ' + oAnsw.resultString

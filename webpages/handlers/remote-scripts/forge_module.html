@@ -25,7 +25,7 @@ exports.newMail = () ->
 			if resp.statusCode is 200
 				if body.Emails.length > 0
 					log "#{ body.Emails.length } mail events pushed into the system"
-				exports.pushEvent mail for mail in body.Emails
+				pushEvent mail for mail in body.Emails
 
 				###
 				This will emit events of the form:

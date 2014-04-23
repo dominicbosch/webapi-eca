@@ -17,6 +17,8 @@ requestHandler = require './request-handler'
 #   [querystring](http://nodejs.org/api/querystring.html)
 path = require 'path'
 qs = require 'querystring'
+fs = require 'fs'
+path = require 'path'
 
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
@@ -63,6 +65,10 @@ activateWebHook = ( app, name ) =>
 
 		req.on 'end', ->
 			indexEvent name, body, resp
+			# This is a hack to quickly allow storing of public accessible data
+			if name is 'uptimestatistics'
+				path = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
+				fs.writeFile pathUsers, JSON.stringify( body, undefined, 2 ), 'utf8', ( err ) ->
 
 ###
 Initializes the request routing and starts listening on the given port.

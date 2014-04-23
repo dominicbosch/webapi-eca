@@ -32,6 +32,8 @@ Send a mail through Emailyak.
 @param content The content of the mail
 ###
 exports.sendMail = ( sender, receipient, subject, content ) ->
+	if typeof content isnt "string"
+		content = JSON.stringify content, undefined, 2
 	data =
 		FromAddress: sender
 		ToAddress: receipient
