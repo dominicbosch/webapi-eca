@@ -162,7 +162,7 @@
     };
     fAddEventParams = function(id) {
       return function(data) {
-        var fAppendParam, i, name, shielded, table;
+        var fAppendParam, fDelayed, i, name, shielded, table;
         if (data.message) {
           oParams = JSON.parse(data.message);
           table = $('<table>');
@@ -188,7 +188,10 @@
             $('#event_poller_params').html('<b>Required Global Parameters:</b>');
             $('#event_poller_params').append(table);
           }
-          return fFillEventParams(id);
+          fDelayed = function() {
+            return fFillEventParams(id);
+          };
+          return setTimeout(fDelayed, 200);
         }
       };
     };
@@ -285,7 +288,7 @@
       return _results;
     }).fail(fFailedRequest('Error fetching event poller'));
     fAddSelectedAction = function(name) {
-      var arrEls, arrName, div, img, subdiv, table, td, tr, _ref;
+      var arrEls, arrName, div, fDelayed, img, subdiv, table, td, tr, _ref;
       arrName = name.split(' -> ');
       arrEls = $("#action_params div.modName").map(function() {
         return $(this).text();
@@ -308,7 +311,10 @@
           return $(this).remove();
         }
       });
-      return fFillActionFunction(arrName[0]);
+      fDelayed = function() {
+        return fFillActionFunction(arrName[0]);
+      };
+      return setTimeout(fDelayed, 300);
     };
     fFetchActionParams = function(div, modName) {
       obj = {
