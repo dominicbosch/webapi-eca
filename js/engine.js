@@ -270,6 +270,8 @@ Engine
       try {
         if (cond.type === 'string') {
           val = selectedProperty[0];
+        } else if (cond.type === 'bool') {
+          val = selectedProperty[0];
         } else if (cond.type === 'value') {
           val = parseFloat(selectedProperty[0]) || 0;
         }

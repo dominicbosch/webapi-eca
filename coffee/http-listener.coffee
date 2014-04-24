@@ -47,7 +47,9 @@ exports = module.exports = ( args ) =>
 indexEvent = ( event, body, resp ) ->
 	try
 		if typeof body is 'string'
-			obj = JSON.parse body
+			obj = payload: JSON.parse body
+		else
+			obj = payload: body
 		timestamp = ( new Date() ).toISOString()
 		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
 		obj.event = event
@@ -67,6 +69,8 @@ activateWebHook = ( app, name ) =>
 			body += data
 
 		req.on 'end', ->
+			console.log body
+			console.log typeof body
 			indexEvent name, body, resp
 			# This is a hack to quickly allow storing of public accessible data
 			if name is 'uptimestatistics'

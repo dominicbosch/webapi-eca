@@ -51,7 +51,15 @@ HTTP Listener
   indexEvent = function(event, body, resp) {
     var err, obj, rand, timestamp;
     try {
-      obj = JSON.parse(body);
+      if (typeof body === 'string') {
+        obj = {
+          payload: JSON.parse(body)
+        };
+      } else {
+        obj = {
+          payload: body
+        };
+      }
       timestamp = (new Date()).toISOString();
       rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
       obj.event = event;
@@ -75,6 +83,8 @@ HTTP Listener
         });
         return req.on('end', function() {
           var fPath;
+          console.log(body);
+          console.log(typeof body);
           indexEvent(name, body, resp);
           if (name === 'uptimestatistics') {
             fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');

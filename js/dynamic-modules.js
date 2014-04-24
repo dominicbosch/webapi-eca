@@ -158,6 +158,7 @@ Dynamic Modules
         log: logFunc,
         debug: console.log,
         exports: {},
+        setTimeout: setTimeout,
         pushEvent: fPushEvent(userId, oRule, modType)
       };
       try {
