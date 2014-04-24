@@ -213,7 +213,10 @@ validConditions = ( evt, rule, userId, ruleId ) ->
 			return false
 
 		try
+			# maybe we should only allow certain ops for certain types
 			if cond.type is 'string'
+				val = selectedProperty[ 0 ]
+			else if cond.type is 'bool'
 				val = selectedProperty[ 0 ]
 			else if cond.type is 'value'
 				val = parseFloat( selectedProperty[ 0 ] ) || 0

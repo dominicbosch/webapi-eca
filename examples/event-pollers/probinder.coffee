@@ -89,3 +89,30 @@ getContent = ( args ) ->
 			service: args.contentServiceId
 		callback: args.callback
 
+# Returns an event of the form:
+#
+# {
+#     "text": "test subject",
+#     "id": 127815,
+#     "createDate": "2014-04-19 16:27:45",
+#     "lastModified": "2014-04-19 16:27:45",
+#     "time": "5 days ago",
+#     "userId": 10595,
+#     "username": "Dominic Bosch",
+#     "uri": "https://probinder.com/content/view/id/127815/",
+#     "localUri": "https://probinder.com/content/view/id/127815/",
+#     "title": "",
+#     "serviceId": 27,
+#     "userIds": [
+#         10595
+#     ],
+#     "description": "",
+#     "context": [
+#         {
+#             "id": 18749,
+#             "name": "WebAPI ECA Test Binder",
+#             "remove": true,
+#             "uri": "/content/context/id/18749/webapi-eca-test-binder"
+#         }
+#     ]
+# }

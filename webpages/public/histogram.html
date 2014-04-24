@@ -11,31 +11,26 @@
     <script>
     google.setOnLoadCallback(drawChart);
     function drawChart() {
-        var data = new google.visualization.DataTable();
-        data.addColumn('datetime', 'Time');
-        data.addColumn('number', '#Online');
+        $.getJSON('data/histochart.json', function(d) {
+            var data = new google.visualization.DataTable();
+            data.addColumn('datetime', 'Time');
+            data.addColumn('number', '#Online');
 
-        var options_lines = {
-            title: 'Online statistics',
-            curveType:'function',
-            lineWidth: 2,
-            intervals: { 'style':'line' },
-            legend: 'none',
-        };
-
-        var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));
-
-        var fRepaint = function () {
-            $.getJSON('data/histochart.json', function(d) {
-                var dat = d.pingtimes;
-                for(var prop in dat) {
-                    data.addRow([new Date(prop), dat[prop].sum ]);
-                }
-                chart_lines.draw(data, options_lines);
-            });
-            setTimeout(fRepaint, 5*60*1000);
-        };
-        fRepaint();
+            var options_lines = {
+                title: 'Online statistics',
+                curveType:'function',
+                lineWidth: 2,
+                intervals: { 'style':'line' },
+                legend: 'none',
+            };
+            var dat = d.pingtimes;
+            for(var prop in dat) {
+                data.addRow([new Date(prop), dat[prop].sum ]);
+            }
+            var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));
+            chart_lines.draw(data, options_lines);
+        });
+        setTimeout(drawChart, 3 * 60 * 1000);
     }
     </script>
     <div id="chart_lines" style="width: 900px; height: 500px;"></div>

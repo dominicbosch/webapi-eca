@@ -128,6 +128,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		log: logFunc
 		debug: console.log
 		exports: {}
+		setTimeout: setTimeout # This one allows probably too much
 		pushEvent: fPushEvent userId, oRule, modType
 
 

@@ -26,7 +26,7 @@ remoteUrl = "http://ec2-54-226-188-9.compute-1.amazonaws.com:8126"
 # 	    report.forEach ( item ) ->
 # 	      console.log item[ 0 ]
 
-session = ping.createSession()
+session = ping.createSession retries: 5
 everyMins = 10
 oHosts = {}
 oPings = {}

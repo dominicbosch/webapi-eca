@@ -142,7 +142,9 @@ fOnLoad = () ->
 					$( '#event_poller_params' ).html '<b>Required Global Parameters:</b>'
 					$( '#event_poller_params' ).append table
 
-				fFillEventParams id
+				fDelayed = () ->
+					fFillEventParams id
+				setTimeout fDelayed, 200
 
 	fFillEventParams = ( moduleId ) ->
 		obj =
@@ -219,7 +221,9 @@ fOnLoad = () ->
 		$( "#select_actions option" ).each () ->
 			if $( this ).text() is name
 				$( this ).remove()
-		fFillActionFunction arrName[ 0 ]
+		fDelayed = () ->
+			fFillActionFunction arrName[ 0 ]
+		setTimeout fDelayed, 300
 
 	fFetchActionParams = ( div, modName ) ->
 		obj =

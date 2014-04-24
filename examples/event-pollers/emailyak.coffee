@@ -16,7 +16,6 @@ exports.newMail = () ->
 	# Syntax: needle.request method, url, data, [options], callback
 	#
 	needle.request 'get', url, null, null, ( err, resp, body ) ->
-		log 'Poll function executed'
 		if err
 			log 'Error in EmailYak EM newMail: ' + err.message
 		else
