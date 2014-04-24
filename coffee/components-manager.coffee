@@ -87,21 +87,21 @@ Processes a user request coming through the request-handler.
 - `oReq` is the request object that contains:
 
 	- `command` as a string 
-	- `payload` an optional stringified JSON object 
+	- `body` an optional stringified JSON object 
 The callback function `callback( obj )` will receive an object
 containing the HTTP response code and a corresponding message.
 
 @public processRequest ( *user, oReq, callback* )
 ###
 exports.processRequest = ( user, oReq, callback ) ->
-	if not oReq.payload
-		oReq.payload = '{}'
+	if not oReq.body
+		oReq.body = '{}'
 	try
-		dat = JSON.parse oReq.payload
+		dat = JSON.parse oReq.body
 	catch err
 		return callback
 			code: 404
-			message: 'You had a strange payload in your request!'
+			message: 'You had a strange body in your request!'
 	if commandFunctions[oReq.command]
 
 		# If the command function was registered we invoke it
@@ -112,17 +112,17 @@ exports.processRequest = ( user, oReq, callback ) ->
 			message: 'What do you want from me?'
 
 ###
-Checks whether all required parameters are present in the payload.
+Checks whether all required parameters are present in the body.
 
-@private hasRequiredParams ( *arrParams, oPayload* )
+@private hasRequiredParams ( *arrParams, oBody* )
 @param {Array} arrParams
-@param {Object} oPayload
+@param {Object} oBody
 ###
-hasRequiredParams = ( arrParams, oPayload ) ->
+hasRequiredParams = ( arrParams, oBody ) ->
 	answ =
 		code: 400
 		message: "Your request didn't contain all necessary fields! Requires: #{ arrParams.join() }"
-	return answ for param in arrParams when not oPayload[param]
+	return answ for param in arrParams when not oBody[param]
 	answ.code = 200
 	answ.message = 'All required properties found'
 	answ
@@ -130,13 +130,13 @@ hasRequiredParams = ( arrParams, oPayload ) ->
 ###
 Fetches all available modules and return them together with the available functions.
 
-@private getModules ( *user, oPayload, dbMod, callback* )
+@private getModules ( *user, oBody, dbMod, callback* )
 @param {Object} user
-@param {Object} oPayload
+@param {Object} oBody
 @param {Object} dbMod
 @param {function} callback
 ###
-getModules = ( user, oPayload, dbMod, callback ) ->
+getModules = ( user, oBody, dbMod, callback ) ->
 	fProcessIds = ( userName ) ->
 		( err, arrNames ) ->
 			oRes = {}
@@ -158,21 +158,21 @@ getModules = ( user, oPayload, dbMod, callback ) ->
 
 	dbMod.getAvailableModuleIds user.username, fProcessIds user.username
 
-getModuleParams = ( user, oPayload, dbMod, callback ) ->
-	answ = hasRequiredParams [ 'id' ], oPayload
+getModuleParams = ( user, oBody, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'id' ], oBody
 	if answ.code isnt 200
 		callback answ
 	else
-		dbMod.getModuleField user.username, oPayload.id, "params", ( err, oPayload ) ->
-			answ.message = oPayload
+		dbMod.getModuleField user.username, oBody.id, "params", ( err, oBody ) ->
+			answ.message = oBody
 			callback answ
 
-getModuleUserParams = ( user, oPayload, dbMod, callback ) ->
-	answ = hasRequiredParams [ 'id' ], oPayload
+getModuleUserParams = ( user, oBody, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'id' ], oBody
 	if answ.code isnt 200
 		callback answ
 	else
-		dbMod.getUserParams oPayload.id, user.username, ( err, str ) ->
+		dbMod.getUserParams oBody.id, user.username, ( err, str ) ->
 			oParams = JSON.parse str
 			for name, oParam of oParams
 				if not oParam.shielded
@@ -180,58 +180,58 @@ getModuleUserParams = ( user, oPayload, dbMod, callback ) ->
 			answ.message = JSON.stringify oParams
 			callback answ
 
-getModuleUserArguments = ( user, oPayload, dbMod, callback ) ->
-	answ = hasRequiredParams [ 'ruleId' ,'moduleId' ], oPayload
+getModuleUserArguments = ( user, oBody, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'ruleId' ,'moduleId' ], oBody
 	if answ.code isnt 200
 		callback answ
 	else
-		dbMod.getAllModuleUserArguments user.username, oPayload.ruleId, oPayload.moduleId, ( err, oPayload ) ->
-			answ.message = oPayload
+		dbMod.getAllModuleUserArguments user.username, oBody.ruleId, oBody.moduleId, ( err, oBody ) ->
+			answ.message = oBody
 			callback answ
 
-forgeModule = ( user, oPayload, modType, dbMod, callback ) =>
-	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oPayload
+forgeModule = ( user, oBody, modType, dbMod, callback ) =>
+	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oBody
 	if answ.code isnt 200
 		callback answ
 	else
-		if oPayload.overwrite
-			storeModule user, oPayload, modType, dbMod, callback
+		if oBody.overwrite
+			storeModule user, oBody, modType, dbMod, callback
 		else
-			dbMod.getModule user.username, oPayload.id, ( err, mod ) =>
+			dbMod.getModule user.username, oBody.id, ( err, mod ) =>
 				if mod
 					answ.code = 409
-					answ.message = 'Module name already existing: ' + oPayload.id
+					answ.message = 'Module name already existing: ' + oBody.id
 					callback answ
 				else
-					storeModule user, oPayload, modType, dbMod, callback
+					storeModule user, oBody, modType, dbMod, callback
 
-storeModule = ( user, oPayload, modType, dbMod, callback ) =>
-	src = oPayload.data
-	dynmod.compileString src, user.username, id: 'dummyRule' , oPayload.id, oPayload.lang, modType, null, ( cm ) =>
+storeModule = ( user, oBody, modType, dbMod, callback ) =>
+	src = oBody.data
+	dynmod.compileString src, user.username, id: 'dummyRule' , oBody.id, oBody.lang, modType, null, ( cm ) =>
 		answ = cm.answ
 		if answ.code is 200
 			funcs = []
 			funcs.push name for name, id of cm.module
 			@log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
 			answ.message = 
-				" Module #{ oPayload.id } successfully stored! Found following function(s): #{ funcs }"
-			oPayload.functions = JSON.stringify funcs
-			oPayload.functionArgs = JSON.stringify cm.funcParams
-			dbMod.storeModule user.username, oPayload
-			# if oPayload.public is 'true'
-			# 	dbMod.publish oPayload.id
+				" Module #{ oBody.id } successfully stored! Found following function(s): #{ funcs }"
+			oBody.functions = JSON.stringify funcs
+			oBody.functionArgs = JSON.stringify cm.funcParams
+			dbMod.storeModule user.username, oBody
+			# if oBody.public is 'true'
+			# 	dbMod.publish oBody.id
 		callback answ
 
-storeRule = ( user, oPayload, callback ) =>
+storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
 		rule =
-			id: oPayload.id
-			event: oPayload.event
-			event_start: oPayload.event_start
-			event_interval: oPayload.event_interval
-			conditions: oPayload.conditions
-			actions: oPayload.actions
-		if oPayload.event_start
+			id: oBody.id
+			event: oBody.event
+			event_start: oBody.event_start
+			event_interval: oBody.event_interval
+			conditions: oBody.conditions
+			actions: oBody.actions
+		if oBody.event_start
 			rule.timestamp = (new Date()).toISOString()
 		strRule = JSON.stringify rule
 		# store the rule
@@ -241,20 +241,20 @@ storeRule = ( user, oPayload, callback ) =>
 		# activate the rule
 		db.activateRule rule.id, user.username
 		# if event module parameters were send, store them
-		if oPayload.event_params
+		if oBody.event_params
 			epModId = rule.event.split( ' -> ' )[ 0 ]
-			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oPayload.event_params
-		oFuncArgs = oPayload.event_functions
+			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oBody.event_params
+		oFuncArgs = oBody.event_functions
 		# if event function arguments were send, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.eventPollers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		# if action module params were send, store them
-		oParams = oPayload.action_params
+		oParams = oBody.action_params
 		for id, params of oParams
 			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
-		oFuncArgs = oPayload.action_functions
+		oFuncArgs = oBody.action_functions
 		# if action function arguments were send, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
@@ -276,126 +276,133 @@ storeRule = ( user, oPayload, callback ) =>
 			code: 200
 			message: "Rule '#{ rule.id }' stored and activated!"
 
+
+#
+# COMMAND FUNCTIONS
+# =================
+#
+# Those are the answers to user requests.
+
 commandFunctions =
-	get_public_key: ( user, oPayload, callback ) ->
+	get_public_key: ( user, oBody, callback ) ->
 		callback
 			code: 200
 			message: encryption.getPublicKey()
 
 # EVENT POLLERS
 # -------------
-	get_event_pollers: ( user, oPayload, callback ) ->
-		getModules  user, oPayload, db.eventPollers, callback
+	get_event_pollers: ( user, oBody, callback ) ->
+		getModules  user, oBody, db.eventPollers, callback
 	
-	get_full_event_poller: ( user, oPayload, callback ) ->
-		db.eventPollers.getModule user.username, oPayload.id, ( err, obj ) ->
+	get_full_event_poller: ( user, oBody, callback ) ->
+		db.eventPollers.getModule user.username, oBody.id, ( err, obj ) ->
 			callback
 				code: 200
 				message: JSON.stringify obj
 	
-	get_event_poller_params: ( user, oPayload, callback ) ->
-		getModuleParams user, oPayload, db.eventPollers, callback
+	get_event_poller_params: ( user, oBody, callback ) ->
+		getModuleParams user, oBody, db.eventPollers, callback
 
-	get_event_poller_user_params: ( user, oPayload, callback ) ->
-		getModuleUserParams user, oPayload, db.eventPollers, callback
+	get_event_poller_user_params: ( user, oBody, callback ) ->
+		getModuleUserParams user, oBody, db.eventPollers, callback
 
-	get_event_poller_user_arguments: ( user, oPayload, callback ) ->
-		getModuleUserArguments user, oPayload, db.eventPollers, callback
+	get_event_poller_user_arguments: ( user, oBody, callback ) ->
+		getModuleUserArguments user, oBody, db.eventPollers, callback
 
-	get_event_poller_function_arguments: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	get_event_poller_function_arguments: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.getModuleField user.username, oPayload.id, 'functionArgs', ( err, obj ) ->
+			db.eventPollers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
 	
-	forge_event_poller: ( user, oPayload, callback ) ->
-		forgeModule user, oPayload, "eventpoller", db.eventPollers, callback
+	forge_event_poller: ( user, oBody, callback ) ->
+		forgeModule user, oBody, "eventpoller", db.eventPollers, callback
  
-	delete_event_poller: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	delete_event_poller: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.deleteModule user.username, oPayload.id
+			db.eventPollers.deleteModule user.username, oBody.id
 			callback
 				code: 200
 				message: 'OK!'
 
 # ACTION INVOKERS
 # ---------------
-	get_action_invokers: ( user, oPayload, callback ) ->
-		getModules  user, oPayload, db.actionInvokers, callback
+	get_action_invokers: ( user, oBody, callback ) ->
+		getModules  user, oBody, db.actionInvokers, callback
 	
-	get_full_action_invoker: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	get_full_action_invoker: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModule user.username, oPayload.id, ( err, obj ) ->
+			db.actionInvokers.getModule user.username, oBody.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: JSON.stringify obj
 
-	get_action_invoker_params: ( user, oPayload, callback ) ->
-		getModuleParams user, oPayload, db.actionInvokers, callback
+	get_action_invoker_params: ( user, oBody, callback ) ->
+		getModuleParams user, oBody, db.actionInvokers, callback
 
-	get_action_invoker_user_params: ( user, oPayload, callback ) ->
-		getModuleUserParams user, oPayload, db.actionInvokers, callback
+	get_action_invoker_user_params: ( user, oBody, callback ) ->
+		getModuleUserParams user, oBody, db.actionInvokers, callback
 
-	get_action_invoker_user_arguments: ( user, oPayload, callback ) ->
-		getModuleUserArguments user, oPayload, db.actionInvokers, callback
+	get_action_invoker_user_arguments: ( user, oBody, callback ) ->
+		getModuleUserArguments user, oBody, db.actionInvokers, callback
 
-	get_action_invoker_function_arguments: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	get_action_invoker_function_arguments: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModuleField user.username, oPayload.id, 'functionArgs', ( err, obj ) ->
+			db.actionInvokers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
 	
-	forge_action_invoker: ( user, oPayload, callback ) ->
-		forgeModule user, oPayload, "actioninvoker", db.actionInvokers, callback
+	forge_action_invoker: ( user, oBody, callback ) ->
+		forgeModule user, oBody, "actioninvoker", db.actionInvokers, callback
 
-	delete_action_invoker: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	delete_action_invoker: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.deleteModule user.username, oPayload.id
+			db.actionInvokers.deleteModule user.username, oBody.id
 			callback
 				code: 200
 				message: 'OK!'
 
 # RULES
 # -----
-	get_rules: ( user, oPayload, callback ) ->
+	get_rules: ( user, oBody, callback ) ->
 		db.getUserLinkedRules user.username, ( err, obj ) ->
 			callback
 				code: 200
 				message: obj
 
-	get_rule: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	get_rule: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getRule oPayload.id, ( err, obj ) ->
+			db.getRule oBody.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
 
-	get_rule_log: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	get_rule_log: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getLog user.username, oPayload.id, ( err, obj ) ->
+			db.getLog user.username, oBody.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
@@ -406,33 +413,78 @@ commandFunctions =
 	# - event
 	# - conditions
 	# - actions
-	forge_rule: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id', 'event', 'conditions', 'actions' ], oPayload
+	forge_rule: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id', 'event', 'conditions', 'actions' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			if oPayload.overwrite
-				storeRule user, oPayload, callback
+			if oBody.overwrite
+				storeRule user, oBody, callback
 			else
-				db.getRule oPayload.id, ( err, mod ) =>
+				db.getRule oBody.id, ( err, mod ) =>
 					if mod
 						answ.code = 409
-						answ.message = 'Rule name already existing: ' + oPayload.id
+						answ.message = 'Rule name already existing: ' + oBody.id
 						callback answ
 					else
-						storeRule user, oPayload, callback
+						storeRule user, oBody, callback
 
-	delete_rule: ( user, oPayload, callback ) ->
-		answ = hasRequiredParams [ 'id' ], oPayload
+	delete_rule: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.deleteRule oPayload.id
+			db.deleteRule oBody.id
 			eventEmitter.emit 'rule',
 				event: 'del'
 				user: user.username
 				rule: null
-				ruleId: oPayload.id
+				ruleId: oBody.id
 			callback
 				code: 200
 				message: 'OK!'
+
+
+	create_webhook: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'hookname' ], oBody
+		if answ.code isnt 200
+			callback answ
+		else
+			db.getWebhooks ( err, hooks ) =>
+				if hooks.indexOf oBody.hookname > -1
+					answ.code = 409
+					answ.message = 'Webhook already existing: ' + oBody.hookname
+					callback answ
+				else
+					db.storeWebhook user.username, oBody.hookname
+					callback
+						code: 200
+						message: 'OK!'
+
+	delete_webhook: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'hookname' ], oBody
+		if answ.code isnt 200
+			callback answ
+		else
+			db.getWebhooks ( err, hooks ) =>
+				if hooks.indexOf oBody.hookname is -1
+					answ.code = 409
+					answ.message = 'Webhook does not exist: ' + oBody.hookname
+					callback answ
+				else
+					db.deleteWebhook user.username, oBody.hookname
+					callback
+						code: 200
+						message: 'OK!'
+		
+	get_webhooks: ( user, oBody, callback ) ->
+		db.getWebhooks user.username, ( err, data ) ->
+			if err
+				callback
+					code: 400
+					message: "We didn't like your request!"
+			else
+				callback
+					code: 200
+					message: JSON.stringify data
+

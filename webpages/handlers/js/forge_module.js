@@ -50,8 +50,8 @@
 
   fOnLoad = function() {
     var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj;
-    document.title = "Forge " + moduleName;
-    $('#pagetitle').text("{{{user.username}}}, forge your custom " + moduleName + "!");
+    document.title = "Create " + moduleName;
+    $('#pagetitle').text("{{{user.username}}}, create your custom " + moduleName + "!");
     editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/coffee");
@@ -126,7 +126,7 @@
         });
         obj = {
           command: "forge_" + oParams.type,
-          payload: JSON.stringify({
+          body: JSON.stringify({
             id: $('#input_id').val(),
             lang: $('#editor_mode').val(),
             "public": $('#is_public').is(':checked'),
@@ -136,12 +136,12 @@
         };
         fCheckOverwrite = function(obj) {
           return function(err) {
-            var payl;
+            var bod;
             if (err.status === 409) {
               if (confirm('Are you sure you want to overwrite the existing module?')) {
-                payl = JSON.parse(obj.payload);
-                payl.overwrite = true;
-                obj.payload = JSON.stringify(payl);
+                bod = JSON.parse(obj.body);
+                bod.overwrite = true;
+                obj.body = JSON.stringify(bod);
                 return $.post('/usercommand', obj).done(function(data) {
                   $('#info').text(data.message);
                   $('#info').attr('class', 'success');
@@ -171,7 +171,7 @@
     if (oParams.id) {
       obj = {
         command: "get_full_" + oParams.type,
-        payload: JSON.stringify({
+        body: JSON.stringify({
           id: oParams.id
         })
       };

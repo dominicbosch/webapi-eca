@@ -1036,6 +1036,50 @@ Persistence
 
 
   /*
+  Creates and stores a webhook.
+  
+  @public createWebhook( *userId, hookname* )
+  @param {String} userId
+  @param {String} hookname
+   */
+
+  exports.createWebhook = (function(_this) {
+    return function(userId, hookname) {
+      return _this.db.sadd("user:" + userId + ":webhooks", hookname, replyHandler("sadd 'user:" + userId + ":webhooks' -> '" + hookname + "'"));
+    };
+  })(this);
+
+
+  /*
+  Deletes a webhook.
+  
+  @public deleteWebhook( *userId, hookname* )
+  @param {String} userId
+  @param {String} hookname
+   */
+
+  exports.deleteWebhook = (function(_this) {
+    return function(userId, hookname) {
+      return _this.db.srem("user:" + userId + ":webhooks", hookname, replyHandler("srem 'user:" + userId + ":webhooks' -> '" + hookname + "'"));
+    };
+  })(this);
+
+
+  /*
+  Gets all the users webhooks.
+  
+  @public getWebhooks( *userId* )
+  @param {String} userId
+   */
+
+  exports.getWebhooks = (function(_this) {
+    return function(userId, cb) {
+      return _this.db.smembers("user:" + userId + ":webhooks", cb);
+    };
+  })(this);
+
+
+  /*
   Shuts down the db link.
   
   @public shutDown()

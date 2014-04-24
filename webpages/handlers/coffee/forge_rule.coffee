@@ -17,27 +17,39 @@ fPlaceAndPaintInterval = () ->
 		<input id="input_interval" type="text" />
 		<b>"days hours:minutes"</b>, default = 10 minutes'
 
+fDisplayError = ( msg ) ->
+	window.scrollTo 0, 0
+	$( '#info' ).text "Error: #{ msg }"
+	$( '#info' ).attr 'class', 'error'
+
 fFailedRequest = ( msg ) ->
 	( err ) ->
 		if err.status is 401
 			window.location.href = 'forge?page=forge_rule'
 		else
-			$( '#info' ).text msg
-			$( '#info' ).attr 'class', 'error'
+			fDisplayError msg
 
-$.post( '/usercommand', command: 'get_public_key' )
-	.done ( data ) ->
-		strPublicKey = data.message
-	.fail ( err ) ->
-		if err.status is 401
-			window.location.href = 'forge?page=forge_rule'
-		else
-			$( '#info' ).text 'Error fetching public key, unable to send user specific parameters securely'
-			$( '#info' ).attr 'class', 'error'
+fIssueRequest = ( args ) ->
+	$( '#info' ).text ''
+	$.post( '/usercommand', args.body )
+		.done args.done
+		.fail args.fail
+	
 
 fOnLoad = () ->
-	document.title = 'Rule Forge!'
-	$( '#pagetitle' ).text '{{{user.username}}}, forge your ECA Rule!'
+	# Fetch the public key from the engine
+	fIssueRequest
+		body: command: 'get_public_key'
+		done: ( data ) ->
+			strPublicKey = data.message
+		fail: ( err ) ->
+			if err.status is 401
+				window.location.href = 'forge?page=forge_rule'
+			else
+				fDisplayError 'When fetching public key. Unable to send user specific parameters securely!'
+
+	document.title = 'Create Rules!'
+	$( '#pagetitle' ).text '{{{user.username}}}, create your ECA Rule!'
 
 	editor = ace.edit "editor_conditions"
 	editor.setTheme "ace/theme/monokai"
@@ -45,23 +57,63 @@ fOnLoad = () ->
 	editor.setShowPrintMargin false
 	# editor.session.setUseSoftTabs false 
 
+	
+
 # EVENT
-	$.post( '/usercommand', command: 'get_event_pollers' )
-		.done ( data ) ->
-			try
-				oEps = JSON.parse data.message
-			catch err
-				console.error 'ERROR: non-object received from server: ' + data.message
-				return
-			
-			fAppendEvents = ( id, events ) ->
-				fAppendEvent = ( evt ) ->
-					$( '#select_event' ).append $( '<option>' ).text id + ' -> ' + evt
-				fAppendEvent evt for evt in events
-			fAppendEvents id, events for id, events of oEps
-			$( '#input_event' ).val $( '#select_event' ).val()
-			fFetchEventParams $( '#select_event option:selected' ).text()
-		.fail fFailedRequest 'Error fetching event poller'
+
+	# If the user is coming from an event he wants a rule to be setup for him
+	if oParams.eventname
+		$( '#select_event_type' ).val 'Custom Event'
+		inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
+		inpEvt.val oParams.eventname
+		$( '#event_parameters' ).append inpEvt
+
+	# Event type is changed, changes the whole event section
+	$( '#select_event_type' ).change () ->
+		$( '#event_parameters *' ).remove()
+		switch $( this ).val()
+
+			# The user wants to act on a custom event
+			when 'Custom Event'
+				inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
+				$( '#event_parameters' ).append inpEvt
+
+			# The user wants a webhook as event producer
+			when 'Webhook'
+				fIssueRequest
+					body: command: 'get_webhooks'
+					done: ( data ) ->
+						try
+							arrHooks = JSON.parse data.message
+							if arrHooks.length is 0
+								fDisplayError 'No webhooks found! Choose another Event Type or create a Webhook.'
+								$( '#select_event_type' ).val ''
+							else
+								selHook = $( '<select>' ).attr 'id', 'input_eventname'
+								for hook in arrHooks
+									selHook.append $( '<option>' ).text hook
+								$( '#event_parameters' ).append selHook
+						catch err
+							fDisplayError 'Badly formed webhooks!'
+					fail: fFailedRequest 'Unable to get webhooks!'
+
+			when 'Event Poller'
+				fIssueRequest
+					body: command: 'get_event_pollers'
+					done: ( data ) ->
+						try
+							oEps = JSON.parse data.message
+							fAppendEvents = ( id, events ) ->
+								fAppendEvent = ( evt ) ->
+									$( '#select_event' ).append $( '<option>' ).text id + ' -> ' + evt
+								fAppendEvent evt for evt in events
+							fAppendEvents id, events for id, events of oEps
+							$( '#input_event' ).val $( '#select_event' ).val()
+							fFetchEventParams $( '#select_event option:selected' ).text()
+						catch err
+							console.error 'ERROR: non-object received from server: ' + data.message
+
+					fail: fFailedRequest 'Error fetching event poller'
 
 	$( '#select_event' ).change () ->
 		evtFunc = $( this ).val()
@@ -87,20 +139,22 @@ fOnLoad = () ->
 		$( '#event_poller_params *' ).remove()
 		if name
 			arr = name.split ' -> '
-			obj =
-				command: 'get_event_poller_params'
-				payload: JSON.stringify
-					id: arr[ 0 ]
-			$.post( '/usercommand', obj )
-				.done fAddEventParams arr[ 0 ]
-				.fail fFailedRequest 'Error fetching event poller params'
+			fIssueRequest
+				body: 
+					command: 'get_event_poller_params'
+					body: JSON.stringify
+						id: arr[ 0 ]
+				done: fAddEventParams arr[ 0 ]
+				fail: fFailedRequest 'Error fetching event poller params'
 			fFetchEventFunctionArgs arr
 
 	fFetchEventFunctionArgs = ( arrName ) ->
-		obj =
-			command: 'get_event_poller_function_arguments'
-			payload: JSON.stringify
-				id: arrName[ 0 ]
+		# FIXME this data gets not populated sometimes!
+		fIssueRequest
+			body: 
+				command: 'get_event_poller_function_arguments'
+				body: JSON.stringify
+					id: arrName[ 0 ]
 		$.post( '/usercommand', obj )
 			.done ( data ) ->
 				if data.message
@@ -149,7 +203,7 @@ fOnLoad = () ->
 	fFillEventParams = ( moduleId ) ->
 		obj =
 			command: 'get_event_poller_user_params'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: moduleId
 		$.post( '/usercommand', obj )
 			.done ( data ) ->
@@ -163,7 +217,7 @@ fOnLoad = () ->
 						$( this ).attr 'unchanged', 'false'
 
 		obj.command = 'get_event_poller_user_arguments'
-		obj.payload = JSON.stringify
+		obj.body = JSON.stringify
 			ruleId: $( '#input_id' ).val()
 			moduleId: moduleId
 		$.post( '/usercommand', obj )
@@ -180,6 +234,16 @@ fOnLoad = () ->
 					# $( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
 
 # ACTIONS
+
+
+	# <b>Selected Actions:</b>
+	# <table id="selected_actions"></table>
+	# <br><br>
+	# <b>Required Parameters:</b>
+	# <br><br>
+	# <div id="action_params"></div>
+	# <br><br>
+
 	obj =
 		command: 'get_action_invokers'
 	$.post( '/usercommand', obj )
@@ -228,7 +292,7 @@ fOnLoad = () ->
 	fFetchActionParams = ( div, modName ) ->
 		obj =
 			command: 'get_action_invoker_params'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: modName
 		$.post( '/usercommand', obj )
 			.done ( data ) ->
@@ -253,7 +317,7 @@ fOnLoad = () ->
 	fFetchActionFunctionArgs = ( tag, arrName ) ->
 		obj =
 			command: 'get_action_invoker_function_arguments'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: arrName[ 0 ]
 		$.post( '/usercommand', obj )
 			.done ( data ) ->
@@ -277,13 +341,13 @@ fOnLoad = () ->
 	fFillActionFunction = ( name ) ->
 		obj =
 			command: 'get_action_invoker_user_params'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: name
 		$.post( '/usercommand', obj )
 			.done fAddActionUserParams name
 		
 		obj.command = 'get_action_invoker_user_arguments'
-		obj.payload = JSON.stringify
+		obj.body = JSON.stringify
 			ruleId: $( '#input_id' ).val()
 			moduleId: name
 		$.post( '/usercommand', obj )
@@ -494,9 +558,9 @@ fOnLoad = () ->
 				( err ) ->
 					if err.status is 409
 						if confirm 'Are you sure you want to overwrite the existing rule?'
-							payl = JSON.parse obj.payload
+							payl = JSON.parse obj.body
 							payl.overwrite = true
-							obj.payload = JSON.stringify payl
+							obj.body = JSON.stringify payl
 							$.post( '/usercommand', obj )
 								.done ( data ) ->
 									$( '#info' ).text data.message
@@ -511,7 +575,7 @@ fOnLoad = () ->
 				start = start.toISOString()
 			obj =
 				command: 'forge_rule'
-				payload: JSON.stringify
+				body: JSON.stringify
 					id: $( '#input_id' ).val()
 					event: eventId
 					event_params: ep
@@ -537,7 +601,7 @@ fOnLoad = () ->
 	if oParams.id
 		obj =
 			command: 'get_rule'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: oParams.id
 		$.post( '/usercommand', obj )
 			.done ( data ) ->

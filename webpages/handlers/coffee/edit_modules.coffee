@@ -58,7 +58,7 @@ fOnLoad = () ->
 				cmd = 'delete_action_invoker'
 			data =
 				command: cmd
-				payload: JSON.stringify
+				body: JSON.stringify
 					id: modName
 			$.post( '/usercommand', data )
 				.done fFetchModules

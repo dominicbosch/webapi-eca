@@ -188,6 +188,7 @@ oOperators =
 	'>': ( x, y ) -> x > y
 	'>=': ( x, y ) -> x >= y
 	'==': ( x, y ) -> x is y
+	'!=': ( x, y ) -> x isnt y
 	'instr': ( x, y ) -> x.indexOf( y ) > -1
 
 ###
@@ -252,12 +253,12 @@ processEvent = ( evt ) =>
 						if arrSelectors
 							for sel in arrSelectors
 								selector = sel.substring 2, sel.length - 1
-								data = jsonQuery( evt.payload, selector ).nodes()[ 0 ]
+								data = jsonQuery( evt.body, selector ).nodes()[ 0 ]
 								argument = argument.replace sel, data
 								if oArg.value is sel
 									argument = data # if the user wants to pass an object, we allow him to do so
 						# if oArg.jsselector
-						arrArgs.push argument #jsonQuery( evt.payload, oArg.value ).nodes()[ 0 ]
+						arrArgs.push argument #jsonQuery( evt.body, oArg.value ).nodes()[ 0 ]
 						# else
 						# 	arrArgs.push oArg.value
 				else

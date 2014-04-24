@@ -235,6 +235,9 @@ Engine
     '==': function(x, y) {
       return x === y;
     },
+    '!=': function(x, y) {
+      return x !== y;
+    },
     'instr': function(x, y) {
       return x.indexOf(y) > -1;
     }
@@ -318,7 +321,7 @@ Engine
                   for (_j = 0, _len1 = arrSelectors.length; _j < _len1; _j++) {
                     sel = arrSelectors[_j];
                     selector = sel.substring(2, sel.length - 1);
-                    data = jsonQuery(evt.payload, selector).nodes()[0];
+                    data = jsonQuery(evt.body, selector).nodes()[0];
                     argument = argument.replace(sel, data);
                     if (oArg.value === sel) {
                       argument = data;

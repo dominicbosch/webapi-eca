@@ -7,7 +7,7 @@ exports.parseTextToJSON = ( eventname, text ) ->
 	try
 		pushEvent
 			event: eventname
-			payload: JSON.parse text
+			body: JSON.parse text
 		log "Text successfully parsed"
 	catch e
 		log "Error during JSON parsing of #{ text }"
@@ -17,7 +17,7 @@ exports.parseTextToJSON = ( eventname, text ) ->
 exports.parseObjectToPrettyText = ( eventname, obj ) ->
 	pushEvent
 		event: eventname
-		payload: JSON.stringify text, undefined, 2
+		body: JSON.stringify text, undefined, 2
 
 
 lastSend = null
@@ -31,7 +31,7 @@ exports.accumulateEvents = ( evtname, evt, sendTime ) ->
 		lastSend = sTime
 		pushEvent
 			event: evtname
-			payload: arrEvents
+			body: arrEvents
 		arrEvents = []
 
 
@@ -57,7 +57,7 @@ fPushEvent = () ->
 		log "Pushing changed interval event"
 		pushEvent
 			event: eventname
-			payload: event
+			body: event
 	setTimeout fPushEvent, interval
 	
 

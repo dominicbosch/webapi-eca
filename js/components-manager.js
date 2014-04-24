@@ -108,7 +108,7 @@ Components Manager
   - `oReq` is the request object that contains:
   
   	- `command` as a string 
-  	- `payload` an optional stringified JSON object 
+  	- `body` an optional stringified JSON object 
   The callback function `callback( obj )` will receive an object
   containing the HTTP response code and a corresponding message.
   
@@ -117,16 +117,16 @@ Components Manager
 
   exports.processRequest = function(user, oReq, callback) {
     var dat, err;
-    if (!oReq.payload) {
-      oReq.payload = '{}';
+    if (!oReq.body) {
+      oReq.body = '{}';
     }
     try {
-      dat = JSON.parse(oReq.payload);
+      dat = JSON.parse(oReq.body);
     } catch (_error) {
       err = _error;
       return callback({
         code: 404,
-        message: 'You had a strange payload in your request!'
+        message: 'You had a strange body in your request!'
       });
     }
     if (commandFunctions[oReq.command]) {
@@ -141,14 +141,14 @@ Components Manager
 
 
   /*
-  Checks whether all required parameters are present in the payload.
+  Checks whether all required parameters are present in the body.
   
-  @private hasRequiredParams ( *arrParams, oPayload* )
+  @private hasRequiredParams ( *arrParams, oBody* )
   @param {Array} arrParams
-  @param {Object} oPayload
+  @param {Object} oBody
    */
 
-  hasRequiredParams = function(arrParams, oPayload) {
+  hasRequiredParams = function(arrParams, oBody) {
     var answ, param, _i, _len;
     answ = {
       code: 400,
@@ -156,7 +156,7 @@ Components Manager
     };
     for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
       param = arrParams[_i];
-      if (!oPayload[param]) {
+      if (!oBody[param]) {
         return answ;
       }
     }
@@ -169,14 +169,14 @@ Components Manager
   /*
   Fetches all available modules and return them together with the available functions.
   
-  @private getModules ( *user, oPayload, dbMod, callback* )
+  @private getModules ( *user, oBody, dbMod, callback* )
   @param {Object} user
-  @param {Object} oPayload
+  @param {Object} oBody
   @param {Object} dbMod
   @param {function} callback
    */
 
-  getModules = function(user, oPayload, dbMod, callback) {
+  getModules = function(user, oBody, dbMod, callback) {
     var fProcessIds;
     fProcessIds = function(userName) {
       return function(err, arrNames) {
@@ -216,26 +216,26 @@ Components Manager
     return dbMod.getAvailableModuleIds(user.username, fProcessIds(user.username));
   };
 
-  getModuleParams = function(user, oPayload, dbMod, callback) {
+  getModuleParams = function(user, oBody, dbMod, callback) {
     var answ;
-    answ = hasRequiredParams(['id'], oPayload);
+    answ = hasRequiredParams(['id'], oBody);
     if (answ.code !== 200) {
       return callback(answ);
     } else {
-      return dbMod.getModuleField(user.username, oPayload.id, "params", function(err, oPayload) {
-        answ.message = oPayload;
+      return dbMod.getModuleField(user.username, oBody.id, "params", function(err, oBody) {
+        answ.message = oBody;
         return callback(answ);
       });
     }
   };
 
-  getModuleUserParams = function(user, oPayload, dbMod, callback) {
+  getModuleUserParams = function(user, oBody, dbMod, callback) {
     var answ;
-    answ = hasRequiredParams(['id'], oPayload);
+    answ = hasRequiredParams(['id'], oBody);
     if (answ.code !== 200) {
       return callback(answ);
     } else {
-      return dbMod.getUserParams(oPayload.id, user.username, function(err, str) {
+      return dbMod.getUserParams(oBody.id, user.username, function(err, str) {
         var name, oParam, oParams;
         oParams = JSON.parse(str);
         for (name in oParams) {
@@ -250,36 +250,36 @@ Components Manager
     }
   };
 
-  getModuleUserArguments = function(user, oPayload, dbMod, callback) {
+  getModuleUserArguments = function(user, oBody, dbMod, callback) {
     var answ;
-    answ = hasRequiredParams(['ruleId', 'moduleId'], oPayload);
+    answ = hasRequiredParams(['ruleId', 'moduleId'], oBody);
     if (answ.code !== 200) {
       return callback(answ);
     } else {
-      return dbMod.getAllModuleUserArguments(user.username, oPayload.ruleId, oPayload.moduleId, function(err, oPayload) {
-        answ.message = oPayload;
+      return dbMod.getAllModuleUserArguments(user.username, oBody.ruleId, oBody.moduleId, function(err, oBody) {
+        answ.message = oBody;
         return callback(answ);
       });
     }
   };
 
   forgeModule = (function(_this) {
-    return function(user, oPayload, modType, dbMod, callback) {
+    return function(user, oBody, modType, dbMod, callback) {
       var answ;
-      answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oPayload);
+      answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        if (oPayload.overwrite) {
-          return storeModule(user, oPayload, modType, dbMod, callback);
+        if (oBody.overwrite) {
+          return storeModule(user, oBody, modType, dbMod, callback);
         } else {
-          return dbMod.getModule(user.username, oPayload.id, function(err, mod) {
+          return dbMod.getModule(user.username, oBody.id, function(err, mod) {
             if (mod) {
               answ.code = 409;
-              answ.message = 'Module name already existing: ' + oPayload.id;
+              answ.message = 'Module name already existing: ' + oBody.id;
               return callback(answ);
             } else {
-              return storeModule(user, oPayload, modType, dbMod, callback);
+              return storeModule(user, oBody, modType, dbMod, callback);
             }
           });
         }
@@ -288,12 +288,12 @@ Components Manager
   })(this);
 
   storeModule = (function(_this) {
-    return function(user, oPayload, modType, dbMod, callback) {
+    return function(user, oBody, modType, dbMod, callback) {
       var src;
-      src = oPayload.data;
+      src = oBody.data;
       return dynmod.compileString(src, user.username, {
         id: 'dummyRule'
-      }, oPayload.id, oPayload.lang, modType, null, function(cm) {
+      }, oBody.id, oBody.lang, modType, null, function(cm) {
         var answ, funcs, id, name, _ref;
         answ = cm.answ;
         if (answ.code === 200) {
@@ -304,10 +304,10 @@ Components Manager
             funcs.push(name);
           }
           _this.log.info("CM | Storing new module with functions " + (funcs.join(', ')));
-          answ.message = " Module " + oPayload.id + " successfully stored! Found following function(s): " + funcs;
-          oPayload.functions = JSON.stringify(funcs);
-          oPayload.functionArgs = JSON.stringify(cm.funcParams);
-          dbMod.storeModule(user.username, oPayload);
+          answ.message = " Module " + oBody.id + " successfully stored! Found following function(s): " + funcs;
+          oBody.functions = JSON.stringify(funcs);
+          oBody.functionArgs = JSON.stringify(cm.funcParams);
+          dbMod.storeModule(user.username, oBody);
         }
         return callback(answ);
       });
@@ -315,39 +315,39 @@ Components Manager
   })(this);
 
   storeRule = (function(_this) {
-    return function(user, oPayload, callback) {
+    return function(user, oBody, callback) {
       var args, arr, epModId, eventInfo, id, oFuncArgs, oParams, params, rule, strRule;
       rule = {
-        id: oPayload.id,
-        event: oPayload.event,
-        event_start: oPayload.event_start,
-        event_interval: oPayload.event_interval,
-        conditions: oPayload.conditions,
-        actions: oPayload.actions
+        id: oBody.id,
+        event: oBody.event,
+        event_start: oBody.event_start,
+        event_interval: oBody.event_interval,
+        conditions: oBody.conditions,
+        actions: oBody.actions
       };
-      if (oPayload.event_start) {
+      if (oBody.event_start) {
         rule.timestamp = (new Date()).toISOString();
       }
       strRule = JSON.stringify(rule);
       db.storeRule(rule.id, strRule);
       db.linkRule(rule.id, user.username);
       db.activateRule(rule.id, user.username);
-      if (oPayload.event_params) {
+      if (oBody.event_params) {
         epModId = rule.event.split(' -> ')[0];
-        db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oPayload.event_params));
+        db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oBody.event_params));
       }
-      oFuncArgs = oPayload.event_functions;
+      oFuncArgs = oBody.event_functions;
       for (id in oFuncArgs) {
         args = oFuncArgs[id];
         arr = id.split(' -> ');
         db.eventPollers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(args));
       }
-      oParams = oPayload.action_params;
+      oParams = oBody.action_params;
       for (id in oParams) {
         params = oParams[id];
         db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
       }
-      oFuncArgs = oPayload.action_functions;
+      oFuncArgs = oBody.action_functions;
       for (id in oFuncArgs) {
         args = oFuncArgs[id];
         arr = id.split(' -> ');
@@ -372,39 +372,39 @@ Components Manager
   })(this);
 
   commandFunctions = {
-    get_public_key: function(user, oPayload, callback) {
+    get_public_key: function(user, oBody, callback) {
       return callback({
         code: 200,
         message: encryption.getPublicKey()
       });
     },
-    get_event_pollers: function(user, oPayload, callback) {
-      return getModules(user, oPayload, db.eventPollers, callback);
+    get_event_pollers: function(user, oBody, callback) {
+      return getModules(user, oBody, db.eventPollers, callback);
     },
-    get_full_event_poller: function(user, oPayload, callback) {
-      return db.eventPollers.getModule(user.username, oPayload.id, function(err, obj) {
+    get_full_event_poller: function(user, oBody, callback) {
+      return db.eventPollers.getModule(user.username, oBody.id, function(err, obj) {
         return callback({
           code: 200,
           message: JSON.stringify(obj)
         });
       });
     },
-    get_event_poller_params: function(user, oPayload, callback) {
-      return getModuleParams(user, oPayload, db.eventPollers, callback);
+    get_event_poller_params: function(user, oBody, callback) {
+      return getModuleParams(user, oBody, db.eventPollers, callback);
     },
-    get_event_poller_user_params: function(user, oPayload, callback) {
-      return getModuleUserParams(user, oPayload, db.eventPollers, callback);
+    get_event_poller_user_params: function(user, oBody, callback) {
+      return getModuleUserParams(user, oBody, db.eventPollers, callback);
     },
-    get_event_poller_user_arguments: function(user, oPayload, callback) {
-      return getModuleUserArguments(user, oPayload, db.eventPollers, callback);
+    get_event_poller_user_arguments: function(user, oBody, callback) {
+      return getModuleUserArguments(user, oBody, db.eventPollers, callback);
     },
-    get_event_poller_function_arguments: function(user, oPayload, callback) {
+    get_event_poller_function_arguments: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.eventPollers.getModuleField(user.username, oPayload.id, 'functionArgs', function(err, obj) {
+        return db.eventPollers.getModuleField(user.username, oBody.id, 'functionArgs', function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -412,32 +412,32 @@ Components Manager
         });
       }
     },
-    forge_event_poller: function(user, oPayload, callback) {
-      return forgeModule(user, oPayload, "eventpoller", db.eventPollers, callback);
+    forge_event_poller: function(user, oBody, callback) {
+      return forgeModule(user, oBody, "eventpoller", db.eventPollers, callback);
     },
-    delete_event_poller: function(user, oPayload, callback) {
+    delete_event_poller: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.eventPollers.deleteModule(user.username, oPayload.id);
+        db.eventPollers.deleteModule(user.username, oBody.id);
         return callback({
           code: 200,
           message: 'OK!'
         });
       }
     },
-    get_action_invokers: function(user, oPayload, callback) {
-      return getModules(user, oPayload, db.actionInvokers, callback);
+    get_action_invokers: function(user, oBody, callback) {
+      return getModules(user, oBody, db.actionInvokers, callback);
     },
-    get_full_action_invoker: function(user, oPayload, callback) {
+    get_full_action_invoker: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.actionInvokers.getModule(user.username, oPayload.id, function(err, obj) {
+        return db.actionInvokers.getModule(user.username, oBody.id, function(err, obj) {
           return callback({
             code: 200,
             message: JSON.stringify(obj)
@@ -445,22 +445,22 @@ Components Manager
         });
       }
     },
-    get_action_invoker_params: function(user, oPayload, callback) {
-      return getModuleParams(user, oPayload, db.actionInvokers, callback);
+    get_action_invoker_params: function(user, oBody, callback) {
+      return getModuleParams(user, oBody, db.actionInvokers, callback);
     },
-    get_action_invoker_user_params: function(user, oPayload, callback) {
-      return getModuleUserParams(user, oPayload, db.actionInvokers, callback);
+    get_action_invoker_user_params: function(user, oBody, callback) {
+      return getModuleUserParams(user, oBody, db.actionInvokers, callback);
     },
-    get_action_invoker_user_arguments: function(user, oPayload, callback) {
-      return getModuleUserArguments(user, oPayload, db.actionInvokers, callback);
+    get_action_invoker_user_arguments: function(user, oBody, callback) {
+      return getModuleUserArguments(user, oBody, db.actionInvokers, callback);
     },
-    get_action_invoker_function_arguments: function(user, oPayload, callback) {
+    get_action_invoker_function_arguments: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.actionInvokers.getModuleField(user.username, oPayload.id, 'functionArgs', function(err, obj) {
+        return db.actionInvokers.getModuleField(user.username, oBody.id, 'functionArgs', function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -468,23 +468,23 @@ Components Manager
         });
       }
     },
-    forge_action_invoker: function(user, oPayload, callback) {
-      return forgeModule(user, oPayload, "actioninvoker", db.actionInvokers, callback);
+    forge_action_invoker: function(user, oBody, callback) {
+      return forgeModule(user, oBody, "actioninvoker", db.actionInvokers, callback);
     },
-    delete_action_invoker: function(user, oPayload, callback) {
+    delete_action_invoker: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.actionInvokers.deleteModule(user.username, oPayload.id);
+        db.actionInvokers.deleteModule(user.username, oBody.id);
         return callback({
           code: 200,
           message: 'OK!'
         });
       }
     },
-    get_rules: function(user, oPayload, callback) {
+    get_rules: function(user, oBody, callback) {
       return db.getUserLinkedRules(user.username, function(err, obj) {
         return callback({
           code: 200,
@@ -492,13 +492,13 @@ Components Manager
         });
       });
     },
-    get_rule: function(user, oPayload, callback) {
+    get_rule: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getRule(oPayload.id, function(err, obj) {
+        return db.getRule(oBody.id, function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -506,13 +506,13 @@ Components Manager
         });
       }
     },
-    get_rule_log: function(user, oPayload, callback) {
+    get_rule_log: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getLog(user.username, oPayload.id, function(err, obj) {
+        return db.getLog(user.username, oBody.id, function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -520,47 +520,108 @@ Components Manager
         });
       }
     },
-    forge_rule: function(user, oPayload, callback) {
+    forge_rule: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id', 'event', 'conditions', 'actions'], oPayload);
+      answ = hasRequiredParams(['id', 'event', 'conditions', 'actions'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        if (oPayload.overwrite) {
-          return storeRule(user, oPayload, callback);
+        if (oBody.overwrite) {
+          return storeRule(user, oBody, callback);
         } else {
-          return db.getRule(oPayload.id, (function(_this) {
+          return db.getRule(oBody.id, (function(_this) {
             return function(err, mod) {
               if (mod) {
                 answ.code = 409;
-                answ.message = 'Rule name already existing: ' + oPayload.id;
+                answ.message = 'Rule name already existing: ' + oBody.id;
                 return callback(answ);
               } else {
-                return storeRule(user, oPayload, callback);
+                return storeRule(user, oBody, callback);
               }
             };
           })(this));
         }
       }
     },
-    delete_rule: function(user, oPayload, callback) {
+    delete_rule: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id'], oPayload);
+      answ = hasRequiredParams(['id'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.deleteRule(oPayload.id);
+        db.deleteRule(oBody.id);
         eventEmitter.emit('rule', {
           event: 'del',
           user: user.username,
           rule: null,
-          ruleId: oPayload.id
+          ruleId: oBody.id
         });
         return callback({
           code: 200,
           message: 'OK!'
         });
       }
+    },
+    create_webhook: function(user, oBody, callback) {
+      var answ;
+      answ = hasRequiredParams(['hookname'], oBody);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.getWebhooks((function(_this) {
+          return function(err, hooks) {
+            if (hooks.indexOf(oBody.hookname > -1)) {
+              answ.code = 409;
+              answ.message = 'Webhook already existing: ' + oBody.hookname;
+              return callback(answ);
+            } else {
+              db.storeWebhook(user.username, oBody.hookname);
+              return callback({
+                code: 200,
+                message: 'OK!'
+              });
+            }
+          };
+        })(this));
+      }
+    },
+    delete_webhook: function(user, oBody, callback) {
+      var answ;
+      answ = hasRequiredParams(['hookname'], oBody);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.getWebhooks((function(_this) {
+          return function(err, hooks) {
+            if (hooks.indexOf(oBody.hookname === -1)) {
+              answ.code = 409;
+              answ.message = 'Webhook does not exist: ' + oBody.hookname;
+              return callback(answ);
+            } else {
+              db.deleteWebhook(user.username, oBody.hookname);
+              return callback({
+                code: 200,
+                message: 'OK!'
+              });
+            }
+          };
+        })(this));
+      }
+    },
+    get_webhooks: function(user, oBody, callback) {
+      return db.getWebhooks(user.username, function(err, data) {
+        if (err) {
+          return callback({
+            code: 400,
+            message: "We didn't like your request!"
+          });
+        } else {
+          return callback({
+            code: 200,
+            message: JSON.stringify(data)
+          });
+        }
+      });
     }
   };
 

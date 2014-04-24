@@ -83,6 +83,10 @@ input[type=password]:focus {
   padding-bottom: 5px;
 }
 
+#input_id {
+  font-size: 1em;
+}
+
 #editor_mode {
   margin-right: 15px;
 }

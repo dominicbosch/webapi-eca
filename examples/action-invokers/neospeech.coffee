@@ -102,7 +102,7 @@ pollUntilDone = ( conversionNumber, email, accountid, infoEvent ) ->
 			if oAnsw.statusCode is '4' or oAnsw.statusCode is '5'
 				pushEvent
 					event: infoEvent
-					payload:
+					body:
 						accountid: accountid
 						downloadUrl: oAnsw.downloadUrl
 			else

@@ -50,7 +50,7 @@ fOnLoad = () ->
 			$( '#log_col' ).text ""
 			data =
 				command: 'delete_rule'
-				payload: JSON.stringify
+				body: JSON.stringify
 					id: ruleName
 			$.post( '/usercommand', data )
 				.done fFetchRules
@@ -64,7 +64,7 @@ fOnLoad = () ->
 		ruleName = $( 'div', $( this ).closest( 'tr' )).text()
 		data =
 			command: 'get_rule_log'
-			payload: JSON.stringify
+			body: JSON.stringify
 				id: ruleName
 		$.post( '/usercommand', data )
 			.done ( data ) ->

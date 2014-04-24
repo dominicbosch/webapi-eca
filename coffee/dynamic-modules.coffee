@@ -100,7 +100,7 @@ fPushEvent = ( userId, oRule, modType ) ->
 			db.pushEvent
 				event: oRule.event + '_created:' + oRule.timestamp
 				eventid: "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"
-				payload: obj
+				body: obj
 
 		else
 			obj.eventid = "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"

@@ -1,11 +1,15 @@
-<b>Rule Name: </b><input id="input_id" type="text" /><br>
+<h2>Rule Name: <input id="input_id" type="text" /></h2>
+
 <h2>EVENT</h2>
-<select id="select_event"><option></option></select><br/>
-<input id="input_event" type="text" /><br/><br/>
-<div id="event_start"></div>
-<div id="event_interval"></div><br/>
-<div id="event_poller_params"></div>
-<br>
+<b>Event Type:</b>
+<select id="select_event_type">
+	<option></option>
+	<option>Custom Event</option>
+	<option>Webhook</option>
+	<option>Event Poller</option>
+</select>
+<div id="event_parameters"></div>
+
 <h2>CONDITIONS</h2>
 Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors">js-select selectors</a> for valid selectors! ( only the first matching element will be returned )
 <table>
@@ -22,15 +26,10 @@ Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors
 	</div>
 </td></tr>
 <tr><td>
+
 	<h2>ACTIONS</h2>
 	<select id="select_actions"><option></option></select>
 	<br><br>
-	<b>Selected Actions:</b>
-	<table id="selected_actions"></table>
-	<br><br>
-	<b>Required Parameters:</b>
-	<br><br>
-	<div id="action_params"></div>
-	<br><br>
+	<div id="action_parameters"></div>
 	<button id="but_submit">save</button>
 </td></tr></table>

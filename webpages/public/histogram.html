@@ -14,14 +14,16 @@
         $.getJSON('data/histochart.json', function(d) {
             var data = new google.visualization.DataTable();
             data.addColumn('datetime', 'Time');
-            data.addColumn('number', '#Online');
+            data.addColumn('number', '# Responding');
 
             var options_lines = {
-                title: 'Online statistics',
+                title: 'Host Uptime Statistics',
                 curveType:'function',
                 lineWidth: 2,
                 intervals: { 'style':'line' },
                 legend: 'none',
+                vAxis: { title: "Number of Responding Hosts" },
+                hAxis: { title: "Timestamp" }
             };
             var dat = d.pingtimes;
             for(var prop in dat) {

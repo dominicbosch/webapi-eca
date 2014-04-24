@@ -69,25 +69,25 @@ exports.tearDown = ( cb ) ->
 	setTimeout cb, 100
 
 exports.requestProcessing =
-	testEmptyPayload: ( test ) =>
+	testEmptyBody: ( test ) =>
 		test.expect 1
 
 		request =
 			command: 'get_event_pollers'
 
 		cm.processRequest oUser, request, ( answ ) =>
-			test.strictEqual 200, answ.code, 'Empty payload did not return 200'
+			test.strictEqual 200, answ.code, 'Empty body did not return 200'
 			test.done()
 
-	testCorruptPayload: ( test ) =>
+	testCorruptBody: ( test ) =>
 		test.expect 1
 
 		request =
 			command: 'get_event_pollers'
-			payload: 'no-json'
+			body: 'no-json'
 
 		cm.processRequest oUser, request, ( answ ) =>
-			test.strictEqual 404, answ.code, 'Corrupt payload did not return 404'
+			test.strictEqual 404, answ.code, 'Corrupt body did not return 404'
 			test.done()
 
 exports.testListener = ( test ) =>
@@ -108,7 +108,7 @@ exports.testListener = ( test ) =>
 
 	request =
 		command: 'forge_rule'
-		payload: strRuleThree
+		body: strRuleThree
 
 	cm.addRuleListener ( evt ) =>
 		strEvt = JSON.stringify evt.rule
@@ -162,9 +162,9 @@ exports.moduleHandling =
 
 		request =
 			command: 'get_event_poller_params'
-			payload: 
+			body: 
 				id: oEpOne.id
-		request.payload = JSON.stringify request.payload
+		request.body = JSON.stringify request.body
 		cm.processRequest oUser, request, ( answ ) =>
 			test.strictEqual 200, answ.code,
 				'Required Module Parameters did not return 200'
@@ -181,7 +181,7 @@ exports.moduleHandling =
 
 		request =
 			command: 'forge_action_invoker'
-			payload: JSON.stringify oTmp
+			body: JSON.stringify oTmp
  
 		cm.processRequest oUser, request, ( answ ) =>
 			test.strictEqual 200, answ.code, 'Forging Module did not return 200'
@@ -208,7 +208,7 @@ exports.ruleForge =
 
 		request =
 			command: 'forge_rule'
-			payload: JSON.stringify oRuleThree
+			body: JSON.stringify oRuleThree
 
 		cm.processRequest oUser, request, ( answ ) =>
 			test.strictEqual 200, answ.code, "Forging Rule returned #{ answ.code }: #{ answ.message }"
@@ -229,7 +229,7 @@ exports.ruleForge =
 
 					request =
 						command: 'delete_rule'
-						payload: JSON.stringify id: oRuleThree.id
+						body: JSON.stringify id: oRuleThree.id
 
 					cm.processRequest oUser, request, ( answ ) =>
 						test.strictEqual 200, answ.code, "Deleting Rule returned #{ answ.code }: #{ answ.message }"
@@ -248,7 +248,7 @@ exports.ruleForge =
 
 		request =
 			command: 'forge_rule'
-			payload: JSON.stringify oRuleOne
+			body: JSON.stringify oRuleOne
 
 		cm.processRequest oUser, request, ( answ ) =>
 			test.strictEqual 200, answ.code, "Forging Rule returned #{ answ.code }: #{ answ.message }"
@@ -261,14 +261,14 @@ exports.ruleForge =
 					try
 						arrRows = data.split "\n"
 						logged = arrRows[ 1 ].split( '] ' )[1]
-						test.strictEqual logged, "{#{ oAiOne.id }} " + oEventOne.payload.property,
+						test.strictEqual logged, "{#{ oAiOne.id }} " + oEventOne.body.property,
 							'Did not log the right thing'
 					catch e
 						test.ok false, 'Parsing log failed'
 
 					request =
 						command: 'delete_rule'
-						payload: JSON.stringify id: oRuleOne.id
+						body: JSON.stringify id: oRuleOne.id
 
 					cm.processRequest oUser, request, ( answ ) =>
 						test.strictEqual 200, answ.code, "Deleting Rule returned #{ answ.code }: #{ answ.message }"

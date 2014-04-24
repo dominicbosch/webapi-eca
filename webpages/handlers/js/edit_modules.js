@@ -72,7 +72,7 @@
         }
         data = {
           command: cmd,
-          payload: JSON.stringify({
+          body: JSON.stringify({
             id: modName
           })
         };

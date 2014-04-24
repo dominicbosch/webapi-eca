@@ -14,23 +14,26 @@
       menubar.append(link);
     };
 
-    fCreateLink( 'Forge Event Poller',
-      fRedirect( 'forge?page=forge_module&type=event_poller' )
-    );
-    fCreateLink( 'Forge Action Invoker',
-      fRedirect( 'forge?page=forge_module&type=action_invoker' )
-    );
-    fCreateLink( 'Forge Rule',
-      fRedirect( 'forge?page=forge_rule' )
-    );
-    fCreateLink( 'Invoke Event',
+    fCreateLink( 'Push Event',
       fRedirect( 'forge?page=forge_event' )
     );
-    fCreateLink( 'Edit Modules',
-      fRedirect( 'forge?page=edit_modules' )
+    fCreateLink( 'Create Rule',
+      fRedirect( 'forge?page=forge_rule' )
     );
     fCreateLink( 'Edit Rules',
       fRedirect( 'forge?page=edit_rules' )
+    );
+    fCreateLink( 'Create EP',
+      fRedirect( 'forge?page=forge_module&type=event_poller' )
+    );
+    fCreateLink( 'Create AI',
+      fRedirect( 'forge?page=forge_module&type=action_invoker' )
+    );
+    fCreateLink( 'Edit EPs & AIs',
+      fRedirect( 'forge?page=edit_modules' )
+    );
+    fCreateLink( 'Webhooks',
+      fRedirect( 'forge?page=forge_webhook' )
     );
 //    fCreateLink( 'admin', fRedirect( 'admin' ) );
 

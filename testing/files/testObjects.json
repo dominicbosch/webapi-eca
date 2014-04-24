@@ -32,7 +32,7 @@
     "aiTwo": {
       "id":"aiTwo",
       "lang":"CoffeeScript",
-      "data":"# Send a mail through emailyak\nexports.otherEvent = ( evt ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tpayload =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, payload, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
+      "data":"# Send a mail through emailyak\nexports.otherEvent = ( evt ) ->\n\turl = 'https://api.emailyak.com/v1/' + params.apikey + '/json/send/email/'\n\tbody =\n\t    FromAddress : \"testsender@mscliveweb.simpleyak.com\",\n\t    ToAddress: \"dominic.bosch@gmail.com\",\n\t    Subject: \"TestMAIL\",\n\t    TextBody: \"Hello\"\n\t\n\tneedle.post url, body, ( err, resp, body ) ->\n\t\tif err\n\t\t\tlog err\n\t\tif resp.statusCode isnt 200\n\t\t\tlog 'Request not successful:'\n\t\t\tlog body\n",
       "public":"false",
       "params":"[\"apikey\",\"andmore\"]",
       "functions":"[\"otherEvent\"]",
@@ -56,7 +56,7 @@
   "events": {
     "eventOne":{
       "event": "test_1",
-      "payload": {
+      "body": {
         "property": "test_1",
         "nestedProperty": {
           "more": "really nested"
@@ -68,7 +68,7 @@
     },
     "eventReal":{
       "event": "epOne -> newMail",
-      "payload": {
+      "body": {
         "property": "test_1",
         "nestedProperty": {
           "more": "really nested"

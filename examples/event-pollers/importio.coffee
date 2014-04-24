@@ -8,17 +8,19 @@ Required module params:
 ###
 
 io = new importio params.userGuid, params.apikey, "query.import.io"
-
+isConnected = false
 tryToConnect = ( numAttempt, cb ) ->
-	io.connect ( connected ) ->
-		if connected
-			cb true
-		else
-			log "Unable to connect, attempting again... ##{ numAttempt++ }"
-			if numAttempt is 5
-				cb false
+	if not isConnected
+		io.connect ( connected ) ->
+			if connected
+				isConnected = true
+				cb true
 			else
-				tryToConnect numAttempt, cb
+				log "Unable to connect, attempting again... ##{ numAttempt++ }"
+				if numAttempt is 5
+					cb false
+				else
+					tryToConnect numAttempt, cb
 
 arrPages = [
 	"http://www.meteoblue.com/en/switzerland/weather-basel"
@@ -87,7 +89,7 @@ exports.currentData = ( idCity ) ->
 # Helper function to detect and convert temperatures
 convertTemperature = ( text ) ->
 	arrStr = text.split '°'
-	if arrStr > 1
+	if arrStr.length > 1
 		val = parseFloat arrStr[ 0 ]
 		if arrStr[ 1 ] is 'F'
 			fahrenheit = val
@@ -100,7 +102,7 @@ convertTemperature = ( text ) ->
 
 		celsius: celsius
 		fahrenheit: fahrenheit
-		kelvin: celsius - 273.15
+		kelvin: celsius + 273.15
 
 
 # idCity, the city identifier corresponding to the arrPages array
@@ -121,9 +123,12 @@ exports.tempOverThreshold = ( tempUnit, tempThreshold, idCity ) ->
 		connectorGuids: [ "06394265-b4e1-4b48-be82-a9f2acb9040f" ]
 	queryService params, ( data ) ->
 		oTemp = convertTemperature data[ 0 ].current_temp
-		switch tempUnit
-			when "K" then val = oTemp.kelvin
-			when "F" then val = oTemp.fahrenheit
-			else val = oTemp.celsius
-		if val > parseFloat tempThreshold
-			pushEvent oTemp
+		if oTemp
+			switch tempUnit
+				when "K" then val = oTemp.kelvin
+				when "F" then val = oTemp.fahrenheit
+				else val = oTemp.celsius
+			if val > parseFloat tempThreshold
+				pushEvent oTemp
+		else
+			log "Can't grab temperature from #{ data[ 0 ].current_temp }"
