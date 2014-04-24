@@ -45,19 +45,23 @@ exports = module.exports = ( args ) =>
 	module.exports
 
 indexEvent = ( event, body, resp ) ->
-	try
 		if typeof body is 'string'
-			obj = payload: JSON.parse body
+			try
+				obj = qs.parse body
+			catch err
+				try
+					obj = JSON.parse body
+				catch err
+					resp.send 400, 'Badly formed event!'
+					return
 		else
-			obj = payload: body
+			obj = body
 		timestamp = ( new Date() ).toISOString()
 		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
 		obj.event = event
 		obj.eventid = "#{ obj.event }_UTC|#{ timestamp }_#{ rand }"
 		db.pushEvent obj
 		resp.send 200, "Thank you for the event: #{ obj.eventid }"
-	catch err
-		resp.send 400, 'Badly formed event!'
 
 # Activate a webhook. the body will be JSON parsed, the name of the webhook will
 # be the event name given to the event object, a timestamp will be added
@@ -69,8 +73,6 @@ activateWebHook = ( app, name ) =>
 			body += data
 
 		req.on 'end', ->
-			console.log body
-			console.log typeof body
 			indexEvent name, body, resp
 			# This is a hack to quickly allow storing of public accessible data
 			if name is 'uptimestatistics'

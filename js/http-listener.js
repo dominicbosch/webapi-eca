@@ -50,26 +50,28 @@ HTTP Listener
 
   indexEvent = function(event, body, resp) {
     var err, obj, rand, timestamp;
-    try {
-      if (typeof body === 'string') {
-        obj = {
-          payload: JSON.parse(body)
-        };
-      } else {
-        obj = {
-          payload: body
-        };
+    if (typeof body === 'string') {
+      try {
+        obj = qs.parse(body);
+      } catch (_error) {
+        err = _error;
+        try {
+          obj = JSON.parse(body);
+        } catch (_error) {
+          err = _error;
+          resp.send(400, 'Badly formed event!');
+          return;
+        }
       }
-      timestamp = (new Date()).toISOString();
-      rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
-      obj.event = event;
-      obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
-      db.pushEvent(obj);
-      return resp.send(200, "Thank you for the event: " + obj.eventid);
-    } catch (_error) {
-      err = _error;
-      return resp.send(400, 'Badly formed event!');
+    } else {
+      obj = body;
     }
+    timestamp = (new Date()).toISOString();
+    rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+    obj.event = event;
+    obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
+    db.pushEvent(obj);
+    return resp.send(200, "Thank you for the event: " + obj.eventid);
   };
 
   activateWebHook = (function(_this) {
@@ -83,8 +85,6 @@ HTTP Listener
         });
         return req.on('end', function() {
           var fPath;
-          console.log(body);
-          console.log(typeof body);
           indexEvent(name, body, resp);
           if (name === 'uptimestatistics') {
             fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
