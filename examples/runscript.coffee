@@ -33,13 +33,20 @@ sandbox =
   importio: importio
   log: console.log
   debug: console.log
+  setTimeout: setTimeout
   exports: {}
   pushEvent: ( obj ) ->
     console.log obj
 
 vm.runInNewContext src, sandbox, sandbox.id
 
-sandbox.exports[ process.argv[ 3 ] ].apply null, [ "param1", "param2", "param3", "param4" ]
+# sandbox.exports[ process.argv[ 3 ] ].apply null, [ "FS14", "FS14 - CS108", "param3", "param4" ]
+sandbox.exports[ process.argv[ 3 ] ].apply null, [ 
+  useraccount: "10595"
+  semester: "FS14"
+  studies: "BSC4"
+  major: "BL"
+]
 
 console.log "If no error happened until here it seems the script
   compiled and ran correctly! Congrats!"
