@@ -39,6 +39,11 @@ Dynamic Modules
 
   log.info('EP | Event Poller starts up');
 
+  process.on('uncaughtException', function(err) {
+    log.error('Probably one of the event pollers created an error in a callback function!');
+    return log.error(err);
+  });
+
   db({
     logger: log
   });

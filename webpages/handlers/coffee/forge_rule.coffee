@@ -62,11 +62,18 @@ fOnLoad = () ->
 # EVENT
 
 	# If the user is coming from an event he wants a rule to be setup for him
-	if oParams.eventname
-		$( '#select_event_type' ).val 'Custom Event'
-		inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
-		inpEvt.val oParams.eventname
-		$( '#event_parameters' ).append inpEvt
+	switch oParams.eventtype
+		when 'custom'
+			$( '#select_event_type' ).val 'Custom Event'
+			inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
+			inpEvt.val oParams.eventname
+			$( '#event_parameters' ).append inpEvt
+
+		when 'webhook'
+			console.log 'webhook'
+
+		when 'poller'
+			console.log 'poller'
 
 	# Event type is changed, changes the whole event section
 	$( '#select_event_type' ).change () ->

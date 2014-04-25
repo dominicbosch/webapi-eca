@@ -21,6 +21,8 @@ request = require 'request'
 importio = require( 'import-io' ).client
 
 params = JSON.parse fs.readFileSync 'params.json', 'utf8'
+arrArgs = JSON.parse fs.readFileSync 'arguments.json', 'utf8'
+
 code = fs.readFileSync process.argv[ 2 ], 'utf8'
 src = cs.compile code
 
@@ -40,13 +42,7 @@ sandbox =
 
 vm.runInNewContext src, sandbox, sandbox.id
 
-# sandbox.exports[ process.argv[ 3 ] ].apply null, [ "FS14", "FS14 - CS108", "param3", "param4" ]
-sandbox.exports[ process.argv[ 3 ] ].apply null, [ 
-  useraccount: "10595"
-  semester: "FS14"
-  studies: "BSC4"
-  major: "BL"
-]
+console.log sandbox.exports[ process.argv[ 3 ] ].apply null, arrArgs
 
 console.log "If no error happened until here it seems the script
   compiled and ran correctly! Congrats!"

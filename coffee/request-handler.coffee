@@ -110,11 +110,14 @@ exports.handleEvent = ( req, resp ) ->
 
 	req.on 'end', ->
 		#if req.session and req.session.user
+		console.log typeof body
+		console.log body
 		try
 			obj = JSON.parse body
 		catch err
 			resp.send 400, 'Badly formed event!'
 		# If required event properties are present we process the event #
+		console.log obj
 		if obj and obj.event and not err
 			timestamp = ( new Date() ).toISOString()
 			rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
@@ -360,4 +363,66 @@ exports.handleAdminCommand = ( req, resp ) =>
 					resp.send obj.code, obj
 	else
 		resp.send 401, 'You need to be logged in as admin!'
-	
+
+
+indexEvent = ( event, body, resp ) ->
+		if typeof body is 'string'
+			try
+				obj = qs.parse body
+			catch err
+				try
+					obj = JSON.parse body
+				catch err
+					resp.send 400, 'Badly formed event!'
+					return
+		else
+			obj = body
+		timestamp = ( new Date() ).toISOString()
+		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
+		obj.event = event
+		obj.eventid = "#{ obj.event }_UTC|#{ timestamp }_#{ rand }"
+		db.pushEvent obj
+		resp.send 200, "Thank you for the event: #{ obj.eventid }"
+		obj
+
+###
+Handles webhook posts
+###
+exports.handleWebhooks = ( req, resp ) =>
+	console.log 'RH | IMPLEMENT WEBHOOKS'
+
+###
+Handles measurement posts
+###
+exports.handleMeasurements = ( req, resp ) =>
+	body = ''
+	req.on 'data', ( data ) ->
+		body += data
+
+	req.on 'end', ->
+		obj = indexEvent name, body, resp
+		if obj.eventname is 'uptimestatistics'
+			# This is a hack to quickly allow storing of public accessible data
+			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
+			fs.writeFile fPath, JSON.stringify( JSON.parse( body ), undefined, 2 ), 'utf8'
+
+# Activate a webhook. the body will be JSON parsed, the name of the webhook will
+# be the event name given to the event object, a timestamp will be added
+activateWebHook = ( app, name ) =>
+	@log.info "HL | Webhook activated for #{ name }"
+	app.post "/webhooks/#{ name }", ( req, resp ) ->
+		body = ''
+		req.on 'data', ( data ) ->
+			body += data
+
+		req.on 'end', ->
+			indexEvent name, body, resp
+
+# Remove a webhook
+removeWebHook = ( app, hookid ) =>
+	@log.info "HL | Removing Webhook for #{ hookid }"
+	isFound = false
+	for oRoute, i in app.routes.post
+		if oRoute.path is "/webhooks/#{ name }"
+			app.routes.post.splice i, 1
+			isFound = true

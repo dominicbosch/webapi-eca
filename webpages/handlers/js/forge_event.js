@@ -73,7 +73,7 @@
               sel = "&selkey=" + oSelector.key + "&selval=" + oSelector.val;
             }
           }
-          url = 'forge?page=forge_rule&eventname=' + obj.event + sel;
+          url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.event + sel;
           return window.open(url, '_blank');
         } else {
           $('#info').text('Please provide a valid eventname');

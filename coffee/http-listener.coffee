@@ -19,8 +19,6 @@ db = require './persistence'
 #   [querystring](http://nodejs.org/api/querystring.html)
 path = require 'path'
 qs = require 'querystring'
-fs = require 'fs'
-path = require 'path'
 
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
@@ -43,41 +41,6 @@ exports = module.exports = ( args ) =>
 	requestHandler args
 	initRouting args[ 'http-port' ]
 	module.exports
-
-indexEvent = ( event, body, resp ) ->
-		if typeof body is 'string'
-			try
-				obj = qs.parse body
-			catch err
-				try
-					obj = JSON.parse body
-				catch err
-					resp.send 400, 'Badly formed event!'
-					return
-		else
-			obj = body
-		timestamp = ( new Date() ).toISOString()
-		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
-		obj.event = event
-		obj.eventid = "#{ obj.event }_UTC|#{ timestamp }_#{ rand }"
-		db.pushEvent obj
-		resp.send 200, "Thank you for the event: #{ obj.eventid }"
-
-# Activate a webhook. the body will be JSON parsed, the name of the webhook will
-# be the event name given to the event object, a timestamp will be added
-activateWebHook = ( app, name ) =>
-	@log.info "HL | Webhook activated for #{ name }"
-	app.post "/webhooks/#{ name }", ( req, resp ) ->
-		body = ''
-		req.on 'data', ( data ) ->
-			body += data
-
-		req.on 'end', ->
-			indexEvent name, body, resp
-			# This is a hack to quickly allow storing of public accessible data
-			if name is 'uptimestatistics'
-				fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-				fs.writeFile fPath, JSON.stringify( JSON.parse( body ), undefined, 2 ), 'utf8'
 
 ###
 Initializes the request routing and starts listening on the given port.
@@ -118,8 +81,10 @@ initRouting = ( port ) =>
 	app.post '/usercommand', requestHandler.handleUserCommand
 	# - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
 	app.post '/admincommand', requestHandler.handleAdminCommand
-	# - **`POST` to _"/webhooks/*"_:** Webhooks can be added in the config file
-	activateWebHook app, hookName for hookName in @arrWebhooks 
+	# - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
+	app.post '/webhooks', requestHandler.handleWebhooks
+	# - **`POST` to _"/measurements/*"_:** We also want to record measurements
+	app.post '/measurements', requestHandler.handleMeasurements
 
 	server = app.listen parseInt( port ) || 8111 # inbound event channel
 

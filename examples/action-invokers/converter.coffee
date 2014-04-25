@@ -87,3 +87,32 @@ fConvertTimeStringToDate = ( text ) ->
 	if start < new Date()
 		start.setDate start.getDate() + 1
 	start
+
+degToRad = ( deg ) ->
+	deg * Math.PI / 180
+
+exports.LongLatToMeterDistance = ( latOne, longOne, latTwo, longTwo, eventname ) ->
+	earthRadius = 3958.75
+	latOne = parseFloat latOne
+	longOne = parseFloat longOne
+	latTwo = parseFloat latTwo
+	longTwo = parseFloat longTwo
+	if isNaN latOne or isNaN longOne or isNaN latTwo or isNaN longTwo
+		log "Illegal values detected in yur given parameters:
+			#{ latOne }, #{ longOne }, #{ latTwo }, #{ longTwo }"
+		return
+	dLat = degToRad latTwo - latOne 
+	dLng = degToRad longTwo - longOne
+	a = Math.sin( dLat / 2 ) * Math.sin( dLat / 2 ) +
+			Math.cos( degToRad latOne ) * Math.cos( degToRad latTwo ) *
+			Math.sin( dLng / 2 ) * Math.sin( dLng / 2 )
+	c = 2 * Math.atan2 Math.sqrt( a ), Math.sqrt 1 - a
+	
+	pushEvent
+		event: eventname
+		body:
+			latOne: latOne
+			longOne: longOne
+			latTwo: latTwo
+			longTwo: longTwo
+			distance: earthRadius * c * 1609 # meter conversion

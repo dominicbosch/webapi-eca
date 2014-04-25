@@ -31,6 +31,10 @@ logconf[ 'file-path' ] = process.argv[ 5 ]
 log = logger.getLogger logconf
 log.info 'EP | Event Poller starts up'
 
+process.on 'uncaughtException', ( err ) ->
+	log.error 'Probably one of the event pollers created an error in a callback function!'
+	log.error err
+
 # Initialize required modules (should be in cache already)
 db logger: log
 dynmod

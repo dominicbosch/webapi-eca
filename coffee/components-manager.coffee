@@ -445,40 +445,38 @@ commandFunctions =
 				message: 'OK!'
 
 
+# WEBHOOKS
 	create_webhook: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'hookname' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getWebhooks ( err, hooks ) =>
-				if hooks.indexOf oBody.hookname > -1
+			db.getUserWebhooks user.username, ( err, hooks ) =>
+				if hooks.indexOf( oBody.hookname ) > -1
 					answ.code = 409
 					answ.message = 'Webhook already existing: ' + oBody.hookname
 					callback answ
 				else
-					db.storeWebhook user.username, oBody.hookname
-					callback
-						code: 200
-						message: 'OK!'
+					db.getAllWebhookIDs ( arrHooks ) ->
+						genHookID = ( arrHooks ) ->
+							hookid = ''
+							for i in [0..1]
+								hookid += Math.random().toString( 36 ).substring 2
+							if arrHooks and arrHooks.indexOf( hookid ) > -1
+								genHookID arrHooks
+							else
+								hookid
+						hookid = genHookID arrHooks
+						db.createWebhook user.username, oBody.hookname, hookid
+						callback
+							code: 200
+							message: JSON.stringify
+								hookid: hookid
 
-	delete_webhook: ( user, oBody, callback ) ->
-		answ = hasRequiredParams [ 'hookname' ], oBody
-		if answ.code isnt 200
-			callback answ
-		else
-			db.getWebhooks ( err, hooks ) =>
-				if hooks.indexOf oBody.hookname is -1
-					answ.code = 409
-					answ.message = 'Webhook does not exist: ' + oBody.hookname
-					callback answ
-				else
-					db.deleteWebhook user.username, oBody.hookname
-					callback
-						code: 200
-						message: 'OK!'
-		
-	get_webhooks: ( user, oBody, callback ) ->
-		db.getWebhooks user.username, ( err, data ) ->
+
+
+	get_all_webhooks: ( user, oBody, callback ) ->
+		db.getUserWebhooks user.username, ( err, data ) ->
 			if err
 				callback
 					code: 400
@@ -488,3 +486,24 @@ commandFunctions =
 					code: 200
 					message: JSON.stringify data
 
+
+
+
+
+
+	delete_webhook: ( user, oBody, callback ) ->
+		answ = hasRequiredParams [ 'hookname' ], oBody
+		if answ.code isnt 200
+			callback answ
+		else
+			db.getUserWebhooks user.username, ( err, hooks ) =>
+				if hooks.indexOf( oBody.hookname ) is -1
+					answ.code = 409
+					answ.message = 'Webhook does not exist: ' + oBody.hookname
+					callback answ
+				else
+					db.deleteUserWebhook user.username, oBody.hookname
+					callback
+						code: 200
+						message: 'OK!'
+		

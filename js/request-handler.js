@@ -11,7 +11,7 @@ Request Handler
  */
 
 (function() {
-  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, pathUsers, qs, renderPage;
+  var activateWebHook, crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, indexEvent, mustache, path, pathUsers, qs, removeWebHook, renderPage;
 
   db = require('./persistence');
 
@@ -127,12 +127,15 @@ Request Handler
     });
     return req.on('end', function() {
       var answ, err, obj, rand, timestamp;
+      console.log(typeof body);
+      console.log(body);
       try {
         obj = JSON.parse(body);
       } catch (_error) {
         err = _error;
         resp.send(400, 'Badly formed event!');
       }
+      console.log(obj);
       if (obj && obj.event && !err) {
         timestamp = (new Date()).toISOString();
         rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
@@ -432,6 +435,103 @@ Request Handler
       } else {
         return resp.send(401, 'You need to be logged in as admin!');
       }
+    };
+  })(this);
+
+  indexEvent = function(event, body, resp) {
+    var err, obj, rand, timestamp;
+    if (typeof body === 'string') {
+      try {
+        obj = qs.parse(body);
+      } catch (_error) {
+        err = _error;
+        try {
+          obj = JSON.parse(body);
+        } catch (_error) {
+          err = _error;
+          resp.send(400, 'Badly formed event!');
+          return;
+        }
+      }
+    } else {
+      obj = body;
+    }
+    timestamp = (new Date()).toISOString();
+    rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
+    obj.event = event;
+    obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
+    db.pushEvent(obj);
+    resp.send(200, "Thank you for the event: " + obj.eventid);
+    return obj;
+  };
+
+
+  /*
+  Handles webhook posts
+   */
+
+  exports.handleWebhooks = (function(_this) {
+    return function(req, resp) {
+      return console.log('RH | IMPLEMENT WEBHOOKS');
+    };
+  })(this);
+
+
+  /*
+  Handles measurement posts
+   */
+
+  exports.handleMeasurements = (function(_this) {
+    return function(req, resp) {
+      var body;
+      body = '';
+      req.on('data', function(data) {
+        return body += data;
+      });
+      return req.on('end', function() {
+        var fPath, obj;
+        obj = indexEvent(name, body, resp);
+        if (obj.eventname === 'uptimestatistics') {
+          fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
+          return fs.writeFile(fPath, JSON.stringify(JSON.parse(body), void 0, 2), 'utf8');
+        }
+      });
+    };
+  })(this);
+
+  activateWebHook = (function(_this) {
+    return function(app, name) {
+      _this.log.info("HL | Webhook activated for " + name);
+      return app.post("/webhooks/" + name, function(req, resp) {
+        var body;
+        body = '';
+        req.on('data', function(data) {
+          return body += data;
+        });
+        return req.on('end', function() {
+          return indexEvent(name, body, resp);
+        });
+      });
+    };
+  })(this);
+
+  removeWebHook = (function(_this) {
+    return function(app, hookid) {
+      var i, isFound, oRoute, _i, _len, _ref, _results;
+      _this.log.info("HL | Removing Webhook for " + hookid);
+      isFound = false;
+      _ref = app.routes.post;
+      _results = [];
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+        oRoute = _ref[i];
+        if (oRoute.path === ("/webhooks/" + name)) {
+          app.routes.post.splice(i, 1);
+          _results.push(isFound = true);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     };
   })(this);
 

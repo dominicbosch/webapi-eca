@@ -1044,8 +1044,37 @@ Persistence
    */
 
   exports.createWebhook = (function(_this) {
-    return function(userId, hookname) {
-      return _this.db.sadd("user:" + userId + ":webhooks", hookname, replyHandler("sadd 'user:" + userId + ":webhooks' -> '" + hookname + "'"));
+    return function(userId, hookname, hookid) {
+      _this.db.sadd("user:" + userId + ":webhooks", hookname, replyHandler("sadd 'user:" + userId + ":webhooks' -> '" + hookname + "'"));
+      return _this.db.sadd("webhooks", hookid, replyHandler("sadd 'webhooks' -> '" + hookid + "'"));
+    };
+  })(this);
+
+
+  /*
+  Gets all the users webhooks.
+  
+  @public getWebhooks( *userId* )
+  @param {String} userId
+   */
+
+  exports.getUserWebhooks = (function(_this) {
+    return function(userId, cb) {
+      return _this.db.smembers("user:" + userId + ":webhooks", cb);
+    };
+  })(this);
+
+
+  /*
+  Gets all the users webhooks.
+  
+  @public getWebhooks( *userId* )
+  @param {String} userId
+   */
+
+  exports.getAllWebhookIDs = (function(_this) {
+    return function(cb) {
+      return _this.db.smembers("webhooks", cb);
     };
   })(this);
 
@@ -1058,23 +1087,9 @@ Persistence
   @param {String} hookname
    */
 
-  exports.deleteWebhook = (function(_this) {
+  exports.deleteUserWebhook = (function(_this) {
     return function(userId, hookname) {
       return _this.db.srem("user:" + userId + ":webhooks", hookname, replyHandler("srem 'user:" + userId + ":webhooks' -> '" + hookname + "'"));
-    };
-  })(this);
-
-
-  /*
-  Gets all the users webhooks.
-  
-  @public getWebhooks( *userId* )
-  @param {String} userId
-   */
-
-  exports.getWebhooks = (function(_this) {
-    return function(userId, cb) {
-      return _this.db.smembers("user:" + userId + ":webhooks", cb);
     };
   })(this);
 

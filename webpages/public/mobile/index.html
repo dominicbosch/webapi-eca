@@ -7,24 +7,44 @@
   <body>
     <h1>Mobile Page</h1>
     <script>
-      function displayPosition(position) {
+
+      var arrParams = window.location.search.substring( 1 ).split( '&' );
+      var oParams = {};
+      var hookid, arrKV;
+      for( var i = 0; i < arrParams.length; i++ ) {
+        arrKV = arrParams[ i ].split( '=' );
+        if( arrKV[ 0 ] === 'hookid' ) hookid = arrKV[ 1 ]
+      }
+      function displayPosition( position ) {
         var lat = position.coords.latitude,
             lon = position.coords.longitude;
-        $('#print').html("<table border='1'><tr><th>Timestamp</th><td>" + position.timestamp +
-        "<tr><th>Latitude</th><td>" + lat + " deg</td></tr>" +
-        "<tr><th>Longitude</th><td>" + lon + " deg</td></tr></table>");
+        $('#print').html("<h3>You're here!</h3>");
+        // $('#print').html("<table border='1'><tr><th>Timestamp</th><td>" + position.timestamp +
+        // "<tr><th>Latitude</th><td>" + lat + " deg</td></tr>" +
+        // "<tr><th>Longitude</th><td>" + lon + " deg</td></tr></table>");
         
         var img_url="http://maps.googleapis.com/maps/api/staticmap?center="
         +lat+","+lon+"&zoom=15&size=400x300&sensor=false&maptype=roadmap&markers=color:orange|label:1|"+lat+","+lon;
         
         document.getElementById("mapholder").innerHTML="<img src='"+img_url+"'>";
-        $.post('../push_event', { event: 'geoposition', eventid: 'geoposition_' + position.timestamp })
-        .done(function(data) {
-          $('#info').text("Sent event to engine: " + data);
-        })
-        .fail(function(err) {
-          $('#info').text("Error: " + err);
-        });
+        var fPostPosition = function() {
+          var url = '../event';
+          if( hookid ) url = '../webhooks/' + hookid
+          $.post( url, JSON.stringify({
+            event: 'geoposition',
+            latitude: lat,
+            longitude: lon
+          }))
+          .done(function(data) {
+            $('#info').text("Sent event to engine: " + data.message);
+          })
+          .fail(function(err) {
+            $('#info').text("Error: " + err);
+          });
+          // Post position every 5 mins 
+          setTimeout( fPostPosition, 5 * 60 * 1000 );
+        }
+        fPostPosition()
       }
        
       function displayError(positionError) {

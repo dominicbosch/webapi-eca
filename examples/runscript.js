@@ -9,7 +9,7 @@ compilation and running of module code
  */
 
 (function() {
-  var code, crypto, cs, fs, importio, needle, params, request, sandbox, src, vm;
+  var arrArgs, code, crypto, cs, fs, importio, needle, params, request, sandbox, src, vm;
 
   if (!process.argv[2]) {
     console.log('Please provide a path to a coffee file');
@@ -31,6 +31,8 @@ compilation and running of module code
   importio = require('import-io').client;
 
   params = JSON.parse(fs.readFileSync('params.json', 'utf8'));
+
+  arrArgs = JSON.parse(fs.readFileSync('arguments.json', 'utf8'));
 
   code = fs.readFileSync(process.argv[2], 'utf8');
 
@@ -54,14 +56,7 @@ compilation and running of module code
 
   vm.runInNewContext(src, sandbox, sandbox.id);
 
-  sandbox.exports[process.argv[3]].apply(null, [
-    {
-      useraccount: "10595",
-      semester: "FS14",
-      studies: "BSC4",
-      major: "BL"
-    }
-  ]);
+  console.log(sandbox.exports[process.argv[3]].apply(null, arrArgs));
 
   console.log("If no error happened until here it seems the script compiled and ran correctly! Congrats!");
 

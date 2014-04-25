@@ -10,7 +10,7 @@ HTTP Listener
  */
 
 (function() {
-  var activateWebHook, app, db, exports, express, fs, indexEvent, initRouting, path, qs, requestHandler;
+  var app, db, exports, express, initRouting, path, qs, requestHandler;
 
   requestHandler = require('./request-handler');
 
@@ -19,10 +19,6 @@ HTTP Listener
   path = require('path');
 
   qs = require('querystring');
-
-  fs = require('fs');
-
-  path = require('path');
 
   express = require('express');
 
@@ -48,53 +44,6 @@ HTTP Listener
     };
   })(this);
 
-  indexEvent = function(event, body, resp) {
-    var err, obj, rand, timestamp;
-    if (typeof body === 'string') {
-      try {
-        obj = qs.parse(body);
-      } catch (_error) {
-        err = _error;
-        try {
-          obj = JSON.parse(body);
-        } catch (_error) {
-          err = _error;
-          resp.send(400, 'Badly formed event!');
-          return;
-        }
-      }
-    } else {
-      obj = body;
-    }
-    timestamp = (new Date()).toISOString();
-    rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
-    obj.event = event;
-    obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
-    db.pushEvent(obj);
-    return resp.send(200, "Thank you for the event: " + obj.eventid);
-  };
-
-  activateWebHook = (function(_this) {
-    return function(app, name) {
-      _this.log.info("HL | Webhook activated for " + name);
-      return app.post("/webhooks/" + name, function(req, resp) {
-        var body;
-        body = '';
-        req.on('data', function(data) {
-          return body += data;
-        });
-        return req.on('end', function() {
-          var fPath;
-          indexEvent(name, body, resp);
-          if (name === 'uptimestatistics') {
-            fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
-            return fs.writeFile(fPath, JSON.stringify(JSON.parse(body), void 0, 2), 'utf8');
-          }
-        });
-      });
-    };
-  })(this);
-
 
   /*
   Initializes the request routing and starts listening on the given port.
@@ -105,7 +54,7 @@ HTTP Listener
 
   initRouting = (function(_this) {
     return function(port) {
-      var hookName, server, sess_sec, _i, _len, _ref;
+      var server, sess_sec;
       app.use(express.cookieParser());
       sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
       app.use(express.session({
@@ -120,11 +69,8 @@ HTTP Listener
       app.post('/logout', requestHandler.handleLogout);
       app.post('/usercommand', requestHandler.handleUserCommand);
       app.post('/admincommand', requestHandler.handleAdminCommand);
-      _ref = _this.arrWebhooks;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        hookName = _ref[_i];
-        activateWebHook(app, hookName);
-      }
+      app.post('/webhooks', requestHandler.handleWebhooks);
+      app.post('/measurements', requestHandler.handleMeasurements);
       server = app.listen(parseInt(port) || 8111);
       server.on('listening', function() {
         var addr;

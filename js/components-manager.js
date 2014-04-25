@@ -568,48 +568,43 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getWebhooks((function(_this) {
+        return db.getUserWebhooks(user.username, (function(_this) {
           return function(err, hooks) {
-            if (hooks.indexOf(oBody.hookname > -1)) {
+            if (hooks.indexOf(oBody.hookname) > -1) {
               answ.code = 409;
               answ.message = 'Webhook already existing: ' + oBody.hookname;
               return callback(answ);
             } else {
-              db.storeWebhook(user.username, oBody.hookname);
-              return callback({
-                code: 200,
-                message: 'OK!'
+              return db.getAllWebhookIDs(function(arrHooks) {
+                var genHookID, hookid;
+                genHookID = function(arrHooks) {
+                  var hookid, i, _i;
+                  hookid = '';
+                  for (i = _i = 0; _i <= 1; i = ++_i) {
+                    hookid += Math.random().toString(36).substring(2);
+                  }
+                  if (arrHooks && arrHooks.indexOf(hookid) > -1) {
+                    return genHookID(arrHooks);
+                  } else {
+                    return hookid;
+                  }
+                };
+                hookid = genHookID(arrHooks);
+                db.createWebhook(user.username, oBody.hookname, hookid);
+                return callback({
+                  code: 200,
+                  message: JSON.stringify({
+                    hookid: hookid
+                  })
+                });
               });
             }
           };
         })(this));
       }
     },
-    delete_webhook: function(user, oBody, callback) {
-      var answ;
-      answ = hasRequiredParams(['hookname'], oBody);
-      if (answ.code !== 200) {
-        return callback(answ);
-      } else {
-        return db.getWebhooks((function(_this) {
-          return function(err, hooks) {
-            if (hooks.indexOf(oBody.hookname === -1)) {
-              answ.code = 409;
-              answ.message = 'Webhook does not exist: ' + oBody.hookname;
-              return callback(answ);
-            } else {
-              db.deleteWebhook(user.username, oBody.hookname);
-              return callback({
-                code: 200,
-                message: 'OK!'
-              });
-            }
-          };
-        })(this));
-      }
-    },
-    get_webhooks: function(user, oBody, callback) {
-      return db.getWebhooks(user.username, function(err, data) {
+    get_all_webhooks: function(user, oBody, callback) {
+      return db.getUserWebhooks(user.username, function(err, data) {
         if (err) {
           return callback({
             code: 400,
@@ -622,6 +617,29 @@ Components Manager
           });
         }
       });
+    },
+    delete_webhook: function(user, oBody, callback) {
+      var answ;
+      answ = hasRequiredParams(['hookname'], oBody);
+      if (answ.code !== 200) {
+        return callback(answ);
+      } else {
+        return db.getUserWebhooks(user.username, (function(_this) {
+          return function(err, hooks) {
+            if (hooks.indexOf(oBody.hookname) === -1) {
+              answ.code = 409;
+              answ.message = 'Webhook does not exist: ' + oBody.hookname;
+              return callback(answ);
+            } else {
+              db.deleteUserWebhook(user.username, oBody.hookname);
+              return callback({
+                code: 200,
+                message: 'OK!'
+              });
+            }
+          };
+        })(this));
+      }
     }
   };
 

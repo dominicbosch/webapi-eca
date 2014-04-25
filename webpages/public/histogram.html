@@ -10,6 +10,7 @@
 <body>
     <script>
     google.setOnLoadCallback(drawChart);
+    var dateNow = new Date()
     function drawChart() {
         $.getJSON('data/histochart.json', function(d) {
             var data = new google.visualization.DataTable();
@@ -23,7 +24,7 @@
                 intervals: { 'style':'line' },
                 legend: 'none',
                 vAxis: { title: "Number of Responding Hosts" },
-                hAxis: { title: "Timestamp", format: "MMM d, HH:mm" }
+                hAxis: { title: "Timestamp", format: "MMM d, HH" }
             };
             var dat = d.pingtimes;
             for(var prop in dat) {

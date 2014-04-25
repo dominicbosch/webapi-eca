@@ -68,11 +68,18 @@
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
-    if (oParams.eventname) {
-      $('#select_event_type').val('Custom Event');
-      inpEvt = $('<input>').attr('type', 'text').attr('id', 'input_eventname');
-      inpEvt.val(oParams.eventname);
-      $('#event_parameters').append(inpEvt);
+    switch (oParams.eventtype) {
+      case 'custom':
+        $('#select_event_type').val('Custom Event');
+        inpEvt = $('<input>').attr('type', 'text').attr('id', 'input_eventname');
+        inpEvt.val(oParams.eventname);
+        $('#event_parameters').append(inpEvt);
+        break;
+      case 'webhook':
+        console.log('webhook');
+        break;
+      case 'poller':
+        console.log('poller');
     }
     $('#select_event_type').change(function() {
       $('#event_parameters *').remove();

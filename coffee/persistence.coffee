@@ -801,9 +801,28 @@ Creates and stores a webhook.
 @param {String} userId
 @param {String} hookname
 ###
-exports.createWebhook = ( userId, hookname ) =>
+exports.createWebhook = ( userId, hookname, hookid ) =>
 	@db.sadd "user:#{ userId }:webhooks", hookname,
 		replyHandler "sadd 'user:#{ userId }:webhooks' -> '#{ hookname }'"
+	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
+
+###
+Gets all the users webhooks.
+
+@public getWebhooks( *userId* )
+@param {String} userId
+###
+exports.getUserWebhooks = ( userId, cb ) =>
+	@db.smembers "user:#{ userId }:webhooks", cb
+
+###
+Gets all the users webhooks.
+
+@public getWebhooks( *userId* )
+@param {String} userId
+###
+exports.getAllWebhookIDs = ( cb ) =>
+	@db.smembers "webhooks", cb
 
 ###
 Deletes a webhook.
@@ -812,18 +831,9 @@ Deletes a webhook.
 @param {String} userId
 @param {String} hookname
 ###
-exports.deleteWebhook = ( userId, hookname ) =>
+exports.deleteUserWebhook = ( userId, hookname ) =>
 	@db.srem "user:#{ userId }:webhooks", hookname,
 		replyHandler "srem 'user:#{ userId }:webhooks' -> '#{ hookname }'"
-
-###
-Gets all the users webhooks.
-
-@public getWebhooks( *userId* )
-@param {String} userId
-###
-exports.getWebhooks = ( userId, cb ) =>
-	@db.smembers "user:#{ userId }:webhooks", cb
 
 ###
 Shuts down the db link.
