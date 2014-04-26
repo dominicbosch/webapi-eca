@@ -57,7 +57,6 @@ Engine
     return function(args) {
       if (!isRunning) {
         _this.log = args.logger;
-        db(args);
         dynmod(args);
         setTimeout(exports.startEngine, 10);
         return module.exports;
@@ -96,19 +95,19 @@ Engine
   exports.internalEvent = (function(_this) {
     return function(evt) {
       var oRule, oUser;
-      if (!listUserRules[evt.user] && evt.event !== 'del') {
+      if (!listUserRules[evt.user] && evt.intevent !== 'del') {
         listUserRules[evt.user] = {};
       }
       oUser = listUserRules[evt.user];
       oRule = evt.rule;
-      if (evt.event === 'new' || (evt.event === 'init' && !oUser[oRule.id])) {
+      if (evt.intevent === 'new' || (evt.intevent === 'init' && !oUser[oRule.id])) {
         oUser[oRule.id] = {
           rule: oRule,
           actions: {}
         };
         updateActionModules(oRule.id);
       }
-      if (evt.event === 'del' && oUser) {
+      if (evt.intevent === 'del' && oUser) {
         delete oUser[evt.ruleId];
       }
       if (JSON.stringify(oUser) === "{}") {
@@ -347,7 +346,7 @@ Engine
           return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
         }
       };
-      _this.log.info('EN | processing event: ' + evt.event + '(' + evt.eventid + ')');
+      _this.log.info('EN | processing event: ' + evt.eventname);
       _results = [];
       for (userName in listUserRules) {
         oUser = listUserRules[userName];
@@ -356,12 +355,12 @@ Engine
           _results1 = [];
           for (ruleName in oUser) {
             oMyRule = oUser[ruleName];
-            ruleEvent = oMyRule.rule.event;
+            ruleEvent = oMyRule.rule.eventname;
             if (oMyRule.rule.timestamp) {
               ruleEvent += '_created:' + oMyRule.rule.timestamp;
             }
-            if (evt.event === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
-              this.log.info('EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName);
+            if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
+              this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
               _results1.push((function() {
                 var _i, _len, _ref, _results2;
                 _ref = oMyRule.rule.actions;

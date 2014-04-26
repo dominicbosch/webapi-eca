@@ -42,12 +42,12 @@ exports.tearDown = ( cb ) ->
 	db.deleteUser oUser.username
 
 	engine.internalEvent
-		event: 'del'
+		intevent: 'del'
 		user: oUser.username
 		rule: oRuleOne
 
 	engine.internalEvent
-		event: 'del'
+		intevent: 'del'
 		user: oUser.username
 		rule: oRuleTwo
 	engine.shutDown()
@@ -67,7 +67,7 @@ exports.ruleEvents =
 		test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'
 
 		engine.internalEvent
-			event: 'new'
+			intevent: 'new'
 			user: oUser.username
 			rule: oRuleOne
 
@@ -79,7 +79,7 @@ exports.ruleEvents =
 	
 
 			engine.internalEvent
-				event: 'new'
+				intevent: 'new'
 				user: oUser.username
 				rule: oRuleTwo
 
@@ -90,7 +90,7 @@ exports.ruleEvents =
 					test.ok listRules[oUser.username][oRuleTwo.id].actions[mod], 'Missing action!'
 		
 				engine.internalEvent
-					event: 'del'
+					intevent: 'del'
 					user: oUser.username
 					rule: null
 					ruleId: oRuleTwo.id
@@ -100,7 +100,7 @@ exports.ruleEvents =
 					test.ok listRules[oUser.username][oRuleOne.id].actions[mod], 'Missing action!'
 		
 				engine.internalEvent
-					event: 'del'
+					intevent: 'del'
 					user: oUser.username
 					rule: null
 					ruleId: oRuleOne.id

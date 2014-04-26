@@ -71,10 +71,10 @@ Dynamic Modules
 
   process.on('message', function(msg) {
     log.info("EP | Got info about new rule: " + msg.event);
-    if (msg.event === 'new' || msg.event === 'init') {
+    if (msg.intevent === 'new' || msg.intevent === 'init') {
       fLoadModule(msg);
     }
-    if (msg.event === 'del') {
+    if (msg.intevent === 'del') {
       delete listUserModules[msg.user][msg.ruleId];
       if (JSON.stringify(listUserModules[msg.user]) === "{}") {
         return delete listUserModules[msg.user];
@@ -84,7 +84,7 @@ Dynamic Modules
 
   fLoadModule = function(msg) {
     var arrName, fAnonymous;
-    arrName = msg.rule.event.split(' -> ');
+    arrName = msg.rule.eventname.split(' -> ');
     fAnonymous = function() {
       return db.eventPollers.getModule(msg.user, arrName[0], function(err, obj) {
         if (!obj) {
@@ -100,15 +100,15 @@ Dynamic Modules
             }
             oUser = listUserModules[msg.user];
             oUser[msg.rule.id] = {
-              id: msg.rule.event,
+              id: msg.rule.eventname,
               timestamp: msg.rule.timestamp,
               pollfunc: arrName[1],
               funcArgs: result.funcArgs,
-              event_interval: msg.rule.event_interval * 60 * 1000,
+              eventinterval: msg.rule.eventinterval * 60 * 1000,
               module: result.module,
               logger: result.logger
             };
-            start = new Date(msg.rule.event_start);
+            start = new Date(msg.rule.eventstart);
             nd = new Date();
             now = new Date();
             if (start < nd) {
@@ -122,13 +122,13 @@ Dynamic Modules
             } else {
               nd = start;
             }
-            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.event_interval + " minutes");
+            log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.eventinterval + " minutes");
             return setTimeout(fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp), nd - now);
           });
         }
       });
     };
-    if (msg.event === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
+    if (msg.intevent === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
       return fAnonymous();
     }
   };
@@ -141,7 +141,7 @@ Dynamic Modules
         if (listUserModules[userId][ruleId].timestamp === timestamp) {
           oRule = listUserModules[userId][ruleId];
           fCallFunction(userId, ruleId, oRule);
-          return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.event_interval);
+          return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.eventinterval);
         } else {
           return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + timestamp);
         }

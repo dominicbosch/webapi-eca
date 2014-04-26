@@ -65,19 +65,19 @@ process.on 'message', ( msg ) ->
 	# Let's split the event string to find module and function in an array
 
 	# A initialization notification or a new rule
-	if msg.event is 'new' or msg.event is 'init'
+	if msg.intevent is 'new' or msg.intevent is 'init'
 		fLoadModule msg
 		# We fetch the module also if the rule was updated
 
 	# A rule was deleted
-	if msg.event is 'del'
+	if msg.intevent is 'del'
 		delete listUserModules[msg.user][msg.ruleId]
 		if JSON.stringify( listUserModules[msg.user] ) is "{}"
 			delete listUserModules[msg.user]
 
 # Loads a module if required
 fLoadModule = ( msg ) ->
-	arrName = msg.rule.event.split ' -> '
+	arrName = msg.rule.eventname.split ' -> '
 	fAnonymous = () ->
 		db.eventPollers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
@@ -103,15 +103,15 @@ fLoadModule = ( msg ) ->
 						oUser = listUserModules[msg.user]
 						# We open up a new object for the rule it
 						oUser[msg.rule.id] =
-							id: msg.rule.event
+							id: msg.rule.eventname
 							timestamp: msg.rule.timestamp
 							pollfunc: arrName[1]
 							funcArgs: result.funcArgs
-							event_interval: msg.rule.event_interval * 60 * 1000
+							eventinterval: msg.rule.eventinterval * 60 * 1000
 							module: result.module
 							logger: result.logger
 
-						start = new Date msg.rule.event_start
+						start = new Date msg.rule.eventstart
 						nd = new Date()
 						now = new Date()
 						if start < nd
@@ -129,10 +129,10 @@ fLoadModule = ( msg ) ->
 						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
 							in rule #{ msg.rule.id }, registered at UTC|#{ msg.rule.timestamp },
 							starting at UTC|#{ start.toISOString() } ( which is in #{ ( nd - now ) / 1000 / 60 } minutes )
-							and polling every #{ msg.rule.event_interval } minutes"
+							and polling every #{ msg.rule.eventinterval } minutes"
 						setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
 
-	if msg.event is 'new' or
+	if msg.intevent is 'new' or
 			not listUserModules[msg.user] or 
 			not listUserModules[msg.user][msg.rule.id]
 		fAnonymous()
@@ -147,7 +147,7 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 			if listUserModules[userId][ruleId].timestamp is timestamp	
 				oRule = listUserModules[userId][ruleId]
 				fCallFunction userId, ruleId, oRule
-				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.event_interval
+				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.eventinterval
 			else
 				log.info "EP | We found a newer polling interval and discontinue this one which
 						was created at UTC|#{ timestamp }"

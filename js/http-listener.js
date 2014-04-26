@@ -64,12 +64,12 @@ HTTP Listener
       app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
       app.get('/admin', requestHandler.handleAdmin);
       app.get('/forge', requestHandler.handleForge);
-      app.post('/event', requestHandler.handleEvent);
       app.post('/login', requestHandler.handleLogin);
       app.post('/logout', requestHandler.handleLogout);
       app.post('/usercommand', requestHandler.handleUserCommand);
       app.post('/admincommand', requestHandler.handleAdminCommand);
-      app.post('/webhooks', requestHandler.handleWebhooks);
+      app.post('/event', requestHandler.handleEvent);
+      app.post('/webhooks/*', requestHandler.handleWebhooks);
       app.post('/measurements', requestHandler.handleMeasurements);
       server = app.listen(parseInt(port) || 8111);
       server.on('listening', function() {

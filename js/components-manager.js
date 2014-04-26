@@ -10,13 +10,15 @@ Components Manager
  */
 
 (function() {
-  var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, forgeModule, fs, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, path, storeModule, storeRule;
+  var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, forgeModule, fs, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, path, rh, storeModule, storeRule;
 
   db = require('./persistence');
 
   dynmod = require('./dynamic-modules');
 
   encryption = require('./encryption');
+
+  rh = require('./request-handler');
 
   fs = require('fs');
 
@@ -67,12 +69,12 @@ Components Manager
                   oRule = JSON.parse(strRule);
                   db.resetLog(userName, oRule.id);
                   eventInfo = '';
-                  if (oRule.event_start) {
-                    eventInfo = "Starting at " + (new Date(oRule.event_start)) + ", Interval set to " + oRule.event_interval + " minutes";
+                  if (oRule.eventstart) {
+                    eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
                   }
                   db.appendLog(userName, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
                   return eventEmitter.emit('rule', {
-                    event: 'init',
+                    intevent: 'init',
                     user: userName,
                     rule: oRule
                   });
@@ -319,48 +321,48 @@ Components Manager
       var args, arr, epModId, eventInfo, id, oFuncArgs, oParams, params, rule, strRule;
       rule = {
         id: oBody.id,
-        event: oBody.event,
-        event_start: oBody.event_start,
-        event_interval: oBody.event_interval,
+        eventname: oBody.eventname,
+        eventstart: oBody.eventstart,
+        eventinterval: oBody.eventinterval,
         conditions: oBody.conditions,
         actions: oBody.actions
       };
-      if (oBody.event_start) {
+      if (oBody.eventstart) {
         rule.timestamp = (new Date()).toISOString();
       }
       strRule = JSON.stringify(rule);
       db.storeRule(rule.id, strRule);
       db.linkRule(rule.id, user.username);
       db.activateRule(rule.id, user.username);
-      if (oBody.event_params) {
-        epModId = rule.event.split(' -> ')[0];
-        db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oBody.event_params));
+      if (oBody.eventparams) {
+        epModId = rule.eventname.split(' -> ')[0];
+        db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oBody.eventparams));
       }
-      oFuncArgs = oBody.event_functions;
+      oFuncArgs = oBody.eventfunctions;
       for (id in oFuncArgs) {
         args = oFuncArgs[id];
         arr = id.split(' -> ');
         db.eventPollers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(args));
       }
-      oParams = oBody.action_params;
+      oParams = oBody.actionparams;
       for (id in oParams) {
         params = oParams[id];
         db.actionInvokers.storeUserParams(id, user.username, JSON.stringify(params));
       }
-      oFuncArgs = oBody.action_functions;
+      oFuncArgs = oBody.actionfunctions;
       for (id in oFuncArgs) {
         args = oFuncArgs[id];
         arr = id.split(' -> ');
         db.actionInvokers.storeUserArguments(user.username, rule.id, arr[0], arr[1], JSON.stringify(args));
       }
       eventInfo = '';
-      if (rule.event_start) {
-        eventInfo = "Starting at " + (new Date(rule.event_start)) + ", Interval set to " + rule.event_interval + " minutes";
+      if (rule.eventstart) {
+        eventInfo = "Starting at " + (new Date(rule.eventstart)) + ", Interval set to " + rule.eventinterval + " minutes";
       }
       db.resetLog(user.username, rule.id);
       db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized. " + eventInfo);
       eventEmitter.emit('rule', {
-        event: 'new',
+        intevent: 'new',
         user: user.username,
         rule: rule
       });
@@ -522,7 +524,7 @@ Components Manager
     },
     forge_rule: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['id', 'event', 'conditions', 'actions'], oBody);
+      answ = hasRequiredParams(['id', 'eventname', 'conditions', 'actions'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
@@ -551,7 +553,7 @@ Components Manager
       } else {
         db.deleteRule(oBody.id);
         eventEmitter.emit('rule', {
-          event: 'del',
+          intevent: 'del',
           user: user.username,
           rule: null,
           ruleId: oBody.id
@@ -568,7 +570,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getUserWebhooks(user.username, (function(_this) {
+        return db.getUserWebhookIDs(user.username, (function(_this) {
           return function(err, hooks) {
             if (hooks.indexOf(oBody.hookname) > -1) {
               answ.code = 409;
@@ -591,6 +593,7 @@ Components Manager
                 };
                 hookid = genHookID(arrHooks);
                 db.createWebhook(user.username, oBody.hookname, hookid);
+                rh.activateWebhook(hookid, oBody.hookname);
                 return callback({
                   code: 200,
                   message: JSON.stringify({
@@ -604,7 +607,7 @@ Components Manager
       }
     },
     get_all_webhooks: function(user, oBody, callback) {
-      return db.getUserWebhooks(user.username, function(err, data) {
+      return db.getAllUserWebhooks(user.username, function(err, data) {
         if (err) {
           return callback({
             code: 400,
@@ -620,25 +623,16 @@ Components Manager
     },
     delete_webhook: function(user, oBody, callback) {
       var answ;
-      answ = hasRequiredParams(['hookname'], oBody);
+      answ = hasRequiredParams(['hookid'], oBody);
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getUserWebhooks(user.username, (function(_this) {
-          return function(err, hooks) {
-            if (hooks.indexOf(oBody.hookname) === -1) {
-              answ.code = 409;
-              answ.message = 'Webhook does not exist: ' + oBody.hookname;
-              return callback(answ);
-            } else {
-              db.deleteUserWebhook(user.username, oBody.hookname);
-              return callback({
-                code: 200,
-                message: 'OK!'
-              });
-            }
-          };
-        })(this));
+        rh.deactivateWebhook(oBody.hookid);
+        db.deleteWebhook(user.username, oBody.hookid);
+        return callback({
+          code: 200,
+          message: 'OK!'
+        });
       }
     }
   };

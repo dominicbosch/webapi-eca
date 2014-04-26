@@ -55,7 +55,7 @@
   },
   "events": {
     "eventOne":{
-      "event": "test_1",
+      "eventname": "test_1",
       "body": {
         "property": "test_1",
         "nestedProperty": {
@@ -64,10 +64,10 @@
       }
     },
     "eventTwo":{
-      "event": "test_2"
+      "eventname": "test_2"
     },
     "eventReal":{
-      "event": "epOne -> newMail",
+      "eventname": "epOne -> newMail",
       "body": {
         "property": "test_1",
         "nestedProperty": {
@@ -79,8 +79,8 @@
   "rules": {
     "ruleOne": {
       "id": "ruleReal",
-      "event": "test_1",
-      "event_interval": 1,
+      "eventname": "test_1",
+      "eventinterval": 1,
       "conditions": 
         [
           {
@@ -91,7 +91,7 @@
           }
         ],
       "actions": ["aiOne -> printToLog"],
-      "action_functions": {
+      "actionfunctions": {
         "aiOne -> printToLog": [
           {
             "argument": "evt",
@@ -103,15 +103,15 @@
     },
     "ruleTwo": {
       "id": "ruleRealTwo",
-      "event": "test_2",
-      "event_interval": 1,
+      "eventname": "test_2",
+      "eventinterval": 1,
       "conditions": [],
       "actions": ["aiTwo -> otherEvent"]
     },
     "ruleThree": {
       "id": "ruleRealThree",
-      "event": "epOne -> newMail",
-      "event_interval": 1,
+      "eventname": "epOne -> newMail",
+      "eventinterval": 1,
       "conditions": [],
       "actions": ["aiThree -> printUserParamToLog"]
     }

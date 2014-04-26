@@ -80,8 +80,6 @@ exports = module.exports = ( args ) =>
 				data.code = 401
 				data.message = 'Missing parameter for this command' 
 			cb null, data
-			
-	db args
 
 	# Load the standard users from the user config file
 	users = JSON.parse fs.readFileSync pathUsers, 'utf8'
@@ -89,18 +87,20 @@ exports = module.exports = ( args ) =>
 		oUser.username = username
 		db.storeUser oUser
 	fStoreUser user, oUser for user, oUser of users
+
+
+	@allowedHooks = {}
+	db.getAllWebhooks ( err, oHooks ) =>
+		if oHooks
+			console
+			@log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
+			@allowedHooks = oHooks
 	module.exports
 
 
 ###
 Handles possible events that were posted to this server and pushes them into the
 event queue.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
 @public handleEvent( *req, resp* )
 ###
 exports.handleEvent = ( req, resp ) ->
@@ -109,30 +109,19 @@ exports.handleEvent = ( req, resp ) ->
 		body += data
 
 	req.on 'end', ->
-		#if req.session and req.session.user
-		console.log typeof body
-		console.log body
 		try
 			obj = JSON.parse body
 		catch err
 			resp.send 400, 'Badly formed event!'
 		# If required event properties are present we process the event #
-		console.log obj
-		if obj and obj.event and not err
-			timestamp = ( new Date() ).toISOString()
-			rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
-			obj.eventid = "#{ obj.event }_UTC|#{ timestamp }_#{ rand }"
+		if obj and obj.eventname and not err
 			answ =
 				code: 200
-				message: "Thank you for the event: #{ obj.eventid }"
+				message: "Thank you for the event: #{ obj.eventname }"
 			resp.send answ.code, answ
 			db.pushEvent obj
 		else
 			resp.send 400, 'Your event was missing important parameters!'
-		# else
-		#   resp.send 401, 'Please login!'
-
-
 
 ###
 Associates the user object with the session if login is successful.
@@ -365,31 +354,23 @@ exports.handleAdminCommand = ( req, resp ) =>
 		resp.send 401, 'You need to be logged in as admin!'
 
 
-indexEvent = ( event, body, resp ) ->
-		if typeof body is 'string'
+indexEvent = ( eventname, body, resp ) ->
+	if typeof body is 'string'
+		try
+			body = JSON.parse body
+		catch err
 			try
-				obj = qs.parse body
+				body = qs.parse body
 			catch err
-				try
-					obj = JSON.parse body
-				catch err
-					resp.send 400, 'Badly formed event!'
-					return
-		else
-			obj = body
-		timestamp = ( new Date() ).toISOString()
-		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
-		obj.event = event
-		obj.eventid = "#{ obj.event }_UTC|#{ timestamp }_#{ rand }"
-		db.pushEvent obj
-		resp.send 200, "Thank you for the event: #{ obj.eventid }"
-		obj
+				resp.send 400, 'Badly formed event!'
+				return
+	obj =
+		eventname: eventname
+		body: body
+	db.pushEvent obj
+	msg = "Thank you for the event: '#{ eventname }'"
+	obj
 
-###
-Handles webhook posts
-###
-exports.handleWebhooks = ( req, resp ) =>
-	console.log 'RH | IMPLEMENT WEBHOOKS'
 
 ###
 Handles measurement posts
@@ -406,23 +387,29 @@ exports.handleMeasurements = ( req, resp ) =>
 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
 			fs.writeFile fPath, JSON.stringify( JSON.parse( body ), undefined, 2 ), 'utf8'
 
-# Activate a webhook. the body will be JSON parsed, the name of the webhook will
-# be the event name given to the event object, a timestamp will be added
-activateWebHook = ( app, name ) =>
-	@log.info "HL | Webhook activated for #{ name }"
-	app.post "/webhooks/#{ name }", ( req, resp ) ->
+###
+Handles webhook posts
+###
+exports.handleWebhooks = ( req, resp ) =>
+	hookid = req.url.substring( 10 ).split( '/' )[ 0 ]
+	hookname = @allowedHooks[ hookid ]
+	if hookname
 		body = ''
 		req.on 'data', ( data ) ->
 			body += data
+		req.on 'end', () ->
+			obj = indexEvent hookname, body, resp
+	else
+		resp.send 404, "Webhook not existing!"
 
-		req.on 'end', ->
-			indexEvent name, body, resp
 
-# Remove a webhook
-removeWebHook = ( app, hookid ) =>
-	@log.info "HL | Removing Webhook for #{ hookid }"
-	isFound = false
-	for oRoute, i in app.routes.post
-		if oRoute.path is "/webhooks/#{ name }"
-			app.routes.post.splice i, 1
-			isFound = true
+# Activate a webhook. the body will be JSON parsed, the name of the webhook will
+# be the event name given to the event object, a timestamp will be added
+exports.activateWebhook = ( hookid, name ) =>
+	@log.info "HL | Webhook '#{ hookid }' activated"
+	@allowedHooks[ hookid ] = name
+
+# Deactivate a webhook
+exports.deactivateWebhook = ( hookid ) =>
+	@log.info "HL | Webhook '#{ hookid }' deactivated"
+	delete @allowedHooks[ hookid ]

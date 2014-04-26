@@ -71,8 +71,6 @@ initRouting = ( port ) =>
 
 	# POST Requests
 
-	# - **`POST` to _"/event"_:** Events coming from remote systems are passed to the engine
-	app.post '/event', requestHandler.handleEvent
 	# - **`POST` to _"/login"_:** Credentials will be verified
 	app.post '/login', requestHandler.handleLogin
 	# - **`POST` to _"/logout"_:** User will be logged out
@@ -81,8 +79,10 @@ initRouting = ( port ) =>
 	app.post '/usercommand', requestHandler.handleUserCommand
 	# - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
 	app.post '/admincommand', requestHandler.handleAdminCommand
+	# - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
+	app.post '/event', requestHandler.handleEvent
 	# - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
-	app.post '/webhooks', requestHandler.handleWebhooks
+	app.post '/webhooks/*', requestHandler.handleWebhooks
 	# - **`POST` to _"/measurements/*"_:** We also want to record measurements
 	app.post '/measurements', requestHandler.handleMeasurements
 

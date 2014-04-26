@@ -16,6 +16,8 @@ db = require './persistence'
 dynmod = require './dynamic-modules'
 # - [Encryption](encryption.html)
 encryption = require './encryption'
+# - [Request Handler](request-handler.html)
+rh = require './request-handler'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
@@ -63,12 +65,13 @@ exports.addRuleListener = ( eh ) =>
 							oRule = JSON.parse strRule
 							db.resetLog userName, oRule.id
 							eventInfo = ''
-							if oRule.event_start
-                eventInfo = "Starting at #{ new Date( oRule.event_start ) }, Interval set to #{ oRule.event_interval } minutes"
+							if oRule.eventstart
+                eventInfo = "Starting at #{ new Date( oRule.eventstart ) },
+                		Interval set to #{ oRule.eventinterval } minutes"
 							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
 							eventEmitter.emit 'rule',
-								event: 'init'
+								intevent: 'init'
 								user: userName
 								rule: oRule
 						catch err
@@ -226,12 +229,12 @@ storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
 		rule =
 			id: oBody.id
-			event: oBody.event
-			event_start: oBody.event_start
-			event_interval: oBody.event_interval
+			eventname: oBody.eventname
+			eventstart: oBody.eventstart
+			eventinterval: oBody.eventinterval
 			conditions: oBody.conditions
 			actions: oBody.actions
-		if oBody.event_start
+		if oBody.eventstart
 			rule.timestamp = (new Date()).toISOString()
 		strRule = JSON.stringify rule
 		# store the rule
@@ -241,35 +244,35 @@ storeRule = ( user, oBody, callback ) =>
 		# activate the rule
 		db.activateRule rule.id, user.username
 		# if event module parameters were send, store them
-		if oBody.event_params
-			epModId = rule.event.split( ' -> ' )[ 0 ]
-			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oBody.event_params
-		oFuncArgs = oBody.event_functions
+		if oBody.eventparams
+			epModId = rule.eventname.split( ' -> ' )[ 0 ]
+			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oBody.eventparams
+		oFuncArgs = oBody.eventfunctions
 		# if event function arguments were send, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.eventPollers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		# if action module params were send, store them
-		oParams = oBody.action_params
+		oParams = oBody.actionparams
 		for id, params of oParams
 			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
-		oFuncArgs = oBody.action_functions
+		oFuncArgs = oBody.actionfunctions
 		# if action function arguments were send, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		eventInfo = ''
-		if rule.event_start
-			eventInfo = "Starting at #{ new Date( rule.event_start ) }, Interval set to #{ rule.event_interval } minutes"
+		if rule.eventstart
+			eventInfo = "Starting at #{ new Date( rule.eventstart ) }, Interval set to #{ rule.eventinterval } minutes"
 		# Initialize the rule log
 		db.resetLog user.username, rule.id
 		db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized. #{ eventInfo }"
 		
 		# Inform everbody about the new rule
 		eventEmitter.emit 'rule',
-			event: 'new'
+			intevent: 'new'
 			user: user.username
 			rule: rule
 		callback
@@ -414,7 +417,7 @@ commandFunctions =
 	# - conditions
 	# - actions
 	forge_rule: ( user, oBody, callback ) ->
-		answ = hasRequiredParams [ 'id', 'event', 'conditions', 'actions' ], oBody
+		answ = hasRequiredParams [ 'id', 'eventname', 'conditions', 'actions' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
@@ -436,7 +439,7 @@ commandFunctions =
 		else
 			db.deleteRule oBody.id
 			eventEmitter.emit 'rule',
-				event: 'del'
+				intevent: 'del'
 				user: user.username
 				rule: null
 				ruleId: oBody.id
@@ -451,7 +454,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getUserWebhooks user.username, ( err, hooks ) =>
+			db.getUserWebhookIDs user.username, ( err, hooks ) =>
 				if hooks.indexOf( oBody.hookname ) > -1
 					answ.code = 409
 					answ.message = 'Webhook already existing: ' + oBody.hookname
@@ -468,15 +471,14 @@ commandFunctions =
 								hookid
 						hookid = genHookID arrHooks
 						db.createWebhook user.username, oBody.hookname, hookid
+						rh.activateWebhook hookid, oBody.hookname
 						callback
 							code: 200
 							message: JSON.stringify
 								hookid: hookid
 
-
-
 	get_all_webhooks: ( user, oBody, callback ) ->
-		db.getUserWebhooks user.username, ( err, data ) ->
+		db.getAllUserWebhooks user.username, ( err, data ) ->
 			if err
 				callback
 					code: 400
@@ -486,24 +488,14 @@ commandFunctions =
 					code: 200
 					message: JSON.stringify data
 
-
-
-
-
-
 	delete_webhook: ( user, oBody, callback ) ->
-		answ = hasRequiredParams [ 'hookname' ], oBody
+		answ = hasRequiredParams [ 'hookid' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getUserWebhooks user.username, ( err, hooks ) =>
-				if hooks.indexOf( oBody.hookname ) is -1
-					answ.code = 409
-					answ.message = 'Webhook does not exist: ' + oBody.hookname
-					callback answ
-				else
-					db.deleteUserWebhook user.username, oBody.hookname
-					callback
-						code: 200
-						message: 'OK!'
+			rh.deactivateWebhook oBody.hookid
+			db.deleteWebhook user.username, oBody.hookid
+			callback
+				code: 200
+				message: 'OK!'
 		

@@ -24,7 +24,7 @@
   fOnLoad = function() {
     var editor;
     document.title = 'Push Events!';
-    $('#pagetitle').text('Push your own custom event directly into the engine!');
+    $('#pagetitle').text('Push your own event directly into the engine!');
     editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.getSession().setMode("ace/mode/json");
@@ -65,7 +65,7 @@
       var err, oSelector, obj, sel, url;
       try {
         obj = JSON.parse(editor.getValue());
-        if (obj.event && typeof obj.event === 'string' && obj.event !== '') {
+        if (obj.eventname && typeof obj.eventname === 'string' && obj.eventname !== '') {
           sel = '';
           if (obj.body && typeof obj.body === 'object') {
             oSelector = fFindKeyStringPair(obj.body);
@@ -73,7 +73,7 @@
               sel = "&selkey=" + oSelector.key + "&selval=" + oSelector.val;
             }
           }
-          url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.event + sel;
+          url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.eventname + sel;
           return window.open(url, '_blank');
         } else {
           $('#info').text('Please provide a valid eventname');

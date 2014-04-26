@@ -9,13 +9,13 @@ if oParams.id
 	oParams.id = decodeURIComponent oParams.id
 
 strPublicKey = ''
-fPlaceAndPaintInterval = () ->
-	$( '#event_start' ).html 'Start Time:
-		<input id="input_start" type="text" />
-		<b>"hh:mm"</b>, default = 12:00'
-	$( '#event_interval' ).html 'Interval:
-		<input id="input_interval" type="text" />
-		<b>"days hours:minutes"</b>, default = 10 minutes'
+# fPlaceAndPaintInterval = () ->
+# 	$( '#event_start' ).html 'Start Time:
+# 		<input id="input_start" type="text" />
+# 		<b>"hh:mm"</b>, default = 12:00'
+# 	$( '#event_interval' ).html 'Interval:
+# 		<input id="input_interval" type="text" />
+# 		<b>"days hours:minutes"</b>, default = 10 minutes'
 
 fDisplayError = ( msg ) ->
 	window.scrollTo 0, 0
@@ -55,19 +55,22 @@ fOnLoad = () ->
 	editor.setTheme "ace/theme/monokai"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
-	# editor.session.setUseSoftTabs false 
 
-	
+	$( '#input_id' ).focus()
 
 # EVENT
 
 	# If the user is coming from an event he wants a rule to be setup for him
 	switch oParams.eventtype
 		when 'custom'
+			$( '#input_id' ).val "My '#{ oParams.eventname }' Rule" 
 			$( '#select_event_type' ).val 'Custom Event'
-			inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
+			inpEvt = $( '<input>' ).attr( 'type', 'text' )
+				.attr( 'style', 'font-size:1em' ).attr 'id', 'input_eventname'
 			inpEvt.val oParams.eventname
-			$( '#event_parameters' ).append inpEvt
+			$( '#event_parameters' ).append $( '<h4>' ).text( 'Event Name : ' ).append inpEvt
+			inpEvt.focus()
+			editor.setValue "[\n\n]"
 
 		when 'webhook'
 			console.log 'webhook'
@@ -82,8 +85,9 @@ fOnLoad = () ->
 
 			# The user wants to act on a custom event
 			when 'Custom Event'
-				inpEvt = $( '<input>' ).attr( 'type', 'text').attr 'id', 'input_eventname'
-				$( '#event_parameters' ).append inpEvt
+				inpEvt = $( '<input>' ).attr( 'type', 'text' )
+					.attr( 'style', 'font-size:1em' ).attr 'id', 'input_eventname'
+				$( '#event_parameters' ).append $( '<h4>' ).text( 'Event Name : ' ).append inpEvt
 
 			# The user wants a webhook as event producer
 			when 'Webhook'
@@ -120,7 +124,7 @@ fOnLoad = () ->
 						catch err
 							console.error 'ERROR: non-object received from server: ' + data.message
 
-					fail: fFailedRequest 'Error fetching event poller'
+					fail: fFailedRequest 'Error fetching Event Poller'
 
 	$( '#select_event' ).change () ->
 		evtFunc = $( this ).val()
@@ -152,7 +156,7 @@ fOnLoad = () ->
 					body: JSON.stringify
 						id: arr[ 0 ]
 				done: fAddEventParams arr[ 0 ]
-				fail: fFailedRequest 'Error fetching event poller params'
+				fail: fFailedRequest 'Error fetching Event Poller params'
 			fFetchEventFunctionArgs arr
 
 	fFetchEventFunctionArgs = ( arrName ) ->
@@ -269,7 +273,7 @@ fOnLoad = () ->
 					if arrEls.length is 0
 						$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
 			fAppendActions module, actions for module, actions of oAis
-		.fail fFailedRequest 'Error fetching event poller'
+		.fail fFailedRequest 'Error fetching Event Poller'
 
 	fAddSelectedAction = ( name ) ->
 		arrName = name.split ' -> '
@@ -584,15 +588,15 @@ fOnLoad = () ->
 				command: 'forge_rule'
 				body: JSON.stringify
 					id: $( '#input_id' ).val()
-					event: eventId
-					event_params: ep
-					event_start: start
-					event_interval: mins
-					event_functions: evtFuncs
+					eventname: eventId
+					eventparams: ep
+					eventstart: start
+					eventinterval: mins
+					eventfunctions: evtFuncs
 					conditions: conds
 					actions: acts
-					action_params: ap
-					action_functions: actFuncs
+					actionparams: ap
+					actionfunctions: actFuncs
 			$.post( '/usercommand', obj )
 				.done ( data ) ->
 					$( '#info' ).text data.message
@@ -617,18 +621,18 @@ fOnLoad = () ->
 					$( '#input_id' ).val oRule.id
 					
 					# Event
-					$( '#select_event' ).val oRule.event
+					$( '#select_event' ).val oRule.eventname
 					if $( '#select_event' ).val() isnt ''
-						fFetchEventParams oRule.event
+						fFetchEventParams oRule.eventname
 						fPlaceAndPaintInterval()
 
-					$( '#input_event' ).val oRule.event
-					d = new Date oRule.event_start 
+					$( '#input_event' ).val oRule.eventname
+					d = new Date oRule.eventstart 
 					mins = d.getMinutes()
 					if mins.toString().length is 1
 							mins = '0' + mins
 					$( '#input_start' ).val d.getHours() + ':' + mins
-					$( '#input_interval' ).val oRule.event_interval
+					$( '#input_interval' ).val oRule.eventinterval
 
 					# Conditions
 					editor.setValue JSON.stringify oRule.conditions, undefined, 2

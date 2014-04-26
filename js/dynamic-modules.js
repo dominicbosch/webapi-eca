@@ -39,7 +39,6 @@ Dynamic Modules
   exports = module.exports = (function(_this) {
     return function(args) {
       _this.log = args.logger;
-      db(args);
       return module.exports;
     };
   })(this);
@@ -120,17 +119,14 @@ Dynamic Modules
 
   fPushEvent = function(userId, oRule, modType) {
     return function(obj) {
-      var rand, timestamp;
+      var timestamp;
       timestamp = (new Date()).toISOString();
-      rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
       if (modType === 'eventpoller') {
         return db.pushEvent({
-          event: oRule.event + '_created:' + oRule.timestamp,
-          eventid: "" + userId + "_" + oRule.event + "_UTC|" + timestamp + "_" + rand,
+          eventname: oRule.eventname + '_created:' + oRule.timestamp,
           body: obj
         });
       } else {
-        obj.eventid = "" + userId + "_" + oRule.event + "_UTC|" + timestamp + "_" + rand;
         return db.pushEvent(obj);
       }
     };

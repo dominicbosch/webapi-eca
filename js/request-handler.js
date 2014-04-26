@@ -11,7 +11,7 @@ Request Handler
  */
 
 (function() {
-  var activateWebHook, crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, indexEvent, mustache, path, pathUsers, qs, removeWebHook, renderPage;
+  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, indexEvent, mustache, path, pathUsers, qs, renderPage;
 
   db = require('./persistence');
 
@@ -92,7 +92,6 @@ Request Handler
           return cb(null, data);
         }
       };
-      db(args);
       users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
       fStoreUser = function(username, oUser) {
         oUser.username = username;
@@ -102,6 +101,14 @@ Request Handler
         oUser = users[user];
         fStoreUser(user, oUser);
       }
+      _this.allowedHooks = {};
+      db.getAllWebhooks(function(err, oHooks) {
+        if (oHooks) {
+          console;
+          _this.log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
+          return _this.allowedHooks = oHooks;
+        }
+      });
       return module.exports;
     };
   })(this);
@@ -110,12 +117,6 @@ Request Handler
   /*
   Handles possible events that were posted to this server and pushes them into the
   event queue.
-  
-  *Requires
-  the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-  and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-  objects.*
-  
   @public handleEvent( *req, resp* )
    */
 
@@ -126,23 +127,17 @@ Request Handler
       return body += data;
     });
     return req.on('end', function() {
-      var answ, err, obj, rand, timestamp;
-      console.log(typeof body);
-      console.log(body);
+      var answ, err, obj;
       try {
         obj = JSON.parse(body);
       } catch (_error) {
         err = _error;
         resp.send(400, 'Badly formed event!');
       }
-      console.log(obj);
-      if (obj && obj.event && !err) {
-        timestamp = (new Date()).toISOString();
-        rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
-        obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
+      if (obj && obj.eventname && !err) {
         answ = {
           code: 200,
-          message: "Thank you for the event: " + obj.eventid
+          message: "Thank you for the event: " + obj.eventname
         };
         resp.send(answ.code, answ);
         return db.pushEvent(obj);
@@ -438,43 +433,30 @@ Request Handler
     };
   })(this);
 
-  indexEvent = function(event, body, resp) {
-    var err, obj, rand, timestamp;
+  indexEvent = function(eventname, body, resp) {
+    var err, msg, obj;
     if (typeof body === 'string') {
       try {
-        obj = qs.parse(body);
+        body = JSON.parse(body);
       } catch (_error) {
         err = _error;
         try {
-          obj = JSON.parse(body);
+          body = qs.parse(body);
         } catch (_error) {
           err = _error;
           resp.send(400, 'Badly formed event!');
           return;
         }
       }
-    } else {
-      obj = body;
     }
-    timestamp = (new Date()).toISOString();
-    rand = (Math.floor(Math.random() * 10e9)).toString(16).toUpperCase();
-    obj.event = event;
-    obj.eventid = "" + obj.event + "_UTC|" + timestamp + "_" + rand;
+    obj = {
+      eventname: eventname,
+      body: body
+    };
     db.pushEvent(obj);
-    resp.send(200, "Thank you for the event: " + obj.eventid);
+    msg = "Thank you for the event: '" + eventname + "'";
     return obj;
   };
-
-
-  /*
-  Handles webhook posts
-   */
-
-  exports.handleWebhooks = (function(_this) {
-    return function(req, resp) {
-      return console.log('RH | IMPLEMENT WEBHOOKS');
-    };
-  })(this);
 
 
   /*
@@ -499,39 +481,42 @@ Request Handler
     };
   })(this);
 
-  activateWebHook = (function(_this) {
-    return function(app, name) {
-      _this.log.info("HL | Webhook activated for " + name);
-      return app.post("/webhooks/" + name, function(req, resp) {
-        var body;
+
+  /*
+  Handles webhook posts
+   */
+
+  exports.handleWebhooks = (function(_this) {
+    return function(req, resp) {
+      var body, hookid, hookname;
+      hookid = req.url.substring(10).split('/')[0];
+      hookname = _this.allowedHooks[hookid];
+      if (hookname) {
         body = '';
         req.on('data', function(data) {
           return body += data;
         });
         return req.on('end', function() {
-          return indexEvent(name, body, resp);
+          var obj;
+          return obj = indexEvent(hookname, body, resp);
         });
-      });
+      } else {
+        return resp.send(404, "Webhook not existing!");
+      }
     };
   })(this);
 
-  removeWebHook = (function(_this) {
-    return function(app, hookid) {
-      var i, isFound, oRoute, _i, _len, _ref, _results;
-      _this.log.info("HL | Removing Webhook for " + hookid);
-      isFound = false;
-      _ref = app.routes.post;
-      _results = [];
-      for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-        oRoute = _ref[i];
-        if (oRoute.path === ("/webhooks/" + name)) {
-          app.routes.post.splice(i, 1);
-          _results.push(isFound = true);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
+  exports.activateWebhook = (function(_this) {
+    return function(hookid, name) {
+      _this.log.info("HL | Webhook '" + hookid + "' activated");
+      return _this.allowedHooks[hookid] = name;
+    };
+  })(this);
+
+  exports.deactivateWebhook = (function(_this) {
+    return function(hookid) {
+      _this.log.info("HL | Webhook '" + hookid + "' deactivated");
+      return delete _this.allowedHooks[hookid];
     };
   })(this);
 

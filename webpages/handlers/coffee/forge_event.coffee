@@ -11,7 +11,7 @@ fFindKeyStringPair = ( obj ) ->
 
 fOnLoad = () ->
 	document.title = 'Push Events!'
-	$( '#pagetitle' ).text 'Push your own custom event directly into the engine!'
+	$( '#pagetitle' ).text 'Push your own event directly into the engine!'
 
 	editor = ace.edit "editor"
 	editor.setTheme "ace/theme/monokai"
@@ -48,13 +48,13 @@ fOnLoad = () ->
 
 		try
 			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
-			if obj.event and typeof obj.event is 'string' and obj.event isnt ''
+			if obj.eventname and typeof obj.eventname is 'string' and obj.eventname isnt ''
 				sel = ''
 				if obj.body and typeof obj.body is 'object'
 					oSelector = fFindKeyStringPair obj.body
 					if oSelector
 						sel = "&selkey=#{ oSelector.key }&selval=#{ oSelector.val }"
-				url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.event + sel
+				url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.eventname + sel
 				window.open url, '_blank'
 			else
 				$( '#info' ).text 'Please provide a valid eventname'

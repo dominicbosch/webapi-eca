@@ -112,14 +112,14 @@ exports.testListener = ( test ) =>
 
 	cm.addRuleListener ( evt ) =>
 		strEvt = JSON.stringify evt.rule
-		if evt.event is 'init'
+		if evt.intevent is 'init'
 			if strEvt is strRuleOne or strEvt is strRuleTwo
 				test.ok true, 'Dummy true to fill expected tests!'
 
 			if strEvt is strRuleThree
 				test.ok false, 'Init Rule found test rule number two??'
 
-		if evt.event is 'new'
+		if evt.intevent is 'new'
 			if strEvt is strRuleOne or strEvt is strRuleTwo
 				test.ok false, 'New Rule got test rule number one??'
 
@@ -215,7 +215,6 @@ exports.ruleForge =
 
 		fWaitForPersistence = () ->
 			evt = objects.events.eventReal
-			evt.eventid = 'event_testid'
 			db.pushEvent evt
 
 			fWaitAgain = () ->

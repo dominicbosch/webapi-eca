@@ -36,7 +36,6 @@ Initializes the dynamic module handler.
 ###
 exports = module.exports = ( args ) =>
 	@log = args.logger
-	db args
 	module.exports
 
 logFunction = ( uId, rId, mId ) ->
@@ -95,15 +94,12 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 fPushEvent = ( userId, oRule, modType ) ->
 	( obj ) ->
 		timestamp = ( new Date() ).toISOString()
-		rand = ( Math.floor Math.random() * 10e9 ).toString( 16 ).toUpperCase()
 		if modType is 'eventpoller'
 			db.pushEvent
-				event: oRule.event + '_created:' + oRule.timestamp
-				eventid: "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"
+				eventname: oRule.eventname + '_created:' + oRule.timestamp
 				body: obj
 
 		else
-			obj.eventid = "#{ userId }_#{ oRule.event }_UTC|#{ timestamp }_#{ rand }"
 			db.pushEvent obj
 
 fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>

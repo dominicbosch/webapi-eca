@@ -57,7 +57,6 @@ Initializes the Engine and starts polling the event queue for new events.
 exports = module.exports = ( args ) =>
 	if not isRunning
 		@log = args.logger
-		db args
 		dynmod args
 		setTimeout exports.startEngine, 10 # Very important, this forks a token for the poll task
 		module.exports
@@ -88,18 +87,18 @@ are basically CRUD on rules.
 @param {Object} evt
 ###
 exports.internalEvent = ( evt ) =>
-	if not listUserRules[evt.user] and evt.event isnt 'del'
+	if not listUserRules[evt.user] and evt.intevent isnt 'del'
 		listUserRules[evt.user] = {}
-
+		
 	oUser = listUserRules[evt.user]
 	oRule = evt.rule
-	if evt.event is 'new' or ( evt.event is 'init' and not oUser[oRule.id] )
+	if evt.intevent is 'new' or ( evt.intevent is 'init' and not oUser[oRule.id] )
 		oUser[oRule.id] = 
 			rule: oRule
 			actions: {}
 		updateActionModules oRule.id
 
-	if evt.event is 'del' and oUser
+	if evt.intevent is 'del' and oUser
 		delete oUser[evt.ruleId]
 
 	# If a user is empty after all the updates above, we remove her from the list
@@ -273,14 +272,18 @@ processEvent = ( evt ) =>
 		else
 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
-	@log.info 'EN | processing event: ' + evt.event + '(' + evt.eventid + ')'
+	@log.info 'EN | processing event: ' + evt.eventname
 	for userName, oUser of listUserRules
+
 		for ruleName, oMyRule of oUser
-			ruleEvent = oMyRule.rule.event
+
+			ruleEvent = oMyRule.rule.eventname
 			if oMyRule.rule.timestamp
 				ruleEvent += '_created:' + oMyRule.rule.timestamp
-			if evt.event is ruleEvent and validConditions evt, oMyRule.rule, userName, ruleName
-				@log.info 'EN | EVENT FIRED: ' + evt.event + '(' + evt.eventid + ') for rule ' + ruleName
+			if evt.eventname is ruleEvent and validConditions evt, oMyRule.rule, userName, ruleName
+				
+				@log.info 'EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName
+				
 				for action in oMyRule.rule.actions
 					arr = action.split ' -> '
 					fSearchAndInvokeAction listUserRules, [ userName, ruleName, 'actions', arr[0]], arr[1], evt, 0
