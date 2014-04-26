@@ -31,6 +31,10 @@ input[type=password]:focus {
   border: 1px solid rgba(81, 203, 238, 1);
 }
 
+.indent20 {
+  padding-left: 20px;
+}
+
 #mobile {
   margin: 10px 20px 10px 20px;
 }
@@ -99,6 +103,10 @@ input[type=password]:focus {
 #conditions,
 #action_parameters {
   margin-left: 20px;
+}
+
+#event_poller_params {
+  padding-top: 10px;
 }
 
 #input_id {

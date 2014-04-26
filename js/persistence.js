@@ -1097,11 +1097,11 @@ Persistence
   /*
   Gets all the user's webhooks with names.
   
-  @public getAllUserWebhooks( *username* )
+  @public getAllUserWebhookNames( *username* )
   @param {String} username
    */
 
-  exports.getAllUserWebhooks = (function(_this) {
+  exports.getAllUserWebhookNames = (function(_this) {
     return function(username, cb) {
       return getSetRecords("user:" + username + ":webhooks", exports.getWebhookName, cb);
     };

@@ -92,7 +92,6 @@ exports = module.exports = ( args ) =>
 	@allowedHooks = {}
 	db.getAllWebhooks ( err, oHooks ) =>
 		if oHooks
-			console
 			@log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
 			@allowedHooks = oHooks
 	module.exports
@@ -415,6 +414,7 @@ exports.activateWebhook = ( user, hookid, name ) =>
 	@allowedHooks[ hookid ] =
 		hookname: name
 		username: user
+
 
 # Deactivate a webhook
 exports.deactivateWebhook = ( hookid ) =>

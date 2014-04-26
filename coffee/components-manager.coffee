@@ -454,21 +454,22 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getUserWebhookIDs user.username, ( err, hooks ) =>
-				if hooks.indexOf( oBody.hookname ) > -1
-					answ.code = 409
-					answ.message = 'Webhook already existing: ' + oBody.hookname
-					callback answ
+			db.getAllUserWebhookNames user.username, ( err, arrHooks ) =>
+				hookExists = false
+				hookExists = true for hookid, hookname of arrHooks when hookname is oBody.hookname
+				if hookExists
+					callback
+						code: 409
+						message: 'Webhook already existing: ' + oBody.hookname
 				else
-					db.getAllWebhookIDs ( arrHooks ) ->
+					db.getAllWebhookIDs ( err, arrHooks ) ->
 						genHookID = ( arrHooks ) ->
 							hookid = ''
-							for i in [0..1]
+							for i in [ 0..1 ]
 								hookid += Math.random().toString( 36 ).substring 2
 							if arrHooks and arrHooks.indexOf( hookid ) > -1
-								genHookID arrHooks
-							else
-								hookid
+								hookid = genHookID arrHooks
+							hookid
 						hookid = genHookID arrHooks
 						db.createWebhook user.username, hookid, oBody.hookname
 						rh.activateWebhook user.username, hookid, oBody.hookname
@@ -479,13 +480,13 @@ commandFunctions =
 								hookname: oBody.hookname
 
 	get_all_webhooks: ( user, oBody, callback ) ->
-		db.getAllUserWebhooks user.username, ( err, data ) ->
+		db.getAllUserWebhookNames user.username, ( err, data ) ->
 			if err
 				callback
 					code: 400
 					message: "We didn't like your request!"
 			else
-				data = JSON.stringify data || ''
+				data = JSON.stringify( data ) || null
 				callback
 					code: 200
 					message: data

@@ -59,7 +59,8 @@
       }
        
       function displayError(positionError) {
-        $('#info').text('Error: ' + positionError);
+        console.log(positionError);
+        $('#info').text('Error: ' + positionError.message);
       }
        
       var gl = navigator.geolocation;

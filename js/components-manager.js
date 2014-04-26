@@ -570,26 +570,34 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getUserWebhookIDs(user.username, (function(_this) {
-          return function(err, hooks) {
-            if (hooks.indexOf(oBody.hookname) > -1) {
-              answ.code = 409;
-              answ.message = 'Webhook already existing: ' + oBody.hookname;
-              return callback(answ);
+        return db.getAllUserWebhookNames(user.username, (function(_this) {
+          return function(err, arrHooks) {
+            var hookExists, hookid, hookname;
+            hookExists = false;
+            for (hookid in arrHooks) {
+              hookname = arrHooks[hookid];
+              if (hookname === oBody.hookname) {
+                hookExists = true;
+              }
+            }
+            if (hookExists) {
+              return callback({
+                code: 409,
+                message: 'Webhook already existing: ' + oBody.hookname
+              });
             } else {
-              return db.getAllWebhookIDs(function(arrHooks) {
-                var genHookID, hookid;
+              return db.getAllWebhookIDs(function(err, arrHooks) {
+                var genHookID;
                 genHookID = function(arrHooks) {
-                  var hookid, i, _i;
+                  var i, _i;
                   hookid = '';
                   for (i = _i = 0; _i <= 1; i = ++_i) {
                     hookid += Math.random().toString(36).substring(2);
                   }
                   if (arrHooks && arrHooks.indexOf(hookid) > -1) {
-                    return genHookID(arrHooks);
-                  } else {
-                    return hookid;
+                    hookid = genHookID(arrHooks);
                   }
+                  return hookid;
                 };
                 hookid = genHookID(arrHooks);
                 db.createWebhook(user.username, hookid, oBody.hookname);
@@ -608,14 +616,14 @@ Components Manager
       }
     },
     get_all_webhooks: function(user, oBody, callback) {
-      return db.getAllUserWebhooks(user.username, function(err, data) {
+      return db.getAllUserWebhookNames(user.username, function(err, data) {
         if (err) {
           return callback({
             code: 400,
             message: "We didn't like your request!"
           });
         } else {
-          data = JSON.stringify(data || '');
+          data = JSON.stringify(data) || null;
           return callback({
             code: 200,
             message: data

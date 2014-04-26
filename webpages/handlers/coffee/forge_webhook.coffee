@@ -32,36 +32,58 @@ fFailedRequest = ( msg ) ->
 			fDisplayError msg
 
 
-fUpdateWebhookList = () ->
+fUpdateWebhookList = ( cb ) ->
 	fIssueRequest
 		body: 
 			command: 'get_all_webhooks'
-		done: fProcessWebhookList
+		done: fProcessWebhookList cb
 		fail: fFailedRequest 'Unable to get Webhook list'
 
+fProcessWebhookList = ( cb ) ->
+	( data ) ->
+		$( '#table_webhooks *' ).remove()
+		if data.message
+			oHooks = JSON.parse data.message
+			$( '#table_webhooks' ).append $( '<h3>' ).text 'Your existing Webhooks:'
+			for hookid, hookname of oHooks
+				tr = $( '<tr>' )
+				tdName = $( '<div>' ).text hookname
+				tdUrl = $( '<input>' ).attr( 'style', 'width:600px' ).val "#{ hostUrl }/webhooks/#{ hookid }"
+				img = $( '<img>' ).attr( 'class', 'del' )
+					.attr( 'title', 'Delete Module' ).attr 'src', 'red_cross_small.png'
+				tr.append( $( '<td>' ).append img )
+				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdName )
+				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdUrl )
+				$( '#table_webhooks' ).append tr
+		else
+			fShowWebhookUsage null
+		cb? hookid, hookname
 
-fProcessWebhookList = ( data ) ->
-	$( '#table_webhooks *' ).remove()
-	if data.message
-		oHooks = JSON.parse data.message
-		$( '#table_webhooks' ).append $( '<h3>' ).text 'Your existing Webhooks:'
-		for hookid, hookname of oHooks
-			tr = $( '<tr>' )
-			tdName = $( '<div>' ).text hookname
-			tdUrl = $( '<input>' ).attr( 'style', 'width:600px' ).val "#{ hostUrl }/webhooks/#{ hookid }"
-			img = $( '<img>' ).attr( 'class', 'del' )
-				.attr( 'title', 'Delete Module' ).attr 'src', 'red_cross_small.png'
-			tr.append( $( '<td>' ).append img )
-			tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdName )
-			tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdUrl )
-			$( '#table_webhooks' ).append tr
+fShowWebhookUsage = ( hookid, hookname ) ->
+	$( '#display_hookurl *' ).remove()
+	if hookid
+		b = $( '<b>' ).text "This is the Webhook Url you can use for your Events '#{ hookname }' : "
+		$( '#display_hookurl' ).append b
+		$( '#display_hookurl' ).append $('<br>')
+		inp = $('<input>').attr( 'type', 'text' ).attr( 'style', 'width:600px' )
+			.val "#{ hostUrl }/webhooks/#{ hookid }"
+		$( '#display_hookurl' ).append inp
+		$( '#display_hookurl' ).append $('<br>')
 
+		div = $( '<div>' )
+		div.append $( '<br>' )
+		div.append $( '<div>' ).html "1. Try it out and push your location to your new webhook
+			via <a target=\"_blank\" href=\"#{ hostUrl }/mobile.html?hookid=#{ hookid }\">this page</a>."
+		div.append $( '<br>' )
+		div.append $( '<div>' ).html "2. Then you should setup <a target=\"_blank\"
+			href=\"forge?page=forge_rule&eventtype=webhook&hookname=#{ hookname }\">a Rule for the '#{ hookname }' Event!</a>"
+		$( '#display_hookurl' ).append div
 
 fOnLoad = () ->
 
 	document.title = 'Create Webhooks!'
 	# Load existing Webhooks
-	fUpdateWebhookList()
+	fUpdateWebhookList fShowWebhookUsage
 
 	# Register button action
 	$( '#but_submit' ).click ->
@@ -80,29 +102,15 @@ fOnLoad = () ->
 						hookname: hookname
 				done: ( data ) ->
 					oAnsw = JSON.parse data.message
-					b = $( '<b>' ).text "This is the Webhook Url you can use for your Event '#{ oAnsw.hookname }' : "
-					$( '#display_hookurl' ).append b
-					$( '#display_hookurl' ).append $('<br>')
-					inp = $('<input>').attr( 'type', 'text' ).attr( 'style', 'width:600px' )
-						.val "#{ hostUrl }/webhooks/#{ oAnsw.hookid }"
-					$( '#display_hookurl' ).append inp
-					$( '#display_hookurl' ).append $('<br>')
-	
-					div = $( '<div>' )
-					div.append $( '<br>' )
-					div.append $( '<div>' ).html "1. Try it out and push your location to your new webhook
-						via <a target=\"_blank\" href=\"#{ hostUrl }/mobile.html?hookid=#{ oAnsw.hookid }\">this page</a>."
-					div.append $( '<br>' )
-					div.append $( '<div>' ).html "2. Then you should setup <a target=\"_blank\"
-						href=\"forge?page=forge_rule&eventtype=webhook&hookname=#{ hookname }\">a Rule for this Event!</a>"
-					$( '#display_hookurl' ).append div
-					fUpdateWebhookList()
+					fShowWebhookUsage oAnsw.hookid, oAnsw.hookname
+					fUpdateWebhookList ( data ) ->
+						$( '#info' ).text "New Webhook successfully created!"
+						$( '#info' ).attr 'class', 'success'
 				fail: ( err ) ->
 					if err.status is 409
 						fFailedRequest( 'Webhook Event Name already existing!' ) err
 					else
 						fFailedRequest( 'Unable to create Webhook! ' + err.message ) err
-					fUpdateWebhookList()
 	
 	$( '#table_webhooks' ).on 'click', 'img', () ->
 		if confirm  "Do you really want to delete this webhook?"
@@ -113,12 +121,13 @@ fOnLoad = () ->
 					command: 'delete_webhook'
 					body: JSON.stringify
 						hookid: arrUrl[ arrUrl.length - 1 ]
+
 				done: ( data ) ->
-					$( '#info' ).text data.message
-					$( '#info' ).attr 'class', 'success'
-					fUpdateWebhookList()
+					fUpdateWebhookList ( data ) ->
+						$( '#info' ).text 'Webhook deleted!'
+						$( '#info' ).attr 'class', 'success'
+
 				fail: ( err ) ->
 					fFailedRequest( 'Unable to delete Webhook!' ) err
-					fUpdateWebhookList()
 
 window.addEventListener 'load', fOnLoad, true

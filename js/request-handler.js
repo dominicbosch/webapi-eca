@@ -104,7 +104,6 @@ Request Handler
       _this.allowedHooks = {};
       db.getAllWebhooks(function(err, oHooks) {
         if (oHooks) {
-          console;
           _this.log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
           return _this.allowedHooks = oHooks;
         }
