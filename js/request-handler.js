@@ -11,7 +11,7 @@ Request Handler
  */
 
 (function() {
-  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, indexEvent, mustache, path, pathUsers, qs, renderPage;
+  var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, parsePushAndAnswerEvent, path, pathUsers, qs, renderPage;
 
   db = require('./persistence');
 
@@ -433,8 +433,8 @@ Request Handler
     };
   })(this);
 
-  indexEvent = function(eventname, body, resp) {
-    var err, msg, obj;
+  parsePushAndAnswerEvent = function(eventname, username, body, resp) {
+    var err, obj;
     if (typeof body === 'string') {
       try {
         body = JSON.parse(body);
@@ -453,8 +453,14 @@ Request Handler
       eventname: eventname,
       body: body
     };
+    if (username) {
+      obj.username = username;
+    }
     db.pushEvent(obj);
-    msg = "Thank you for the event: '" + eventname + "'";
+    resp.send(200, JSON.stringify({
+      message: "Thank you for the event: '" + eventname + "'",
+      evt: obj
+    }));
     return obj;
   };
 
@@ -472,7 +478,7 @@ Request Handler
       });
       return req.on('end', function() {
         var fPath, obj;
-        obj = indexEvent(name, body, resp);
+        obj = parsePushAndAnswerEvent(name, null, body, resp);
         if (obj.eventname === 'uptimestatistics') {
           fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
           return fs.writeFile(fPath, JSON.stringify(JSON.parse(body), void 0, 2), 'utf8');
@@ -488,17 +494,16 @@ Request Handler
 
   exports.handleWebhooks = (function(_this) {
     return function(req, resp) {
-      var body, hookid, hookname;
+      var body, hookid, oHook;
       hookid = req.url.substring(10).split('/')[0];
-      hookname = _this.allowedHooks[hookid];
-      if (hookname) {
+      oHook = _this.allowedHooks[hookid];
+      if (oHook) {
         body = '';
         req.on('data', function(data) {
           return body += data;
         });
         return req.on('end', function() {
-          var obj;
-          return obj = indexEvent(hookname, body, resp);
+          return parsePushAndAnswerEvent(oHook.hookname, oHook.username, body, resp);
         });
       } else {
         return resp.send(404, "Webhook not existing!");
@@ -507,9 +512,12 @@ Request Handler
   })(this);
 
   exports.activateWebhook = (function(_this) {
-    return function(hookid, name) {
+    return function(user, hookid, name) {
       _this.log.info("HL | Webhook '" + hookid + "' activated");
-      return _this.allowedHooks[hookid] = name;
+      return _this.allowedHooks[hookid] = {
+        hookname: name,
+        username: user
+      };
     };
   })(this);
 

@@ -354,7 +354,8 @@ exports.handleAdminCommand = ( req, resp ) =>
 		resp.send 401, 'You need to be logged in as admin!'
 
 
-indexEvent = ( eventname, body, resp ) ->
+# Parse events and register to user if it's a user specific event
+parsePushAndAnswerEvent = ( eventname, username, body, resp ) ->
 	if typeof body is 'string'
 		try
 			body = JSON.parse body
@@ -367,8 +368,12 @@ indexEvent = ( eventname, body, resp ) ->
 	obj =
 		eventname: eventname
 		body: body
+	if username
+		obj.username = username
 	db.pushEvent obj
-	msg = "Thank you for the event: '#{ eventname }'"
+	resp.send 200, JSON.stringify
+		message: "Thank you for the event: '#{ eventname }'"
+		evt: obj
 	obj
 
 
@@ -381,7 +386,7 @@ exports.handleMeasurements = ( req, resp ) =>
 		body += data
 
 	req.on 'end', ->
-		obj = indexEvent name, body, resp
+		obj = parsePushAndAnswerEvent name, null, body, resp
 		if obj.eventname is 'uptimestatistics'
 			# This is a hack to quickly allow storing of public accessible data
 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
@@ -392,22 +397,24 @@ Handles webhook posts
 ###
 exports.handleWebhooks = ( req, resp ) =>
 	hookid = req.url.substring( 10 ).split( '/' )[ 0 ]
-	hookname = @allowedHooks[ hookid ]
-	if hookname
+	oHook = @allowedHooks[ hookid ]
+	if oHook
 		body = ''
 		req.on 'data', ( data ) ->
 			body += data
 		req.on 'end', () ->
-			obj = indexEvent hookname, body, resp
+			parsePushAndAnswerEvent oHook.hookname, oHook.username, body, resp
 	else
 		resp.send 404, "Webhook not existing!"
 
 
 # Activate a webhook. the body will be JSON parsed, the name of the webhook will
 # be the event name given to the event object, a timestamp will be added
-exports.activateWebhook = ( hookid, name ) =>
+exports.activateWebhook = ( user, hookid, name ) =>
 	@log.info "HL | Webhook '#{ hookid }' activated"
-	@allowedHooks[ hookid ] = name
+	@allowedHooks[ hookid ] =
+		hookname: name
+		username: user
 
 # Deactivate a webhook
 exports.deactivateWebhook = ( hookid ) =>

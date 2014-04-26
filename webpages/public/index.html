@@ -5,51 +5,12 @@
     <link href='http://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
     <link href='http://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="js/cryptico.js" type="text/javascript" charset="utf-8"></script>
     <script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+    <script src="js/menubar.js" type="text/javascript" charset="utf-8"></script>
   </head>
   <body>
-<div id="menubar">
-  <script>
-    var menubar = $( '#menubar' );
-    
-    var fRedirect = function( url ) {
-      return function() {
-        window.location.href = url;
-      }
-    };
-    
-    var fCreateLink = function( text, fAction ) {
-      var link = $( '<div>' ).text( text );
-      link.click( fAction );
-      menubar.append(link);
-    };
-
-    fCreateLink( 'Push Event',
-      fRedirect( 'forge?page=forge_event' )
-    );
-    fCreateLink( 'Create Rule',
-      fRedirect( 'forge?page=forge_rule' )
-    );
-    fCreateLink( 'Create Webhooks',
-      fRedirect( 'forge?page=forge_webhook' )
-    );
-    fCreateLink( 'Edit Rules',
-      fRedirect( 'forge?page=edit_rules' )
-    );
-    fCreateLink( 'Create EP',
-      fRedirect( 'forge?page=forge_module&type=event_poller' )
-    );
-    fCreateLink( 'Create AI',
-      fRedirect( 'forge?page=forge_module&type=action_invoker' )
-    );
-    fCreateLink( 'Edit EPs & AIs',
-      fRedirect( 'forge?page=edit_modules' )
-    );
-    fCreateLink( 'Logout',  function() {
-      $.post( '/logout' ).done( fRedirect( document.URL ) );
-    });
-  </script>
-</div>
+    <table id="menubar"><tr></tr></table>
 
     <div id="info"></div>
 		<div id="mainbody">

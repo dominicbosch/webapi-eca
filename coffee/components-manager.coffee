@@ -470,12 +470,13 @@ commandFunctions =
 							else
 								hookid
 						hookid = genHookID arrHooks
-						db.createWebhook user.username, oBody.hookname, hookid
-						rh.activateWebhook hookid, oBody.hookname
+						db.createWebhook user.username, hookid, oBody.hookname
+						rh.activateWebhook user.username, hookid, oBody.hookname
 						callback
 							code: 200
 							message: JSON.stringify
 								hookid: hookid
+								hookname: oBody.hookname
 
 	get_all_webhooks: ( user, oBody, callback ) ->
 		db.getAllUserWebhooks user.username, ( err, data ) ->
@@ -484,9 +485,10 @@ commandFunctions =
 					code: 400
 					message: "We didn't like your request!"
 			else
+				data = JSON.stringify data || ''
 				callback
 					code: 200
-					message: JSON.stringify data
+					message: data
 
 	delete_webhook: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'hookid' ], oBody

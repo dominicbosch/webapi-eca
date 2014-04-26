@@ -51,22 +51,24 @@
 
   fProcessWebhookList = function(data) {
     var hookid, hookname, img, oHooks, tdName, tdUrl, tr, _results;
-    $('#table_webhooks tr').remove();
-    oHooks = JSON.parse(data.message);
-    console.log(hostUrl);
-    _results = [];
-    for (hookid in oHooks) {
-      hookname = oHooks[hookid];
-      tr = $('<tr>');
-      tdName = $('<div>').text(hookname);
-      tdUrl = $('<input>').attr('style', 'width:600px').val("" + hostUrl + "/webhooks/" + hookid);
-      img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'red_cross_small.png');
-      tr.append($('<td>').append(img));
-      tr.append($('<td>').attr('style', 'padding-left:10px').append(tdName));
-      tr.append($('<td>').attr('style', 'padding-left:10px').append(tdUrl));
-      _results.push($('#table_webhooks').append(tr));
+    $('#table_webhooks *').remove();
+    if (data.message) {
+      oHooks = JSON.parse(data.message);
+      $('#table_webhooks').append($('<h3>').text('Your existing Webhooks:'));
+      _results = [];
+      for (hookid in oHooks) {
+        hookname = oHooks[hookid];
+        tr = $('<tr>');
+        tdName = $('<div>').text(hookname);
+        tdUrl = $('<input>').attr('style', 'width:600px').val("" + hostUrl + "/webhooks/" + hookid);
+        img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'red_cross_small.png');
+        tr.append($('<td>').append(img));
+        tr.append($('<td>').attr('style', 'padding-left:10px').append(tdName));
+        tr.append($('<td>').attr('style', 'padding-left:10px').append(tdUrl));
+        _results.push($('#table_webhooks').append(tr));
+      }
+      return _results;
     }
-    return _results;
   };
 
   fOnLoad = function() {
@@ -79,7 +81,6 @@
       if (hookname === '') {
         return fDisplayError('Please provide an Event Name for your new Webhook!');
       } else {
-        $('#display_hookurl *').remove();
         return fIssueRequest({
           body: {
             command: 'create_webhook',
@@ -90,7 +91,7 @@
           done: function(data) {
             var b, div, inp, oAnsw;
             oAnsw = JSON.parse(data.message);
-            b = $('<b>').text("This is the Webhook Url you will use for your Event : ");
+            b = $('<b>').text("This is the Webhook Url you can use for your Event '" + oAnsw.hookname + "' : ");
             $('#display_hookurl').append(b);
             $('#display_hookurl').append($('<br>'));
             inp = $('<input>').attr('type', 'text').attr('style', 'width:600px').val("" + hostUrl + "/webhooks/" + oAnsw.hookid);
@@ -101,14 +102,16 @@
             div.append($('<div>').html("1. Try it out and push your location to your new webhook via <a target=\"_blank\" href=\"" + hostUrl + "/mobile.html?hookid=" + oAnsw.hookid + "\">this page</a>."));
             div.append($('<br>'));
             div.append($('<div>').html("2. Then you should setup <a target=\"_blank\" href=\"forge?page=forge_rule&eventtype=webhook&hookname=" + hookname + "\">a Rule for this Event!</a>"));
-            return $('#display_hookurl').append(div);
+            $('#display_hookurl').append(div);
+            return fUpdateWebhookList();
           },
           fail: function(err) {
             if (err.status === 409) {
-              return fFailedRequest('Webhook Event Name already existing!')(err);
+              fFailedRequest('Webhook Event Name already existing!')(err);
             } else {
-              return fFailedRequest('Unable to create Webhook! ' + err.message)(err);
+              fFailedRequest('Unable to create Webhook! ' + err.message)(err);
             }
+            return fUpdateWebhookList();
           }
         });
       }

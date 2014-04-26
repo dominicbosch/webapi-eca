@@ -797,16 +797,16 @@ exports.removeUserRole = ( userId, role ) =>
 ###
 Creates and stores a webhook.
 
-@public createWebhook( *userId, hookname* )
-@param {String} userId
+@public createWebhook( *username, hookname* )
+@param {String} username
 @param {String} hookname
 ###
-exports.createWebhook = ( userId, hookname, hookid ) =>
+exports.createWebhook = ( username, hookid, hookname ) =>
 	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
-	@db.sadd "user:#{ userId }:webhooks", hookid,
-		replyHandler "sadd 'user:#{ userId }:webhooks' -> '#{ hookid }'"
-	@db.set "webhook:#{ hookid }", hookname,
-		replyHandler "set webhook:#{ hookid } -> #{ hookname }"
+	@db.sadd "user:#{ username }:webhooks", hookid,
+		replyHandler "sadd 'user:#{ username }:webhooks' -> '#{ hookid }'"
+	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username,
+		replyHandler "set webhook:#{ hookid } -> [#{ hookname }, #{ username }]"
 
 ###
 Returns a webhook name.
@@ -815,25 +815,34 @@ Returns a webhook name.
 @param {String} hookid
 ###
 exports.getWebhookName = ( hookid, cb ) =>
-	@db.get "webhook:#{ hookid }", cb
+	@db.hget "webhook:#{ hookid }", "hookname", cb
+
+###
+Returns all webhook properties.
+
+@public getFullWebhookName( *hookid* )
+@param {String} hookid
+###
+exports.getFullWebhook = ( hookid, cb ) =>
+	@db.hgetall "webhook:#{ hookid }", cb
 
 ###
 Returns all the user's webhooks by ID.
 
-@public getUserWebhookIDs( *userId* )
-@param {String} userId
+@public getUserWebhookIDs( *username* )
+@param {String} username
 ###
-exports.getUserWebhookIDs = ( userId, cb ) =>
-	@db.smembers "user:#{ userId }:webhooks", cb
+exports.getUserWebhookIDs = ( username, cb ) =>
+	@db.smembers "user:#{ username }:webhooks", cb
 
 ###
 Gets all the user's webhooks with names.
 
-@public getAllUserWebhooks( *userId* )
-@param {String} userId
+@public getAllUserWebhooks( *username* )
+@param {String} username
 ###
-exports.getAllUserWebhooks = ( userId, cb ) =>
-	getSetRecords "user:#{ userId }:webhooks", exports.getWebhookName, cb
+exports.getAllUserWebhooks = ( username, cb ) =>
+	getSetRecords "user:#{ username }:webhooks", exports.getWebhookName, cb
 
 ###
 Returns all webhook IDs.
@@ -849,19 +858,19 @@ Returns all webhooks with names.
 @public getAllWebhooks()
 ###
 exports.getAllWebhooks = ( cb ) =>
-	getSetRecords "webhooks", exports.getWebhookName, cb
+	getSetRecords "webhooks", exports.getFullWebhook, cb
 
 ###
 Delete a webhook.
 
-@public deleteWebhook( *userId, hookid* )
-@param {String} userId
+@public deleteWebhook( *username, hookid* )
+@param {String} username
 @param {String} hookid
 ###
-exports.deleteWebhook = ( userId, hookid ) =>
+exports.deleteWebhook = ( username, hookid ) =>
 	@db.srem "webhooks", hookid, replyHandler "srem 'webhooks' -> '#{ hookid }'"
-	@db.srem "user:#{ userId }:webhooks", hookid,
-		replyHandler "srem 'user:#{ userId }:webhooks' -> '#{ hookid }'"
+	@db.srem "user:#{ username }:webhooks", hookid,
+		replyHandler "srem 'user:#{ username }:webhooks' -> '#{ hookid }'"
 	@db.del "webhook:#{ hookid }", replyHandler "del webhook:#{ hookid }"
 
 ###

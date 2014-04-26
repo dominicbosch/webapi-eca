@@ -592,12 +592,13 @@ Components Manager
                   }
                 };
                 hookid = genHookID(arrHooks);
-                db.createWebhook(user.username, oBody.hookname, hookid);
-                rh.activateWebhook(hookid, oBody.hookname);
+                db.createWebhook(user.username, hookid, oBody.hookname);
+                rh.activateWebhook(user.username, hookid, oBody.hookname);
                 return callback({
                   code: 200,
                   message: JSON.stringify({
-                    hookid: hookid
+                    hookid: hookid,
+                    hookname: oBody.hookname
                   })
                 });
               });
@@ -614,9 +615,10 @@ Components Manager
             message: "We didn't like your request!"
           });
         } else {
+          data = JSON.stringify(data || '');
           return callback({
             code: 200,
-            message: JSON.stringify(data)
+            message: data
           });
         }
       });

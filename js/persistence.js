@@ -1038,16 +1038,16 @@ Persistence
   /*
   Creates and stores a webhook.
   
-  @public createWebhook( *userId, hookname* )
-  @param {String} userId
+  @public createWebhook( *username, hookname* )
+  @param {String} username
   @param {String} hookname
    */
 
   exports.createWebhook = (function(_this) {
-    return function(userId, hookname, hookid) {
+    return function(username, hookid, hookname) {
       _this.db.sadd("webhooks", hookid, replyHandler("sadd 'webhooks' -> '" + hookid + "'"));
-      _this.db.sadd("user:" + userId + ":webhooks", hookid, replyHandler("sadd 'user:" + userId + ":webhooks' -> '" + hookid + "'"));
-      return _this.db.set("webhook:" + hookid, hookname, replyHandler("set webhook:" + hookid + " -> " + hookname));
+      _this.db.sadd("user:" + username + ":webhooks", hookid, replyHandler("sadd 'user:" + username + ":webhooks' -> '" + hookid + "'"));
+      return _this.db.hmset("webhook:" + hookid, 'hookname', hookname, 'username', username, replyHandler("set webhook:" + hookid + " -> [" + hookname + ", " + username + "]"));
     };
   })(this);
 
@@ -1061,7 +1061,21 @@ Persistence
 
   exports.getWebhookName = (function(_this) {
     return function(hookid, cb) {
-      return _this.db.get("webhook:" + hookid, cb);
+      return _this.db.hget("webhook:" + hookid, "hookname", cb);
+    };
+  })(this);
+
+
+  /*
+  Returns all webhook properties.
+  
+  @public getFullWebhookName( *hookid* )
+  @param {String} hookid
+   */
+
+  exports.getFullWebhook = (function(_this) {
+    return function(hookid, cb) {
+      return _this.db.hgetall("webhook:" + hookid, cb);
     };
   })(this);
 
@@ -1069,13 +1083,13 @@ Persistence
   /*
   Returns all the user's webhooks by ID.
   
-  @public getUserWebhookIDs( *userId* )
-  @param {String} userId
+  @public getUserWebhookIDs( *username* )
+  @param {String} username
    */
 
   exports.getUserWebhookIDs = (function(_this) {
-    return function(userId, cb) {
-      return _this.db.smembers("user:" + userId + ":webhooks", cb);
+    return function(username, cb) {
+      return _this.db.smembers("user:" + username + ":webhooks", cb);
     };
   })(this);
 
@@ -1083,13 +1097,13 @@ Persistence
   /*
   Gets all the user's webhooks with names.
   
-  @public getAllUserWebhooks( *userId* )
-  @param {String} userId
+  @public getAllUserWebhooks( *username* )
+  @param {String} username
    */
 
   exports.getAllUserWebhooks = (function(_this) {
-    return function(userId, cb) {
-      return getSetRecords("user:" + userId + ":webhooks", exports.getWebhookName, cb);
+    return function(username, cb) {
+      return getSetRecords("user:" + username + ":webhooks", exports.getWebhookName, cb);
     };
   })(this);
 
@@ -1115,7 +1129,7 @@ Persistence
 
   exports.getAllWebhooks = (function(_this) {
     return function(cb) {
-      return getSetRecords("webhooks", exports.getWebhookName, cb);
+      return getSetRecords("webhooks", exports.getFullWebhook, cb);
     };
   })(this);
 
@@ -1123,15 +1137,15 @@ Persistence
   /*
   Delete a webhook.
   
-  @public deleteWebhook( *userId, hookid* )
-  @param {String} userId
+  @public deleteWebhook( *username, hookid* )
+  @param {String} username
   @param {String} hookid
    */
 
   exports.deleteWebhook = (function(_this) {
-    return function(userId, hookid) {
+    return function(username, hookid) {
       _this.db.srem("webhooks", hookid, replyHandler("srem 'webhooks' -> '" + hookid + "'"));
-      _this.db.srem("user:" + userId + ":webhooks", hookid, replyHandler("srem 'user:" + userId + ":webhooks' -> '" + hookid + "'"));
+      _this.db.srem("user:" + username + ":webhooks", hookid, replyHandler("srem 'user:" + username + ":webhooks' -> '" + hookid + "'"));
       return _this.db.del("webhook:" + hookid, replyHandler("del webhook:" + hookid));
     };
   })(this);

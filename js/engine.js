@@ -298,7 +298,7 @@ Engine
 
   processEvent = (function(_this) {
     return function(evt) {
-      var action, arr, fSearchAndInvokeAction, oMyRule, oUser, ruleEvent, ruleName, userName, _results;
+      var fCheckEventForUser, fSearchAndInvokeAction, oUser, userName, _results;
       fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
         var argument, arrArgs, arrSelectors, data, err, oArg, sel, selector, _i, _j, _len, _len1, _ref;
         if (!node) {
@@ -346,40 +346,45 @@ Engine
           return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
         }
       };
-      _this.log.info('EN | processing event: ' + evt.eventname);
-      _results = [];
-      for (userName in listUserRules) {
-        oUser = listUserRules[userName];
-        _results.push((function() {
-          var _results1;
-          _results1 = [];
-          for (ruleName in oUser) {
-            oMyRule = oUser[ruleName];
-            ruleEvent = oMyRule.rule.eventname;
-            if (oMyRule.rule.timestamp) {
-              ruleEvent += '_created:' + oMyRule.rule.timestamp;
-            }
-            if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
-              this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
-              _results1.push((function() {
-                var _i, _len, _ref, _results2;
-                _ref = oMyRule.rule.actions;
-                _results2 = [];
-                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-                  action = _ref[_i];
-                  arr = action.split(' -> ');
-                  _results2.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0]], arr[1], evt, 0));
-                }
-                return _results2;
-              })());
-            } else {
-              _results1.push(void 0);
-            }
+      _this.log.info('EN | Processing event: ' + evt.eventname);
+      fCheckEventForUser = function(userName, oUser) {
+        var action, arr, oMyRule, ruleEvent, ruleName, _results;
+        _results = [];
+        for (ruleName in oUser) {
+          oMyRule = oUser[ruleName];
+          ruleEvent = oMyRule.rule.eventname;
+          if (oMyRule.rule.timestamp) {
+            ruleEvent += '_created:' + oMyRule.rule.timestamp;
           }
-          return _results1;
-        }).call(_this));
+          if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
+            this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
+            _results.push((function() {
+              var _i, _len, _ref, _results1;
+              _ref = oMyRule.rule.actions;
+              _results1 = [];
+              for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                action = _ref[_i];
+                arr = action.split(' -> ');
+                _results1.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0]], arr[1], evt, 0));
+              }
+              return _results1;
+            })());
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+      if (evt.username) {
+        return fCheckEventForUser(evt.username, listUserRules[evt.username]);
+      } else {
+        _results = [];
+        for (userName in listUserRules) {
+          oUser = listUserRules[userName];
+          _results.push(fCheckEventForUser(userName, oUser));
+        }
+        return _results;
       }
-      return _results;
     };
   })(this);
 
