@@ -176,12 +176,13 @@
     return Math.max(1, mins);
   };
 
-  fPrepareEventType = function(eventtype) {
+  fPrepareEventType = function(eventtype, cb) {
     $('#select_event_type').val(eventtype);
     $('#event_parameters > div').detach();
     switch (eventtype) {
       case 'Custom Event':
-        return $('#event_parameters').append(domInputEventName);
+        $('#event_parameters').append(domInputEventName);
+        return typeof cb === "function" ? cb() : void 0;
       case 'Webhook':
         return fIssueRequest({
           data: {
@@ -200,17 +201,21 @@
                 selHook.append($('<option>').text(hookname));
               }
               if (i > 0) {
-                return $('#event_parameters').append(domSelectWebhook);
+                $('#event_parameters').append(domSelectWebhook);
               } else {
                 fDisplayError('No webhooks found! Choose another Event Type or create a Webhook.');
-                return $('#select_event_type').val('');
+                $('#select_event_type').val('');
               }
             } catch (_error) {
               err = _error;
-              return fDisplayError('Badly formed webhooks!');
+              fDisplayError('Badly formed webhooks!');
             }
+            return typeof cb === "function" ? cb() : void 0;
           },
-          fail: fFailedRequest('Unable to get webhooks!')
+          fail: function() {
+            fFailedRequest('Unable to get webhooks!');
+            return typeof cb === "function" ? cb() : void 0;
+          }
         });
       case 'Event Poller':
         return fIssueRequest({
@@ -223,7 +228,7 @@
               oEps = JSON.parse(data.message);
               if (JSON.stringify(oEps) === '{}') {
                 fDisplayError('No Event Pollers found! Create one first!');
-                return $('#select_event_type').val('');
+                $('#select_event_type').val('');
               } else {
                 $('#event_parameters').append(domSelectEventPoller);
                 $('#event_parameters').append(domInputEventTiming.show());
@@ -235,14 +240,18 @@
                     $('#select_eventpoller').append($('<option>').text(id + ' -> ' + evt));
                   }
                 }
-                return fFetchEventParams($('option:selected', domSelectEventPoller).text());
+                fFetchEventParams($('option:selected', domSelectEventPoller).text());
               }
             } catch (_error) {
               err = _error;
-              return console.error('ERROR: non-object received for event poller from server: ' + data.message);
+              console.error('ERROR: non-object received for event poller from server: ' + data.message);
             }
+            return typeof cb === "function" ? cb() : void 0;
           },
-          fail: fFailedRequest('Error fetching Event Poller')
+          fail: function() {
+            fFailedRequest('Error fetching Event Poller');
+            return typeof cb === "function" ? cb() : void 0;
+          }
         });
     }
   };
@@ -574,7 +583,7 @@
   };
 
   fOnLoad = function() {
-    var editor;
+    var editor, name;
     fIssueRequest({
       data: {
         command: 'get_public_key'
@@ -607,20 +616,20 @@
     });
     switch (oParams.eventtype) {
       case 'custom':
-        $('#input_id').val("My '" + oParams.eventname + "' Rule");
-        fPrepareEventType('Custom Event');
-        $('#input_eventname').val(oParams.eventname);
-        $('#input_eventname').focus();
-        editor.setValue("[\n\n]");
+        name = decodeURIComponent(oParams.eventname);
+        $('#input_id').val("My '" + name + "' Rule");
+        fPrepareEventType('Custom Event', function() {
+          $('#input_eventname').val(name);
+          $('#input_eventname').focus();
+          return editor.setValue("[\n\n]");
+        });
         break;
       case 'webhook':
-        $('#input_id').val("My '" + oParams.hookname + "' Rule");
-        fPrepareEventType('Webhook');
-        domSelectWebhook.val(oParams.hookname);
-        break;
-      case 'poller':
-        $('#input_id').val("My '" + oParams.eventpoller + "' Rule");
-        fPrepareEventType('Event Poller');
+        name = decodeURIComponent(oParams.hookname);
+        $('#input_id').val("My '" + name + "' Rule");
+        fPrepareEventType('Webhook', function() {
+          return $('select', domSelectWebhook).val(name);
+        });
     }
     fIssueRequest({
       data: {

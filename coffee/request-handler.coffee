@@ -355,6 +355,10 @@ exports.handleAdminCommand = ( req, resp ) =>
 
 # Parse events and register to user if it's a user specific event
 parsePushAndAnswerEvent = ( eventname, username, body, resp ) ->
+	# Currently we allow JSON and form data to arrive at webhooks. 
+	# TODO We should allow to choose arriving formats, such as xml too
+	# TODO We should implement body selectors for webhooks as well to
+	# add flexibility in the way the data arrives
 	if typeof body is 'string'
 		try
 			body = JSON.parse body
@@ -364,6 +368,7 @@ parsePushAndAnswerEvent = ( eventname, username, body, resp ) ->
 			catch err
 				resp.send 400, 'Badly formed event!'
 				return
+
 	obj =
 		eventname: eventname
 		body: body
@@ -389,7 +394,7 @@ exports.handleMeasurements = ( req, resp ) =>
 		if obj.eventname is 'uptimestatistics'
 			# This is a hack to quickly allow storing of public accessible data
 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-			fs.writeFile fPath, JSON.stringify( JSON.parse( body ), undefined, 2 ), 'utf8'
+			fs.writeFile fPath, JSON.stringify( obj, undefined, 2 ), 'utf8'
 
 ###
 Handles webhook posts

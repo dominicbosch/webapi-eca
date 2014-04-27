@@ -85,6 +85,7 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 fOnLoad = () ->
 
 	document.title = 'Create Webhooks!'
+	$( '#pagetitle' ).text 'Create your own Webhooks!'
 	# Load existing Webhooks
 	fUpdateWebhookList fShowWebhookUsage
 

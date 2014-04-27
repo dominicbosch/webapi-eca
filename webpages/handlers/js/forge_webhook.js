@@ -100,6 +100,7 @@
 
   fOnLoad = function() {
     document.title = 'Create Webhooks!';
+    $('#pagetitle').text('Create your own Webhooks!');
     fUpdateWebhookList(fShowWebhookUsage);
     $('#but_submit').click(function() {
       var hookname;

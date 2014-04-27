@@ -153,7 +153,7 @@ fConvertDayHourToMinutes = ( strDayHour ) ->
 #
 
 #	Prepare the event section when a different event type is selected
-fPrepareEventType = ( eventtype ) ->
+fPrepareEventType = ( eventtype, cb ) ->
 	$( '#select_event_type' ).val eventtype
 	$( '#event_parameters > div' ).detach()
 	switch eventtype
@@ -161,6 +161,7 @@ fPrepareEventType = ( eventtype ) ->
 		# The user wants to react to custom event
 		when 'Custom Event'
 			$( '#event_parameters' ).append domInputEventName
+			cb?()
 
 		# The user wants a webhook as event producer
 		when 'Webhook'
@@ -185,8 +186,12 @@ fPrepareEventType = ( eventtype ) ->
 
 					catch err
 						fDisplayError 'Badly formed webhooks!'
+					
+					cb?()
 
-				fail: fFailedRequest 'Unable to get webhooks!'
+				fail: () ->
+					fFailedRequest 'Unable to get webhooks!'
+					cb?()
 
 		when 'Event Poller'
 			fIssueRequest
@@ -211,8 +216,11 @@ fPrepareEventType = ( eventtype ) ->
 
 					catch err
 						console.error 'ERROR: non-object received for event poller from server: ' + data.message
+					cb?()
 
-				fail: fFailedRequest 'Error fetching Event Poller'
+				fail: () ->
+					fFailedRequest 'Error fetching Event Poller'
+					cb?()
 
 # Fetch the required Event Poller parameters
 fFetchEventParams = ( name ) ->
@@ -481,20 +489,18 @@ fOnLoad = () ->
 	# If the user is coming from an event UI he wants a rule to be setup for him
 	switch oParams.eventtype
 		when 'custom'
-			$( '#input_id' ).val "My '#{ oParams.eventname }' Rule" 
-			fPrepareEventType 'Custom Event'
-			$( '#input_eventname' ).val oParams.eventname
-			$( '#input_eventname' ).focus()
-			editor.setValue "[\n\n]" # For now we don't prepare conditions
+			name = decodeURIComponent oParams.eventname
+			$( '#input_id' ).val "My '#{ name }' Rule" 
+			fPrepareEventType 'Custom Event', () ->
+				$( '#input_eventname' ).val name
+				$( '#input_eventname' ).focus()
+				editor.setValue "[\n\n]" # For now we don't prepare conditions
 
 		when 'webhook'
-			$( '#input_id' ).val "My '#{ oParams.hookname }' Rule" 
-			fPrepareEventType 'Webhook'
-			domSelectWebhook.val oParams.hookname
-
-		when 'poller'
-			$( '#input_id' ).val "My '#{ oParams.eventpoller }' Rule" 
-			fPrepareEventType 'Event Poller'
+			name = decodeURIComponent oParams.hookname
+			$( '#input_id' ).val "My '#{ name }' Rule" 
+			fPrepareEventType 'Webhook', () ->
+				$( 'select', domSelectWebhook ).val name
 
 
 # ACTIONS

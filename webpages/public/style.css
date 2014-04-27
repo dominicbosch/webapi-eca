@@ -32,7 +32,7 @@ input[type=password]:focus {
 }
 
 button {
-  font-size: 1.2em;
+  font-size: 1.1em;
 }
 
 .indent20 {
@@ -102,9 +102,9 @@ button {
 }
 
 #pagetitle {
-	font-size: 2em;
+	font-size: 1.6em;
 	font-weight: bold;
-  padding-top: 5px;
+  padding-top: 0px;
   padding-bottom: 5px;
 }
 
