@@ -321,6 +321,7 @@ Components Manager
       var args, arr, epModId, eventInfo, id, oFuncArgs, oParams, params, rule, strRule;
       rule = {
         id: oBody.id,
+        eventtype: oBody.eventtype,
         eventname: oBody.eventname,
         eventstart: oBody.eventstart,
         eventinterval: oBody.eventinterval,

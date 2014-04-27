@@ -357,7 +357,7 @@ Engine
             ruleEvent += '_created:' + oMyRule.rule.timestamp;
           }
           if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
-            this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
+            _this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
             _results.push((function() {
               var _i, _len, _ref, _results1;
               _ref = oMyRule.rule.actions;

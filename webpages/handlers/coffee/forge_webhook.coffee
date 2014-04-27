@@ -10,6 +10,9 @@ if oParams.id
 
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
+fClearInfo = () ->
+	$( '#info' ).text ''
+	$( '#info' ).attr 'class', 'neutral'
 
 fDisplayError = ( msg ) ->
 	window.scrollTo 0, 0
@@ -18,7 +21,7 @@ fDisplayError = ( msg ) ->
 
 
 fIssueRequest = ( args ) ->
-	$( '#info' ).text ''
+	fClearInfo()
 	$.post( '/usercommand', args.body )
 		.done args.done
 		.fail args.fail
@@ -87,7 +90,7 @@ fOnLoad = () ->
 
 	# Register button action
 	$( '#but_submit' ).click ->
-		$( '#info' ).text ''
+		fClearInfo()
 
 		hookname = $( '#inp_hookname' ).val()
 		if hookname is ''

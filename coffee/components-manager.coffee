@@ -229,6 +229,7 @@ storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
 		rule =
 			id: oBody.id
+			eventtype: oBody.eventtype
 			eventname: oBody.eventname
 			eventstart: oBody.eventstart
 			eventinterval: oBody.eventinterval

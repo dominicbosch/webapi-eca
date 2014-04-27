@@ -88,7 +88,7 @@ Dynamic Modules
     fAnonymous = function() {
       return db.eventPollers.getModule(msg.user, arrName[0], function(err, obj) {
         if (!obj) {
-          return log.warn("EP | Strange... no module retrieved: " + arrName[0]);
+          return log.info("EP | No module retrieved for " + arrName[0] + ", must be a custom event or Webhook");
         } else {
           return dynmod.compileString(obj.data, msg.user, msg.rule, arrName[0], obj.lang, "eventpoller", db.eventPollers, function(result) {
             var nd, now, oUser, start;

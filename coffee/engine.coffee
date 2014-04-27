@@ -273,7 +273,7 @@ processEvent = ( evt ) =>
 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
 	@log.info 'EN | Processing event: ' + evt.eventname
-	fCheckEventForUser = ( userName, oUser ) ->
+	fCheckEventForUser = ( userName, oUser ) =>
 		for ruleName, oMyRule of oUser
 
 			ruleEvent = oMyRule.rule.eventname

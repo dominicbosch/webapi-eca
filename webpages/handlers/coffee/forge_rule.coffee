@@ -34,22 +34,34 @@ el = $( '<select>' ).attr( 'type', 'text' )
 el.change () ->	fFetchEventParams $( this ).val()
 domSelectEventPoller.append $( '<h4>' ).text( 'Event Poller Name : ' ).append el
 
-domInputStartTime = $( '<div>' ).attr( 'class', 'indent20' ).html "Start Time :
-	<input id=\"input_start\" type=\"text\" /> <b>\"hh:mm\"</b>, default = 12:00"
+domInputEventTiming = $( '<div>' ).attr( 'class', 'indent20' )
+table = $( '<table>' ).appendTo domInputEventTiming
+tr = $( '<tr>' ).appendTo table
+tr.append $( '<td>' ).text "Start Time : "
+tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_start' ).attr( 'type', 'text' )
+tr.append $( '<td>' ).html " <b>\"hh:mm\"</b>, default = 12:00"
 
-domInputInterval = $( '<div>' ).attr( 'class', 'indent20' ).html "Interval :
-	<input id=\"input_interval\" type=\"text\" /> <b>\"days hours:minutes\"</b>, default = 10 minutes"
+tr = $( '<tr>' ).appendTo table
+tr.append $( '<td>' ).text "Interval : "
+tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_interval' ).attr( 'type', 'text' )
+tr.append $( '<td>' ).html " <b>\"days hours:minutes\"</b>, default = 10 minutes"
 
 domEventPollerParameters = $( '<div>' ).attr 'id', 'event_poller_params'
 
-domTableSelectedActions = $( '<table> ' ).attr( 'id', 'selected_actions' )
-domDivActionUserParams = $( '<div>' ).attr( 'id', 'action_invoker_params' )
-$( '#action_parameters' ).append $( '<div>' ).html "<b>Selected Actions:</b>"
-$( '#action_parameters' ).append domTableSelectedActions
-$( '#action_parameters' ).append $( '<div>' ).html "<br><br><b>Required Parameters:</b><br><br>"
-$( '#action_parameters' ).append domDivActionUserParams
-$( '#action_parameters' ).append $( '<div>' ).html "<br><br>"
+domSectionSelectedActions = $( '<div>' )
+domSectionSelectedActions.append $( '<div>' ).html "<b>Selected Actions:</b>"
+domSectionSelectedActions.append $( '<table> ' ).attr( 'id', 'selected_actions' )
+domSectionSelectedActions.hide()
 
+domSectionActionParameters = $( '<div>' )
+domSectionActionParameters.append $( '<div>' ).html "<br><br><b>Required Parameters:</b><br><br>"
+domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_invoker_params' )
+domSectionActionParameters.append $( '<div>' ).html "<br><br>"
+domSectionActionParameters.hide()
+
+fClearInfo = () ->
+	$( '#info' ).text ''
+	$( '#info' ).attr 'class', 'neutral'
 
 fDisplayError = ( msg ) ->
 	window.scrollTo 0, 0
@@ -64,23 +76,22 @@ fFailedRequest = ( msg ) ->
 			fDisplayError msg
 
 fIssueRequest = ( args ) ->
-	$( '#info' ).text ''
+	fClearInfo()
 	$.post( '/usercommand', args.data )
 		.done args.done
 		.fail args.fail
 
 # Convert a time string ( d h:m ) to a date
 fConvertTimeToDate = ( str ) ->
-	txtStart = $( '#input_start' ).val()
 	dateConv = new Date()
-	if not txtStart
+	if not str
 		dateConv.setHours 12
 		dateConv.setMinutes 0
 	else
-		arrInp = txtStart.split ':'
+		arrInp = str.split ':'
 		# There's only one string entered: hour
 		if arrInp.length is 1
-			txtHr = txtStart
+			txtHr = str
 			dateConv.setMinutes 0
 		else
 			txtHr = arrInp[ 0 ]
@@ -189,8 +200,7 @@ fPrepareEventType = ( eventtype ) ->
 
 						else
 							$( '#event_parameters' ).append domSelectEventPoller
-							$( '#event_parameters' ).append domInputStartTime
-							$( '#event_parameters' ).append domInputInterval
+							$( '#event_parameters' ).append domInputEventTiming.show()
 
 							$( '#select_eventpoller option' ).remove()
 							for id, events of oEps
@@ -206,8 +216,6 @@ fPrepareEventType = ( eventtype ) ->
 
 # Fetch the required Event Poller parameters
 fFetchEventParams = ( name ) ->
-	console.log 'fetching event params'
-	console.log name
 	$( '#event_poller_params *' ).remove()
 	if name
 		$( '#event_parameters' ).append domEventPollerParameters
@@ -223,7 +231,6 @@ fFetchEventParams = ( name ) ->
 
 fDisplayEventParams = ( id ) ->
 	( data ) ->
-		console.log 'displaying event parameters'
 		if data.message
 			oParams = JSON.parse data.message
 			table = $ '<table>'
@@ -250,8 +257,6 @@ fFillEventParams = ( moduleId ) ->
 			body: JSON.stringify
 				id: moduleId
 		done: ( data ) ->
-			console.log 'filling event params: '
-			console.log data
 			oParams = JSON.parse data.message
 			for param, oParam of oParams
 				par = $( "#event_poller_params tr" ).filter () ->
@@ -269,7 +274,6 @@ fFetchEventFunctionArgs = ( arrName ) ->
 			body: JSON.stringify
 				id: arrName[ 0 ]
 		done: ( data ) ->
-			console.log 'fetching event function arguments: '
 			if data.message
 				oParams = JSON.parse data.message
 				if oParams[ arrName[ 1 ] ]
@@ -286,21 +290,18 @@ fFetchEventFunctionArgs = ( arrName ) ->
 						td = $( '<td>' ).appendTo tr
 						td.append $( '<input>' ).attr 'type', 'text'
 						tr.append td
-
 					fIssueRequest
 						data:
 							command: 'get_event_poller_user_arguments'
 							body: JSON.stringify
 								ruleId: $( '#input_id' ).val()
-								moduleId: moduleId
-						done: fAddEventUserArgs moduleId
+								moduleId: arrName[ 0 ]
+						done: fAddEventUserArgs arrName[ 1 ]
 
 		fail: fFailedRequest 'Error fetching event poller function arguments'
 
 fAddEventUserArgs = ( name ) ->
 	( data ) ->
-		console.log 'filling event funcction arguments: '
-		console.log data
 		for key, arrFuncs of data.message
 			par = $ "#event_poller_params"
 			for oFunc in JSON.parse arrFuncs
@@ -327,11 +328,7 @@ fAddSelectedAction = ( name ) ->
 	td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
 	fFetchActionFunctionArgs td, arrName
 	if arrName[ 0 ] not in arrEls
-		div = $( '<div>' ).appendTo $( '#action_invoker_params' )
-		subdiv = $( '<div> ').appendTo div 
-		subdiv.append $( '<div>' )
-			.attr( 'class', 'modName underlined' ).text arrName[ 0 ]
-		fFetchActionParams div, arrName[ 0 ]
+		fFetchActionParams arrName[ 0 ]
 	$( "#select_actions option" ).each () ->
 		if $( this ).text() is name
 			$( this ).remove()
@@ -339,7 +336,7 @@ fAddSelectedAction = ( name ) ->
 		fFillActionFunction arrName[ 0 ]
 	setTimeout fDelayed, 300
 
-fFetchActionParams = ( div, modName ) ->
+fFetchActionParams = ( modName ) ->
 	fIssueRequest
 		data: 
 			command: 'get_action_invoker_params'
@@ -348,20 +345,26 @@ fFetchActionParams = ( div, modName ) ->
 		done: ( data ) ->
 			if data.message
 				oParams = JSON.parse data.message
-				table = $ '<table>'
-				div.append table
-				fAppendActionParam = ( name, shielded ) ->
-					tr = $( '<tr>' )
-					tr.append $( '<td>' ).css 'width', '20px'
-					tr.append $( '<td>' ).attr( 'class', 'key').text name
-					inp = $( '<input>' )
-					if shielded
-						inp.attr( 'type', 'password' )
-					else
-						inp.attr( 'type', 'text' )
-					tr.append $( '<td>' ).text(' : ').append inp
-					table.append tr
-				fAppendActionParam name, sh for name, sh of oParams
+				if JSON.stringify( oParams ) isnt '{}'
+					domSectionActionParameters.show()
+					div = $( '<div>' ).appendTo $( '#action_invoker_params' )
+					subdiv = $( '<div> ').appendTo div 
+					subdiv.append $( '<div>' )
+						.attr( 'class', 'modName underlined' ).text modName
+					table = $ '<table>'
+					div.append table
+					for name, shielded of oParams
+						tr = $( '<tr>' )
+						tr.append $( '<td>' ).css 'width', '20px'
+						tr.append $( '<td>' ).attr( 'class', 'key').text name
+						inp = $( '<input>' )
+						if shielded
+							inp.attr( 'type', 'password' )
+						else
+							inp.attr( 'type', 'text' )
+						tr.append $( '<td>' ).text(' : ').append inp
+						table.append tr
+
 		fail: fFailedRequest 'Error fetching action invoker params'
 
 fFetchActionFunctionArgs = ( tag, arrName ) ->
@@ -450,6 +453,21 @@ fOnLoad = () ->
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
+	$( '#fill_example' ).click () ->
+		editor.setValue """
+
+			[
+				{
+					"selector": ".nested_property",
+					"type": "string",
+					"operator": "<=",
+					"compare": "has this value"
+				}
+			]
+			"""
+
+	$( '#action_parameters' ).append domSectionSelectedActions
+	$( '#action_parameters' ).append domSectionActionParameters
 	$( '#input_id' ).focus()
 
 
@@ -503,31 +521,31 @@ fOnLoad = () ->
 
 
 	$( '#select_actions' ).on 'change', () ->
-		$( '#action_parameters' ).append domTableSelectedActions	
+		domSectionSelectedActions.show()
 		opt = $ 'option:selected', this
 		fAddSelectedAction opt.text()
 		
 	$( '#selected_actions' ).on 'click', 'img', () ->
-		console.log 'click'
 		act = $( this ).closest( 'td' ).siblings( '.title' ).text()
 		arrName = act.split ' -> '
 
-		i = 0
 		nMods = 0
 		# Check whether we're the only function left that was selected from this module
 		$( "#selected_actions td.title" ).each () ->
-			i++
 			arrNm = $( this ).text().split ' -> '
 			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
-
-		# If we are the last selected action we detach the whole action parameter section
-		if i is 1
-			$( '#action_parameters > *' ).detach()
 
 		if nMods is 1
 			$('#action_invoker_params > div').each () ->
 				if $( this ).children( 'div.modName' ).text() is arrName[ 0 ]
 					$( this ).remove()
+
+		# Hide if nothing to show
+		if $('#selected_actions td.title').length is 0
+			domSectionSelectedActions.hide()
+
+		if $('#action_invoker_params > div').length is 0
+			domSectionActionParameters.hide()
 
 		opt = $( '<option>' ).text act
 		$( '#select_actions' ).append opt
@@ -538,7 +556,7 @@ fOnLoad = () ->
 
 	$( '#but_submit' ).click () ->
 		window.scrollTo 0, 0
-		$( '#info' ).text ''
+		fClearInfo()
 
 		try
 			if $( '#input_id' ).val() is ''
@@ -562,6 +580,7 @@ fOnLoad = () ->
 					eventname = $( '#select_eventhook' ).val()
 
 				when 'Event Poller'
+					eventname = $( '#select_eventpoller' ).val()
 					ep = {}
 					$( "#event_poller_params tr" ).each () ->
 						key = $( this ).children( '.key' ).text()
@@ -579,9 +598,9 @@ fOnLoad = () ->
 							ep[ key ].value = val
 
 					evtFuncs = {}
-					evtFuncs[ eventId ] = []
+					evtFuncs[ eventname ] = []
 					$( '#event_poller_params tr.funcMappings' ).each () ->
-						evtFuncs[ eventId ].push
+						evtFuncs[ eventname ].push
 							argument: $( 'div.funcarg', this ).text()
 							value: $( 'input[type=text]', this ).val()
 
@@ -654,26 +673,26 @@ fOnLoad = () ->
 					else
 						fFailedRequest( "#{ obj.id } not stored!" ) err
 
-			if $( '#select_event_type' ) is 'Event Poller'
-				start = fConvertTimeToDate $( '#input_start' ).val().toISOString()
+			if $( '#select_event_type' ).val() is 'Event Poller'
+				start = fConvertTimeToDate( $( '#input_start' ).val() ).toISOString()
 				mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
 
-			obj =
-			console.log obj
+			obj = 
+				command: 'forge_rule'
+				body: JSON.stringify
+					id: $( '#input_id' ).val()
+					eventtype: eventtype
+					eventname: eventname
+					eventparams: ep
+					eventstart: start
+					eventinterval: mins
+					eventfunctions: evtFuncs
+					conditions: conds
+					actions: acts
+					actionparams: ap
+					actionfunctions: actFuncs
 			fIssueRequest
-				data: 
-					command: 'forge_rule'
-					body: JSON.stringify
-						id: $( '#input_id' ).val()
-						eventname: eventId
-						eventparams: ep
-						eventstart: start
-						eventinterval: mins
-						eventfunctions: evtFuncs
-						conditions: conds
-						actions: acts
-						actionparams: ap
-						actionfunctions: actFuncs
+				data: obj
 				done: ( data ) ->
 					$( '#info' ).text data.message
 					$( '#info' ).attr 'class', 'success'
@@ -686,35 +705,52 @@ fOnLoad = () ->
 # Edit a Rule
 # -----------
 	if oParams.id
-		obj =
-			command: 'get_rule'
-			data: JSON.stringify
-				id: oParams.id
 		fIssueRequest
-			data: obj
+			data: 
+				command: 'get_rule'
+				body: JSON.stringify
+					id: oParams.id
 			done: ( data ) ->
 				oRule = JSON.parse data.message
 				if oRule
 					$( '#input_id' ).val oRule.id
 					
 					# Event
-					$( '#select_event' ).val oRule.eventname
-					if $( '#select_event' ).val() isnt ''
-						fFetchEventParams oRule.eventname
-						fPlaceAndPaintInterval()
+					fPrepareEventType oRule.eventtype
+					switch oRule.eventtype
+						when 'Event Poller'
+							$( '#select_event' ).val oRule.eventname
+							if $( '#select_event' ).val() isnt ''
+								fFetchEventParams oRule.eventname
+								$( '#input_event' ).val oRule.eventname
+								d = new Date oRule.eventstart 
+								mins = d.getMinutes()
+								if mins.toString().length is 1
+										mins = '0' + mins
+								$( '#input_start', domInputEventTiming ).val d.getHours() + ':' + mins
+								$( '#input_interval', domInputEventTiming ).val oRule.eventinterval
 
-					$( '#input_event' ).val oRule.eventname
-					d = new Date oRule.eventstart 
-					mins = d.getMinutes()
-					if mins.toString().length is 1
-							mins = '0' + mins
-					$( '#input_start' ).val d.getHours() + ':' + mins
-					$( '#input_interval' ).val oRule.eventinterval
+							else
+								window.scrollTo 0, 0
+								$( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
+								$( '#info' ).attr 'class', 'error'
+
+						when 'Webhook'
+							$( '#select_eventhook' ).val oRule.eventname
+
+							if $( '#select_eventhook' ).val() is ''
+								window.scrollTo 0, 0
+								$( '#info' ).text 'Your Webhook does not exist anymore!'
+								$( '#info' ).attr 'class', 'error'
+
+						when 'Custom Event'
+							$( '#input_eventname' ).val oRule.eventname
 
 					# Conditions
 					editor.setValue JSON.stringify oRule.conditions, undefined, 2
 
 					# Actions
+					domSectionSelectedActions.show()
 					for action in oRule.actions
 						arrName = action.split ' -> '
 						fAddSelectedAction action

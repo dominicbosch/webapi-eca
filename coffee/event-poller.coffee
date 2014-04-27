@@ -81,7 +81,7 @@ fLoadModule = ( msg ) ->
 	fAnonymous = () ->
 		db.eventPollers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
-				log.warn "EP | Strange... no module retrieved: #{ arrName[0] }"
+				log.info "EP | No module retrieved for #{ arrName[0] }, must be a custom event or Webhook"
 			else
 				 # we compile the module and pass: 
 				dynmod.compileString obj.data,  # code
