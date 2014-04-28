@@ -404,22 +404,26 @@ Persistence
           var fRegisterFunction, func, oAnswer, sem, _i, _len, _results;
           sem = obj.length;
           oAnswer = {};
-          _results = [];
-          for (_i = 0, _len = obj.length; _i < _len; _i++) {
-            func = obj[_i];
-            fRegisterFunction = function(func) {
-              return function(err, obj) {
-                if (obj) {
-                  oAnswer[func] = obj;
-                }
-                if (--sem === 0) {
-                  return cb(null, oAnswer);
-                }
+          if (sem === 0) {
+            return cb(null, oAnswer);
+          } else {
+            _results = [];
+            for (_i = 0, _len = obj.length; _i < _len; _i++) {
+              func = obj[_i];
+              fRegisterFunction = function(func) {
+                return function(err, obj) {
+                  if (obj) {
+                    oAnswer[func] = obj;
+                  }
+                  if (--sem === 0) {
+                    return cb(null, oAnswer);
+                  }
+                };
               };
-            };
-            _results.push(_this.db.get("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
+              _results.push(_this.db.get("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
+            }
+            return _results;
           }
-          return _results;
         };
       })(this));
     };
@@ -751,26 +755,28 @@ Persistence
     return function(cb) {
       _this.log.info("DB | Fetching all active rules");
       return _this.db.smembers('users', function(err, obj) {
-        var fFetchActiveUserRules, result, semaphore, user, _i, _len, _results;
+        var fProcessAnswer, result, semaphore, user, _i, _len, _results;
         result = {};
         if (obj.length === 0) {
           return cb(null, result);
         } else {
           semaphore = obj.length;
-          fFetchActiveUserRules = function(userId) {
-            return _this.db.smembers("user:" + user + ":active-rules", function(err, obj) {
-              if (obj.length > 0) {
-                result[userId] = obj;
-              }
-              if (--semaphore === 0) {
-                return cb(null, result);
-              }
-            });
-          };
           _results = [];
           for (_i = 0, _len = obj.length; _i < _len; _i++) {
             user = obj[_i];
-            _results.push(fFetchActiveUserRules(user));
+            fProcessAnswer = function(user) {
+              return (function(_this) {
+                return function(err, obj) {
+                  if (obj.length > 0) {
+                    result[user] = obj;
+                  }
+                  if (--semaphore === 0) {
+                    return cb(null, result);
+                  }
+                };
+              })(this);
+            };
+            _results.push(_this.db.smembers("user:" + user + ":active-rules", fProcessAnswer(user)));
           }
           return _results;
         }

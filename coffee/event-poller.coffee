@@ -32,8 +32,14 @@ log = logger.getLogger logconf
 log.info 'EP | Event Poller starts up'
 
 process.on 'uncaughtException', ( err ) ->
-	log.error 'Probably one of the event pollers created an error in a callback function!'
-	log.error err
+	# TODO we'd have to wrap the dynamic-modules module in an own child process which
+	# we could let crash, create log info about what dynamic module caused the crash and
+	# then restart the dynamic-modules module, passing the crash info to the logger of the
+	# rule that caused this issue. on the other hand we're just fine like this since only
+	# the deferred token of the corresponding rule gets eliminated if it throws an error
+	# and the event polling won't continue fo this rule, which is fine for us, except that
+	# we do not have a good way to inform the user about his error.
+	log.error 'Probably one of the event pollers produced an error!'
 
 # Initialize required modules (should be in cache already)
 db logger: log
@@ -174,6 +180,7 @@ This function will loop infinitely every 10 seconds until isRunning is set to fa
 pollLoop = () ->
   # We only loop if we're running
   if isRunning
+  	#FIXME CHECK IF ALREADY RUNNING!
 
   	#FIXME a scheduler should go here because we are limited in setTimeout
   	# to an integer value -> ~24 days at maximum!

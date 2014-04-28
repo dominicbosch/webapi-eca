@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "bunyan": "0.22.1",
-    "coffee-script": "1.6.3",
+    "coffee-script": "1.7.1",
     "crypto-js": "3.1.2",
     "express": "3.4.8",
     "groc": "0.6.1",
@@ -18,7 +18,7 @@
     "js-select": "0.6.0",
     "mustache": "0.8.1",
     "needle": "0.6.3",
-    "nodeunit": "0.8.4",
+    "nodeunit": "0.8.6",
     "redis": "0.10.0",
     "request": "2.33.0",
     "optimist": "0.6.1"

@@ -347,14 +347,17 @@ class IndexedModules
 		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
 			sem = obj.length
 			oAnswer = {}
-			for func in obj
-				fRegisterFunction = ( func ) =>
-					( err, obj ) =>
-						if obj
-							oAnswer[ func ] = obj
-						if --sem is 0
-							cb null, oAnswer
-				@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }", fRegisterFunction func
+			if sem is 0
+				cb null, oAnswer
+			else
+				for func in obj
+					fRegisterFunction = ( func ) =>
+						( err, obj ) =>
+							if obj
+								oAnswer[ func ] = obj
+							if --sem is 0
+								cb null, oAnswer
+					@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }", fRegisterFunction func
 
 	getUserArguments: ( userId, ruleId, mId, funcId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId } )"
@@ -596,14 +599,14 @@ exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
 			cb null, result
 		else
 			semaphore = obj.length
-			fFetchActiveUserRules = ( userId ) =>
-				@db.smembers "user:#{ user }:active-rules", ( err, obj ) =>
-					if obj.length > 0
-						result[userId] = obj
-					if --semaphore is 0
-						cb null, result
-			fFetchActiveUserRules user for user in obj
-
+			for user in obj
+				fProcessAnswer = ( user ) ->
+					( err, obj ) =>
+						if obj.length > 0
+							result[user] = obj
+						if --semaphore is 0
+							cb null, result
+				@db.smembers "user:#{ user }:active-rules", fProcessAnswer user 
 
 ###
 ## Users

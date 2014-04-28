@@ -6,7 +6,7 @@
 exports.parseTextToJSON = ( eventname, text ) ->
 	try
 		pushEvent
-			event: eventname
+			eventname: eventname
 			body: JSON.parse text
 		log "Text successfully parsed"
 	catch e
@@ -16,7 +16,7 @@ exports.parseTextToJSON = ( eventname, text ) ->
 # Parses objects to text
 exports.parseObjectToPrettyText = ( eventname, obj ) ->
 	pushEvent
-		event: eventname
+		eventname: eventname
 		body: JSON.stringify text, undefined, 2
 
 
@@ -30,7 +30,7 @@ exports.accumulateEvents = ( evtname, evt, sendTime ) ->
 	if lastSend < yesterday
 		lastSend = sTime
 		pushEvent
-			event: evtname
+			eventname: evtname
 			body: arrEvents
 		arrEvents = []
 
@@ -56,7 +56,7 @@ fPushEvent = () ->
 	if eventname isnt ''
 		log "Pushing changed interval event"
 		pushEvent
-			event: eventname
+			eventname: eventname
 			body: event
 	setTimeout fPushEvent, interval
 	
@@ -109,7 +109,7 @@ exports.LongLatToMeterDistance = ( latOne, longOne, latTwo, longTwo, eventname )
 	c = 2 * Math.atan2 Math.sqrt( a ), Math.sqrt 1 - a
 	
 	pushEvent
-		event: eventname
+		eventname: eventname
 		body:
 			latOne: latOne
 			longOne: longOne

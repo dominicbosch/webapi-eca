@@ -54,7 +54,7 @@ domSectionSelectedActions.append $( '<table> ' ).attr( 'id', 'selected_actions' 
 domSectionSelectedActions.hide()
 
 domSectionActionParameters = $( '<div>' )
-domSectionActionParameters.append $( '<div>' ).html "<br><br><b>Required Parameters:</b><br><br>"
+domSectionActionParameters.append $( '<div>' ).html "<br><br><b>Required User-specific Data:</b><br><br>"
 domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_invoker_params' )
 domSectionActionParameters.append $( '<div>' ).html "<br><br>"
 domSectionActionParameters.hide()
@@ -254,7 +254,7 @@ fDisplayEventParams = ( id ) ->
 				tr.append $( '<td>' ).text( ' : ' ).append inp
 				table.append tr
 			if i > 0
-				$( '#event_poller_params' ).html '<b>Required Global Parameters:</b>'
+				$( '#event_poller_params' ).html '<b>Required User-specific Data:</b>'
 				$( '#event_poller_params' ).append table
 				fFillEventParams id
 
@@ -286,7 +286,7 @@ fFetchEventFunctionArgs = ( arrName ) ->
 				oParams = JSON.parse data.message
 				if oParams[ arrName[ 1 ] ]
 					if oParams[ arrName[ 1 ] ].length > 0
-						$( '#event_poller_params' ).append $( "<b>" ).text 'Required Function Parameters:'
+						$( '#event_poller_params' ).append $( "<b>" ).text 'Required Rule-specific Data:'
 					table = $( '<table>' ).appendTo $( '#event_poller_params' )
 					for functionArgument in oParams[ arrName[ 1 ] ]
 						tr = $( '<tr>' ).attr( 'class', 'funcMappings' ).appendTo table
@@ -492,8 +492,8 @@ fOnLoad = () ->
 			name = decodeURIComponent oParams.eventname
 			$( '#input_id' ).val "My '#{ name }' Rule" 
 			fPrepareEventType 'Custom Event', () ->
-				$( '#input_eventname' ).val name
-				$( '#input_eventname' ).focus()
+				$( 'input', domInputEventName ).val name
+				$( 'input', domInputEventName ).focus()
 				editor.setValue "[\n\n]" # For now we don't prepare conditions
 
 		when 'webhook'
@@ -722,44 +722,44 @@ fOnLoad = () ->
 					$( '#input_id' ).val oRule.id
 					
 					# Event
-					fPrepareEventType oRule.eventtype
-					switch oRule.eventtype
-						when 'Event Poller'
-							$( '#select_event' ).val oRule.eventname
-							if $( '#select_event' ).val() isnt ''
-								fFetchEventParams oRule.eventname
-								$( '#input_event' ).val oRule.eventname
-								d = new Date oRule.eventstart 
-								mins = d.getMinutes()
-								if mins.toString().length is 1
-										mins = '0' + mins
-								$( '#input_start', domInputEventTiming ).val d.getHours() + ':' + mins
-								$( '#input_interval', domInputEventTiming ).val oRule.eventinterval
+					fPrepareEventType oRule.eventtype, () ->
 
-							else
-								window.scrollTo 0, 0
-								$( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
-								$( '#info' ).attr 'class', 'error'
+						switch oRule.eventtype
+							when 'Event Poller'
+								$( 'select', domSelectEventPoller ).val oRule.eventname
+								if $( 'select', domSelectEventPoller ).val() is oRule.eventname
+									fFetchEventParams oRule.eventname
+									d = new Date oRule.eventstart 
+									mins = d.getMinutes()
+									if mins.toString().length is 1
+											mins = '0' + mins
+									$( '#input_start', domInputEventTiming ).val d.getHours() + ':' + mins
+									$( '#input_interval', domInputEventTiming ).val oRule.eventinterval
 
-						when 'Webhook'
-							$( '#select_eventhook' ).val oRule.eventname
+								else
+									window.scrollTo 0, 0
+									$( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
+									$( '#info' ).attr 'class', 'error'
 
-							if $( '#select_eventhook' ).val() is ''
-								window.scrollTo 0, 0
-								$( '#info' ).text 'Your Webhook does not exist anymore!'
-								$( '#info' ).attr 'class', 'error'
+							when 'Webhook'
+								$( 'select', domSelectWebhook ).val oRule.eventname
 
-						when 'Custom Event'
-							$( '#input_eventname' ).val oRule.eventname
+								if $( 'select', domSelectWebhook ).val() is oRule.eventname
+									window.scrollTo 0, 0
+									$( '#info' ).text 'Your Webhook does not exist anymore!'
+									$( '#info' ).attr 'class', 'error'
 
-					# Conditions
-					editor.setValue JSON.stringify oRule.conditions, undefined, 2
+							when 'Custom Event'
+								$( 'input', domInputEventName ).val oRule.eventname
 
-					# Actions
-					domSectionSelectedActions.show()
-					for action in oRule.actions
-						arrName = action.split ' -> '
-						fAddSelectedAction action
+						# Conditions
+						editor.setValue JSON.stringify oRule.conditions, undefined, 2
+
+						# Actions
+						domSectionSelectedActions.show()
+						for action in oRule.actions
+							arrName = action.split ' -> '
+							fAddSelectedAction action
 
 			fail: ( err ) ->
 				if err.responseText is ''

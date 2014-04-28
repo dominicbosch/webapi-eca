@@ -4,6 +4,7 @@ var fs = require( 'fs' ),
   path = require( 'path' ),
   nodeunit = require( 'nodeunit' ),
   db = require( './js/persistence' ),
+  cs = require('coffee-script'),
   args = process.argv.slice( 2 ),
   fEnd = function() {
     console.log( 'Shutting down DB from unit_test.sh script. '
@@ -11,6 +12,9 @@ var fs = require( 'fs' ),
     db.shutDown();
   };
    
+if (cs.register) {
+  cs.register();
+}
 if( args[ 0 ] !== undefined ) {
   var fl = path.resolve( args[ 0 ] );
   if ( fs.existsSync( fl ) ) {

@@ -73,7 +73,7 @@
 
   domSectionActionParameters = $('<div>');
 
-  domSectionActionParameters.append($('<div>').html("<br><br><b>Required Parameters:</b><br><br>"));
+  domSectionActionParameters.append($('<div>').html("<br><br><b>Required User-specific Data:</b><br><br>"));
 
   domSectionActionParameters.append($('<div>').attr('id', 'action_invoker_params'));
 
@@ -297,7 +297,7 @@
           table.append(tr);
         }
         if (i > 0) {
-          $('#event_poller_params').html('<b>Required Global Parameters:</b>');
+          $('#event_poller_params').html('<b>Required User-specific Data:</b>');
           $('#event_poller_params').append(table);
           return fFillEventParams(id);
         }
@@ -347,7 +347,7 @@
           oParams = JSON.parse(data.message);
           if (oParams[arrName[1]]) {
             if (oParams[arrName[1]].length > 0) {
-              $('#event_poller_params').append($("<b>").text('Required Function Parameters:'));
+              $('#event_poller_params').append($("<b>").text('Required Rule-specific Data:'));
             }
             table = $('<table>').appendTo($('#event_poller_params'));
             _ref = oParams[arrName[1]];
@@ -619,8 +619,8 @@
         name = decodeURIComponent(oParams.eventname);
         $('#input_id').val("My '" + name + "' Rule");
         fPrepareEventType('Custom Event', function() {
-          $('#input_eventname').val(name);
-          $('#input_eventname').focus();
+          $('input', domInputEventName).val(name);
+          $('input', domInputEventName).focus();
           return editor.setValue("[\n\n]");
         });
         break;
@@ -881,51 +881,52 @@
           })
         },
         done: function(data) {
-          var action, arrName, d, mins, oRule, _j, _len1, _ref, _results;
+          var oRule;
           oRule = JSON.parse(data.message);
           if (oRule) {
             $('#input_id').val(oRule.id);
-            fPrepareEventType(oRule.eventtype);
-            switch (oRule.eventtype) {
-              case 'Event Poller':
-                $('#select_event').val(oRule.eventname);
-                if ($('#select_event').val() !== '') {
-                  fFetchEventParams(oRule.eventname);
-                  $('#input_event').val(oRule.eventname);
-                  d = new Date(oRule.eventstart);
-                  mins = d.getMinutes();
-                  if (mins.toString().length === 1) {
-                    mins = '0' + mins;
+            return fPrepareEventType(oRule.eventtype, function() {
+              var action, arrName, d, mins, _j, _len1, _ref, _results;
+              switch (oRule.eventtype) {
+                case 'Event Poller':
+                  $('select', domSelectEventPoller).val(oRule.eventname);
+                  if ($('select', domSelectEventPoller).val() === oRule.eventname) {
+                    fFetchEventParams(oRule.eventname);
+                    d = new Date(oRule.eventstart);
+                    mins = d.getMinutes();
+                    if (mins.toString().length === 1) {
+                      mins = '0' + mins;
+                    }
+                    $('#input_start', domInputEventTiming).val(d.getHours() + ':' + mins);
+                    $('#input_interval', domInputEventTiming).val(oRule.eventinterval);
+                  } else {
+                    window.scrollTo(0, 0);
+                    $('#info').text('Error loading Rule: Your Event Poller does not exist anymore!');
+                    $('#info').attr('class', 'error');
                   }
-                  $('#input_start', domInputEventTiming).val(d.getHours() + ':' + mins);
-                  $('#input_interval', domInputEventTiming).val(oRule.eventinterval);
-                } else {
-                  window.scrollTo(0, 0);
-                  $('#info').text('Error loading Rule: Your Event Poller does not exist anymore!');
-                  $('#info').attr('class', 'error');
-                }
-                break;
-              case 'Webhook':
-                $('#select_eventhook').val(oRule.eventname);
-                if ($('#select_eventhook').val() === '') {
-                  window.scrollTo(0, 0);
-                  $('#info').text('Your Webhook does not exist anymore!');
-                  $('#info').attr('class', 'error');
-                }
-                break;
-              case 'Custom Event':
-                $('#input_eventname').val(oRule.eventname);
-            }
-            editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
-            domSectionSelectedActions.show();
-            _ref = oRule.actions;
-            _results = [];
-            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-              action = _ref[_j];
-              arrName = action.split(' -> ');
-              _results.push(fAddSelectedAction(action));
-            }
-            return _results;
+                  break;
+                case 'Webhook':
+                  $('select', domSelectWebhook).val(oRule.eventname);
+                  if ($('select', domSelectWebhook).val() === oRule.eventname) {
+                    window.scrollTo(0, 0);
+                    $('#info').text('Your Webhook does not exist anymore!');
+                    $('#info').attr('class', 'error');
+                  }
+                  break;
+                case 'Custom Event':
+                  $('input', domInputEventName).val(oRule.eventname);
+              }
+              editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
+              domSectionSelectedActions.show();
+              _ref = oRule.actions;
+              _results = [];
+              for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                action = _ref[_j];
+                arrName = action.split(' -> ');
+                _results.push(fAddSelectedAction(action));
+              }
+              return _results;
+            });
           }
         },
         fail: function(err) {
