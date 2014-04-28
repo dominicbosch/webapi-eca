@@ -13,7 +13,7 @@
     "coffee-script": "1.7.1",
     "crypto-js": "3.1.2",
     "express": "3.4.8",
-    "groc": "0.6.1",
+    "groc": "0.6.3",
     "import-io": "1.0.x",
     "js-select": "0.6.0",
     "mustache": "0.8.1",

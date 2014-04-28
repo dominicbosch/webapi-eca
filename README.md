@@ -63,10 +63,4 @@ Run test suite:
 
 Create the doc *(to be accessed via the webserver, e.g.: localhost:8125/doc/)*:
 
-> **WARNING:**
-
-> *manual adjustment of `./node_modules/groc/lib/styles/default/docPage.jade` required until groc is fixed:*
-
-> *`!!! 5` needs to be relaced with  `doctype html`*
-
     run_doc.sh
