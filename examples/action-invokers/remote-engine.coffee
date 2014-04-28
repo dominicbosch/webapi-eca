@@ -3,6 +3,7 @@ Remote Engine
 -------------
 #
 # Requires user params:
+
 #  - eventname: The event type to be pushed into the system
 #  - webhook: 	The url to the emote webhook that will receive the event
 ###
@@ -14,7 +15,7 @@ options =
 ###
 Push an event into a WebAPI engine.
 
-@param {Object} evt The event object that will be transmitted.
+ - {Object} evt The event object that will be transmitted.
 ###
 exports.pushEvent = ( evt ) ->
 	if not evt

@@ -3,6 +3,7 @@
 # ---------------------
 #
 # Requires user params:
+
 #  - apikey: The user's EmailYak API key
 #
 
@@ -24,27 +25,28 @@ exports.newMail = () ->
 					log "#{ body.Emails.length } mail events pushed into the system"
 				pushEvent mail for mail in body.Emails
 
-				###
-				This will emit events of the form:
-				( Refer to http://docs.emailyak.com/get-new-email.html for more information. )
+				
+				# This will emit events of the form:
+				
+				# ( Refer to http://docs.emailyak.com/get-new-email.html for more information. )
 
-				{
-					"EmailID": "xquukd5z",
-					"Received": "2014-04-19T11:27:11",
-					"ToAddress": "test@mscliveweb.simpleyak.com",
-					"ParsedData": [
-						{
-							"Data": "Best Regards\nTest User",
-							"Part": 0,
-							"Type": "Email"
-						}
-					],
-					"FromName": "Test User",
-					"ToAddressList": "test@mscliveweb.simpleyak.com",
-					"FromAddress": "test.address@provider.com",
-					"HtmlBody": "Best Regards\nTest User",
-					"CcAddressList": "",
-					"TextBody": "Best Regards\nTest User",
-					"Subject": "test subject"
-				}
-				###
+# 				{
+# 					"EmailID": "xquukd5z",
+# 					"Received": "2014-04-19T11:27:11",
+# 					"ToAddress": "test@mscliveweb.simpleyak.com",
+# 					"ParsedData": [
+# 						{
+# 							"Data": "Best Regards\nTest User",
+# 							"Part": 0,
+# 							"Type": "Email"
+# 						}
+# 					],
+# 					"FromName": "Test User",
+# 					"ToAddressList": "test@mscliveweb.simpleyak.com",
+# 					"FromAddress": "test.address@provider.com",
+# 					"HtmlBody": "Best Regards\nTest User",
+# 					"CcAddressList": "",
+# 					"TextBody": "Best Regards\nTest User",
+# 					"Subject": "test subject"
+# 				}
+				

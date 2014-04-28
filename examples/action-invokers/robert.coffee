@@ -8,6 +8,7 @@ This is a customized module, made for Robert Frank to automatically create
 courses binders and prefill them with data.
 
 This module requires user-specific parameters:
+
 - binderUsername
 - binderPassword
 - importIoUserGuid
@@ -305,6 +306,7 @@ exports.createSemester = ( semester ) ->
 	
 
 # Expects
+
 # - semester
 # - studies
 # - major

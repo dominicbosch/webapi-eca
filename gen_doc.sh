@@ -9,6 +9,7 @@ require( 'groc' ).CLI(
     "README.md",
     "LICENSE.md",
     "coffee/*.coffee",
+    "examples/*/**",
     "-o./webpages/public/doc"
   ],
   function( err ) {

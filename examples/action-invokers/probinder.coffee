@@ -31,11 +31,11 @@ standardCallback = ( funcName ) ->
 ###
 Call the ProBinder service with the given parameters.
 
-@param {Object} args the required function arguments object
-@param {Object} [args.data] the data to be posted
-@param {String} args.service the required service identifier to be appended to the url
-@param {String} args.method the required method identifier to be appended to the url
-@param {function} [args.callback] the function to receive the request answer
+ - {Object} args the required function arguments object
+ - {Object} [args.data] the data to be posted
+ - {String} args.service the required service identifier to be appended to the url
+ - {String} args.method the required method identifier to be appended to the url
+ - {function} [args.callback] the function to receive the request answer
 ###
 callService = ( args ) ->
 	if not args.service or not args.method
@@ -50,9 +50,9 @@ callService = ( args ) ->
 ###
 Does everything to post something in a binder
 
-@param {String} companyId the comany associated to the binder
-@param {String} contextId the binder id
-@param {String} content the content to be posted
+ - {String} companyId the comany associated to the binder
+ - {String} contextId the binder id
+ - {String} content the content to be posted
 ###
 exports.newContent = ( companyId, contextId, content ) ->
 	if arguments[ 4 ]
@@ -71,8 +71,8 @@ exports.newContent = ( companyId, contextId, content ) ->
 ###
 Does everything to post a file info in a binder tab
 
-@param {String} fromService the content service which grabs the content
-@param {String} fromId the content id from which the information is grabbed
+ - {String} fromService the content service which grabs the content
+ - {String} fromId the content id from which the information is grabbed
 ###
 exports.makeFileEntry = ( fromService, fromId, toCompany, toContext ) ->
 	getContent
@@ -87,11 +87,11 @@ exports.makeFileEntry = ( fromService, fromId, toCompany, toContext ) ->
 ###
 Calls the content get service with the content id and the service id provided. 
 
-@param {Object} args the object containing the service id and the content id,
+ - {Object} args the object containing the service id and the content id,
    success and error callback methods
-@param {String} args.serviceid the service id that is able to process this content
-@param {String} args.contentid the content id
-@param {function} [args.callback] receives the needle answer from the "call" function
+ - {String} args.serviceid the service id that is able to process this content
+ - {String} args.contentid the content id
+ - {function} [args.callback] receives the needle answer from the "call" function
 ###
 getContent = ( args ) ->
 	if not args.callback
@@ -107,7 +107,7 @@ getContent = ( args ) ->
 ###
 Sets the content as read.
 
-@param {Object} id the content id to be set to read.
+ - {Object} id the content id to be set to read.
 ###
 exports.setRead = ( id ) ->
 	callService

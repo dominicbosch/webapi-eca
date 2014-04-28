@@ -3,7 +3,7 @@
 # Converts text to speech and issues an event into th system on completion
 #
 # Requires user-specific parameters:
-# 
+
 # - emailaccount
 # - accountid
 # - loginkey
@@ -29,22 +29,22 @@ arrFormats = [
 	"FORMAT_MUWAV" # (8bit Mu-law PCM Wave)
 ]
 
-# oResponseCodes =
-# 	"0": "success"
-# 	"-1": "invalid login"
-# 	"-2": "account inactive"
-# 	"-3": "account unauthorized"
-# 	"-4": "invalid or inactive login key"
-# 	"-5": "invalid conversion number lookup"
-# 	"-6": "content size is too large (only for “Basic” subscribers)"
-# 	"-7": "monthly allowance has been exceeded (only for “Basic” subscribers)"
-# 	"-10": "invalid TTS Voice ID"
-# 	"-11": "invalid TTS Output Format ID"
-# 	"-12": "invalid REST request"
-# 	"-13": "invalid or unavailable TTS Sample Rate"
-# 	"1": "invalid SSML (not a valid XML document)"
-# 	"2": "invalid SSML (SSML content must begin with a “speak” tag)"
-# 	"3": "invalid SSML (“lexicon” tag is not supported)"
+# 		oResponseCodes =
+# 			"0": "success"
+# 			"-1": "invalid login"
+# 			"-2": "account inactive"
+# 			"-3": "account unauthorized"
+# 			"-4": "invalid or inactive login key"
+# 			"-5": "invalid conversion number lookup"
+# 			"-6": "content size is too large (only for “Basic” subscribers)"
+# 			"-7": "monthly allowance has been exceeded (only for “Basic” subscribers)"
+# 			"-10": "invalid TTS Voice ID"
+# 			"-11": "invalid TTS Output Format ID"
+# 			"-12": "invalid REST request"
+# 			"-13": "invalid or unavailable TTS Sample Rate"
+# 			"1": "invalid SSML (not a valid XML document)"
+# 			"2": "invalid SSML (SSML content must begin with a “speak” tag)"
+# 			"3": "invalid SSML (“lexicon” tag is not supported)"
 
 parseAnswer = ( body ) ->
 	arrSelectors = body.match /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|[>"']))+.)["']?/g
@@ -55,6 +55,7 @@ parseAnswer = ( body ) ->
 	oAnswer
 
 # Function arguments:
+
 # - text: the text to be translated into voice
 # - idVoice: index of the voice used for conversion from the arrVoices array.
 # - idAudioFormat: index of the voice used for conversion from the arrVoices array.

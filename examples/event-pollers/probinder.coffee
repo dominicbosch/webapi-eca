@@ -4,6 +4,7 @@ ProBinder EVENT POLLER
 
 Global variables
 This module requires user-specific parameters:
+
 - username
 - password
 ###
@@ -29,11 +30,11 @@ standardCallback = ( funcName ) ->
 ###
 Call the ProBinder service with the given parameters.
 
-@param {Object} args the required function arguments object
-@param {Object} [args.data] the data to be posted
-@param {String} args.service the required service identifier to be appended to the url
-@param {String} args.method the required method identifier to be appended to the url
-@param {function} [args.callback] the function to receive the request answer
+ - {Object} args the required function arguments object
+ - {Object} [args.data] the data to be posted
+ - {String} args.service the required service identifier to be appended to the url
+ - {String} args.method the required method identifier to be appended to the url
+ - {function} [args.callback] the function to receive the request answer
 ###
 callService = ( args ) ->
 	if not args.service or not args.method
@@ -89,30 +90,30 @@ getContent = ( args ) ->
 			service: args.contentServiceId
 		callback: args.callback
 
-# Returns an event of the form:
-#
-# {
-#     "text": "test subject",
-#     "id": 127815,
-#     "createDate": "2014-04-19 16:27:45",
-#     "lastModified": "2014-04-19 16:27:45",
-#     "time": "5 days ago",
-#     "userId": 10595,
-#     "username": "Dominic Bosch",
-#     "uri": "https://probinder.com/content/view/id/127815/",
-#     "localUri": "https://probinder.com/content/view/id/127815/",
-#     "title": "",
-#     "serviceId": 27,
-#     "userIds": [
-#         10595
-#     ],
-#     "description": "",
-#     "context": [
-#         {
-#             "id": 18749,
-#             "name": "WebAPI ECA Test Binder",
-#             "remove": true,
-#             "uri": "/content/context/id/18749/webapi-eca-test-binder"
-#         }
-#     ]
-# }
+#		Returns an event of the form:
+
+# 		{
+# 		    "text": "test subject",
+# 		    "id": 127815,
+# 		    "createDate": "2014-04-19 16:27:45",
+# 		    "lastModified": "2014-04-19 16:27:45",
+# 		    "time": "5 days ago",
+# 		    "userId": 10595,
+# 		    "username": "Dominic Bosch",
+# 		    "uri": "https://probinder.com/content/view/id/127815/",
+# 		    "localUri": "https://probinder.com/content/view/id/127815/",
+# 		    "title": "",
+# 		    "serviceId": 27,
+# 		    "userIds": [
+# 		        10595
+# 		    ],
+# 		    "description": "",
+# 		    "context": [
+# 		        {
+# 		            "id": 18749,
+# 		            "name": "WebAPI ECA Test Binder",
+# 		            "remove": true,
+# 		            "uri": "/content/context/id/18749/webapi-eca-test-binder"
+# 		        }
+# 		    ]
+# 		}

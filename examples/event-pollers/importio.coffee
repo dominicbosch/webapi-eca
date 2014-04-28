@@ -57,18 +57,19 @@ exports.weekData = ( idCity ) ->
 		connectorGuids: [ "2a1d789a-4d24-4942-bdca-ffa0e9f99c85" ]
 	queryService params, ( data ) ->
 		pushEvent data
-	# [ 
-	# 	{
-	# 		wind: '9 mph',
-	#     day_identifier: 'Today',
-	#     day_name: 'Mon',
-	#     temp_max: '61 °F',
-	#     temp_min: '50 °F',
-	#     sunlight: '0 h',
-	#     rain: '0-2mm'
-	#   },
-	#   [...]
-	# ]
+
+#		[ 
+# 		{
+# 			wind: '9 mph',
+# 			day_identifier: 'Today',
+# 			day_name: 'Mon',
+# 			temp_max: '61 °F',
+# 			temp_min: '50 °F',
+# 			sunlight: '0 h',
+# 			rain: '0-2mm'
+# 		},
+# 		[...]
+# 	]
 
 exports.currentData = ( idCity ) ->
 	params =
@@ -76,14 +77,14 @@ exports.currentData = ( idCity ) ->
 		connectorGuids: [ "06394265-b4e1-4b48-be82-a9f2acb9040f" ]
 	queryService params, ( data ) ->
 		pushEvent data
-	# [
-	# 	{
-	# 		current_time_wind_desc: '01:00 | Overcast',
-	#     current_temp: '53°F',
-	#     coordinates: '47.56°N 7.59°E 260m asl',
-	#     city: 'Basel-Stadt'
-	#   }
-	# ]
+#		[
+# 		{
+# 			current_time_wind_desc: '01:00 | Overcast',
+# 			current_temp: '53°F',
+# 			coordinates: '47.56°N 7.59°E 260m asl',
+# 			city: 'Basel-Stadt'
+# 		}
+# 	]
 
 
 # Helper function to detect and convert temperatures

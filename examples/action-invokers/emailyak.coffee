@@ -1,8 +1,10 @@
+
 ### 
 EmailYak ACTION INVOKER
 ------------------------
 #
 # Requires user params:
+
 #  - apikey: The user's EmailYak API key
 ###
 
@@ -26,10 +28,10 @@ standardCallback = ( funcName ) ->
 ###
 Send a mail through Emailyak.
 
-@param sender The email address belonging to your apikey
-@param receipient The email address for the one that receives the mail
-@param subject The subject of the mail
-@param content The content of the mail
+- sender The email address belonging to your apikey
+- receipient The email address for the one that receives the mail
+- subject The subject of the mail
+- content The content of the mail
 ###
 exports.sendMail = ( sender, receipient, subject, content ) ->
 	if typeof content isnt "string"
