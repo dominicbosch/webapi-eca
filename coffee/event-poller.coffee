@@ -59,7 +59,7 @@ isRunning = true
 # Register disconnect action. Since no standalone mode is intended
 # the event poller will shut down
 process.on 'disconnect', () ->
-	log.info 'EP | Shutting down Event Poller'
+	log.warn 'EP | Shutting down Event Poller'
 	isRunning = false
 	# very important so the process doesnt linger on when the paren process is killed  
 	process.exit()

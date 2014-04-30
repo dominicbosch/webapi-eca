@@ -3,6 +3,7 @@ OpenWeather EVENT POLLER
 ------------------------
 
 This module requires user-specific parameters:
+
 - appid
 ###
 urlService = 'http://api.openweathermap.org/data/2.5/weather'

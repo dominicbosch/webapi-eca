@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env nodejs
 /*
  * # groc Documentation
  * Create the documentation to be displayed through the webserver.

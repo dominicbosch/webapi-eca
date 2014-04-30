@@ -6,6 +6,7 @@ ProBinder ACTION INVOKER
 
 Global variables
 This module requires user-specific parameters:
+
 - username
 - password
 ###

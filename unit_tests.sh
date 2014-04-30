@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env nodejs
 process.chdir( __dirname );
 var fs = require( 'fs' ),
   path = require( 'path' ),

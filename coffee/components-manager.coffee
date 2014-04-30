@@ -225,6 +225,8 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 			# 	dbMod.publish oBody.id
 		callback answ
 
+# Store a rule and inform everybody about it
+# ------------------------------------------
 storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
 		rule =
@@ -244,22 +246,22 @@ storeRule = ( user, oBody, callback ) =>
 		db.linkRule rule.id, user.username
 		# activate the rule
 		db.activateRule rule.id, user.username
-		# if event module parameters were send, store them
+		# if event module parameters were sent, store them
 		if oBody.eventparams
 			epModId = rule.eventname.split( ' -> ' )[ 0 ]
 			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oBody.eventparams
 		oFuncArgs = oBody.eventfunctions
-		# if event function arguments were send, store them
+		# if event function arguments were sent, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.eventPollers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
-		# if action module params were send, store them
+		# if action module params were sent, store them
 		oParams = oBody.actionparams
 		for id, params of oParams
 			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
 		oFuncArgs = oBody.actionfunctions
-		# if action function arguments were send, store them
+		# if action function arguments were sent, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
@@ -450,6 +452,7 @@ commandFunctions =
 
 
 # WEBHOOKS
+# --------
 	create_webhook: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'hookname' ], oBody
 		if answ.code isnt 200

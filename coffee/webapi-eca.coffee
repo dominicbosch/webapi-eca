@@ -157,8 +157,6 @@ init = =>
 	@log.info 'RS | Initialzing DB'
 	db args
 	# > We only proceed with the initialization if the DB is ready
-	#TODO eventually we shouldn't let each module load its own persistence
-	#module, but hand this one through them via the args...
 	db.isConnected ( err ) =>
 		db.selectDatabase parseInt( args[ 'db-select' ] ) || 0
 		if err
@@ -192,6 +190,7 @@ init = =>
 				# - The keygen phrase, this has to be handled differently in the future!
 				args[ 'keygen' ]
 			]
+			# Initialize the event poller with the required CLI arguments
 			poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs
 
 			# after the engine and the event poller have been initialized we can
@@ -203,7 +202,7 @@ init = =>
 			cm.addRuleListener ( evt ) -> poller.send evt
 
 			@log.info 'RS | Initialzing http listener'
-			# The request handler passes certain requests to the module manager
+			# The request handler passes certain requests to the components manager
 			args[ 'request-service' ] = cm.processRequest
 			# We give the HTTP listener the ability to shutdown the whole system
 			args[ 'shutdown-function' ] = shutDown

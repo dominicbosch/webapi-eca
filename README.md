@@ -27,7 +27,7 @@ Download and install dependencies:
     cd webapi-eca
     npm install
 
-Get your [redis](http://redis.io/) instance up and running (and find the port for the config file below) or create your own `js/persistence.js`.
+Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`.
 
 Edit the configuration file:
 
