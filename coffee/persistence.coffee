@@ -377,9 +377,38 @@ class IndexedModules
 
 
 ###
+Stores data for a module in a rule. This is used to allow persistance for moduöes in rules.
+
+@public log( *userId, ruleId, moduleId, field, data* )
+@param {String} userId
+@param {String} ruleId
+@param {String} moduleId
+@param {String} field
+@param {String} data
+###
+exports.persistSetVar = ( userId, ruleId, moduleId, field, data ) =>
+	@db.hmset "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, data,
+		replyHandler "hmset 'rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }' -> #{ field } = [data]"
+
+
+###
+Gets data for a module in a rule.
+
+@public log( *userId, ruleId, moduleId, field, cb* )
+@param {String} userId
+@param {String} ruleId
+@param {String} moduleId
+@param {String} field
+@param {function} cb
+###
+exports.persistGetVar = ( userId, ruleId, moduleId, field, cb ) =>
+	@db.hget "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, cb
+
+
+###
 Appends a log entry.
 
-@public log( *userId, ruleId, message* )
+@public log( *userId, ruleId, moduleId, message* )
 @param {String} userId
 @param {String} ruleId
 @param {String} message

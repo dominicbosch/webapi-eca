@@ -381,20 +381,20 @@ parsePushAndAnswerEvent = ( eventname, username, body, resp ) ->
 	obj
 
 
-###
-Handles measurement posts
-###
-exports.handleMeasurements = ( req, resp ) =>
-	body = ''
-	req.on 'data', ( data ) ->
-		body += data
+# ###
+# Handles measurement posts
+# ###
+# exports.handleMeasurements = ( req, resp ) =>
+# 	body = ''
+# 	req.on 'data', ( data ) ->
+# 		body += data
 
-	req.on 'end', ->
-		obj = parsePushAndAnswerEvent name, null, body, resp
-		if obj.eventname is 'uptimestatistics'
-			# This is a hack to quickly allow storing of public accessible data
-			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-			fs.writeFile fPath, JSON.stringify( obj, undefined, 2 ), 'utf8'
+# 	req.on 'end', ->
+# 		obj = parsePushAndAnswerEvent name, null, body, resp
+# 		if obj.eventname is 'uptimestatistics'
+# 			# This is a hack to quickly allow storing of public accessible data
+# 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
+# 			fs.writeFile fPath, JSON.stringify( obj, undefined, 2 ), 'utf8'
 
 ###
 Handles webhook posts

@@ -9,12 +9,13 @@ broadcast = ( msg ) ->
 			json: true
 			jar: true
 			url: hook
-			body: msg
+			body:
+				message: msg
 		request options, ( err, resp, body ) ->
 			if err or resp.statusCode isnt 200
-				log "Error in pushing data to webhook '#{ url }'!"
+				log "Error in pushing data to webhook '#{ hook }'!"
 			else
-				log "Successfully posted data to '#{ url }'"
+				log "Successfully posted data to '#{ hook }'"
 
 exports.message = ( msg ) ->
 	if msg.webhook
