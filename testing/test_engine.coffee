@@ -59,9 +59,9 @@ exports.ruleEvents =
 		test.expect 2 + 2 * oRuleOne.actions.length + oRuleTwo.actions.length
 
 		db.storeUser oUser
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-		db.linkRule oRuleOne.id, oUser.username
-		db.activateRule oRuleOne.id, oUser.username
+		db.storeRule oUser.username, oRuleOne.id, JSON.stringify oRuleOne
+		# db.linkRule oRuleOne.id, oUser.username
+		# db.activateRule oRuleOne.id, oUser.username
 		db.actionInvokers.storeModule oUser.username, oAiOne
 		db.actionInvokers.storeModule oUser.username, oAiTwo
 		test.strictEqual listRules[oUser.username], undefined, 'Initial user object exists!?'

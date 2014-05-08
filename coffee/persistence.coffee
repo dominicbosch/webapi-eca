@@ -284,7 +284,7 @@ class IndexedModules
 		# @unpublish mId
 		# @unlinkModule mId, userId
 		@deleteUserParams mId, userId
-		exports.getUserLinkedRules userId, ( err, obj ) =>
+		exports.getRuleIds userId, ( err, obj ) =>
 			for rule in obj
 				@getUserArgumentsFunctions userId, rule, mId, ( err, obj ) =>
 					@deleteUserArguments userId, rule, mId
@@ -376,33 +376,33 @@ class IndexedModules
 ###
 
 
-###
-Stores data for a module in a rule. This is used to allow persistance for moduöes in rules.
+# ###
+# Stores data for a module in a rule. This is used to allow persistance for moduöes in rules.
 
-@public log( *userId, ruleId, moduleId, field, data* )
-@param {String} userId
-@param {String} ruleId
-@param {String} moduleId
-@param {String} field
-@param {String} data
-###
-exports.persistSetVar = ( userId, ruleId, moduleId, field, data ) =>
-	@db.hmset "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, data,
-		replyHandler "hmset 'rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }' -> #{ field } = [data]"
+# @public log( *userId, ruleId, moduleId, field, data* )
+# @param {String} userId
+# @param {String} ruleId
+# @param {String} moduleId
+# @param {String} field
+# @param {String} data
+# ###
+# exports.persistSetVar = ( userId, ruleId, moduleId, field, data ) =>
+# 	@db.hmset "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, data,
+# 		replyHandler "hmset 'rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }' -> #{ field } = [data]"
 
 
-###
-Gets data for a module in a rule.
+# ###
+# Gets data for a module in a rule.
 
-@public log( *userId, ruleId, moduleId, field, cb* )
-@param {String} userId
-@param {String} ruleId
-@param {String} moduleId
-@param {String} field
-@param {function} cb
-###
-exports.persistGetVar = ( userId, ruleId, moduleId, field, cb ) =>
-	@db.hget "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, cb
+# @public log( *userId, ruleId, moduleId, field, cb* )
+# @param {String} userId
+# @param {String} ruleId
+# @param {String} moduleId
+# @param {String} field
+# @param {function} cb
+# ###
+# exports.persistGetVar = ( userId, ruleId, moduleId, field, cb ) =>
+# 	@db.hget "rulepersistence:#{ userId }:#{ ruleId }:#{ moduleId }", field, cb
 
 
 ###
@@ -442,177 +442,173 @@ exports.resetLog = ( userId, ruleId ) =>
 ###
 Query the DB for a rule and pass it to cb(err, obj).
 
-@public getRule( *ruleId, cb* )
+@public getRule( *userId, ruleId, cb* )
+@param {String} userId
 @param {String} ruleId
 @param {function} cb
 ###
-exports.getRule = ( ruleId, cb ) =>
-	@log.info "DB | getRule( '#{ ruleId }' )"
-	@db.get "rule:#{ ruleId }", cb
-
-###
-Fetch all rules and pass them to cb(err, obj).  
-
-@public getRules( *cb* )
-@param {function} cb
-###
-exports.getRules = ( cb ) =>
-	@log.info "DB | Fetching all Rules: getSetRecords 'rules'"
-	getSetRecords 'rules', exports.getRule, cb
-
-###
-Fetch all rule IDs and hand it to cb(err, obj).
-
-@public getRuleIds( *cb* )
-@param {function} cb
-###
-exports.getRuleIds = ( cb ) =>
-	@log.info "DB | Fetching all Rule IDs: 'rules'"
-	@db.smembers 'rules', cb
+exports.getRule = ( userId, ruleId, cb ) =>
+	@log.info "DB | getRule( '#{ userId }', '#{ ruleId }' )"
+	@db.get "user:#{ userId }:rule:#{ ruleId }", cb
 
 ###
 Store a string representation of a rule in the DB.
 
-@public storeRule( *ruleId, data* )
+@public storeRule( *userId, ruleId, data* )
+@param {String} userId
 @param {String} ruleId
 @param {String} data
 ###
-exports.storeRule = ( ruleId, data ) =>
-	@log.info "DB | storeRule( '#{ ruleId }' )"
-	@db.sadd 'rules', "#{ ruleId }",
-		replyHandler "sadd 'rules' -> '#{ ruleId }'"
-	@db.set "rule:#{ ruleId }", data,
-		replyHandler "set 'rule:#{ ruleId }' -> [data]"
+exports.storeRule = ( userId, ruleId, data ) =>
+	@log.info "DB | storeRule( '#{ userId }', '#{ ruleId }' )"
+	@db.sadd "user:#{ userId }:rules", "#{ ruleId }",
+		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
+	@db.set "user:#{ userId }:rule:#{ ruleId }", data,
+		replyHandler "set 'user:#{ userId }:rule:#{ ruleId }' -> [data]"
+
+###
+Returns all existing rule ID's for a user
+
+@public getRuleIds( *userId, cb* )
+@param {String} userId
+@param {function} cb
+###
+exports.getRuleIds = ( userId, cb ) =>
+	@log.info "DB | getRuleIds( '#{ userId }' )"
+	@db.smembers "user:#{ userId }:rules", cb
 
 ###
 Delete a string representation of a rule.
 
-@public deleteRule( *ruleId, userId* )
-@param {String} ruleId
+@public deleteRule( *userId, ruleId* )
 @param {String} userId
-###
-exports.deleteRule = ( ruleId ) =>
-	@log.info "DB | deleteRule( '#{ ruleId }' )"
-	@db.srem "rules", ruleId, replyHandler "srem 'rules' -> '#{ ruleId }'"
-	@db.del "rule:#{ ruleId }", replyHandler "del 'rule:#{ ruleId }'"
-
-	# We also need to delete all references in linked and active users
-	@db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
-		delLinkedUserRule = ( userId ) =>
-			exports.resetLog userId, ruleId
-			@db.srem "user:#{ userId }:rules", ruleId,
-				replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
-		delLinkedUserRule id  for id in obj
-	@db.del "rule:#{ ruleId }:users", replyHandler "del 'rule:#{ ruleId }:users'"
-
-	@db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
-		delActiveUserRule = ( userId ) =>
-			@db.srem "user:#{ userId }:active-rules", ruleId,
-				replyHandler "srem 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
-		delActiveUserRule id  for id in obj
-	@db.del "rule:#{ ruleId }:active-users", 
-		replyHandler "del 'rule:#{ ruleId }:active-users'"
-		#TODO remove module links and params and arguments
-
-###
-Associate a rule to a user.
-
-@public linkRule( *ruleId, userId* )
 @param {String} ruleId
-@param {String} userId
 ###
-exports.linkRule = ( ruleId, userId ) =>
-	@log.info "DB | linkRule: '#{ ruleId }' to user '#{ userId }'"
-	@db.sadd "rule:#{ ruleId }:users", userId,
-		replyHandler "sadd 'rule:#{ ruleId }:users' -> '#{ userId }'"
-	@db.sadd "user:#{ userId }:rules", ruleId,
-		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
-
-###
-Get rules linked to a user and hand it to cb(err, obj).
-
-@public getUserLinkRule( *userId, cb* )
-@param {String} userId
-@param {function} cb
-###
-exports.getUserLinkedRules = ( userId, cb ) =>
-	@log.info "DB | getUserLinkedRules: smembers 'user:#{ userId }:rules'"
-	@db.smembers "user:#{ userId }:rules", cb
-
-###
-Get users linked to a rule and hand it to cb(err, obj).
-
-@public getRuleLinkedUsers( *ruleId, cb* )
-@param {String} ruleId
-@param {function} cb
-###
-exports.getRuleLinkedUsers = ( ruleId, cb ) =>
-	@log.info "DB | getRuleLinkedUsers: smembers 'rule:#{ ruleId }:users'"
-	@db.smembers "rule:#{ ruleId }:users", cb
-
-###
-Delete an association of a rule to a user.
-
-@public unlinkRule( *ruleId, userId* )
-@param {String} ruleId
-@param {String} userId
-###
-exports.unlinkRule = ( ruleId, userId ) =>
-	@log.info "DB | unlinkRule: '#{ ruleId }:#{ userId }'"
-	@db.srem "rule:#{ ruleId }:users", userId,
-		replyHandler "srem 'rule:#{ ruleId }:users' -> '#{ userId }'"
+exports.deleteRule = ( userId, ruleId ) =>
+	@log.info "DB | deleteRule( '#{ userId }', '#{ ruleId }' )"
 	@db.srem "user:#{ userId }:rules", ruleId,
 		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
+	@db.del "user:#{ userId }:rule:#{ ruleId }",
+		replyHandler "del 'user:#{ userId }:rule:#{ ruleId }'"
 
-###
-Activate a rule.
+	## This is not required anymore since we bind rules tightly to users
+	# We also need to delete all references in linked and active users
+	# @db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
+	# 	delLinkedUserRule = ( userId ) =>
+	# 		exports.resetLog userId, ruleId
+	# 		@db.srem "user:#{ userId }:rules", ruleId,
+	# 			replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
+	# 	delLinkedUserRule id  for id in obj
+	# @db.del "rule:#{ ruleId }:users", replyHandler "del 'rule:#{ ruleId }:users'"
 
-@public activateRule( *ruleId, userId* )
-@param {String} ruleId
-@param {String} userId
-###
-exports.activateRule = ( ruleId, userId ) =>
-	@log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
-	@db.sadd "rule:#{ ruleId }:active-users", userId,
-		replyHandler "sadd 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
-	@db.sadd "user:#{ userId }:active-rules", ruleId,
-		replyHandler "sadd 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
+	# @db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
+	# 	delActiveUserRule = ( userId ) =>
+	# 		@db.srem "user:#{ userId }:active-rules", ruleId,
+	# 			replyHandler "srem 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
+	# 	delActiveUserRule id  for id in obj
+	# @db.del "rule:#{ ruleId }:active-users", 
+	# 	replyHandler "del 'rule:#{ ruleId }:active-users'"
+		#TODO remove module links and params and arguments
 
-###
-Get rules activated for a user and hand it to cb(err, obj).
+# ###
+# Associate a rule to a user.
 
-@public getUserLinkRule( *userId, cb* )
-@param {String} userId
-@param {function} cb
-###
-exports.getUserActivatedRules = ( userId, cb ) =>
-	@log.info "DB | getUserActivatedRules: smembers 'user:#{ userId }:active-rules'"
-	@db.smembers "user:#{ userId }:active-rules", cb
+# @public linkRule( *ruleId, userId* )
+# @param {String} ruleId
+# @param {String} userId
+# ###
+# exports.linkRule = ( ruleId, userId ) =>
+# 	@log.info "DB | linkRule: '#{ ruleId }' to user '#{ userId }'"
+# 	@db.sadd "rule:#{ ruleId }:users", userId,
+# 		replyHandler "sadd 'rule:#{ ruleId }:users' -> '#{ userId }'"
+# 	@db.sadd "user:#{ userId }:rules", ruleId,
+# 		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
 
-###
-Get users activated for a rule and hand it to cb(err, obj).
+# ###
+# Get rules linked to a user and hand it to cb(err, obj).
 
-@public getRuleActivatedUsers ( *ruleId, cb* )
-@param {String} ruleId
-@param {function} cb
-###
-exports.getRuleActivatedUsers = ( ruleId, cb ) =>
-	@log.info "DB | getRuleActivatedUsers: smembers 'rule:#{ ruleId }:active-users'"
-	@db.smembers "rule:#{ ruleId }:active-users", cb
+# @public getUserLinkRule( *userId, cb* )
+# @param {String} userId
+# @param {function} cb
+# ###
+# exports.getUserLinkedRules = ( userId, cb ) =>
+# 	@log.info "DB | getUserLinkedRules: smembers 'user:#{ userId }:rules'"
+# 	@db.smembers "user:#{ userId }:rules", cb
 
-###
-Deactivate a rule.
+# ###
+# Get users linked to a rule and hand it to cb(err, obj).
 
-@public deactivateRule( *ruleId, userId* )
-@param {String} ruleId
-@param {String} userId
-###
-exports.deactivateRule = ( ruleId, userId ) =>
-	@log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
-	@db.srem "rule:#{ ruleId }:active-users", userId,
-		replyHandler "srem 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
-	@db.srem "user:#{ userId }:active-rules", ruleId,
-		replyHandler "srem 'user:#{ userId }:active-rules' '#{ ruleId }'"
+# @public getRuleLinkedUsers( *ruleId, cb* )
+# @param {String} ruleId
+# @param {function} cb
+# ###
+# exports.getRuleLinkedUsers = ( ruleId, cb ) =>
+# 	@log.info "DB | getRuleLinkedUsers: smembers 'rule:#{ ruleId }:users'"
+# 	@db.smembers "rule:#{ ruleId }:users", cb
+
+# ###
+# Delete an association of a rule to a user.
+
+# @public unlinkRule( *ruleId, userId* )
+# @param {String} ruleId
+# @param {String} userId
+# ###
+# exports.unlinkRule = ( ruleId, userId ) =>
+# 	@log.info "DB | unlinkRule: '#{ ruleId }:#{ userId }'"
+# 	@db.srem "rule:#{ ruleId }:users", userId,
+# 		replyHandler "srem 'rule:#{ ruleId }:users' -> '#{ userId }'"
+# 	@db.srem "user:#{ userId }:rules", ruleId,
+# 		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
+
+# ###
+# Activate a rule.
+
+# @public activateRule( *ruleId, userId* )
+# @param {String} ruleId
+# @param {String} userId
+# ###
+# exports.activateRule = ( ruleId, userId ) =>
+# 	@log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
+# 	@db.sadd "rule:#{ ruleId }:active-users", userId,
+# 		replyHandler "sadd 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
+# 	@db.sadd "user:#{ userId }:active-rules", ruleId,
+# 		replyHandler "sadd 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
+
+# ###
+# Get rules activated for a user and hand it to cb(err, obj).
+
+# @public getUserLinkRule( *userId, cb* )
+# @param {String} userId
+# @param {function} cb
+# ###
+# exports.getUserActivatedRules = ( userId, cb ) =>
+# 	@log.info "DB | getUserActivatedRules: smembers 'user:#{ userId }:active-rules'"
+# 	@db.smembers "user:#{ userId }:active-rules", cb
+
+# ###
+# Get users activated for a rule and hand it to cb(err, obj).
+
+# @public getRuleActivatedUsers ( *ruleId, cb* )
+# @param {String} ruleId
+# @param {function} cb
+# ###
+# exports.getRuleActivatedUsers = ( ruleId, cb ) =>
+# 	@log.info "DB | getRuleActivatedUsers: smembers 'rule:#{ ruleId }:active-users'"
+# 	@db.smembers "rule:#{ ruleId }:active-users", cb
+
+# ###
+# Deactivate a rule.
+
+# @public deactivateRule( *ruleId, userId* )
+# @param {String} ruleId
+# @param {String} userId
+# ###
+# exports.deactivateRule = ( ruleId, userId ) =>
+# 	@log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
+# 	@db.srem "rule:#{ ruleId }:active-users", userId,
+# 		replyHandler "srem 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
+# 	@db.srem "user:#{ userId }:active-rules", ruleId,
+# 		replyHandler "srem 'user:#{ userId }:active-rules' '#{ ruleId }'"
 
 ###
 Fetch all active ruleIds and pass them to cb(err, obj).
@@ -620,6 +616,7 @@ Fetch all active ruleIds and pass them to cb(err, obj).
 @public getAllActivatedRuleIds( *cb* )
 @param {function} cb
 ###
+# TODO we should add an active flag to rules
 exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
 	@log.info "DB | Fetching all active rules"
 	@db.smembers 'users', ( err, obj ) =>
@@ -635,7 +632,7 @@ exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
 							result[user] = obj
 						if --semaphore is 0
 							cb null, result
-				@db.smembers "user:#{ user }:active-rules", fProcessAnswer user 
+				@db.smembers "user:#{ user }:rules", fProcessAnswer user 
 
 ###
 ## Users

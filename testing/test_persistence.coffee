@@ -244,63 +244,60 @@ exports.EventPollerParams =
 	testCreateAndRead: ( test ) ->
 		test.expect 2
 
-		userId = 'tester1'
 		eventId = 'test-event-poller_1'
 		params = 'shouldn\'t this be an object?'
 
 		# store an entry to start with 
-		db.eventPollers.storeUserParams eventId, userId, params
+		db.eventPollers.storeUserParams eventId, oUser.username, params
 		
 		# test that the ID shows up in the set
 		db.eventPollers.getUserParamsIds ( err, obj ) ->
-			test.ok eventId+':'+userId in obj,
+			test.ok eventId+':'+oUser.username in obj,
 				'Expected key not in event-params set'
 			
 			# the retrieved object really is the one we expected
-			db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+			db.eventPollers.getUserParams eventId, oUser.username, ( err, obj ) ->
 				test.strictEqual obj, params,
 					'Retrieved event params is not what we expected'
-				db.eventPollers.deleteUserParams eventId, userId
+				db.eventPollers.deleteUserParams eventId, oUser.username
 				test.done()
 
 	testUpdate: ( test ) ->
 		test.expect 1
 
-		userId = 'tester1'
 		eventId = 'test-event-poller_1'
 		params = 'shouldn\'t this be an object?'
 		paramsNew = 'shouldn\'t this be a new object?'
 
 		# store an entry to start with 
-		db.eventPollers.storeUserParams eventId, userId, params
-		db.eventPollers.storeUserParams eventId, userId, paramsNew
+		db.eventPollers.storeUserParams eventId, oUser.username, params
+		db.eventPollers.storeUserParams eventId, oUser.username, paramsNew
 
 		# the retrieved object really is the one we expected
-		db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+		db.eventPollers.getUserParams eventId, oUser.username, ( err, obj ) ->
 			test.strictEqual obj, paramsNew,
 				'Retrieved event params is not what we expected'
-			db.eventPollers.deleteUserParams eventId, userId
+			db.eventPollers.deleteUserParams eventId, oUser.username
 			
 			test.done()
 
 	testDelete: ( test ) ->
 		test.expect 2
 
-		userId = 'tester1'
 		eventId = 'test-event-poller_1'
 		params = 'shouldn\'t this be an object?'
 
 		# store an entry to start with and delete it right away
-		db.eventPollers.storeUserParams eventId, userId, params
-		db.eventPollers.deleteUserParams eventId, userId
+		db.eventPollers.storeUserParams eventId, oUser.username, params
+		db.eventPollers.deleteUserParams eventId, oUser.username
 		
 		# Ensure the event params have been deleted
-		db.eventPollers.getUserParams eventId, userId, ( err, obj ) ->
+		db.eventPollers.getUserParams eventId, oUser.username, ( err, obj ) ->
 			test.strictEqual obj, null,
 				'Event params still exists'
 			# Ensure the ID has been removed from the set
 			db.eventPollers.getUserParamsIds ( err, obj ) ->
-				test.ok eventId+':'+userId not in obj,
+				test.ok eventId+':'+oUser.username not in obj,
 					'Event Params key still exists in set'
 				
 				test.done()
@@ -311,29 +308,29 @@ exports.EventPollerParams =
 ###
 exports.Rules =
 	tearDown: ( cb ) ->
-		db.deleteRule oRuleOne.id
+		db.deleteRule 'tester1', oRuleOne.id
 		cb()
 
 	testCreateAndRead: ( test ) ->
 		test.expect 3
 
+		db.storeUser oUser
 		# store an entry to start with 
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+		db.storeRule oUser.username, oRuleOne.id, JSON.stringify oRuleOne
 		
 		# test that the ID shows up in the set
-		db.getRuleIds ( err, obj ) ->
+		db.getRuleIds oUser.username, ( err, obj ) ->
 			test.ok oRuleOne.id in obj,
 				'Expected key not in rule key set'
 			
 			# the retrieved object really is the one we expected
-			db.getRule oRuleOne.id, ( err, obj ) ->
+			db.getRule oUser.username, oRuleOne.id, ( err, obj ) ->
 				test.deepEqual JSON.parse(obj), oRuleOne,
 					'Retrieved rule is not what we expected'
-
+					
 				# Ensure the rule is in the list of all existing ones
-				db.getRules ( err , obj ) ->
-					test.deepEqual oRuleOne, JSON.parse( obj[oRuleOne.id] ),
-						'Rule not in result set'
+				db.getAllActivatedRuleIdsPerUser ( err , obj ) ->
+					test.ok oRuleOne.id in obj[oUser.username], 'Rule not in result set'
 					
 					test.done()
 
@@ -341,12 +338,12 @@ exports.Rules =
 		test.expect 1
 
 		# store an entry to start with 
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-		db.storeRule oRuleOne.id, JSON.stringify oRuleTwo
+		db.storeRule oUser.username, oRuleOne.id, JSON.stringify oRuleOne
+		db.storeRule oUser.username, oRuleOne.id, JSON.stringify oRuleTwo
 
 		# the retrieved object really is the one we expected
-		db.getRule oRuleOne.id, ( err, obj ) ->
-			test.deepEqual JSON.parse(obj), oRuleTwo,
+		db.getRule oUser.username, oRuleOne.id, ( err, obj ) ->
+			test.deepEqual JSON.parse( obj ), oRuleTwo,
 				'Retrieved rule is not what we expected'
 			
 			test.done()
@@ -354,148 +351,150 @@ exports.Rules =
 	testDelete: ( test ) ->
 		test.expect 2
 
+
 		# store an entry to start with and delete it right away
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-		db.deleteRule oRuleOne.id
+		db.storeRule oUser.username, oRuleOne.id, JSON.stringify oRuleOne
+		db.deleteRule oUser.username, oRuleOne.id
 		
 		# Ensure the event params have been deleted
-		db.getRule oRuleOne.id, ( err, obj ) ->
+		db.getRule oUser.username, oRuleOne.id, ( err, obj ) ->
 			test.strictEqual obj, null,
 				'Rule still exists'
 
 			# Ensure the ID has been removed from the set
-			db.getRuleIds ( err, obj ) ->
+			db.getRuleIds oUser.username, ( err, obj ) ->
 				test.ok oRuleOne.id not in obj,
 					'Rule key still exists in set'
 				
 				test.done()
 
-	testLink: ( test ) ->
-		test.expect 2
+## TODO activation should be handled through a rule object property set true or false
+	# testLink: ( test ) ->
+	# 	test.expect 2
 
-		# link a rule to the user
-		db.linkRule oRuleOne.id, oUser.username
+	# 	# link a rule to the user
+	# 	db.linkRule oRuleOne.id, oUser.username
 
-			# Ensure the user is linked to the rule
-		db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
-			test.ok oUser.username in obj,
-				"Rule not linked to user #{ oUser.username }"
+	# 		# Ensure the user is linked to the rule
+	# 	db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
+	# 		test.ok oUser.username in obj,
+	# 			"Rule not linked to user #{ oUser.username }"
 
-			# Ensure the rule is linked to the user
-			db.getUserLinkedRules oUser.username, ( err, obj ) ->
-				test.ok oRuleOne.id in obj,
-					"User not linked to rule #{ oRuleOne.id }"
+	# 		# Ensure the rule is linked to the user
+	# 		db.getUserLinkedRules oUser.username, ( err, obj ) ->
+	# 			test.ok oRuleOne.id in obj,
+	# 				"User not linked to rule #{ oRuleOne.id }"
 				
-				test.done()
+	# 			test.done()
 
-	testUnlink: ( test ) ->
-		test.expect 2
+	# testUnlink: ( test ) ->
+	# 	test.expect 2
 
-		# link and unlink immediately afterwards
-		db.linkRule oRuleOne.id, oUser.username
-		db.unlinkRule oRuleOne.id, oUser.username
+	# 	# link and unlink immediately afterwards
+	# 	db.linkRule oRuleOne.id, oUser.username
+	# 	db.unlinkRule oRuleOne.id, oUser.username
 
-			# Ensure the user is linked to the rule
-		db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
-			test.ok oUser.username not in obj,
-				"Rule still linked to user #{ oUser.username }"
+	# 		# Ensure the user is linked to the rule
+	# 	db.getRuleLinkedUsers oRuleOne.id, ( err, obj ) ->
+	# 		test.ok oUser.username not in obj,
+	# 			"Rule still linked to user #{ oUser.username }"
 
-			# Ensure the rule is linked to the user
-			db.getUserLinkedRules oUser.username, ( err, obj ) ->
-				test.ok oRuleOne.id not in obj,
-					"User still linked to rule #{ oRuleOne.id }"
+	# 		# Ensure the rule is linked to the user
+	# 		db.getUserLinkedRules oUser.username, ( err, obj ) ->
+	# 			test.ok oRuleOne.id not in obj,
+	# 				"User still linked to rule #{ oRuleOne.id }"
 				
-				test.done()
+	# 			test.done()
 
-	testActivate: ( test ) ->
-		test.expect 4
+	# testActivate: ( test ) ->
+	# 	test.expect 4
 
-		usr =
-			username: "tester-1"
-			password: "tester-1"
-		db.storeUser usr
-		db.activateRule oRuleOne.id, oUser.username
-		# activate a rule for a user
+	# 	usr =
+	# 		username: "tester-1"
+	# 		password: "tester-1"
+	# 	db.storeUser usr
+	# 	db.activateRule oRuleOne.id, oUser.username
+	# 	# activate a rule for a user
 
-			# Ensure the user is activated to the rule
-		db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
-			test.ok oUser.username in obj,
-				"Rule not activated for user #{ oUser.username }"
+	# 		# Ensure the user is activated to the rule
+	# 	db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
+	# 		test.ok oUser.username in obj,
+	# 			"Rule not activated for user #{ oUser.username }"
 
-			# Ensure the rule is linked to the user
-			db.getUserActivatedRules oUser.username, ( err, obj ) ->
-				test.ok oRuleOne.id in obj,
-					"User not activated for rule #{ oRuleOne.id }"
+	# 		# Ensure the rule is linked to the user
+	# 		db.getUserActivatedRules oUser.username, ( err, obj ) ->
+	# 			test.ok oRuleOne.id in obj,
+	# 				"User not activated for rule #{ oRuleOne.id }"
 
-				# Ensure the rule is showing up in all active rules
-				db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
-					test.notStrictEqual obj[oUser.username], undefined,
-						"User #{ oUser.username } not in activated rules set"
-					if obj[oUser.username]
-						test.ok oRuleOne.id in obj[oUser.username],
-							"Rule #{ oRuleOne.id } not in activated rules set"
-					# else
-					#   test.ok true,
-					#     "Dummy so we meet the expected num of tests"
+	# 			# Ensure the rule is showing up in all active rules
+	# 			db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+	# 				test.notStrictEqual obj[oUser.username], undefined,
+	# 					"User #{ oUser.username } not in activated rules set"
+	# 				if obj[oUser.username]
+	# 					test.ok oRuleOne.id in obj[oUser.username],
+	# 						"Rule #{ oRuleOne.id } not in activated rules set"
+	# 				# else
+	# 				#   test.ok true,
+	# 				#     "Dummy so we meet the expected num of tests"
 					
-					test.done()
+	# 				test.done()
 
-	testDeactivate: ( test ) ->
-		test.expect 3
+	# testDeactivate: ( test ) ->
+	# 	test.expect 3
 
-		# store an entry to start with and link it to te user
-		db.activateRule oRuleOne.id, oUser.username
-		db.deactivateRule oRuleOne.id, oUser.username
+	# 	# store an entry to start with and link it to te user
+	# 	db.activateRule oRuleOne.id, oUser.username
+	# 	db.deactivateRule oRuleOne.id, oUser.username
 
-			# Ensure the user is linked to the rule
-		db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
-			test.ok oUser.username not in obj,
-				"Rule still activated for user #{ oUser.username }"
+	# 		# Ensure the user is linked to the rule
+	# 	db.getRuleActivatedUsers oRuleOne.id, ( err, obj ) ->
+	# 		test.ok oUser.username not in obj,
+	# 			"Rule still activated for user #{ oUser.username }"
 
-			# Ensure the rule is linked to the user
-			db.getUserActivatedRules oUser.username, ( err, obj ) ->
-				test.ok oRuleOne.id not in obj,
-					"User still activated for rule #{ oRuleOne.id }"
+	# 		# Ensure the rule is linked to the user
+	# 		db.getUserActivatedRules oUser.username, ( err, obj ) ->
+	# 			test.ok oRuleOne.id not in obj,
+	# 				"User still activated for rule #{ oRuleOne.id }"
 
-				# Ensure the rule is showing up in all active rules
-				db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
-					if obj[oUser.username]
-						test.ok oRuleOne.id not in obj[oUser.username],
-							"Rule #{ oRuleOne.id } still in activated rules set"
-					else
-						test.ok true,
-							"We are fine since there are no entries for this user anymore"
+	# 			# Ensure the rule is showing up in all active rules
+	# 			db.getAllActivatedRuleIdsPerUser ( err, obj ) ->
+	# 				if obj[oUser.username]
+	# 					test.ok oRuleOne.id not in obj[oUser.username],
+	# 						"Rule #{ oRuleOne.id } still in activated rules set"
+	# 				else
+	# 					test.ok true,
+	# 						"We are fine since there are no entries for this user anymore"
 					
-					test.done()
+	# 				test.done()
 
-	testUnlinkAndDeactivateAfterDeletion: ( test ) ->
-		test.expect 2
+	# testUnlinkAndDeactivateAfterDeletion: ( test ) ->
+	# 	test.expect 2
 
-		# store an entry to start with and link it to te user
-		db.storeRule oRuleOne.id, JSON.stringify oRuleOne
-		db.linkRule oRuleOne.id, oUser.username
-		db.activateRule oRuleOne.id, oUser.username
+	# 	# store an entry to start with and link it to te user
+	# 	db.storeRule oRuleOne.id, JSON.stringify oRuleOne
+	# 	db.linkRule oRuleOne.id, oUser.username
+	# 	db.activateRule oRuleOne.id, oUser.username
 
-		# We need to wait here and there since these calls are asynchronous
-		fWaitForTest = () ->
+	# 	# We need to wait here and there since these calls are asynchronous
+	# 	fWaitForTest = () ->
 
-			# Ensure the user is unlinked to the rule
-			db.getUserLinkedRules oUser.username, ( err, obj ) ->
-				test.ok oRuleOne.id not in obj,
-					"Rule #{ oRuleOne.id } still linked to user #{ oUser.username }"
+	# 		# Ensure the user is unlinked to the rule
+	# 		db.getUserLinkedRules oUser.username, ( err, obj ) ->
+	# 			test.ok oRuleOne.id not in obj,
+	# 				"Rule #{ oRuleOne.id } still linked to user #{ oUser.username }"
 
-				# Ensure the rule is deactivated for the user
-				db.getUserActivatedRules oUser.username, ( err, obj ) ->
-					test.ok oRuleOne.id not in obj,
-						"Rule #{ oRuleOne.id } still activated for user #{ oUser.username }"
+	# 			# Ensure the rule is deactivated for the user
+	# 			db.getUserActivatedRules oUser.username, ( err, obj ) ->
+	# 				test.ok oRuleOne.id not in obj,
+	# 					"Rule #{ oRuleOne.id } still activated for user #{ oUser.username }"
 					
-					test.done()
+	# 				test.done()
 
-		fWaitForDeletion = () ->
-			db.deleteRule oRuleOne.id
-			setTimeout fWaitForTest, 500
+	# 	fWaitForDeletion = () ->
+	# 		db.deleteRule oRuleOne.id
+	# 		setTimeout fWaitForTest, 500
 
-		setTimeout fWaitForDeletion, 100
+	# 	setTimeout fWaitForDeletion, 100
 
 
 ###
@@ -583,7 +582,7 @@ exports.User =
 
 
 	testDeleteLinks: ( test ) ->
-		test.expect 4
+		test.expect 3
 
 		# Wait until the user and his rules and roles are stored
 		fWaitForPersistence = () ->
@@ -600,21 +599,21 @@ exports.User =
 					test.ok obj.length is 0,
 						'User still associated to roles!'
 					
-					db.getUserLinkedRules oUser.username, ( err, obj ) ->
+					# db.getUserLinkedRules oUser.username, ( err, obj ) ->
+					# 	test.ok obj.length is 0,
+					# 		'User still associated to rules!'
+					db.getRuleIds oUser.username, ( err, obj ) ->
 						test.ok obj.length is 0,
-							'User still associated to rules!'
-						db.getUserActivatedRules oUser.username, ( err, obj ) ->
-							test.ok obj.length is 0,
-								'User still associated to activated rules!'
-							db.deleteRole 'tester'
-							test.done()
+							'User still associated to activated rules!'
+						db.deleteRole 'tester'
+						test.done()
 
 		# Store the user and make some links
 		db.storeUser oUser
-		db.linkRule 'rule-1', oUser.username
-		db.linkRule 'rule-2', oUser.username
-		db.linkRule 'rule-3', oUser.username
-		db.activateRule 'rule-1', oUser.username
+		# db.linkRule 'rule-1', oUser.username
+		# db.linkRule 'rule-2', oUser.username
+		# db.linkRule 'rule-3', oUser.username
+		# db.activateRule 'rule-1', oUser.username
 		db.storeUserRole oUser.username, 'tester'
 		# Verify role is deleted
 		

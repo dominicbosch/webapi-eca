@@ -53,32 +53,31 @@ exports.addRuleListener = ( eh ) =>
 
 	# Fetch all active rules per user
 	db.getAllActivatedRuleIdsPerUser ( err, objUsers ) =>
-
+		
 		# Go through all rules of each user
 		fGoThroughUsers = ( user, rules ) =>
 
 			# Fetch the rules object for each rule in each user
-			fFetchRule = ( userName ) =>
-				( rule ) =>
-					db.getRule rule, ( err, strRule ) =>
+			fFetchRule = ( rule ) =>
+					db.getRule user, rule, ( err, strRule ) =>
 						try 
 							oRule = JSON.parse strRule
-							db.resetLog userName, oRule.id
+							db.resetLog user, oRule.id
 							eventInfo = ''
 							if oRule.eventstart
                 eventInfo = "Starting at #{ new Date( oRule.eventstart ) },
                 		Interval set to #{ oRule.eventinterval } minutes"
-							db.appendLog userName, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
+							db.appendLog user, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
 							eventEmitter.emit 'rule',
 								intevent: 'init'
-								user: userName
+								user: user
 								rule: oRule
 						catch err
 							@log.warn "CM | There's an invalid rule in the system: #{ strRule }"
 
 			# Go through all rules for each user
-			fFetchRule( user ) rule for rule in rules
+			fFetchRule rule for rule in rules
 					
 		# Go through each user
 		fGoThroughUsers user, rules for user, rules of objUsers
@@ -241,11 +240,7 @@ storeRule = ( user, oBody, callback ) =>
 			rule.timestamp = (new Date()).toISOString()
 		strRule = JSON.stringify rule
 		# store the rule
-		db.storeRule rule.id, strRule
-		# link the rule to the user
-		db.linkRule rule.id, user.username
-		# activate the rule
-		db.activateRule rule.id, user.username
+		db.storeRule user.username, rule.id, strRule
 		# if event module parameters were sent, store them
 		if oBody.eventparams
 			epModId = rule.eventname.split( ' -> ' )[ 0 ]
@@ -388,7 +383,7 @@ commandFunctions =
 # RULES
 # -----
 	get_rules: ( user, oBody, callback ) ->
-		db.getUserLinkedRules user.username, ( err, obj ) ->
+		db.getRuleIds user.username, ( err, obj ) ->
 			callback
 				code: 200
 				message: obj
@@ -398,7 +393,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.getRule oBody.id, ( err, obj ) ->
+			db.getRule user.username, oBody.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
@@ -427,7 +422,7 @@ commandFunctions =
 			if oBody.overwrite
 				storeRule user, oBody, callback
 			else
-				db.getRule oBody.id, ( err, mod ) =>
+				db.getRule user.username, oBody.id, ( err, mod ) =>
 					if mod
 						answ.code = 409
 						answ.message = 'Rule name already existing: ' + oBody.id
@@ -440,7 +435,7 @@ commandFunctions =
 		if answ.code isnt 200
 			callback answ
 		else
-			db.deleteRule oBody.id
+			db.deleteRule user.username, oBody.id
 			eventEmitter.emit 'rule',
 				intevent: 'del'
 				user: user.username

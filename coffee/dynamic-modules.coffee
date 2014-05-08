@@ -99,23 +99,23 @@ fPushEvent = ( userId, oRule, modType ) ->
 				eventname: oRule.eventname + '_created:' + oRule.timestamp
 				body: obj
 
-fSetVar = ( userId, ruleId, modId ) ->
-	( field, data ) ->
-		db.persistSetVar  userId, ruleId, modId, field, JSON.stringify data
+# fSetVar = ( userId, ruleId, modId ) ->
+# 	( field, data ) ->
+# 		db.persistSetVar  userId, ruleId, modId, field, JSON.stringify data
 		
-fGetVar = ( userId, ruleId, modId ) ->
-	( field, cb ) ->
-		fObectify = ( cb ) ->
-			( err, str ) ->
-				if err
-					cb err
-				else
-					try
-						cb null, JSON.parse str
-					catch
-						cb err
+# fGetVar = ( userId, ruleId, modId ) ->
+# 	( field, cb ) ->
+# 		fObectify = ( cb ) ->
+# 			( err, str ) ->
+# 				if err
+# 					cb err
+# 				else
+# 					try
+# 						cb null, JSON.parse str
+# 					catch
+# 						cb err
 
-		db.persistGetVar  userId, ruleId, modId, field, fObectify cb
+# 		db.persistGetVar  userId, ruleId, modId, field, fObectify cb
 
 
 fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
@@ -142,9 +142,9 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		exports: {}
 		setTimeout: setTimeout # This one allows probably too much
 		pushEvent: fPushEvent userId, oRule, modType
-		# TODO garbage collect entries below if rule is deleted...
-		setVar: fSetVar userId, oRule.id, modId
-		getVar: fGetVar userId, oRule.id, modId
+		# TODO garbage collect entries below if rule is setVar...
+		# deleted: fSetVar userId, oRule.id, modId
+		# getVar: fGetVar userId, oRule.id, modId
 
 
 	#TODO child_process to run module!

@@ -61,34 +61,32 @@ Components Manager
         var fGoThroughUsers, rules, user, _results;
         fGoThroughUsers = function(user, rules) {
           var fFetchRule, rule, _i, _len, _results;
-          fFetchRule = function(userName) {
-            return function(rule) {
-              return db.getRule(rule, function(err, strRule) {
-                var eventInfo, oRule;
-                try {
-                  oRule = JSON.parse(strRule);
-                  db.resetLog(userName, oRule.id);
-                  eventInfo = '';
-                  if (oRule.eventstart) {
-                    eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
-                  }
-                  db.appendLog(userName, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
-                  return eventEmitter.emit('rule', {
-                    intevent: 'init',
-                    user: userName,
-                    rule: oRule
-                  });
-                } catch (_error) {
-                  err = _error;
-                  return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
+          fFetchRule = function(rule) {
+            return db.getRule(user, rule, function(err, strRule) {
+              var eventInfo, oRule;
+              try {
+                oRule = JSON.parse(strRule);
+                db.resetLog(user, oRule.id);
+                eventInfo = '';
+                if (oRule.eventstart) {
+                  eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
                 }
-              });
-            };
+                db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
+                return eventEmitter.emit('rule', {
+                  intevent: 'init',
+                  user: user,
+                  rule: oRule
+                });
+              } catch (_error) {
+                err = _error;
+                return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
+              }
+            });
           };
           _results = [];
           for (_i = 0, _len = rules.length; _i < _len; _i++) {
             rule = rules[_i];
-            _results.push(fFetchRule(user)(rule));
+            _results.push(fFetchRule(rule));
           }
           return _results;
         };
@@ -332,9 +330,7 @@ Components Manager
         rule.timestamp = (new Date()).toISOString();
       }
       strRule = JSON.stringify(rule);
-      db.storeRule(rule.id, strRule);
-      db.linkRule(rule.id, user.username);
-      db.activateRule(rule.id, user.username);
+      db.storeRule(user.username, rule.id, strRule);
       if (oBody.eventparams) {
         epModId = rule.eventname.split(' -> ')[0];
         db.eventPollers.storeUserParams(epModId, user.username, JSON.stringify(oBody.eventparams));
@@ -488,7 +484,7 @@ Components Manager
       }
     },
     get_rules: function(user, oBody, callback) {
-      return db.getUserLinkedRules(user.username, function(err, obj) {
+      return db.getRuleIds(user.username, function(err, obj) {
         return callback({
           code: 200,
           message: obj
@@ -501,7 +497,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        return db.getRule(oBody.id, function(err, obj) {
+        return db.getRule(user.username, oBody.id, function(err, obj) {
           return callback({
             code: 200,
             message: obj
@@ -532,7 +528,7 @@ Components Manager
         if (oBody.overwrite) {
           return storeRule(user, oBody, callback);
         } else {
-          return db.getRule(oBody.id, (function(_this) {
+          return db.getRule(user.username, oBody.id, (function(_this) {
             return function(err, mod) {
               if (mod) {
                 answ.code = 409;
@@ -552,7 +548,7 @@ Components Manager
       if (answ.code !== 200) {
         return callback(answ);
       } else {
-        db.deleteRule(oBody.id);
+        db.deleteRule(user.username, oBody.id);
         eventEmitter.emit('rule', {
           intevent: 'del',
           user: user.username,

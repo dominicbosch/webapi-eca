@@ -63,7 +63,7 @@ Dynamic Modules
   isRunning = true;
 
   process.on('disconnect', function() {
-    log.info('EP | Shutting down Event Poller');
+    log.warn('EP | Shutting down Event Poller');
     isRunning = false;
     return process.exit();
   });

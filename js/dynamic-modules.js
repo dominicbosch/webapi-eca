@@ -126,8 +126,6 @@ Dynamic Modules
           eventname: oRule.eventname + '_created:' + oRule.timestamp,
           body: obj
         });
-      } else {
-        return db.pushEvent(obj);
       }
     };
   };
