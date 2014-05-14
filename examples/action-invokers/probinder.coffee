@@ -89,7 +89,7 @@ exports.makeFileEntry = ( fromService, fromId, toCompany, toContext ) ->
 Calls the content get service with the content id and the service id provided. 
 
  - {Object} args the object containing the service id and the content id,
-   success and error callback methods
+	 success and error callback methods
  - {String} args.serviceid the service id that is able to process this content
  - {String} args.contentid the content id
  - {function} [args.callback] receives the needle answer from the "call" function
@@ -117,3 +117,45 @@ exports.setRead = ( id ) ->
 		data:
 			id: id
 		callback: standardCallback 'setRead'
+
+getWikiTitle = ( title, cb ) ->
+	titleUrl = 'http://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&exchars=200&explaintext&titles='
+	needle.get titleUrl + encodeURIComponent( title ), ( err, resp, obj ) ->
+		if err or resp.statusCode isnt 200 or not obj.query or not obj.query.pages or obj.query.pages['-1']
+			cb new Error 'Unable to fetch data'
+		else
+			for id, page of obj.query.pages
+				cb null, page.extract
+
+getWikiSearch = ( text, cb ) ->
+	searchUrl = 'http://en.wikipedia.org/w/api.php?format=json&action=query&list=search&srwhat=text&srlimit=3&srsearch='
+	needle.get searchUrl + encodeURIComponent( text ), ( err, resp, obj ) ->
+		if err or resp.statusCode isnt 200 or not obj.query or not obj.query.search or obj.query.search.length is 0
+			cb new Error 'Nothing found'
+		else
+			for result in obj.query.search
+				cb null, result.snippet.replace /<(?:.|\n)*?>/gm, ''
+
+exports.annotateTagEntries = ( entryId, tags ) ->
+	arrTags = tags.split( "#" ).slice 1
+	for tag in arrTags
+		tag = tag.trim().replace /\\"/g, ''
+		tag = tag.trim().replace /\\/g, ''
+		fProcessTitleAnswer = ( loopTag ) -> 
+			( err, result ) ->
+				if not err and result
+					exports.annotateEntry entryId, result
+				else
+					getWikiSearch loopTag, ( err, result ) ->
+						exports.annotateEntry entryId, result
+
+		getWikiTitle tag, fProcessTitleAnswer tag
+
+exports.annotateEntry = ( entryId, text ) ->
+	log "Adding Commment '#{ text }' to ##{ entryId }"
+	callService
+		service: 'content'
+		method: 'addcomment'
+		data:
+			contentId: entryId
+			text: text
