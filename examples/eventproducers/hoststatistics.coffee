@@ -3,10 +3,10 @@ ping = require 'net-ping'
 needle = require 'needle'
 		
 
-# remoteUrl = "localhost:8125"
-remoteUrl = "http://ec2-54-226-188-9.compute-1.amazonaws.com:8126"
+remoteUrl = "localhost:8125"
+# remoteUrl = "http://ec2-54-226-188-9.compute-1.amazonaws.com"
 fPushEvent = ( evt ) ->
-	needle.post remoteUrl + '/measurements', evt, ( err, resp, body ) ->
+	needle.post remoteUrl + '/measurements', JSON.stringify( evt ), ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
 			console.log 'Error in pushing event!'
 		else
@@ -38,7 +38,7 @@ if histData
 		console.log 'Error parsing histo data'
 		console.log err
 
-i = -1
+i = 253
 ips = []
 pingTime = (new Date()).toISOString()
 fPollHosts = () ->
