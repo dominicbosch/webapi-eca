@@ -393,7 +393,8 @@ exports.handleMeasurements = ( req, resp ) =>
 		body += data
 
 	req.on 'end', ->
-		obj = parsePushAndAnswerEvent obj.eventname, null, body, resp
+		# It does not only look like a quick hack, it is one...
+		obj = parsePushAndAnswerEvent 'uptimestatistics', null, body, resp
 		if obj.eventname is 'uptimestatistics'
 			# This is a hack to quickly allow storing of public accessible data
 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
