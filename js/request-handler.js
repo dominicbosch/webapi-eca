@@ -477,7 +477,7 @@ Request Handler
       });
       return req.on('end', function() {
         var fPath, obj;
-        obj = parsePushAndAnswerEvent(name, null, body, resp);
+        obj = parsePushAndAnswerEvent(obj.eventname, null, body, resp);
         if (obj.eventname === 'uptimestatistics') {
           fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
           return fs.writeFile(fPath, JSON.stringify(obj, void 0, 2), 'utf8');
