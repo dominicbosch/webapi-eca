@@ -398,7 +398,7 @@ exports.handleMeasurements = ( req, resp ) =>
 		if obj.eventname is 'uptimestatistics'
 			# This is a hack to quickly allow storing of public accessible data
 			fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-			fs.writeFile fPath, JSON.stringify( obj, undefined, 2 ), 'utf8'
+			fs.writeFile fPath, JSON.stringify( obj.body, undefined, 2 ), 'utf8'
 
 ###
 Handles webhook posts

@@ -38,7 +38,7 @@ if histData
 		console.log 'Error parsing histo data'
 		console.log err
 
-i = 253
+i = -1
 ips = []
 pingTime = (new Date()).toISOString()
 fPollHosts = () ->
