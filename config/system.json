@@ -1,5 +1,5 @@
 {
-  "http-port": 80,
+  "http-port": 8080,
   "db-port": 6379,
   "db-select": 0,
   "log": {
