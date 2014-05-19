@@ -86,7 +86,9 @@ initRouting = ( port ) =>
 	# - **`POST` to _"/measurements/*"_:** We also want to record measurements
 	app.post '/measurements', requestHandler.handleMeasurements
 
-	server = app.listen parseInt( port ) || 8111 # inbound event channel
+	prt = parseInt( port ) || 8111 # inbound event channel
+	server = app.listen prt
+	@log.info "HL | Started listening on port #{ prt }"
 
 	server.on 'listening', () =>
 		addr = server.address()
