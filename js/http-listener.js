@@ -54,7 +54,7 @@ HTTP Listener
 
   initRouting = (function(_this) {
     return function(port) {
-      var server, sess_sec;
+      var prt, server, sess_sec;
       app.use(express.cookieParser());
       sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
       app.use(express.session({
@@ -71,7 +71,9 @@ HTTP Listener
       app.post('/event', requestHandler.handleEvent);
       app.post('/webhooks/*', requestHandler.handleWebhooks);
       app.post('/measurements', requestHandler.handleMeasurements);
-      server = app.listen(parseInt(port) || 8111);
+      prt = parseInt(port) || 8111;
+      server = app.listen(prt);
+      _this.log.info("HL | Started listening on port " + prt);
       server.on('listening', function() {
         var addr;
         addr = server.address();
