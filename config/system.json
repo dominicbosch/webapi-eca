@@ -1,11 +1,11 @@
 {
-  "http-port": 8125,
+  "http-port": 80,
   "db-port": 6379,
   "db-select": 0,
   "log": {
   	"nolog": "false",
     "mode": "productive",
-    "io-level": "info",
+    "io-level": "error",
     "file-level": "info",
     "file-path": "logs/server.log"
   },
