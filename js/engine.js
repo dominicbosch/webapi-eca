@@ -332,7 +332,7 @@ Engine
             } else {
               _this.log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
             }
-            node.module[funcName].apply(null, arrArgs);
+            node.module[funcName].apply(_this, arrArgs);
             _this.log.info("EN | " + funcName + " finished execution");
           } catch (_error) {
             err = _error;

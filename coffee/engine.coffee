@@ -262,7 +262,7 @@ processEvent = ( evt ) =>
 						# 	arrArgs.push oArg.value
 				else
 					@log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
-				node.module[ funcName ].apply null, arrArgs
+				node.module[ funcName ].apply this, arrArgs
 				@log.info "EN | #{ funcName } finished execution"
 			catch err
 				@log.info "EN | ERROR IN ACTION INVOKER: " + err.message

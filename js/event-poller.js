@@ -40,7 +40,8 @@ Dynamic Modules
   log.info('EP | Event Poller starts up');
 
   process.on('uncaughtException', function(err) {
-    return log.error('Probably one of the event pollers produced an error!');
+    log.error('Probably one of the event pollers produced an error!');
+    return log.error(err);
   });
 
   db({
@@ -159,7 +160,7 @@ Dynamic Modules
           arrArgs.push(oArg.value);
         }
       }
-      return oRule.module[oRule.pollfunc].apply(null, arrArgs);
+      return oRule.module[oRule.pollfunc].apply(this, arrArgs);
     } catch (_error) {
       err = _error;
       log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);

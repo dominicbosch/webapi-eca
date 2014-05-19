@@ -40,6 +40,7 @@ process.on 'uncaughtException', ( err ) ->
 	# and the event polling won't continue fo this rule, which is fine for us, except that
 	# we do not have a good way to inform the user about his error.
 	log.error 'Probably one of the event pollers produced an error!'
+	log.error err
 
 # Initialize required modules (should be in cache already)
 db logger: log
@@ -167,7 +168,7 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 		if oRule.funcArgs and oRule.funcArgs[oRule.pollfunc]
 			for oArg in oRule.funcArgs[oRule.pollfunc]
 				arrArgs.push oArg.value
-		oRule.module[oRule.pollfunc].apply null, arrArgs
+		oRule.module[oRule.pollfunc].apply this, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		throw err

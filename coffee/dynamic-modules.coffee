@@ -98,6 +98,8 @@ fPushEvent = ( userId, oRule, modType ) ->
 			db.pushEvent
 				eventname: oRule.eventname + '_created:' + oRule.timestamp
 				body: obj
+		else
+			db.pushEvent obj
 
 # fSetVar = ( userId, ruleId, modId ) ->
 # 	( field, data ) ->
