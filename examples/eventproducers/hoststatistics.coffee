@@ -3,8 +3,8 @@ ping = require 'net-ping'
 needle = require 'needle'
 		
 
-remoteUrl = "localhost:8125"
-# remoteUrl = "http://ec2-54-226-188-9.compute-1.amazonaws.com"
+# remoteUrl = "localhost:8125"
+remoteUrl = "http://http://ec2-54-196-2-15.compute-1.amazonaws.com"
 fPushEvent = ( evt ) ->
 	needle.post remoteUrl + '/measurements', JSON.stringify( evt ), ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
@@ -43,7 +43,7 @@ ips = []
 pingTime = (new Date()).toISOString()
 fPollHosts = () ->
 	i++
-	console.log "Pinging 131.152.85.#{ i }"
+	# console.log "Pinging 131.152.85.#{ i }"
 	session.pingHost "131.152.85.#{ i }", ( err, target, sent, rcvd ) ->
 		if not err
 			ips.push target
