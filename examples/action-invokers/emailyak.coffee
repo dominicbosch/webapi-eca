@@ -40,6 +40,7 @@ exports.sendMail = ( sender, receipient, subject, content ) ->
 		FromAddress: sender
 		ToAddress: receipient
 		Subject: subject
-		TextBody: content
+		HtmlBody: content # optional
+		TextBody: content.replace /<(?:.|\n)*?>/gm, '' # strip eventual html tags
 	needle.request 'post', url, data, json: true, standardCallback 'sendMail'
 

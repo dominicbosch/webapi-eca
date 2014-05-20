@@ -2,6 +2,14 @@
 # Helper constructs
 #
 
+exports.replaceText = ( eventname, text, find, replace ) ->
+	re = new RegExp find, "g"
+	pushEvent
+		eventname: eventname
+		body: text.replace re, replace
+	log "replaceText completed finding '#{ find }'"
+	
+
 # Parses text to JSON
 exports.parseTextToJSON = ( eventname, text ) ->
 	try
@@ -11,6 +19,7 @@ exports.parseTextToJSON = ( eventname, text ) ->
 		log "Text successfully parsed"
 	catch e
 		log "Error during JSON parsing of #{ text }"
+		log e.message
 
 
 # Parses objects to text

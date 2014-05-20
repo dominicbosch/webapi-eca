@@ -54,8 +54,9 @@ fPollHosts = () ->
 		
 		oSum[ pingTime ] = sum: ips.length
 		fPushEvent
-			eventname: 'uptimestatistics'
-			payload:
+			# eventname: 'uptimestatistics'
+			# body:
+			JSON.stringify
 				currentlyon: ips.length
 				pingtimes: oSum
 

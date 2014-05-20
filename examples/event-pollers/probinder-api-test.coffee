@@ -7,40 +7,41 @@ Tests the ProBinder API. Requires user credentials:
 
 ###
 url = "https://probinder.com/service/"
+arrFailed = []
 testLog = ""
-testSuccess = true
 testTimeout = 15000
 options = {}
 
 exports.testProBinder = ( requestTimeoutMilliSeconds ) ->
+	arrFailed = []
 	testLog = ""
-	testSuccess = true
 	testTimeout = parseInt( requestTimeoutMilliSeconds ) || testTimeout
 	options =
 		username: params.username
 		password: params.password
 		timeout: testTimeout
 
-	arrTestFuncs = [
-		testLogin
-		testNotLoggedInUnreadContentCount
-		testLoggedInUnreadContentCount
-	]
+	oTestFuncs =
+		testLogin: testLogin
+		testNotLoggedInUnreadContentCount: testNotLoggedInUnreadContentCount
+		testLoggedInUnreadContentCount: testLoggedInUnreadContentCount
 
-	semaphore = arrTestFuncs.length
-	for fTest, i in arrTestFuncs
-		log 'Testing function #' + i
+	semaphore = 0
+	for name, fTest of oTestFuncs
+		semaphore++
+		log "Testing function '#{ name }'"
 		fTest () ->
 			if --semaphore is 0
+				testSuccess = arrFailed.length is 0
 				if testSuccess
 					summary = "All tests passed!"
 				else
-					summary = "At least one test failed!"
+					summary = arrFailed.length + " test(s) failed: " + arrFailed.join ", "
 				pushEvent
 					success: testSuccess 
 					log: testLog
 					summary: summary
-				log 'Test completed: ' + summary 
+				log summary 
 
 testLoggedInUnreadContentCount = ( cb ) ->
 	turl = url + "user/unreadcontentcount"
@@ -57,12 +58,12 @@ testLogin = ( cb ) ->
 responseHandler = ( cb, testName, expectedCode ) ->
 	( err, resp, body ) ->
 		if err
-			testLog += "FAIL | #{ testName }: Timeout!<br/>"
-			testSuccess = false
+			testLog += "<b> - FAIL | #{ testName }: Timeout! Server didn't answer within #{ testTimeout / 1000 } seconds</b><br/>"
+			arrFailed.push testName
 		else if resp.statusCode isnt expectedCode
-			testLog += "FAIL | #{ testName }: Response 
-				#{ resp.statusCode }(expected: #{ expectedCode }), #{ body.error.message }<br/>"
-			testSuccess = false
+			testLog += "<b> - FAIL | #{ testName }: Response 
+				#{ resp.statusCode }(expected: #{ expectedCode }), #{ body.error.message }</b><br/>"
+			arrFailed.push testName
 		else
-			testLog += "SUCCESS | #{ testName }<br/>"
+			testLog += " + SUCCESS | #{ testName }<br/>"
 		cb?()
