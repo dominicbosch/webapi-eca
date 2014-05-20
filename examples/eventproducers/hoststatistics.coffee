@@ -50,7 +50,7 @@ fPollHosts = () ->
 			
 	if i is 255
 		i = -1
-		console.log "All ping requests returned (#{ips.length} answered), pushing event into the system and starting again at 0"
+		console.log "#{ (new Date()).toISOString() } | All ping requests returned (#{ips.length} answered), pushing event into the system and starting again at 0"
 		
 		oSum[ pingTime ] = sum: ips.length
 		fPushEvent
