@@ -144,14 +144,14 @@ exports.annotateTagEntries = ( entryId, tags ) ->
 		fProcessTitleAnswer = ( loopTag ) -> 
 			( err, result ) ->
 				if not err and result
-					exports.annotateEntry entryId, result
+					exports.commentEntry entryId, result
 				else
 					getWikiSearch loopTag, ( err, result ) ->
-						exports.annotateEntry entryId, result
+						exports.commentEntry entryId, result
 
 		getWikiTitle tag, fProcessTitleAnswer tag
 
-exports.annotateEntry = ( entryId, text ) ->
+exports.commentEntry = ( entryId, text ) ->
 	log "Adding Commment '#{ text }' to ##{ entryId }"
 	callService
 		service: 'content'

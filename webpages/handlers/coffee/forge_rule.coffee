@@ -457,10 +457,18 @@ fOnLoad = () ->
 	$( '#pagetitle' ).text '{{{user.username}}}, create your ECA Rule!'
 
 	editor = ace.edit "editor_conditions"
-	editor.setTheme "ace/theme/monokai"
+	# editor.setTheme "ace/theme/monokai"
+	editor.setTheme "ace/theme/cimson_editor"
+	editor.setFontSize "18px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
+	$( '#editor_theme' ).change ( el ) ->
+		editor.setTheme "ace/theme/" + $( this ).val()
+		
+	$( '#editor_font' ).change ( el ) ->
+		editor.setFontSize $( this ).val()
+		
 	$( '#fill_example' ).click () ->
 		editor.setValue """
 

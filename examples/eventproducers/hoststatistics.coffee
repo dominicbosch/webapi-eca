@@ -4,11 +4,13 @@ needle = require 'needle'
 		
 
 # remoteUrl = "localhost:8125"
-remoteUrl = "http://http://ec2-54-196-2-15.compute-1.amazonaws.com"
+remoteUrl = "http://ec2-54-196-2-15.compute-1.amazonaws.com"
 fPushEvent = ( evt ) ->
 	needle.post remoteUrl + '/measurements', JSON.stringify( evt ), ( err, resp, body ) ->
 		if err or resp.statusCode isnt 200
 			console.log 'Error in pushing event!'
+			console.log err
+			console.log resp.statusCode
 		else
 			console.log 'Successfully posted an event'
 

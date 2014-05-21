@@ -602,9 +602,16 @@
     document.title = 'Create Rules!';
     $('#pagetitle').text('{{{user.username}}}, create your ECA Rule!');
     editor = ace.edit("editor_conditions");
-    editor.setTheme("ace/theme/monokai");
+    editor.setTheme("ace/theme/cimson_editor");
+    editor.setFontSize("18px");
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
+    $('#editor_theme').change(function(el) {
+      return editor.setTheme("ace/theme/" + $(this).val());
+    });
+    $('#editor_font').change(function(el) {
+      return editor.setFontSize($(this).val());
+    });
     $('#fill_example').click(function() {
       return editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
     });

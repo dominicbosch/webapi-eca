@@ -14,12 +14,20 @@ fOnLoad = () ->
 	$( '#pagetitle' ).text 'Push your own event directly into the engine!'
 
 	editor = ace.edit "editor"
-	editor.setTheme "ace/theme/monokai"
+	# editor.setTheme "ace/theme/monokai"
+	editor.setTheme "ace/theme/cimson_editor"
+	editor.setFontSize "18px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 	$( '#editor' ).css 'height', '400px'
 	$( '#editor' ).css 'width', '600px'
 	
+	$( '#editor_theme' ).change ( el ) ->
+		editor.setTheme "ace/theme/" + $( this ).val()
+		
+	$( '#editor_font' ).change ( el ) ->
+		editor.setFontSize $( this ).val()
+
 	$( '#but_submit' ).click () ->
 		try
 			val = editor.getValue()

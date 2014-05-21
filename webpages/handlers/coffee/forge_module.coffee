@@ -36,17 +36,26 @@ fOnLoad = () ->
 
 	# Setup the ACE editor
 	editor = ace.edit "editor"
-	editor.setTheme "ace/theme/monokai"
+	editor.setTheme "ace/theme/cimson_editor"
+	# editor.setTheme "ace/theme/monokai"
 	editor.getSession().setMode "ace/mode/coffee"
+	editor.setFontSize "18px"
 	editor.setShowPrintMargin false
 	editor.session.setUseSoftTabs false 
 	
+
 	$( '#editor_mode' ).change ( el ) ->
 		if $( this ).val() is 'CoffeeScript'
 			editor.getSession().setMode "ace/mode/coffee"
 		else 
 			editor.getSession().setMode "ace/mode/javascript"
-	
+
+	$( '#editor_theme' ).change ( el ) ->
+		editor.setTheme "ace/theme/" + $( this ).val()
+		
+	$( '#editor_font' ).change ( el ) ->
+		editor.setFontSize $( this ).val()
+
 	# Add parameter list functionality
 	fChangeInputVisibility = () ->
 		$( '#tableParams tr' ).each ( id ) ->

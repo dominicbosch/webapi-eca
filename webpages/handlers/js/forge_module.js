@@ -53,8 +53,9 @@
     document.title = "Create " + moduleName;
     $('#pagetitle').text("{{{user.username}}}, create your custom " + moduleName + "!");
     editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
+    editor.setTheme("ace/theme/cimson_editor");
     editor.getSession().setMode("ace/mode/coffee");
+    editor.setFontSize("18px");
     editor.setShowPrintMargin(false);
     editor.session.setUseSoftTabs(false);
     $('#editor_mode').change(function(el) {
@@ -63,6 +64,12 @@
       } else {
         return editor.getSession().setMode("ace/mode/javascript");
       }
+    });
+    $('#editor_theme').change(function(el) {
+      return editor.setTheme("ace/theme/" + $(this).val());
+    });
+    $('#editor_font').change(function(el) {
+      return editor.setFontSize($(this).val());
     });
     fChangeInputVisibility = function() {
       return $('#tableParams tr').each(function(id) {

@@ -26,11 +26,18 @@
     document.title = 'Push Events!';
     $('#pagetitle').text('Push your own event directly into the engine!');
     editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
+    editor.setTheme("ace/theme/cimson_editor");
+    editor.setFontSize("18px");
     editor.getSession().setMode("ace/mode/json");
     editor.setShowPrintMargin(false);
     $('#editor').css('height', '400px');
     $('#editor').css('width', '600px');
+    $('#editor_theme').change(function(el) {
+      return editor.setTheme("ace/theme/" + $(this).val());
+    });
+    $('#editor_font').change(function(el) {
+      return editor.setFontSize($(this).val());
+    });
     $('#but_submit').click(function() {
       var err, val;
       try {
