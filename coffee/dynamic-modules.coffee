@@ -16,13 +16,13 @@ encryption = require './encryption'
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 #   [events](http://nodejs.org/api/events.html)
 vm = require 'vm'
-needle = require 'needle'
 request = require 'request'
 
 # - External Modules: [coffee-script](http://coffeescript.org/),
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
+needle = require 'needle'
 cryptoJS = require 'crypto-js'
 importio = require( 'import-io' ).client
 

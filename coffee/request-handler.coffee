@@ -392,11 +392,12 @@ exports.handleMeasurements = ( req, resp ) =>
 	req.on 'data', ( data ) ->
 		body += data
 
-	req.on 'end', ->
+	req.on 'end', =>
 		# It does not only look like a quick hack, it is one...
 		obj = parsePushAndAnswerEvent 'uptimestatistics', null, body, resp
 		# if obj.eventname is 'uptimestatistics'
 			# This is a hack to quickly allow storing of public accessible data
+		@log 'Storing uptime stats'
 		fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
 		fs.writeFile fPath, JSON.stringify( obj.body, undefined, 2 ), 'utf8'
 
