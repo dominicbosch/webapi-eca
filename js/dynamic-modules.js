@@ -17,11 +17,11 @@ Dynamic Modules
 
   vm = require('vm');
 
-  needle = require('needle');
-
   request = require('request');
 
   cs = require('coffee-script');
+
+  needle = require('needle');
 
   cryptoJS = require('crypto-js');
 
