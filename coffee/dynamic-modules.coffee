@@ -24,6 +24,7 @@ request = require 'request'
 cs = require 'coffee-script'
 diff = require 'diff'
 deepdiff = require 'deep-diff'
+prettydiff = require 'prettydiff'
 jsdom = require 'jsdom'
 jsselect = require 'js-select'
 needle = require 'needle'
@@ -143,6 +144,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		importio: importio
 		request: request
 		diff: diff
+		prettydiff: prettydiff
 		deepdiff: deepdiff
 		jsdom: jsdom
 		jsselect: jsselect

@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptoJS, cs, db, deepdiff, diff, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, jsdom, jsselect, logFunction, needle, regexpComments, request, vm;
+  var cryptoJS, cs, db, deepdiff, diff, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, jsdom, jsselect, logFunction, needle, prettydiff, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -24,6 +24,8 @@ Dynamic Modules
   diff = require('diff');
 
   deepdiff = require('deep-diff');
+
+  prettydiff = require('prettydiff');
 
   jsdom = require('jsdom');
 
@@ -159,6 +161,7 @@ Dynamic Modules
         importio: importio,
         request: request,
         diff: diff,
+        prettydiff: prettydiff,
         deepdiff: deepdiff,
         jsdom: jsdom,
         jsselect: jsselect,
