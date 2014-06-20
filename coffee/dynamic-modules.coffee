@@ -22,6 +22,10 @@ request = require 'request'
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
+diff = require 'diff'
+deepdiff = require 'deep-diff'
+jsdom = require 'jsdom'
+jsselect = require 'js-select'
 needle = require 'needle'
 cryptoJS = require 'crypto-js'
 importio = require( 'import-io' ).client
@@ -138,6 +142,10 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		needle: needle
 		importio: importio
 		request: request
+		diff: diff
+		deepdiff: deepdiff
+		jsdom: jsdom
+		jsselect: jsselect
 		cryptoJS: cryptoJS
 		log: logFunc
 		debug: console.log

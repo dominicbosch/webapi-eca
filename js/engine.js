@@ -6,7 +6,9 @@ Engine
 ==================
 > The heart of the WebAPI ECA System. The engine loads action invoker modules
 > corresponding to active rules actions and invokes them if an appropriate event
-> is retrieved.
+> is retrieved. 
+
+TODO events should have: raising-time, reception-time and eventually sender-uri and recipient-uri
  */
 
 (function() {

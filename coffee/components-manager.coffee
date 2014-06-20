@@ -228,6 +228,7 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 # ------------------------------------------
 storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
+	# FIXME this is all clutered up! we only need id, eventname, conditions and actions as rules! everything else is eventpoller related
 		rule =
 			id: oBody.id
 			eventtype: oBody.eventtype

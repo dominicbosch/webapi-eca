@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptoJS, cs, db, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, logFunction, needle, regexpComments, request, vm;
+  var cryptoJS, cs, db, deepdiff, diff, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, jsdom, jsselect, logFunction, needle, regexpComments, request, vm;
 
   db = require('./persistence');
 
@@ -20,6 +20,14 @@ Dynamic Modules
   request = require('request');
 
   cs = require('coffee-script');
+
+  diff = require('diff');
+
+  deepdiff = require('deep-diff');
+
+  jsdom = require('jsdom');
+
+  jsselect = require('js-select');
 
   needle = require('needle');
 
@@ -150,6 +158,10 @@ Dynamic Modules
         needle: needle,
         importio: importio,
         request: request,
+        diff: diff,
+        deepdiff: deepdiff,
+        jsdom: jsdom,
+        jsselect: jsselect,
         cryptoJS: cryptoJS,
         log: logFunc,
         debug: console.log,

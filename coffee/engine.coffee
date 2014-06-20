@@ -6,6 +6,8 @@ Engine
 > corresponding to active rules actions and invokes them if an appropriate event
 > is retrieved. 
 
+TODO events should have: raising-time, reception-time and eventually sender-uri and recipient-uri 
+
 ###
 
 # **Loads Modules:**

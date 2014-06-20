@@ -478,7 +478,6 @@ Request Handler
       return req.on('end', function() {
         var fPath, obj;
         obj = parsePushAndAnswerEvent('uptimestatistics', null, body, resp);
-        _this.log.info('Storing uptime stats');
         fPath = path.resolve(__dirname, '..', 'webpages', 'public', 'data', 'histochart.json');
         return fs.writeFile(fPath, JSON.stringify(obj.body, void 0, 2), 'utf8');
       });
