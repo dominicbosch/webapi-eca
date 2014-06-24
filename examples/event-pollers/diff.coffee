@@ -23,3 +23,30 @@ exports.detectedChange = ( url ) ->
 			catch err
 				log err
 	jsdom.env conf 
+
+# console.log(JSON.stringify(elementToObj(document.getElementById('foo'))));
+    
+# function elementToObj(el) {
+#     var child, children, i, info = {};
+
+#     if (el.nodeType === 3) {
+#         return (el.nodeValue.trim()) ? el.nodeValue : false;
+#     } else if (el.nodeType === 1) {
+#         info.id = el.id || '';
+#         info.className = el.className || '';
+        
+#         info.type = el.tagName.toLowerCase();
+#         info.children = [];
+#         children = el.childNodes;
+#         for (i = 0; i < children.length; i++) {
+#             child = elementToObj(children[i]);
+#             if (child && /^\S*$/.test(child.contents)) {
+#                 info.children.push(child);
+#             }
+#         }
+        
+#         return info;
+#     }
+    
+#     return false;
+# }

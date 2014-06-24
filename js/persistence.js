@@ -180,7 +180,14 @@ Persistence
       var makeObj;
       makeObj = function(pcb) {
         return function(err, obj) {
-          return pcb(err, JSON.parse(obj));
+          var er, oEvt;
+          try {
+            oEvt = JSON.parse(obj);
+            return pcb(err, oEvt);
+          } catch (_error) {
+            er = _error;
+            return pcb(er);
+          }
         };
       };
       return _this.db.lpop('event_queue', makeObj(cb));

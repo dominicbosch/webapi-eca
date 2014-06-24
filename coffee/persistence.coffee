@@ -133,7 +133,11 @@ Pop an event from the event queue and pass it to cb(err, obj).
 exports.popEvent = ( cb ) =>
 	makeObj = ( pcb ) ->
 		( err, obj ) ->
-			pcb err, JSON.parse obj 
+			try
+				oEvt = JSON.parse obj
+				pcb err, oEvt 
+			catch er
+				pcb er
 	@db.lpop 'event_queue', makeObj cb
 
 
