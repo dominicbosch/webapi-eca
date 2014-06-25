@@ -16,20 +16,11 @@ encryption = require './encryption'
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 #   [events](http://nodejs.org/api/events.html)
 vm = require 'vm'
-request = require 'request'
 
 # - External Modules: [coffee-script](http://coffeescript.org/),
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
-diff = require 'diff'
-deepdiff = require 'deep-diff'
-prettydiff = require 'prettydiff'
-jsdom = require 'jsdom'
-jsselect = require 'js-select'
-needle = require 'needle'
-cryptoJS = require 'crypto-js'
-importio = require( 'import-io' ).client
 
 
 ###
@@ -138,17 +129,17 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 	logFunc = logFunction userId, oRule.id, modId
 	# The sandbox contains the objects that are accessible to the user. Eventually they need to be required from a vm themselves 
 	sandbox = 
+		importio: require( 'import-io' ).client
+		prettydiff: require 'prettydiff'
+		cryptoJS: require 'crypto-js'
+		deepdiff: require 'deep-diff'
+		jsselect: require 'js-select'
+		request: require 'request'
+		needle: require 'needle'
+		jsdom: require 'jsdom'
+		diff: require 'diff'
 		id: "#{ userId }.#{ oRule.id }.#{ modId }.vm"
 		params: params
-		needle: needle
-		importio: importio
-		request: request
-		diff: diff
-		prettydiff: prettydiff
-		deepdiff: deepdiff
-		jsdom: jsdom
-		jsselect: jsselect
-		cryptoJS: cryptoJS
 		log: logFunc
 		debug: console.log
 		exports: {}

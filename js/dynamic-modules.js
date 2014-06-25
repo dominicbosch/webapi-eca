@@ -9,7 +9,7 @@ Dynamic Modules
  */
 
 (function() {
-  var cryptoJS, cs, db, deepdiff, diff, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, importio, jsdom, jsselect, logFunction, needle, prettydiff, regexpComments, request, vm;
+  var cs, db, encryption, exports, fPushEvent, fTryToLoadModule, getFunctionParamNames, logFunction, regexpComments, vm;
 
   db = require('./persistence');
 
@@ -17,25 +17,7 @@ Dynamic Modules
 
   vm = require('vm');
 
-  request = require('request');
-
   cs = require('coffee-script');
-
-  diff = require('diff');
-
-  deepdiff = require('deep-diff');
-
-  prettydiff = require('prettydiff');
-
-  jsdom = require('jsdom');
-
-  jsselect = require('js-select');
-
-  needle = require('needle');
-
-  cryptoJS = require('crypto-js');
-
-  importio = require('import-io').client;
 
 
   /*
@@ -155,17 +137,17 @@ Dynamic Modules
       _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
       logFunc = logFunction(userId, oRule.id, modId);
       sandbox = {
+        importio: require('import-io').client,
+        prettydiff: require('prettydiff'),
+        cryptoJS: require('crypto-js'),
+        deepdiff: require('deep-diff'),
+        jsselect: require('js-select'),
+        request: require('request'),
+        needle: require('needle'),
+        jsdom: require('jsdom'),
+        diff: require('diff'),
         id: "" + userId + "." + oRule.id + "." + modId + ".vm",
         params: params,
-        needle: needle,
-        importio: importio,
-        request: request,
-        diff: diff,
-        prettydiff: prettydiff,
-        deepdiff: deepdiff,
-        jsdom: jsdom,
-        jsselect: jsselect,
-        cryptoJS: cryptoJS,
         log: logFunc,
         debug: console.log,
         exports: {},

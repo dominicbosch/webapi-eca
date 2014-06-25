@@ -25,6 +25,7 @@
     "nodeunit": "0.8.6",
     "redis": "0.10.0",
     "request": "2.33.0",
-    "optimist": "0.6.1"
+    "optimist": "0.6.1",
+    "pagerank": "1.2.0"
   }
 }
