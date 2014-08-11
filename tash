@@ -1,0 +1,96 @@
+[1mdiff --git a/coffee/dynamic-modules.coffee b/coffee/dynamic-modules.coffee[m
+[1mindex 7672988..60a01ba 100644[m
+[1m--- a/coffee/dynamic-modules.coffee[m
+[1m+++ b/coffee/dynamic-modules.coffee[m
+[36m@@ -1,10 +1,10 @@[m
+[31m-###[m
+[32m+[m[32m# ###[m
+ [m
+[31m-Dynamic Modules[m
+[31m-===============[m
+[31m-> Compiles CoffeeScript modules and loads JS modules in a VM, together[m
+[31m-> with only a few allowed node.js modules.[m
+[31m-###[m
+[32m+[m[32m# Dynamic Modules[m
+[32m+[m[32m# ===============[m
+[32m+[m[32m# > Compiles CoffeeScript modules and loads JS modules in a VM, together[m
+[32m+[m[32m# > with only a few allowed node.js modules.[m
+[32m+[m[32m# ###[m
+ [m
+ # **Loads Modules:**[m
+ [m
+[36m@@ -23,13 +23,13 @@[m [mvm = require 'vm'[m
+ cs = require 'coffee-script'[m
+ [m
+ [m
+[31m-###[m
+[31m-Module call[m
+[31m------------[m
+[31m-Initializes the dynamic module handler.[m
+[32m+[m[32m# ###[m
+[32m+[m[32m# Module call[m
+[32m+[m[32m# -----------[m
+[32m+[m[32m# Initializes the dynamic module handler.[m
+ [m
+[31m-@param {Object} args[m
+[31m-###[m
+[32m+[m[32m# @param {Object} args[m
+[32m+[m[32m# ###[m
+ exports = module.exports = ( args ) =>[m
+ 	@log = args.logger[m
+ 	module.exports[m
+[36m@@ -46,17 +46,17 @@[m [mgetFunctionParamNames = ( fName, func, oFuncs ) ->[m
+ 		result = [][m
+ 	oFuncs[fName] = result[m
+ [m
+[31m-###[m
+[31m-Try to run a JS module from a string, together with the[m
+[31m-given parameters. If it is written in CoffeeScript we[m
+[31m-compile it first into JS.[m
+[31m-[m
+[31m-@public compileString ( *src, id, params, lang* )[m
+[31m-@param {String} src[m
+[31m-@param {String} id[m
+[31m-@param {Object} params[m
+[31m-@param {String} lang[m
+[31m-###[m
+[32m+[m[32m# ###[m
+[32m+[m[32m# Try to run a JS module from a string, together with the[m
+[32m+[m[32m# given parameters. If it is written in CoffeeScript we[m
+[32m+[m[32m# compile it first into JS.[m
+[32m+[m
+[32m+[m[32m# @public compileString ( *src, id, params, lang* )[m
+[32m+[m[32m# @param {String} src[m
+[32m+[m[32m# @param {String} id[m
+[32m+[m[32m# @param {Object} params[m
+[32m+[m[32m# @param {String} lang[m
+[32m+[m[32m# ###[m
+ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) =>[m
+ 	if lang is 'CoffeeScript'[m
+ 		try[m
+[36m@@ -97,25 +97,6 @@[m [mfPushEvent = ( userId, oRule, modType ) ->[m
+ 		else[m
+ 			db.pushEvent obj[m
+ [m
+[31m-# fSetVar = ( userId, ruleId, modId ) ->[m
+[31m-# 	( field, data ) ->[m
+[31m-# 		db.persistSetVar  userId, ruleId, modId, field, JSON.stringify data[m
+[31m-		[m
+[31m-# fGetVar = ( userId, ruleId, modId ) ->[m
+[31m-# 	( field, cb ) ->[m
+[31m-# 		fObectify = ( cb ) ->[m
+[31m-# 			( err, str ) ->[m
+[31m-# 				if err[m
+[31m-# 					cb err[m
+[31m-# 				else[m
+[31m-# 					try[m
+[31m-# 						cb null, JSON.parse str[m
+[31m-# 					catch[m
+[31m-# 						cb err[m
+[31m-[m
+[31m-# 		db.persistGetVar  userId, ruleId, modId, field, fObectify cb[m
+[31m-[m
+[31m-[m
+ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>[m
+ 	if not params[m
+ 		params = {}[m

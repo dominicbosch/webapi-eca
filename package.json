@@ -27,5 +27,8 @@
     "request": "2.33.0",
     "optimist": "0.6.1",
     "pagerank": "1.2.0"
+  },
+  "devDependencies": {
+    "gulp": "~3.8.7"
   }
 }
