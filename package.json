@@ -16,7 +16,6 @@
     "prettydiff": "1.0.10",
     "deep-diff": "0.1.7",
     "express": "3.4.8",
-    "groc": "0.6.3",
     "import-io": "1.0.x",
     "js-select": "0.6.0",
     "jsdom": "0.11.0",
@@ -40,6 +39,10 @@
     "gulp-jshint": "~1.8.4",
     "gulp-coffeelint": "~0.3.3",
     "gulp-concat": "~2.3.4",
-    "gulp-header": "~1.0.5"
+    "gulp-header": "~1.0.5",
+    "groc": "~0.6.3",
+    "gulp-help": "~0.1.11",
+    "gulp-util": "~3.0.0",
+    "gulp-plumber": "~0.6.4"
   }
 }
