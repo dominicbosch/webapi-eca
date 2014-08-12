@@ -1,0 +1,28 @@
+{
+  "testing": {
+    "http-port": 8080,
+    "db-port": 6379,
+    "db-select": 0,
+    "log": {
+      "nolog": "false",
+      "mode": "productive",
+      "io-level": "info",
+      "file-level": "info",
+      "file-path": "logs/server.log"
+    },
+    "keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
+  },
+  "productive": {
+    "http-port": 8080,
+    "db-port": 6379,
+    "db-select": 0,
+    "log": {
+      "nolog": "false",
+      "mode": "productive",
+      "io-level": "info",
+      "file-level": "info",
+      "file-path": "logs/server.log"
+    },
+    "keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
+  }
+}

@@ -1,10 +1,20 @@
+###
+
+GULP FILE
+=========
+
+Type `gulp` in command line to get option list.
+
+###
+
+
 # fs = require 'fs'
 # groc = require 'groc'
 gulp = require 'gulp'
 plumber = require 'gulp-plumber'
 gutil = require 'gulp-util'
-# chalk = gutil.colors
-# gulphelp = require 'gulp-help'
+chalk = gutil.colors
+gulphelp = require 'gulp-help'
 # minifyHtml = require 'gulp-minify-html'
 # minifyCss = require 'gulp-minify-css'
 uglify = require 'gulp-uglify'
@@ -18,41 +28,48 @@ coffee = require 'gulp-coffee'
 watch = require 'gulp-watch'
 dirTesting = 'builds/testing/'
 dirProductive = 'builds/productive/'
-# msgCmdC = '\n\n\n --> Press Ctrl/Cmd + C to stop watching!\n\n'
+msgCmdC = '\n\n\n --> Press Ctrl/Cmd + C to stop watching!\n\n'
 
 # Register gulp help as default task
-# gulphelp gulp,
-#   description: 'Displays this!'
-#   aliases: [ 'h', '?', '-h', '--help' ]
+gulphelp gulp,
+  description: 'Displays this!'
+  aliases: [ 'h', '?', '-h', '--help' ]
+
+gulp.task 'default', [ 'help' ], () ->
+  # gutil.log chalk.yellow 'do you require a default task?'
 
 coffeeStream = coffee bare: true
 fHandleError = ( err ) ->
   gutil.beep()
-  console.log err.toString()
-  # gutil.log chalk.red err.toString()
-  # this.emit 'end'
-# coffeeStream.on 'error', fHandleError
+  if err.stack
+    msg = err.stack
+  else
+    msg = err.toString()
+  gutil.log chalk.red msg
 
+###
+Compile the gulp file itself
+###
+fCompileGulpFile = ( doWatch ) ->
+  stream = gulp.src( 'gulpfile.coffee' )
+    .pipe( plumber errorHandler: fHandleError )
+  if doWatch then stream = stream.pipe( watch() )
+  stream.pipe( coffeeStream )
+    .pipe( uglify() )
+    .pipe( gulp.dest '' )
 
-# fCompileGulpFile = ( doWatch ) ->
-#   stream = gulp.src 'gulpfile.coffee'
-#   if doWatch then stream = stream.pipe( watch() )
-#   stream.pipe( coffee( bare: true ).on( 'error', fHandleError ) )
-#     # .pipe( uglify() )
-#     .pipe( gulp.dest '' )
+# For debugging purposes we do not directly use coffee files to run either gulp or any part of the actual product
+gulp.task 'gulpfile-compile', 'Compile Gulp File', () ->
+  gutil.log chalk.yellow gulp.tasks[ 'gulpfile-compile' ].help.message
+  fCompileGulpFile false
 
+gulp.task 'gulpfile-compile-watch', 'Continously compile Gulp File when it changes', () ->
+  gutil.log chalk.yellow gulp.tasks[ 'gulpfile-compile-watch' ].help.message + msgCmdC
+  fCompileGulpFile true
 
-# # For debugging purposes we do not directly use coffee files to run either gulp or any part of the actual product
-# # gulp.task 'coffee-gulp', 'Compile Gulp File', () ->
-# gulp.task 'coffee-gulp', () ->
-#   # gutil.log chalk.yellow gulp.tasks[ 'coffee-gulp' ].help.message
-#   fCompileGulpFile false
-
-# # gulp.task 'coffee-gulp-watch', 'Continously compile Gulp File when it changes', () ->
-# gulp.task 'coffee-gulp-watch', () ->
-#   # gutil.log chalk.yellow gulp.tasks[ 'coffee-gulp-watch' ].help.message + msgCmdC
-#   fCompileGulpFile true
-
+###
+Compile the engine's source code
+###
 fCompileEngine = ( doWatch ) ->
   stream = gulp.src( 'src/engine-coffee/*.coffee' )
     .pipe( plumber errorHandler: fHandleError )
@@ -62,15 +79,49 @@ fCompileEngine = ( doWatch ) ->
     .pipe( uglify() )
     .pipe( gulp.dest dirProductive + 'js' )
 
-# gulp.task 'coffee', 'One-time compiling of all coffee files in the project', () ->
-gulp.task 'coffee', () ->
-  # gutil.log chalk.yellow gulp.tasks[ 'coffee' ].help.message
+gulp.task 'engine-compile', 'One-time compiling of ENGINE coffee files', () ->
+  gutil.log chalk.yellow gulp.tasks[ 'engine-compile' ].help.message
   fCompileEngine false
 
-# gulp.task 'coffee-watch', 'Start watching for coffee file changes in the whole project and compile them', ( cb ) ->
-gulp.task 'coffee-watch', ( cb ) ->
-  # gutil.log chalk.yellow gulp.tasks[ 'coffee-watch' ].help.message + msgCmdC
+gulp.task 'engine-compile-watch', 'Start watching for ENGINE coffee file changes and compile them', ( cb ) ->
+  gutil.log chalk.yellow gulp.tasks[ 'engine-compile-watch' ].help.message + msgCmdC
   fCompileEngine true
+
+
+###
+Compile web app code
+###
+fCompileWebapp = ( doWatch ) ->
+  stream = gulp.src( 'src/engine-coffee/*.coffee' )
+    .pipe( plumber errorHandler: fHandleError )
+  if doWatch then stream = stream.pipe( watch() )
+  stream.pipe( coffeeStream )
+    .pipe( gulp.dest dirTesting + 'js' )
+    .pipe( uglify() )
+    .pipe( gulp.dest dirProductive + 'js' )
+
+gulp.task 'webapp-compile', 'One-time compiling of WEBAPP coffee files', () ->
+  gutil.log chalk.yellow gulp.tasks[ 'all-compile' ].help.message
+  fCompileWebapp false
+
+gulp.task 'webapp-compile-watch', 'Start watching for WEBAPP coffee file changes and compile them', ( cb ) ->
+  gutil.log chalk.yellow gulp.tasks[ 'all-compile-watch' ].help.message + msgCmdC
+  fCompileWebapp true
+
+###
+Compile all existing source code files
+###
+gulp.task 'all-compile', 'One-time compiling of ALL coffee files', () ->
+  gutil.log chalk.yellow gulp.tasks[ 'all-compile' ].help.message
+  fCompileGulpFile false
+  fCompileEngine false
+  fCompileWebapp false
+
+gulp.task 'all-compile-watch', 'Start watching for ALL coffee file changes and compile them', ( cb ) ->
+  gutil.log chalk.yellow gulp.tasks[ 'all-compile-watch' ].help.message + msgCmdC
+  fCompileGulpFile true
+  fCompileEngine true
+  fCompileWebapp true
 
 
 

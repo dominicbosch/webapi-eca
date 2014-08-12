@@ -1,4 +1,3 @@
-wqwf asdasd {
 ###
 
 Configuration
@@ -31,7 +30,7 @@ exports = module.exports = ( args ) =>
 	if args.configPath
 		loadConfigFile args.configPath
 	else
-		loadConfigFile path.join 'config', 'system.json'
+		loadConfigFile path.join 'config', 'systems.json'
 	module.exports
 
 ###
@@ -42,6 +41,7 @@ Reads the config file synchronously from the file system and try to parse it.
 @param {String} configPath
 ###
 loadConfigFile = ( configPath ) =>
+	# FIXME this needs to load the correct config file entry (testing/productive/whatever)
 	@config = null
 	confProperties = [
 		'log'
