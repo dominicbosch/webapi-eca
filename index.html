@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Webapi-eca by dominicbosch</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/dominicbosch/webapi-eca">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/dominicbosch/webapi-eca/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/dominicbosch/webapi-eca/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Webapi-eca</h1>
+          <p>An ECA engine which acts as a middleware between WebAPI&#39;s. Find the tutorial on: http://dominicbosch.github.io/webapi-eca</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/dominicbosch">dominicbosch</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="tutorial" class="anchor" href="#tutorial"><span class="octicon octicon-link"></span></a>Tutorial</h1>
+
+<h3>
+<a name="installation-of-the-system" class="anchor" href="#installation-of-the-system"><span class="octicon octicon-link"></span></a>Installation of the System</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="cm">/**</span>
+<span class="cm"> * Converts an RGB color number to a hex color string if valid.</span>
+<span class="cm"> * @param {number} color A 6-digit hex RGB color code as a number.</span>
+<span class="cm"> * @return {?string} A CSS representation of the color or null if invalid.</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">convertToHexColor</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Color must be a number, finite, with no fractional part, in the correct</span>
+  <span class="c1">// range for an RGB hex color.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">isFinite</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="o">==</span> <span class="nx">color</span> <span class="o">&amp;&amp;</span>
+      <span class="nx">color</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">color</span> <span class="o">&lt;=</span> <span class="mh">0xffffff</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">hexColor</span> <span class="o">=</span> <span class="nx">color</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+    <span class="c1">// Pads with initial zeros and # (e.g. for 'ff' yields '#0000ff').</span>
+    <span class="k">return</span> <span class="s1">'#000000'</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span> <span class="o">-</span> <span class="nx">hexColor</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="o">+</span> <span class="nx">hexColor</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>
+<a name="hello-world-event" class="anchor" href="#hello-world-event"><span class="octicon octicon-link"></span></a>Hello World Event</h3>
+
+<h3>
+<a name="html-scraping-job" class="anchor" href="#html-scraping-job"><span class="octicon octicon-link"></span></a>HTML Scraping job</h3>
+
+<p>Text output, true/false, condition check</p>
+
+<h3>
+<a name="data-acquiring" class="anchor" href="#data-acquiring"><span class="octicon octicon-link"></span></a>Data Acquiring</h3>
+
+<p>Data visualization</p>
+
+<h3>
+<a name="notification" class="anchor" href="#notification"><span class="octicon octicon-link"></span></a>Notification</h3>
+
+<h3>
+<a name="mobile-alert-service" class="anchor" href="#mobile-alert-service"><span class="octicon octicon-link"></span></a>Mobile Alert Service</h3>
+
+<h3>
+<a name="cms-enrichment" class="anchor" href="#cms-enrichment"><span class="octicon octicon-link"></span></a>CMS Enrichment</h3>
+
+<h3>
+<a name="voting-event" class="anchor" href="#voting-event"><span class="octicon octicon-link"></span></a>Voting Event</h3>
+
+<p>time period -&gt; rating from world wide different IP addresses.</p>
+
+<h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<h1>
+<a name="building-process" class="anchor" href="#building-process"><span class="octicon octicon-link"></span></a>Building process</h1>
+
+<h1>
+<a name="nodejs" class="anchor" href="#nodejs"><span class="octicon octicon-link"></span></a>Node.js</h1>
+
+<h3>
+<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+
+<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+
+<h1>
+<a name="tutorial-1" class="anchor" href="#tutorial-1"><span class="octicon octicon-link"></span></a>Tutorial</h1>
+
+<h3>
+<a name="installation-of-the-system-1" class="anchor" href="#installation-of-the-system-1"><span class="octicon octicon-link"></span></a>Installation of the System</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="cm">/**</span>
+<span class="cm"> * Converts an RGB color number to a hex color string if valid.</span>
+<span class="cm"> * @param {number} color A 6-digit hex RGB color code as a number.</span>
+<span class="cm"> * @return {?string} A CSS representation of the color or null if invalid.</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">convertToHexColor</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Color must be a number, finite, with no fractional part, in the correct</span>
+  <span class="c1">// range for an RGB hex color.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">isFinite</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">color</span><span class="p">)</span> <span class="o">==</span> <span class="nx">color</span> <span class="o">&amp;&amp;</span>
+      <span class="nx">color</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">color</span> <span class="o">&lt;=</span> <span class="mh">0xffffff</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">hexColor</span> <span class="o">=</span> <span class="nx">color</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+    <span class="c1">// Pads with initial zeros and # (e.g. for 'ff' yields '#0000ff').</span>
+    <span class="k">return</span> <span class="s1">'#000000'</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span> <span class="o">-</span> <span class="nx">hexColor</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="o">+</span> <span class="nx">hexColor</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>
+<a name="hello-world-event-1" class="anchor" href="#hello-world-event-1"><span class="octicon octicon-link"></span></a>Hello World Event</h3>
+
+<h3>
+<a name="html-scraping-job-1" class="anchor" href="#html-scraping-job-1"><span class="octicon octicon-link"></span></a>HTML Scraping job</h3>
+
+<p>Text output, true/false, condition check</p>
+
+<h3>
+<a name="data-acquiring-1" class="anchor" href="#data-acquiring-1"><span class="octicon octicon-link"></span></a>Data Acquiring</h3>
+
+<p>Data visualization</p>
+
+<h3>
+<a name="notification-1" class="anchor" href="#notification-1"><span class="octicon octicon-link"></span></a>Notification</h3>
+
+<h3>
+<a name="mobile-alert-service-1" class="anchor" href="#mobile-alert-service-1"><span class="octicon octicon-link"></span></a>Mobile Alert Service</h3>
+
+<h3>
+<a name="cms-enrichment-1" class="anchor" href="#cms-enrichment-1"><span class="octicon octicon-link"></span></a>CMS Enrichment</h3>
+
+<h3>
+<a name="voting-event-1" class="anchor" href="#voting-event-1"><span class="octicon octicon-link"></span></a>Voting Event</h3>
+
+<p>time period -&gt; rating from world wide different IP addresses.</p>
+
+<h2>
+<a name="documentation-1" class="anchor" href="#documentation-1"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<h1>
+<a name="building-process-1" class="anchor" href="#building-process-1"><span class="octicon octicon-link"></span></a>Building process</h1>
+
+<h1>
+<a name="nodejs-1" class="anchor" href="#nodejs-1"><span class="octicon octicon-link"></span></a>Node.js</h1>
+
+<pre><code>$ cd your_repo_root/repo_name
+$ git fetch origin
+$ git checkout gh-pages
+</code></pre>
+
+<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+
+<h3>
+<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+
+<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+
+<h3>
+<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+
+<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+
+<h3>
+<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+
+<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+
+<h3>
+<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+
+<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
