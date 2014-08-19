@@ -14,7 +14,7 @@
       </a>
 
       <div class="trigger">
-        {% for weight in (1..site.max_weight) %}
+        {% for weight in (site.max_weight..0) %}
           {% for page in site.pages %}
             {% if page.title %}
               {% if page.weight == weight %}
