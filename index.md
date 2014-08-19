@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Welcome
+title: Overview
 overview: true
 priority: 0
 ---
 
 
-Welcome to Reactivity in the Web
-================================
+Overview
+========
 
 Hello!
 
