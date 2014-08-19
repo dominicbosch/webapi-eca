@@ -14,7 +14,7 @@
       </a>
 
       <div class="trigger">
-        {% for priority in (site.max_priority..0) %}
+        {% for priority in (0..site.max_priority) %}
           {% for page in site.pages %}
             {% if page.title %}
               {% if page.priority == priority %}
