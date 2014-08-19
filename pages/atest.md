@@ -2,7 +2,7 @@
 layout: default
 title: Data Acquiring
 overview: true
-weight: 2
+priority: 2
 ---
 
 

@@ -14,10 +14,10 @@
       </a>
 
       <div class="trigger">
-        {% for weight in (site.max_weight..0) %}
+        {% for priority in (site.max_priority..0) %}
           {% for page in site.pages %}
             {% if page.title %}
-              {% if page.weight == weight %}
+              {% if page.priority == priority %}
               <a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
               {% endif %}
             {% endif %}
