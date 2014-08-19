@@ -70,14 +70,14 @@ Apply your settings, for example:
 
 The configurations properties are:
 
-  - http-port: The port on which the system listens for requests
-  - db-port: The db-port where your redis instance is listening
-  - log: Logging configuration
-    - mode: If set to productive no expensive origin lookup is performed and logged
-    - io-level: The log-level for the std I/O stream
-    - file-level: The log-level for the log file
-    - file-path: Log file path, relative to cwd
-    - nolog: False if no log shall be generated at all. Mainly used for unit tests
+  - `http-port: The port on which the system listens for requests
+  - `db-port`: The db-port where your redis instance is listening
+  - `log`: Logging configuration
+    - `mode`: If set to productive no expensive origin lookup is performed and logged
+    - `io-level`: The log-level for the std I/O stream
+    - `file-level`: The log-level for the log file
+    - `file-path`: Log file path, relative to cwd
+    - `nolog`: False if no log shall be generated at all. Mainly used for unit tests
 
 Start the server:
 
