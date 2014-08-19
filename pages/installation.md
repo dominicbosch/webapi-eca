@@ -54,17 +54,19 @@ Edit the configuration file:
 
 Apply your settings, for example:
 
-    {
-      "http-port": 8125,            # The port on which the system listens for requests
-      "db-port": 6379,              # The db-port where your redis instance is listening
-      "log": {                      ### logging configurations
-        "mode": "development",      # if set to productive no expensive origin lookup is performed and logged
-        "io-level": "info",         # the log-level for the std I/O stream
-        "file-level": "info",       # the log-level for the log file
-        "file-path": "server.log"   # log file path, relative to cwd
-        "nolog": "false"            # false if no log shall be generated at all. Mainly used for unit tests
-      }
-    }
+{% highlight json %}
+{
+  "http-port": 8125,            # The port on which the system listens for requests
+  "db-port": 6379,              # The db-port where your redis instance is listening
+  "log": {                      ### logging configurations
+    "mode": "development",      # if set to productive no expensive origin lookup is performed and logged
+    "io-level": "info",         # the log-level for the std I/O stream
+    "file-level": "info",       # the log-level for the log file
+    "file-path": "server.log"   # log file path, relative to cwd
+    "nolog": "false"            # false if no log shall be generated at all. Mainly used for unit tests
+  }
+}
+{% endhighlight %}
 
 Start the server:
 

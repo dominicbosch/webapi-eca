@@ -9,8 +9,6 @@ priority: 2
 Tutorials
 =========
 
-### Installation of the System
-
 {% highlight javascript %}
 /**
  * Converts an RGB color number to a hex color string if valid.
