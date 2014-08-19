@@ -1,5 +1,4 @@
 highlighter: pygments
-baseurl: /webapi-eca
-# sass:
-#     sass_dir: _sass
-#     style: :compressed
+baseurl: "/webapi-eca"
+description: > 
+  Tutorials for the webapi-eca engine
