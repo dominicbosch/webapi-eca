@@ -1,4 +1,4 @@
 highlighter: pygments
 baseurl: "/webapi-eca"
-description: > 
+description: > # ignore new lines
   Tutorials for the webapi-eca engine
