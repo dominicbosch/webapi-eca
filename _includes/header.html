@@ -17,9 +17,9 @@
         {% for priority in (0..site.max_priority) %}
           {% for page in site.pages %}
             {% if page.priority %}
-            {% prio = page.priority %}
+            {% assign prio = page.priority %}
             {% else %}
-            {% prio = site.max_priority %}
+            {% assign prio = site.max_priority %}
             {% endif %}
             {% if page.title %}
               {% if prio == priority %}
