@@ -1,7 +1,7 @@
 markdown: kramdown
 highlighter: pygments
 baseurl: /webapi-eca
-title: WebAPI ECA Engine Tutorial
+title: Reactivity on the Web
 description: > # ignore new lines until next property
-  Tutorials for the webapi-eca engine
+  Introduction &amp; Tutorials to Reactivity on the Web
 max_priority: 10
