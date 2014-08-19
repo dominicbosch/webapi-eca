@@ -10,7 +10,7 @@ Tutorial
 
 ### Installation of the System
 
-```javascript
+{% highlight javascript %}
 /**
  * Converts an RGB color number to a hex color string if valid.
  * @param {number} color A 6-digit hex RGB color code as a number.
@@ -27,7 +27,7 @@ function convertToHexColor(color) {
   }
   return null;
 }
-```
+{% endhighlight %}
 
 
 ### Hello World Event
