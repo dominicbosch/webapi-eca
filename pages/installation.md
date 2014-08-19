@@ -1,12 +1,13 @@
 ---
 layout: default
-title: HTMLScraping Job
+title: System Installation
 overview: true
+priority: 1
 ---
 
 
-Tutorial
-========
+System Installation
+===================
 
 ### Installation of the System
 

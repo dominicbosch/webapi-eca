@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Data Acquiring
+title: Tutorials
 overview: true
 priority: 2
 ---
 
 
-A Test
-========
+Tutorials
+=========
 
 ### Installation of the System
 
