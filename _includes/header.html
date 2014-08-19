@@ -16,8 +16,13 @@
       <div class="trigger">
         {% for priority in (0..site.max_priority) %}
           {% for page in site.pages %}
+            {% if page.priority %}
+            {% prio = page.priority %}
+            {% else %}
+            {% prio = site.max_priority %}
+            {% endif %}
             {% if page.title %}
-              {% if page.priority == priority %}
+              {% if prio == priority %}
               <a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
               {% endif %}
             {% endif %}
