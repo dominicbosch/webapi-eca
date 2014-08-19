@@ -1,6 +1,8 @@
 #
-# General Helper Fucntions
+# The module that helps creating the rules
 #
+
+# FIXME: notify of non existing Action invoker in the first place!
 
 strPublicKey = ''
 
