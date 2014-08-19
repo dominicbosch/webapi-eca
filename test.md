@@ -37,6 +37,12 @@ function convertToHexColor(color) {
 <html><head><title></title></head></html>
 ```
 
+{% highlight python %}
+def yourfunction():
+     print "Hello World!"
+{% endhighlight %}
+
+
 ~~~ ruby
 def what?
   42
