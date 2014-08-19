@@ -70,7 +70,7 @@ Apply your settings, for example:
 
 The configurations properties are:
 
-  - `http-port: The port on which the system listens for requests
+  - `http-port`: The port on which the system listens for requests
   - `db-port`: The db-port where your redis instance is listening
   - `log`: Logging configuration
     - `mode`: If set to productive no expensive origin lookup is performed and logged

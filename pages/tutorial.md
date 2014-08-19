@@ -9,6 +9,8 @@ priority: 2
 Tutorials
 =========
 
+<!--
+
 {% highlight javascript %}
 /**
  * Converts an RGB color number to a hex color string if valid.
@@ -28,48 +30,14 @@ function convertToHexColor(color) {
 }
 {% endhighlight %}
 
+-->
 
-### Hello World Event
+- Hello World Event
+- HTML Scraping job: Text output, true/false, condition check
+- Data Acquiring: Data visualization
+- Notification 
+- Mobile Alert Service
+- CMS Enrichment
+- Voting Event: time period -> rating from world wide different IP addresses.
 
-
-```html
-<html><head><title></title></head></html>
-```
-
-{% highlight python %}
-def yourfunction():
-     print "Hello World!"
-{% endhighlight %}
-
-
-~~~ ruby
-def what?
-  42
-end
-~~~
-
-### HTML Scraping job
-Text output, true/false, condition check
-
-
-### Data Acquiring
-Data visualization
-
-
-### Notification 
-
-
-### Mobile Alert Service
-
-
-### CMS Enrichment
-
-
-### Voting Event
-time period -> rating from world wide different IP addresses.
-
-
-## Documentation
-# Building process
-# Node.js
 
