@@ -9,6 +9,7 @@ Tutorial
 ========
 
 ### Installation of the System
+
 ```javascript
 /**
  * Converts an RGB color number to a hex color string if valid.
