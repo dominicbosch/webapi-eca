@@ -33,21 +33,19 @@ Download and install dependencies:
     cd webapi-eca
     npm install
 
-Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`.
+Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`. Visit their page, for Ubuntu this is fairly easy:
 
-> Checkout their page, but for ubuntu it was fairly easy:
-
->    sudo apt-get update
->    sudo apt-get install build-essential
->    sudo apt-get install tcl8.5
->    wget http://download.redis.io/redis-stable.tar.gz
->    tar xvzf redis-stable.tar.gz
->    cd redis-stable
->    make
->    make test
->    sudo make install
->    cd utils
->    sudo ./install_server.sh
+    sudo apt-get update
+    sudo apt-get install build-essential
+    sudo apt-get install tcl8.5
+    wget http://download.redis.io/redis-stable.tar.gz
+    tar xvzf redis-stable.tar.gz
+    cd redis-stable
+    make
+    make test
+    sudo make install
+    cd utils
+    sudo ./install_server.sh
 
 
 Edit the configuration file:
