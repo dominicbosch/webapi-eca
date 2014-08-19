@@ -37,6 +37,11 @@ function convertToHexColor(color) {
 <html><head><title></title></head></html>
 ```
 
+~~~ ruby
+def what?
+  42
+end
+~~~
 
 ### HTML Scraping job
 Text output, true/false, condition check
