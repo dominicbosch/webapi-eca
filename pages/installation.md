@@ -34,6 +34,7 @@ Download and install dependencies:
     npm install
 
 Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`.
+
 > Checkout their page, but for ubuntu it was fairly easy:
 > sudo apt-get update
 > sudo apt-get install build-essential
