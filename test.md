@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Jekyll &bull; Simple, blog-aware, static sites
+title: Hello World
 overview: true
 ---
 
