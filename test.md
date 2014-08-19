@@ -30,6 +30,10 @@ function convertToHexColor(color) {
 ```
 
 
+```html
+<html><head><title></title></head></html>
+```
+
 ### Hello World Event
 
 
