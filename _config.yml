@@ -1,4 +1,5 @@
+markdown: kramdown
 highlighter: pygments
 baseurl: "/webapi-eca"
-description: > # ignore new lines
+description: > # ignore new lines until next property
   Tutorials for the webapi-eca engine
