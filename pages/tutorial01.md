@@ -11,23 +11,31 @@ Tutorial: Hello World Event
 
 Access the Web interface to the [previously](installation.html) setup engine at the given port in the configuration file, e.g. [Web Interface](http://localhost:8125).
 
+
+
+
 ## Setup Your first Action Dispatcher
 
-First you will need to create an Action Dispatcher in order to set up a valid rule. In the navigation, cick on "Create AI" as shown in the image below:
+First you will need to create an Action Dispatcher in order to set up a valid rule.
+1. In the navigation, click on "Create AI":
 
 ![CreateAI]({{ site.baseurl }}/images/CreateAI.png)
 
+
+
 ### Cleanup prefilled Example
 
-You will see an already prefilled Action Dispatcher, called "ProBinder" as shown below:
+You will see an already prefilled Action Dispatcher, called "ProBinder":
 
 ![CreateAI1]({{ site.baseurl }}/images/CreateAI1.png)
 
-Clean up the editor for a plain example:
+2. Clean up the editor for a plain example:
 
 - Remove the entire code from the editor.
 - Also remove the prefilled user-specific properties `username` and `password` on the right-hand side of the editor, by clicking the red crosses.
 - Now enter your own module name: `Logging`, instead of `ProBinder`. For our "Hello World" example we will log something as a result of an event.
+
+
 
 ### Enter Module Code
 
