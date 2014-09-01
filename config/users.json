@@ -12,5 +12,9 @@
   "alexander": {
     "password": "b6c06f2e1badf7a3a2804163a04026dc97226b0bc920c0466c59a0709b1ea83a8bdc3cb7a4ce82f4205b5a82d1a64484a160939d70d728eec302ebdebc270f30",
     "roles": []
+  },
+  "user": {
+    "password": "2eed5b39352d60a94854082ac64061a361c330293ea3424d63aeecae9b6e8ba75c77fdc30db99d4f72cdc5f0905a95f1050a560268954e56a4dde6dbb0e3e656",
+    "roles": []
   }
 }
