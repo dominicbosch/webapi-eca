@@ -26,7 +26,7 @@ fOnLoad = () ->
 		if $( '#module_type' ).val() is 'Event Poller'
 			cmd = 'get_event_pollers'
 		else
-			cmd = 'get_action_invokers'
+			cmd = 'get_action_dispatchers'
 		$.post( '/usercommand', command: cmd )
 			.done fUpdateModuleList
 			.fail fErrHandler 'Did not retrieve rules! '
@@ -55,7 +55,7 @@ fOnLoad = () ->
 			if $( '#module_type' ).val() is 'Event Poller'
 				cmd = 'delete_event_poller'
 			else
-				cmd = 'delete_action_invoker'
+				cmd = 'delete_action_dispatcher'
 			data =
 				command: cmd
 				body: JSON.stringify
@@ -69,6 +69,6 @@ fOnLoad = () ->
 		if $( '#module_type' ).val() is 'Event Poller'
 			window.location.href = 'forge?page=forge_module&type=event_poller&id=' + modName
 		else
-			window.location.href = 'forge?page=forge_module&type=action_invoker&id=' + modName
+			window.location.href = 'forge?page=forge_module&type=action_dispatcher&id=' + modName
 
 window.addEventListener 'load', fOnLoad, true

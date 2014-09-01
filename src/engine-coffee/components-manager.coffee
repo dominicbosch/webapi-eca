@@ -3,7 +3,7 @@
 Components Manager
 ==================
 > The components manager takes care of the dynamic JS modules and the rules.
-> Event Poller and Action Invoker modules are loaded as strings and stored in the database,
+> Event Poller and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event poller.
 
 ###
@@ -255,12 +255,12 @@ storeRule = ( user, oBody, callback ) =>
 		# if action module params were sent, store them
 		oParams = oBody.actionparams
 		for id, params of oParams
-			db.actionInvokers.storeUserParams id, user.username, JSON.stringify params
+			db.actionDispatchers.storeUserParams id, user.username, JSON.stringify params
 		oFuncArgs = oBody.actionfunctions
 		# if action function arguments were sent, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
-			db.actionInvokers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
+			db.actionDispatchers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		eventInfo = ''
 		if rule.eventstart
@@ -334,49 +334,49 @@ commandFunctions =
 				code: 200
 				message: 'OK!'
 
-# ACTION INVOKERS
-# ---------------
-	get_action_invokers: ( user, oBody, callback ) ->
-		getModules  user, oBody, db.actionInvokers, callback
+# ACTION DISPATCHERS
+# ------------------
+	get_action_dispatchers: ( user, oBody, callback ) ->
+		getModules  user, oBody, db.actionDispatchers, callback
 	
-	get_full_action_invoker: ( user, oBody, callback ) ->
+	get_full_action_dispatcher: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModule user.username, oBody.id, ( err, obj ) ->
+			db.actionDispatchers.getModule user.username, oBody.id, ( err, obj ) ->
 				callback
 					code: 200
 					message: JSON.stringify obj
 
-	get_action_invoker_params: ( user, oBody, callback ) ->
-		getModuleParams user, oBody, db.actionInvokers, callback
+	get_action_dispatcher_params: ( user, oBody, callback ) ->
+		getModuleParams user, oBody, db.actionDispatchers, callback
 
-	get_action_invoker_user_params: ( user, oBody, callback ) ->
-		getModuleUserParams user, oBody, db.actionInvokers, callback
+	get_action_dispatcher_user_params: ( user, oBody, callback ) ->
+		getModuleUserParams user, oBody, db.actionDispatchers, callback
 
-	get_action_invoker_user_arguments: ( user, oBody, callback ) ->
-		getModuleUserArguments user, oBody, db.actionInvokers, callback
+	get_action_dispatcher_user_arguments: ( user, oBody, callback ) ->
+		getModuleUserArguments user, oBody, db.actionDispatchers, callback
 
-	get_action_invoker_function_arguments: ( user, oBody, callback ) ->
+	get_action_dispatcher_function_arguments: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
+			db.actionDispatchers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
 	
-	forge_action_invoker: ( user, oBody, callback ) ->
-		forgeModule user, oBody, "actioninvoker", db.actionInvokers, callback
+	forge_action_dispatcher: ( user, oBody, callback ) ->
+		forgeModule user, oBody, "actiondispatcher", db.actionDispatchers, callback
 
-	delete_action_invoker: ( user, oBody, callback ) ->
+	delete_action_dispatcher: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.actionInvokers.deleteModule user.username, oBody.id
+			db.actionDispatchers.deleteModule user.username, oBody.id
 			callback
 				code: 200
 				message: 'OK!'

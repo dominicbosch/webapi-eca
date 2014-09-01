@@ -1,8 +1,8 @@
 
 
 ### 
-Robert ACTION INVOKER
-------------------------
+Robert ACTION DISPATCHER
+-------------------------
 
 This is a customized module, made for Robert Frank to automatically create
 courses binders and prefill them with data.

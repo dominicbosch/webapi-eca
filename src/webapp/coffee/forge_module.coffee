@@ -8,8 +8,8 @@ for param in arrParams
 if oParams.type is 'event_poller'
 	moduleName = 'Event Poller'
 else
-	moduleName = 'Action Invoker'
-	oParams.type = 'action_invoker'
+	moduleName = 'Action Dispatcher'
+	oParams.type = 'action_dispatcher'
 if oParams.id
 	oParams.id = decodeURIComponent oParams.id
 

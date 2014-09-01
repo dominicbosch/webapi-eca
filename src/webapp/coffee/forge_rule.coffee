@@ -2,7 +2,7 @@
 # The module that helps creating the rules
 #
 
-# FIXME: notify of non existing Action invoker in the first place!
+# FIXME: notify of non existing Action dispatcher in the first place!
 
 strPublicKey = ''
 
@@ -57,7 +57,7 @@ domSectionSelectedActions.hide()
 
 domSectionActionParameters = $( '<div>' )
 domSectionActionParameters.append $( '<div>' ).html "<br><br><b>Required User-specific Data:</b><br><br>"
-domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_invoker_params' )
+domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_dispatcher_params' )
 domSectionActionParameters.append $( '<div>' ).html "<br><br>"
 domSectionActionParameters.hide()
 
@@ -327,7 +327,7 @@ fAddEventUserArgs = ( name ) ->
 
 fAddSelectedAction = ( name ) ->
 	arrName = name.split ' -> '
-	arrEls = $( "#action_invoker_params div.modName" ).map( () ->
+	arrEls = $( "#action_dispatcher_params div.modName" ).map( () ->
 		$( this ).text()
 	).get()
 	table = $( '#selected_actions' )
@@ -349,7 +349,7 @@ fAddSelectedAction = ( name ) ->
 fFetchActionParams = ( modName ) ->
 	fIssueRequest
 		data: 
-			command: 'get_action_invoker_params'
+			command: 'get_action_dispatcher_params'
 			body: JSON.stringify
 				id: modName
 		done: ( data ) ->
@@ -357,7 +357,7 @@ fFetchActionParams = ( modName ) ->
 				oParams = JSON.parse data.message
 				if JSON.stringify( oParams ) isnt '{}'
 					domSectionActionParameters.show()
-					div = $( '<div>' ).appendTo $( '#action_invoker_params' )
+					div = $( '<div>' ).appendTo $( '#action_dispatcher_params' )
 					subdiv = $( '<div> ').appendTo div 
 					subdiv.append $( '<div>' )
 						.attr( 'class', 'modName underlined' ).text modName
@@ -375,12 +375,12 @@ fFetchActionParams = ( modName ) ->
 						tr.append $( '<td>' ).text(' : ').append inp
 						table.append tr
 
-		fail: fFailedRequest 'Error fetching action invoker params'
+		fail: fFailedRequest 'Error fetching action dispatcher params'
 
 fFetchActionFunctionArgs = ( tag, arrName ) ->
 	fIssueRequest
 		data: 
-			command: 'get_action_invoker_function_arguments'
+			command: 'get_action_dispatcher_function_arguments'
 			body: JSON.stringify
 				id: arrName[ 0 ]
 		done: ( data ) ->
@@ -396,19 +396,19 @@ fFetchActionFunctionArgs = ( tag, arrName ) ->
 						td = $( '<td>' ).appendTo tr
 						td.append $( '<input>' ).attr 'type', 'text'
 						tr.append td
-		fail: fFailedRequest 'Error fetching action invoker function params'
+		fail: fFailedRequest 'Error fetching action dispatcher function params'
 
 fFillActionFunction = ( name ) ->
 	fIssueRequest
 		data: 
-			command: 'get_action_invoker_user_params'
+			command: 'get_action_dispatcher_user_params'
 			body: JSON.stringify
 				id: name
 		done: fAddActionUserParams name
 
 	fIssueRequest
 		data:
-			command: 'get_action_invoker_user_arguments'
+			command: 'get_action_dispatcher_user_arguments'
 			body: JSON.stringify
 				ruleId: $( '#input_id' ).val()
 				moduleId: name
@@ -417,7 +417,7 @@ fFillActionFunction = ( name ) ->
 fAddActionUserParams = ( name ) ->
 	( data ) ->
 		oParams = JSON.parse data.message
-		domMod = $( "#action_invoker_params div" ).filter () ->
+		domMod = $( "#action_dispatcher_params div" ).filter () ->
 			$( 'div.modName', this ).text() is name
 		for param, oParam of oParams
 			par = $( "tr", domMod ).filter () ->
@@ -517,7 +517,7 @@ fOnLoad = () ->
 
 	fIssueRequest
 		data:
-			command: 'get_action_invokers'
+			command: 'get_action_dispatchers'
 		done: ( data ) ->
 			try
 				oAis = JSON.parse data.message
@@ -528,12 +528,12 @@ fOnLoad = () ->
 			for module, actions of oAis
 				for act in actions
 					i++
-					arrEls = $( "#action_invoker_params div" ).filter () ->
+					arrEls = $( "#action_dispatcher_params div" ).filter () ->
 						$( this ).text() is "#{ module } -> #{ act }"
 					# It could have been loaded async before through the rules into the action params
 					if arrEls.length is 0
 						$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
-		fail: fFailedRequest 'Error fetching Action Invokers'
+		fail: fFailedRequest 'Error fetching Action Dispatchers'
 
 
 	$( '#select_actions' ).on 'change', () ->
@@ -552,7 +552,7 @@ fOnLoad = () ->
 			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
 
 		if nMods is 1
-			$('#action_invoker_params > div').each () ->
+			$('#action_dispatcher_params > div').each () ->
 				if $( this ).children( 'div.modName' ).text() is arrName[ 0 ]
 					$( this ).remove()
 
@@ -560,7 +560,7 @@ fOnLoad = () ->
 		if $('#selected_actions td.title').length is 0
 			domSectionSelectedActions.hide()
 
-		if $('#action_invoker_params > div').length is 0
+		if $('#action_dispatcher_params > div').length is 0
 			domSectionActionParameters.hide()
 
 		opt = $( '<option>' ).text act
@@ -623,9 +623,9 @@ fOnLoad = () ->
 			if $( '#selected_actions tr' ).length is 0
 				throw new Error 'Please select at least one action or create one!'
 
-			# Store all selected action invokers
+			# Store all selected action dispatchers
 			ap = {}
-			$( '> div', $( '#action_invoker_params' ) ).each () ->
+			$( '> div', $( '#action_dispatcher_params' ) ).each () ->
 				modName = $( '.modName', this ).text()
 				params = {}
 				$( 'tr', this ).each () ->

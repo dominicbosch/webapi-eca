@@ -1,8 +1,8 @@
 
 
 ### 
-ProBinder ACTION INVOKER
-------------------------
+ProBinder ACTION DISPATCHER
+---------------------------
 
 Global variables
 This module requires user-specific parameters:

@@ -3,7 +3,7 @@
 Persistence
 ============
 > Handles the connection to the database and provides functionalities for event pollers,
-> action invokers, rules and the (hopefully encrypted) storing of user-specific parameters
+> action dispatchers, rules and the (hopefully encrypted) storing of user-specific parameters
 > per module.
 > General functionality as a wrapper for the module holds initialization,
 > the retrieval of modules and shut down.
@@ -11,11 +11,11 @@ Persistence
 > The general structure for linked data is that the key is stored in a set.
 > By fetching all set entries we can then fetch all elements, which is
 > automated in this function.
-> For example, modules of the same group, e.g. action invokers are registered in an
+> For example, modules of the same group, e.g. action dispatchers are registered in an
 > unordered set in the database, from where they can be retrieved again. For example
-> a new action invoker has its ID (e.g 'probinder') first registered in the set
-> 'action-invokers' and then stored in the db with the key 'action-invoker:' + ID
-> (e.g. action-invoker:probinder). 
+> a new action dispatcher has its ID (e.g 'probinder') first registered in the set
+> 'action-dispatchers' and then stored in the db with the key 'action-dispatcher:' + ID
+> (e.g. action-dispatcher:probinder). 
 >
 
 ###
@@ -41,7 +41,7 @@ exports = module.exports = ( args ) =>
 			args[ 'db-port' ] = 6379
 		@log = args.logger
 		exports.eventPollers = new IndexedModules 'event-poller', @log
-		exports.actionInvokers = new IndexedModules 'action-invoker', @log
+		exports.actionDispatchers = new IndexedModules 'action-dispatcher', @log
 		exports.initPort args[ 'db-port' ]
 
 exports.getLogger = () =>
@@ -61,7 +61,7 @@ exports.initPort = ( port ) =>
 		else
 			@log.error err
 	exports.eventPollers.setDB @db
-	exports.actionInvokers.setDB @db
+	exports.actionDispatchers.setDB @db
 
 exports.selectDatabase = ( id ) =>
 	@db.select id

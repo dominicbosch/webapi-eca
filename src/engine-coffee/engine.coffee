@@ -2,7 +2,7 @@
 
 Engine
 ==================
-> The heart of the WebAPI ECA System. The engine loads action invoker modules
+> The heart of the WebAPI ECA System. The engine loads action dispatcher modules
 > corresponding to active rules actions and invokes them if an appropriate event
 > is retrieved. 
 
@@ -111,14 +111,14 @@ exports.internalEvent = ( evt ) =>
 
 ###
 As soon as changes were made to the rule set we need to ensure that the aprropriate action
-invoker modules are loaded, updated or deleted.
+dispatcher modules are loaded, updated or deleted.
 
 @private updateActionModules ( *updatedRuleId* )
 @param {Object} updatedRuleId
 ###
 updateActionModules = ( updatedRuleId ) =>
 	
-	# Remove all action invoker modules that are not required anymore
+	# Remove all action dispatcher modules that are not required anymore
 	fRemoveNotRequired = ( oUser ) ->
 
 		# Check whether the action is still existing in the rule
@@ -136,17 +136,17 @@ updateActionModules = ( updatedRuleId ) =>
 
 	fRemoveNotRequired oUser for name, oUser of listUserRules
 
-	# Add action invoker modules that are not yet loaded
+	# Add action dispatcher modules that are not yet loaded
 	fAddRequired = ( userName, oUser ) =>
 
 		# Check whether the action is existing in a rule and load if not
 		fCheckRules = ( oMyRule ) =>
 
-			# Load the action invoker module if it was part of the updated rule or if it's new
+			# Load the action dispatcher module if it was part of the updated rule or if it's new
 			fAddIfNewOrNotExisting = ( actionName ) =>
 				moduleName = (actionName.split ' -> ')[ 0 ]
 				if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
-					db.actionInvokers.getModule userName, moduleName, ( err, obj ) =>
+					db.actionDispatchers.getModule userName, moduleName, ( err, obj ) =>
 						if obj
 							# we compile the module and pass: 
 							dynmod.compileString obj.data,  # code
@@ -154,8 +154,8 @@ updateActionModules = ( updatedRuleId ) =>
 								oMyRule.rule,                    	# oRule
 								moduleName,                         # moduleId
 								obj.lang,                           # script language
-								"actioninvoker",                    # module type
-								db.actionInvokers,                  # the DB interface
+								"actiondispatcher",                    # module type
+								db.actionDispatchers,                  # the DB interface
 								( result ) =>
 									if result.answ.code is 200
 										@log.info "EN | Module '#{ moduleName }' successfully loaded for userName
