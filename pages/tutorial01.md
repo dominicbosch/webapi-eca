@@ -17,7 +17,7 @@ Access the Web interface to the [previously](installation.html) setup engine at 
 ## Setup Your first Action Dispatcher
 
 First you will need to create an Action Dispatcher in order to set up a valid rule.
-1. In the navigation, click on "Create AI":
+> 1. In the navigation, click on "Create AI":
 
 ![CreateAI]({{ site.baseurl }}/images/CreateAI.png)
 
@@ -29,7 +29,7 @@ You will see an already prefilled Action Dispatcher, called "ProBinder":
 
 ![CreateAI1]({{ site.baseurl }}/images/CreateAI1.png)
 
-2. Clean up the editor for a plain example:
+> 2. Clean up the editor for a plain example:
 
 - Remove the entire code from the editor.
 - Also remove the prefilled user-specific properties `username` and `password` on the right-hand side of the editor, by clicking the red crosses.
