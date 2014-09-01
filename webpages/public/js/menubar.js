@@ -27,10 +27,10 @@ $( document ).ready(function() {
   fCreateLink( 'Create EP',
     fRedirect( 'forge?page=forge_module&type=event_poller' )
   );
-  fCreateLink( 'Create AI',
-    fRedirect( 'forge?page=forge_module&type=action_invoker' )
+  fCreateLink( 'Create AD',
+    fRedirect( 'forge?page=forge_module&type=action_dispatcher' )
   );
-  fCreateLink( 'Edit EPs & AIs',
+  fCreateLink( 'Edit EPs & ADs',
     fRedirect( 'forge?page=edit_modules' )
   );
   //    fCreateLink( 'admin', fRedirect( 'admin' ) );
