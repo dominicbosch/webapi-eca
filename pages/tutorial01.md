@@ -1,36 +1,37 @@
 ---
 layout: default
-title: Hello World Event
+title: Hello World
 overview: true
 priority: 3
 ---
 
 
-Tutorial: Hello World Event
-===========================
+Tutorial: Hello World
+=====================
 
-Access the Web interface to the [previously](installation.html) setup engine at the given port in the configuration file, e.g. [Web Interface](http://localhost:8125).
+Access the Web interface to the [previously](installation.html) instantiated engine, e.g. [http://localhost:8125](http://localhost:8125).
 
+For a running Hello World example you need to do three things:
 
-
-
-## Setup Your first Action Dispatcher
-
-First you will need to create an Action Dispatcher in order to set up a valid rule.
-
-1\. In the navigation, click on "Create AI":
-
-![CreateAI]({{ site.baseurl }}/images/CreateAI.png)
+1. Create an ***Action Dispatcher***
+2. Create a ***Rule***
+3. Invoke an ***Event*** which triggers the ***Rule***, that uses your ***Action Dispatcher***
 
 
 
-### Cleanup prefilled Example
+## Setup Your first ***Action Dispatcher***
+
+**1\. In the navigation, click on "Create AD":**
+
+> ![CreateAD]({{ site.baseurl }}/images/CreateADLink.png)
+
+
 
 You will see an already prefilled Action Dispatcher, called "ProBinder":
 
-![CreateAI1]({{ site.baseurl }}/images/CreateAI1.png)
+> ![CreateAD]({{ site.baseurl }}/images/CreateAD.png)
 
-2\. Clean up the editor for a plain example:
+**2\. Cleanup the editor:**
 
 - Remove the entire code from the editor.
 - Also remove the prefilled user-specific properties `username` and `password` on the right-hand side of the editor, by clicking the red crosses.
@@ -38,16 +39,14 @@ You will see an already prefilled Action Dispatcher, called "ProBinder":
 
 
 
-### Enter Module Code
+**3\. Enter Module Code that allows you to log things:**
 
-Now enter the code which allows you to log things:
-
-{% highlight coffeescript %}
+> {% highlight coffeescript %}
 exports.writeLog = ( msg ) ->
     log msg
 {% endhighlight %}
 
-And finally click `save` to store your new Action Dispatcher
+**4\. Click `save` to store your first Action Dispatcher**
 
 What you defined now in the body of the module `Logger` is:
 
