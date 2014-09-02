@@ -24,13 +24,13 @@ $( document ).ready(function() {
   fCreateLink( 'Edit Rules',
     fRedirect( 'forge?page=edit_rules' )
   );
-  fCreateLink( 'Create EP',
+  fCreateLink( 'Create ET',
     fRedirect( 'forge?page=forge_module&type=event_poller' )
   );
   fCreateLink( 'Create AD',
     fRedirect( 'forge?page=forge_module&type=action_dispatcher' )
   );
-  fCreateLink( 'Edit EPs & ADs',
+  fCreateLink( 'Edit ETs & ADs',
     fRedirect( 'forge?page=edit_modules' )
   );
   //    fCreateLink( 'admin', fRedirect( 'admin' ) );
