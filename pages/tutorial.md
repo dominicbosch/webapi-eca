@@ -9,30 +9,8 @@ priority: 2
 Tutorials
 =========
 
-<!--
-
-{% highlight javascript %}
-/**
- * Converts an RGB color number to a hex color string if valid.
- * @param {number} color A 6-digit hex RGB color code as a number.
- * @return {?string} A CSS representation of the color or null if invalid.
- */
-function convertToHexColor(color) {
-  // Color must be a number, finite, with no fractional part, in the correct
-  // range for an RGB hex color.
-  if (isFinite(color) && Math.floor(color) == color &&
-      color >= 0 && color <= 0xffffff) {
-    var hexColor = color.toString(16);
-    // Pads with initial zeros and # (e.g. for 'ff' yields '#0000ff').
-    return '#000000'.substr(0, 7 - hexColor.length) + hexColor;
-  }
-  return null;
-}
-{% endhighlight %}
-
--->
-
-- Hello World Event
+- [Hello World Event](tutorial01.html)
+- [Forward Event Data to Actions](tutorial02.html)
 - HTML Scraping job: Text output, true/false, condition check
 - Data Acquiring: Data visualization
 - Notification 

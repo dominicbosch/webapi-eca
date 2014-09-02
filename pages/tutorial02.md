@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Pass Event Data to Actions
+title: Forward Event Data to Actions
 overview: true
 priority: 4
 ---
 
 
-Tutorial: Pass Event Data to Actions
-====================================
+Tutorial: Forward Event Data to Actions
+=======================================
 
 In the [Hello World Tutorial](tutorial01.html), you have seen how to set up a basic working example on the ECA engine. But one important key capability of the system, the forwarding of ***Event*** information to ***Actions***, still needs to be introduced.
 
