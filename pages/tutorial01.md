@@ -46,7 +46,7 @@ exports.writeLog = ( msg ) ->
     log msg
 {% endhighlight %}
 
-**1.4\.** Click `save` to store your first ***Action Dispatcher***
+**1.4\.** Click "save" to store your first ***Action Dispatcher***
 
 The system will respond with the message `Module Logger successfully stored! Found following function(s): writeLog`:
 
@@ -101,12 +101,12 @@ Whenever the specified **EVENT** is detected, it will be compared against the **
 **2.6\.** In the select box under **ACTIONS**, choose `Logger -> writeLog`
 
 
-**2.7\.** In the input filed `msg` that should show up now, enter `Hello World`
+**2.7\.** In the input filed `msg` that should show up now, type `Hello World`
 
 
-**2.8\.** Click `Save Rule`
+**2.8\.** Click "Save Rule"
 
-The system should respond with `Rule 'Hello World Rule' stored and activated!`:
+The system responds with `Rule 'Hello World Rule' stored and activated!`:
 
 > ![CreateRuleDone]({{ site.baseurl }}/images/CreateRuleDone.png)
 
@@ -117,7 +117,7 @@ The system should respond with `Rule 'Hello World Rule' stored and activated!`:
 
 ## **3\. Emit Your first Event into the System**
 
-The system is now listening for events of the type `button-click` and will dispatch your chosen ***Action*** as soon as such an ***Event*** is detected. In order to emit such an ***Event*** into the system you need to...
+The system is now listening for `button-click` ***Events*** and will dispatch your chosen ***Action*** as soon as such an ***Event*** is detected. In order to emit such an ***Event*** into the system you need to...
 
 **3.1\.** ...click on "Push Event", in the navigation:
 
@@ -136,21 +136,25 @@ The type of the ***Event*** is `button-click`, the same as you just defined in y
 {% endhighlight %}
 
 
-**3.2\.** Now click on `Push Event into System` and the system will respond with `Thank you for the event: button-click`:
+**3.2\.** Now click on "Push Event into System" and the system will respond with `Thank you for the event: button-click`:
 
 > ![PushEventDone]({{ site.baseurl }}/images/PushEventDone.png)
 
 ***-> Congratulations you emmitted your first Event into the system!***
 
+<br>
+
+## **4\. Check the Result**
+
 Now you need to check the ***Rule*** log in order to see the result of this Hello World tutorial.
 
-**3.3\.** Click on "Edit Rules", in the navigation:
+**4.1\.** Click on "Edit Rules", in the navigation:
 
 > ![EditRulesLink]({{ site.baseurl }}/images/EditRulesLink.png)
 
-You see a list of all your active ***Rules***, which currently only consists of your `Hello World Rule`. Hover over the icon that looks like a sheet of paper. A tooltip saying `Show Rule Log` should appear.
+You see a list of all your active ***Rules***, which currently only consists of your `Hello World Rule`. Hover over the icon that looks like a sheet of paper. A tooltip saying `Show Rule Log` appears.
 
-**3.4\.** Click on the `Show Rule Log` icon of the `Hello World Rule`:
+**4.2\.** Click on the "Show Rule Log" icon of the `Hello World Rule`:
 
 > ![EditRules]({{ site.baseurl }}/images/EditRules.png)
 
