@@ -10,7 +10,9 @@ Type `gulp` in command line to get option list.
 
 # fs = require 'fs'
 # groc = require 'groc'
+argv = require( 'yargs' ).argv
 gulp = require 'gulp'
+gulpif = require 'gulp-if'
 plumber = require 'gulp-plumber'
 gutil = require 'gulp-util'
 chalk = gutil.colors
@@ -26,19 +28,38 @@ coffee = require 'gulp-coffee'
 # concat = require 'gulp-concat'
 # header = require 'gulp-header'
 watch = require 'gulp-watch'
-dirTesting = 'builds/testing/'
-dirProductive = 'builds/productive/'
-msgCmdC = '\n\n\n --> Press Ctrl/Cmd + C to stop watching!\n\n'
 
-# Register gulp help as default task
-gulphelp gulp,
-  description: 'Displays this!'
-  aliases: [ 'h', '?', '-h', '--help' ]
+dirDist = 'dist/'
 
-gulp.task 'default', [ 'help' ], () ->
-  # gutil.log chalk.yellow 'do you require a default task?'
+if argv.watch
+  msgCmdC = "\n\n\n #{ chalk.bgYellow "--> Press Ctrl/Cmd + C to stop watching!" }\n\n"
+else
+  msgCmdC = ""
 
-coffeeStream = coffee bare: true
+
+fPrintTaskRunning = ( task ) ->
+  gutil.log chalk.yellow( 'Running TASK: ' + gulp.tasks[ task.seq[ 0 ] ].help.message ) + msgCmdC
+
+
+fSimpleCoffeePipe = ( src, dest ) ->
+  fCoffeePipe( src, false ).pipe gulp.dest dest
+  if argv.watch
+    fCoffeePipe( src, true ).pipe gulp.dest dest 
+
+
+fCoffeePipe = ( srcDir, doWatch ) ->
+  if doWatch
+    stream = watch( srcDir )
+      .pipe plumber errorHandler: fHandleError
+  else
+    stream = gulp.src srcDir
+  stream = stream.pipe coffee bare: true
+  if argv.productive
+    stream = stream.pipe uglify()
+  stream
+
+
+# Error Handler in case the compiling fails, to avoid the breaking of the watch pipe
 fHandleError = ( err ) ->
   gutil.beep()
   if err.stack
@@ -47,81 +68,73 @@ fHandleError = ( err ) ->
     msg = err.toString()
   gutil.log chalk.red msg
 
+
+# Register gulp help as default task
+gulphelp gulp,
+  description: 'Displays this!'
+  aliases: [ 'h', '?', '-h', '--help' ]
+  afterPrintCallback: ( tasks ) ->
+    gutil.log """\n
+      #{ chalk.underline 'Additionally available arguments' } (apply wherever it makes sense)
+      \ \ #{ chalk.yellow '--productive \t' }  Executes the task for the productive environment
+      \ \ #{ chalk.yellow '--watch \t' }  Continuously executes the task on changes\n
+    """
+
 ###
 Compile the gulp file itself
 ###
-fCompileGulpFile = ( doWatch ) ->
-  stream = gulp.src( 'gulpfile.coffee' )
-    .pipe( plumber errorHandler: fHandleError )
-  if doWatch then stream = stream.pipe( watch() )
-  stream.pipe( coffeeStream )
-    .pipe( uglify() )
-    .pipe( gulp.dest '' )
+fCompileGulpFile = () ->
+  fSimpleCoffeePipe 'gulpfile.coffee', ''
 
-# For debugging purposes we do not directly use coffee files to run either gulp or any part of the actual product
-gulp.task 'gulpfile-compile', 'Compile Gulp File', () ->
-  gutil.log chalk.yellow gulp.tasks[ 'gulpfile-compile' ].help.message
-  fCompileGulpFile false
+gulp.task 'gulpfile-compile', 'Compile the (coffee) GULP file', () ->
+  fPrintTaskRunning this
+  fCompileGulpFile()
 
-gulp.task 'gulpfile-compile-watch', 'Continously compile Gulp File when it changes', () ->
-  gutil.log chalk.yellow gulp.tasks[ 'gulpfile-compile-watch' ].help.message + msgCmdC
-  fCompileGulpFile true
+# , options:
+#   'productive': 'Executes the task for the productive environment'
+#   'watch': 'Continuously executes the task on changes'
+
+
 
 ###
 Compile the engine's source code
 ###
-fCompileEngine = ( doWatch ) ->
-  stream = gulp.src( 'src/engine-coffee/*.coffee' )
-    .pipe( plumber errorHandler: fHandleError )
-  if doWatch then stream = stream.pipe( watch() )
-  stream.pipe( coffeeStream )
-    .pipe( gulp.dest dirTesting + 'js' )
-    .pipe( uglify() )
-    .pipe( gulp.dest dirProductive + 'js' )
+fCompileEngine = () ->
+  fSimpleCoffeePipe 'src/engine-coffee/*.coffee', dirDist + 'js'
 
-gulp.task 'engine-compile', 'One-time compiling of ENGINE coffee files', () ->
-  gutil.log chalk.yellow gulp.tasks[ 'engine-compile' ].help.message
-  fCompileEngine false
-
-gulp.task 'engine-compile-watch', 'Start watching for ENGINE coffee file changes and compile them', ( cb ) ->
-  gutil.log chalk.yellow gulp.tasks[ 'engine-compile-watch' ].help.message + msgCmdC
-  fCompileEngine true
+gulp.task 'engine-compile', 'Compile ENGINE coffee files in the project', ( cb ) ->
+  fPrintTaskRunning this
+  fCompileEngine()
 
 
 ###
 Compile web app code
 ###
-fCompileWebapp = ( doWatch ) ->
-  stream = gulp.src( 'src/engine-coffee/*.coffee' )
-    .pipe( plumber errorHandler: fHandleError )
-  if doWatch then stream = stream.pipe( watch() )
-  stream.pipe( coffeeStream )
-    .pipe( gulp.dest dirTesting + 'js' )
-    .pipe( uglify() )
-    .pipe( gulp.dest dirProductive + 'js' )
+fCompileWebapp = () ->
+  fSimpleCoffeePipe 'src/webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js'
 
-gulp.task 'webapp-compile', 'One-time compiling of WEBAPP coffee files', () ->
-  gutil.log chalk.yellow gulp.tasks[ 'all-compile' ].help.message
-  fCompileWebapp false
+gulp.task 'webapp-compile', 'Compile WEBAPP coffee files in the project', () ->
+  fPrintTaskRunning this
+  fCompileWebapp()
 
-gulp.task 'webapp-compile-watch', 'Start watching for WEBAPP coffee file changes and compile them', ( cb ) ->
-  gutil.log chalk.yellow gulp.tasks[ 'all-compile-watch' ].help.message + msgCmdC
-  fCompileWebapp true
 
 ###
 Compile all existing source code files
 ###
-gulp.task 'all-compile', 'One-time compiling of ALL coffee files', () ->
-  gutil.log chalk.yellow gulp.tasks[ 'all-compile' ].help.message
-  fCompileGulpFile false
-  fCompileEngine false
-  fCompileWebapp false
+gulp.task 'all-compile', 'Compile ALL coffee files in the project', () ->
+  fPrintTaskRunning this
+  fCompileGulpFile()
+  fCompileEngine()
+  fCompileWebapp()
 
-gulp.task 'all-compile-watch', 'Start watching for ALL coffee file changes and compile them', ( cb ) ->
-  gutil.log chalk.yellow gulp.tasks[ 'all-compile-watch' ].help.message + msgCmdC
-  fCompileGulpFile true
-  fCompileEngine true
-  fCompileWebapp true
+
+
+
+
+
+
+
+
 
 
 

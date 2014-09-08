@@ -2,4 +2,4 @@
 *.log
 .project
 .settings
-builds/*
+dist/*
