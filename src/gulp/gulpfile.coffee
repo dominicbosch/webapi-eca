@@ -12,7 +12,8 @@ Type `gulp` in command line to get option list.
 # groc = require 'groc'
 argv = require( 'yargs' ).argv
 gulp = require 'gulp'
-gulpif = require 'gulp-if'
+clean = require 'gulp-clean'
+# gulpif = require 'gulp-if'
 plumber = require 'gulp-plumber'
 gutil = require 'gulp-util'
 chalk = gutil.colors
@@ -32,27 +33,21 @@ watch = require 'gulp-watch'
 dirDist = 'dist/'
 
 if argv.watch
-  msgCmdC = "\n\n\n #{ chalk.bgYellow "--> Press Ctrl/Cmd + C to stop watching!" }\n\n"
-else
-  msgCmdC = ""
+  gutil.log ""
+  gutil.log "#{ chalk.bgYellow "--> Press Ctrl/Cmd + C to stop watching!" }"
+  gutil.log ""
 
 
-fPrintTaskRunning = ( task ) ->
-  gutil.log chalk.yellow( 'Running TASK: ' + gulp.tasks[ task.seq[ 0 ] ].help.message ) + msgCmdC
-
-
-fSimpleCoffeePipe = ( src, dest ) ->
-  fCoffeePipe( src, false ).pipe gulp.dest dest
+fSimpleCoffeePipe = ( srcDir, dest ) ->
+  stream = gulp.src srcDir
+  fCoffeePipe( stream ).pipe gulp.dest dest
   if argv.watch
-    fCoffeePipe( src, true ).pipe gulp.dest dest 
+    stream = watch( srcDir ).pipe plumber
+      errorHandler: fHandleError
+    fCoffeePipe( stream ).pipe gulp.dest dest 
 
 
-fCoffeePipe = ( srcDir, doWatch ) ->
-  if doWatch
-    stream = watch( srcDir )
-      .pipe plumber errorHandler: fHandleError
-  else
-    stream = gulp.src srcDir
+fCoffeePipe = ( stream ) ->
   stream = stream.pipe coffee bare: true
   if argv.productive
     stream = stream.pipe uglify()
@@ -83,51 +78,46 @@ gulphelp gulp,
 ###
 Compile the gulp file itself
 ###
-fCompileGulpFile = () ->
-  fSimpleCoffeePipe 'gulpfile.coffee', ''
+gulp.task 'compile-gulpfile', 'Compile GULP coffee file', ( cb ) ->
+  fSimpleCoffeePipe 'src/gulp/gulpfile.coffee', ''
+  if not argv.watch then cb()
 
-gulp.task 'gulpfile-compile', 'Compile the (coffee) GULP file', () ->
-  fPrintTaskRunning this
-  fCompileGulpFile()
-
-# , options:
-#   'productive': 'Executes the task for the productive environment'
-#   'watch': 'Continuously executes the task on changes'
-
+###
+Clean everything up
+###
+gulp.task 'clean', 'Clean all deployed productive resources', () ->
+  gulp.src( dirDist, read: false ).pipe clean()
 
 
 ###
 Compile the engine's source code
 ###
-fCompileEngine = () ->
+gulp.task 'compile-engine', 'Compile ENGINE coffee files in the project', ( cb ) ->
   fSimpleCoffeePipe 'src/engine-coffee/*.coffee', dirDist + 'js'
-
-gulp.task 'engine-compile', 'Compile ENGINE coffee files in the project', ( cb ) ->
-  fPrintTaskRunning this
-  fCompileEngine()
+  if not argv.watch then cb()
 
 
 ###
 Compile web app code
 ###
-fCompileWebapp = () ->
+gulp.task 'compile-webapp', 'Compile WEBAPP coffee files in the project', ( cb ) ->
   fSimpleCoffeePipe 'src/webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js'
-
-gulp.task 'webapp-compile', 'Compile WEBAPP coffee files in the project', () ->
-  fPrintTaskRunning this
-  fCompileWebapp()
-
+  if not argv.watch then cb()
 
 ###
 Compile all existing source code files
 ###
-gulp.task 'all-compile', 'Compile ALL coffee files in the project', () ->
-  fPrintTaskRunning this
-  fCompileGulpFile()
-  fCompileEngine()
-  fCompileWebapp()
+gulp.task 'compile-all', 'Compile ALL coffee files in the project',
+[ 'compile-gulpfile', 'compile-webapp', 'compile-engine' ], ( cb ) ->
+  if not argv.watch then cb()
 
-
+###
+Deploy the system into the dist folder
+###
+gulp.task 'deploy', 'Deploy the system into the dist folder', 
+[ 'clean' ], ( cb ) ->
+  gulp.start 'compile-engine', 'compile-webapp'
+  if not argv.watch then cb()
 
 
 

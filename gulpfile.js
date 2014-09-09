@@ -6,13 +6,13 @@ GULP FILE
 
 Type `gulp` in command line to get option list.
  */
-var argv, chalk, coffee, dirDist, fCoffeePipe, fCompileEngine, fCompileGulpFile, fCompileWebapp, fHandleError, fPrintTaskRunning, gulp, gulphelp, gulpif, gutil, msgCmdC, plumber, uglify, watch;
+var argv, chalk, clean, coffee, dirDist, fCoffeePipe, fHandleError, fSimpleCoffeePipe, gulp, gulphelp, gutil, plumber, uglify, watch;
 
 argv = require('yargs').argv;
 
 gulp = require('gulp');
 
-gulpif = require('gulp-if');
+clean = require('gulp-clean');
 
 plumber = require('gulp-plumber');
 
@@ -31,24 +31,24 @@ watch = require('gulp-watch');
 dirDist = 'dist/';
 
 if (argv.watch) {
-  msgCmdC = "\n\n\n " + (chalk.bgYellow("--> Press Ctrl/Cmd + C to stop watching!")) + "\n\n";
-} else {
-  msgCmdC = "";
+  gutil.log("");
+  gutil.log("" + (chalk.bgYellow("--> Press Ctrl/Cmd + C to stop watching!")));
+  gutil.log("");
 }
 
-fPrintTaskRunning = function(task) {
-  return gutil.log(chalk.yellow('Running TASK: ' + gulp.tasks[task.seq[0]].help.message) + msgCmdC);
-};
-
-fCoffeePipe = function(srcDir, doWatch) {
+fSimpleCoffeePipe = function(srcDir, dest) {
   var stream;
-  if (doWatch) {
+  stream = gulp.src(srcDir);
+  fCoffeePipe(stream).pipe(gulp.dest(dest));
+  if (argv.watch) {
     stream = watch(srcDir).pipe(plumber({
       errorHandler: fHandleError
     }));
-  } else {
-    stream = gulp.src(srcDir);
+    return fCoffeePipe(stream).pipe(gulp.dest(dest));
   }
+};
+
+fCoffeePipe = function(stream) {
   stream = stream.pipe(coffee({
     bare: true
   }));
@@ -82,16 +82,22 @@ gulphelp(gulp, {
 Compile the gulp file itself
  */
 
-fCompileGulpFile = function() {
-  fCoffeePipe('gulpfile.coffee', false).pipe(gulp.dest(''));
-  if (argv.watch) {
-    return fCoffeePipe('gulpfile.coffee', true).pipe(gulp.dest(''));
+gulp.task('compile-gulpfile', 'Compile GULP coffee file', function(cb) {
+  fSimpleCoffeePipe('src/gulp/gulpfile.coffee', '');
+  if (!argv.watch) {
+    return cb();
   }
-};
+});
 
-gulp.task('gulpfile-compile', 'Compile the (coffee) GULP file', function() {
-  fPrintTaskRunning(this);
-  return fCompileGulpFile();
+
+/*
+Clean everything up
+ */
+
+gulp.task('clean', 'Clean all deployed productive resources', function() {
+  return gulp.src(dirDist, {
+    read: false
+  }).pipe(clean());
 });
 
 
@@ -99,16 +105,11 @@ gulp.task('gulpfile-compile', 'Compile the (coffee) GULP file', function() {
 Compile the engine's source code
  */
 
-fCompileEngine = function() {
-  fCoffeePipe('src/engine-coffee/*.coffee', false).pipe(gulp.dest(dirDist + 'js'));
-  if (argv.watch) {
-    return fCoffeePipe('src/engine-coffee/*.coffee', true).pipe(gulp.dest(dirDist + 'js'));
+gulp.task('compile-engine', 'Compile ENGINE coffee files in the project', function(cb) {
+  fSimpleCoffeePipe('src/engine-coffee/*.coffee', dirDist + 'js');
+  if (!argv.watch) {
+    return cb();
   }
-};
-
-gulp.task('engine-compile', 'Compile ENGINE coffee files in the project', function(cb) {
-  fPrintTaskRunning(this);
-  return fCompileEngine();
 });
 
 
@@ -116,17 +117,11 @@ gulp.task('engine-compile', 'Compile ENGINE coffee files in the project', functi
 Compile web app code
  */
 
-fCompileWebapp = function() {
-  console.log(gulp.src('src/webapp/coffee/*.coffee'));
-  fCoffeePipe('src/webapp/coffee/*.coffee', false).pipe(gulp.dest(dirDist + 'webpages/handlers/js'));
-  if (argv.watch) {
-    return fCoffeePipe('src/webapp/coffee/*.coffee', true).pipe(gulp.dest(dirDist + 'webpages/handlers/js'));
+gulp.task('compile-webapp', 'Compile WEBAPP coffee files in the project', function(cb) {
+  fSimpleCoffeePipe('src/webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js');
+  if (!argv.watch) {
+    return cb();
   }
-};
-
-gulp.task('webapp-compile', 'Compile WEBAPP coffee files in the project', function() {
-  fPrintTaskRunning(this);
-  return fCompileWebapp();
 });
 
 
@@ -134,9 +129,20 @@ gulp.task('webapp-compile', 'Compile WEBAPP coffee files in the project', functi
 Compile all existing source code files
  */
 
-gulp.task('all-compile', 'Compile ALL coffee files in the project', function() {
-  fPrintTaskRunning(this);
-  fCompileGulpFile();
-  fCompileEngine();
-  return fCompileWebapp();
+gulp.task('compile-all', 'Compile ALL coffee files in the project', ['compile-gulpfile', 'compile-webapp', 'compile-engine'], function(cb) {
+  if (!argv.watch) {
+    return cb();
+  }
+});
+
+
+/*
+Deploy the system into the dist folder
+ */
+
+gulp.task('deploy', 'Deploy the system into the dist folder', ['clean'], function(cb) {
+  gulp.start('compile-engine', 'compile-webapp');
+  if (!argv.watch) {
+    return cb();
+  }
 });
