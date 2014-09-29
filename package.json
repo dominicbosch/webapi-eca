@@ -25,7 +25,8 @@
     "redis": "0.10.0",
     "request": "2.33.0",
     "optimist": "0.6.1",
-    "pagerank": "1.2.0"
+    "pagerank": "1.2.0",
+    "cheerio": "~0.17.0"
   },
   "devDependencies": {
     "gulp": "~3.8.8",

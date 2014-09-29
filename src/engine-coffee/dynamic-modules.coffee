@@ -135,6 +135,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		deepdiff: require 'deep-diff'
 		jsselect: require 'js-select'
 		request: require 'request'
+		cheerio: require 'cheerio'
 		needle: require 'needle'
 		jsdom: require 'jsdom'
 		diff: require 'diff'
