@@ -210,7 +210,7 @@ forgeModule = ( user, oBody, modType, dbMod, callback ) =>
 
 storeModule = ( user, oBody, modType, dbMod, callback ) =>
 	src = oBody.data
-	dynmod.compileString src, user.username, id: 'dummyRule' , oBody.id, oBody.lang, modType, null, ( cm ) =>
+	dynmod.compileString src, user.username, id: 'dummyRule', oBody.id, oBody.lang, modType, null, ( cm ) =>
 		answ = cm.answ
 		if answ.code is 200
 			funcs = []

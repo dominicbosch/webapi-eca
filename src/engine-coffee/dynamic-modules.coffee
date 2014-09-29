@@ -149,6 +149,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		# deleted: fSetVar userId, oRule.id, modId
 		# getVar: fGetVar userId, oRule.id, modId
 
+#FIXME ENGINE BREAKS if non-existing module is used??? 
 
 	#TODO child_process to run module!
 	#Define max runtime per function call as 10 seconds, after that the child will be killed
