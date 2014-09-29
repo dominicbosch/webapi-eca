@@ -8,7 +8,7 @@ Encryption
 # **Loads Modules:**
 
 # - [cryptico](https://github.com/wwwtyro/cryptico)
-cryptico = require 'my-cryptico'
+cryptico = require './cryptico'
 
 exports = module.exports = ( args ) =>
 	@log = args.logger

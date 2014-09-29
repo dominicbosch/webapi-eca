@@ -6,7 +6,7 @@ GULP FILE
 
 Type `gulp` in command line to get option list.
  */
-var argv, chalk, clean, coffee, dirDist, fCoffeePipe, fHandleError, fSimpleCoffeePipe, gulp, gulphelp, gutil, plumber, uglify, watch;
+var argv, chalk, clean, coffee, dirDist, dirLib, dirSource, fCoffeePipe, fHandleError, fSimpleCoffeePipe, gulp, gulphelp, gutil, nodemon, plumber, uglify, watch;
 
 argv = require('yargs').argv;
 
@@ -27,6 +27,12 @@ uglify = require('gulp-uglify');
 coffee = require('gulp-coffee');
 
 watch = require('gulp-watch');
+
+nodemon = require('gulp-nodemon');
+
+dirSource = 'src/';
+
+dirLib = 'lib/';
 
 dirDist = 'dist/';
 
@@ -73,7 +79,7 @@ gulphelp(gulp, {
   description: 'Displays this!',
   aliases: ['h', '?', '-h', '--help'],
   afterPrintCallback: function(tasks) {
-    return gutil.log("\n\n" + (chalk.underline('Additionally available arguments')) + " (apply wherever it makes sense)\n\ \ " + (chalk.yellow('--productive \t')) + "  Executes the task for the productive environment\n\ \ " + (chalk.yellow('--watch \t')) + "  Continuously executes the task on changes\n");
+    return console.log("" + (chalk.underline('Additionally available arguments')) + " (apply wherever it makes sense)\n\ \ " + (chalk.yellow('--productive \t')) + "  Executes the task for the productive environment\n\ \ " + (chalk.yellow('--watch \t')) + "  Continuously executes the task on changes\n");
   }
 });
 
@@ -83,7 +89,7 @@ Compile the gulp file itself
  */
 
 gulp.task('compile-gulpfile', 'Compile GULP coffee file', function(cb) {
-  fSimpleCoffeePipe('src/gulp/gulpfile.coffee', '');
+  fSimpleCoffeePipe(dirSource + 'gulp/gulpfile.coffee', '');
   if (!argv.watch) {
     return cb();
   }
@@ -94,8 +100,14 @@ gulp.task('compile-gulpfile', 'Compile GULP coffee file', function(cb) {
 Clean everything up
  */
 
-gulp.task('clean', 'Clean all deployed productive resources', function() {
-  return gulp.src(dirDist, {
+gulp.task('clean-engine', 'Clean deployed engine resources', function(cb) {
+  return gulp.src(dirDist + 'js', {
+    read: false
+  }).pipe(clean());
+});
+
+gulp.task('clean-webapp', 'Clean deployed webapp resources', function(cb) {
+  return gulp.src(dirDist + 'webapp', {
     read: false
   }).pipe(clean());
 });
@@ -105,8 +117,8 @@ gulp.task('clean', 'Clean all deployed productive resources', function() {
 Compile the engine's source code
  */
 
-gulp.task('compile-engine', 'Compile ENGINE coffee files in the project', function(cb) {
-  fSimpleCoffeePipe('src/engine-coffee/*.coffee', dirDist + 'js');
+gulp.task('compile-engine', 'Compile ENGINE coffee files in the project', ['clean-engine'], function(cb) {
+  fSimpleCoffeePipe(dirSource + 'engine-coffee/*.coffee', dirDist + 'js');
   if (!argv.watch) {
     return cb();
   }
@@ -117,8 +129,8 @@ gulp.task('compile-engine', 'Compile ENGINE coffee files in the project', functi
 Compile web app code
  */
 
-gulp.task('compile-webapp', 'Compile WEBAPP coffee files in the project', function(cb) {
-  fSimpleCoffeePipe('src/webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js');
+gulp.task('compile-webapp', 'Compile WEBAPP coffee files in the project', ['clean-webapp'], function(cb) {
+  fSimpleCoffeePipe(dirSource + 'webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js');
   if (!argv.watch) {
     return cb();
   }
@@ -140,9 +152,20 @@ gulp.task('compile-all', 'Compile ALL coffee files in the project', ['compile-gu
 Deploy the system into the dist folder
  */
 
-gulp.task('deploy', 'Deploy the system into the dist folder', ['clean'], function(cb) {
-  gulp.start('compile-engine', 'compile-webapp');
-  if (!argv.watch) {
-    return cb();
-  }
+gulp.task('deploy', 'Deploy the system into the dist folder', ['compile-engine', 'compile-webapp'], function(cb) {
+  gulp.src(dirSource + 'webapp/static/**/*').pipe(gulp.dest(dirDist + 'webpages/public/'));
+  gulp.src(dirLib + 'cryptico.js').pipe(gulp.dest(dirDist + 'js')).pipe(gulp.dest(dirDist + 'webpages/public/js'));
+  gulp.src(dirSource + 'webapp/handlers/**/*').pipe(gulp.dest(dirDist + 'webpages/handlers/'));
+  return gulp.src(dirSource + 'config/*').pipe(gulp.dest(dirDist + 'config'));
+});
+
+
+/*
+Run the system in the dist folder
+ */
+
+gulp.task('run-system', 'Deploy the system into the dist folder', ['deploy'], function(cb) {
+  return nodemon({
+    script: dirDist + 'js/webapi-eca.js'
+  });
 });

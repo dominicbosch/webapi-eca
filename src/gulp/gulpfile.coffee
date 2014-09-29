@@ -29,7 +29,10 @@ coffee = require 'gulp-coffee'
 # concat = require 'gulp-concat'
 # header = require 'gulp-header'
 watch = require 'gulp-watch'
+nodemon = require 'gulp-nodemon'
 
+dirSource = 'src/'
+dirLib = 'lib/'
 dirDist = 'dist/'
 
 if argv.watch
@@ -69,7 +72,7 @@ gulphelp gulp,
   description: 'Displays this!'
   aliases: [ 'h', '?', '-h', '--help' ]
   afterPrintCallback: ( tasks ) ->
-    gutil.log """\n
+    console.log """
       #{ chalk.underline 'Additionally available arguments' } (apply wherever it makes sense)
       \ \ #{ chalk.yellow '--productive \t' }  Executes the task for the productive environment
       \ \ #{ chalk.yellow '--watch \t' }  Continuously executes the task on changes\n
@@ -78,46 +81,85 @@ gulphelp gulp,
 ###
 Compile the gulp file itself
 ###
-gulp.task 'compile-gulpfile', 'Compile GULP coffee file', ( cb ) ->
-  fSimpleCoffeePipe 'src/gulp/gulpfile.coffee', ''
-  if not argv.watch then cb()
+gulp.task 'compile-gulpfile',
+  'Compile GULP coffee file',
+  ( cb ) ->
+    fSimpleCoffeePipe dirSource + 'gulp/gulpfile.coffee', ''
+    if not argv.watch then cb()
 
 ###
 Clean everything up
 ###
-gulp.task 'clean', 'Clean all deployed productive resources', () ->
-  gulp.src( dirDist, read: false ).pipe clean()
+gulp.task 'clean-engine',
+  'Clean deployed engine resources',
+  ( cb ) ->
+    gulp.src( dirDist + 'js', read: false ).pipe clean()
+
+gulp.task 'clean-webapp',
+  'Clean deployed webapp resources',
+  ( cb ) ->
+    gulp.src( dirDist + 'webapp', read: false ).pipe clean()
 
 
 ###
 Compile the engine's source code
 ###
-gulp.task 'compile-engine', 'Compile ENGINE coffee files in the project', ( cb ) ->
-  fSimpleCoffeePipe 'src/engine-coffee/*.coffee', dirDist + 'js'
-  if not argv.watch then cb()
+gulp.task 'compile-engine',
+  'Compile ENGINE coffee files in the project',
+  [ 'clean-engine' ],
+  ( cb ) ->
+    fSimpleCoffeePipe dirSource + 'engine-coffee/*.coffee', dirDist + 'js'
+    if not argv.watch then cb()
 
 
 ###
 Compile web app code
 ###
-gulp.task 'compile-webapp', 'Compile WEBAPP coffee files in the project', ( cb ) ->
-  fSimpleCoffeePipe 'src/webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js'
-  if not argv.watch then cb()
+gulp.task 'compile-webapp',
+  'Compile WEBAPP coffee files in the project',
+  [ 'clean-webapp' ],
+  ( cb ) ->
+    fSimpleCoffeePipe dirSource + 'webapp/coffee/*.coffee', dirDist + 'webpages/handlers/js'
+    if not argv.watch then cb()
 
 ###
 Compile all existing source code files
 ###
-gulp.task 'compile-all', 'Compile ALL coffee files in the project',
-[ 'compile-gulpfile', 'compile-webapp', 'compile-engine' ], ( cb ) ->
-  if not argv.watch then cb()
+gulp.task 'compile-all',
+  'Compile ALL coffee files in the project',
+  [ 'compile-gulpfile', 'compile-webapp', 'compile-engine' ],
+  ( cb ) ->
+    if not argv.watch then cb()
 
 ###
 Deploy the system into the dist folder
 ###
-gulp.task 'deploy', 'Deploy the system into the dist folder', 
-[ 'clean' ], ( cb ) ->
-  gulp.start 'compile-engine', 'compile-webapp'
-  if not argv.watch then cb()
+gulp.task 'deploy',
+  'Deploy the system into the dist folder', 
+  [ 'compile-engine', 'compile-webapp' ],
+  ( cb ) ->
+    # gulp.start 'compile-engine', 'compile-webapp'
+    gulp.src( dirSource + 'webapp/static/**/*' )
+      .pipe gulp.dest dirDist + 'webpages/public/'
+    gulp.src( dirLib + 'cryptico.js' )
+      .pipe( gulp.dest( dirDist + 'js' ) )
+      .pipe gulp.dest dirDist + 'webpages/public/js'
+    gulp.src( dirSource + 'webapp/handlers/**/*' )
+      .pipe gulp.dest dirDist + 'webpages/handlers/'
+    gulp.src( dirSource + 'config/*' )
+      .pipe gulp.dest dirDist + 'config'
+    # cb()
+
+
+###
+Run the system in the dist folder
+###
+gulp.task 'run-system',
+  'Deploy the system into the dist folder', 
+  [ 'deploy' ],
+  ( cb ) ->
+    nodemon
+      script: dirDist + 'js/webapi-eca.js'
 
 
 
