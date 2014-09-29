@@ -73,14 +73,14 @@ forks the event poller and sends him information about new rules so he can fetch
 
 \subsubsection{Persistence}
 The persistence module is an interface to a persistent storage.
-It stores the events in a queue, action invoker modules, event poller modules, rules, users and roles.
+It stores the events in a queue, action dispatcher modules, event poller modules, rules, users and roles.
 Event Queue
 \texttt{event\_queue} (List): The event queue for all incoming events to be processed by the engine.
-Action Invokers
-\texttt{action-invokers} (Set of [aiId] keys): A set of all existing action invokers.
-\texttt{action-invoker:[aiId]} (String): A stringified action invoker.
-\texttt{action-params} (Set of [aiId]:[userId] keys): All existing action invoker parameters associated with a user.
-\texttt{action-params:[aiId]:[userId]} (String): A stringified parameter object associated to an action invoker and a user.
+Action Dispatchers
+\texttt{action-dispatchers} (Set of [aiId] keys): A set of all existing action dispatchers.
+\texttt{action-dispatcher:[aiId]} (String): A stringified action dispatcher.
+\texttt{action-params} (Set of [aiId]:[userId] keys): All existing action dispatcher parameters associated with a user.
+\texttt{action-params:[aiId]:[userId]} (String): A stringified parameter object associated to an action dispatcher and a user.
 Event Pollers
 \texttt{event-pollers} (Set of [epId] keys): A set of all existing event pollers.
 \texttt{event-poller:[epId]} (String): A stringified event poller.

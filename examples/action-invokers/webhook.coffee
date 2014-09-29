@@ -1,6 +1,6 @@
 
-# Webhook Action Invoker
-# ----------------------
+# Webhook ACTION DISPATCHER
+# -------------------------
 
 # Sends data to a remote Webhook
 

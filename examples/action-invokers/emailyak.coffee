@@ -1,7 +1,7 @@
 
 ### 
-EmailYak ACTION INVOKER
-------------------------
+EmailYak ACTION DISPATCHER
+--------------------------
 #
 # Requires user params:
 
