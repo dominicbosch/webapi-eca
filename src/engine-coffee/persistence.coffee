@@ -227,35 +227,6 @@ class IndexedModules
 			replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ oModule.id }"
 		@db.hmset "user:#{ userId }:#{ @setname }:#{ oModule.id }", oModule,
 			replyHandler "hmset 'user:#{ userId }:#{ @setname }:#{ oModule.id }' -> [oModule]"
-		# @linkModule oModule.id, userId
-
-	# #TODO add testing
-	# linkModule: ( mId, userId ) =>
-	# 	@log.info "DB | (IdxedMods) #{ @setname }.linkModule( #{ mId }, #{ userId } )"
-	# 	@db.sadd "#{ @setname }:#{ mId }:users", userId,
-	# 		replyHandler "sadd '#{ @setname }:#{ mId }:users' -> '#{ userId }'"
-	# 	@db.sadd "user:#{ userId }:#{ @setname }s", mId,
-	# 		replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
-
-	# #TODO add testing
-	# unlinkModule: ( mId, userId ) =>
-	# 	@log.info "DB | (IdxedMods) #{ @setname }.unlinkModule( #{ mId }, #{ userId } )"
-	# 	@db.srem "#{ @setname }:#{ mId }:users", userId,
-	# 		replyHandler "srem '#{ @setname }:#{ mId }:users' -> #{ userId }"
-	# 	@db.srem "user:#{ userId }:#{ @setname }s", mId,
-	# 		replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> #{ mId }"
-
-	# #TODO add testing
-	# publish: ( mId ) =>
-	# 	@log.info "DB | (IdxedMods) #{ @setname }.publish( #{ mId } )"
-	# 	@db.sadd "public-#{ @setname }s", mId,
-	# 		replyHandler "sadd 'public-#{ @setname }s' -> '#{ mId }'"
-
-	# #TODO add testing
-	# unpublish: ( mId ) =>
-	# 	@log.info "DB | (IdxedMods) #{ @setname }.unpublish( #{ mId } )"
-	# 	@db.srem "public-#{ @setname }s", mId,
-	# 		replyHandler "srem 'public-#{ @setname }s' -> '#{ mId }'"
 
 	getModule: ( userId, mId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
@@ -275,18 +246,12 @@ class IndexedModules
 		@log.info "DB | (IdxedMods) #{ @setname }.getModuleIds()"
 		@db.smembers "user:#{ userId }:#{ @setname }s", cb
 
-	# getModules: ( cb ) =>
-	# 	@log.info "DB | (IdxedMods) #{ @setname }.getModules()"
-	# 	getSetRecords "#{ @setname }s", @getModule, cb
-
 	deleteModule: ( userId, mId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ userId }, #{ mId } )"
 		@db.srem "user:#{ userId }:#{ @setname }s", mId,
 			replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> '#{ mId }'"
 		@db.del "user:#{ userId }:#{ @setname }:#{ mId }",
 			replyHandler "del 'user:#{ userId }:#{ @setname }:#{ mId }'"
-		# @unpublish mId
-		# @unlinkModule mId, userId
 		@deleteUserParams mId, userId
 		exports.getRuleIds userId, ( err, obj ) =>
 			for rule in obj
@@ -329,11 +294,6 @@ class IndexedModules
 	the provided cryptico JS library and will only be decrypted right before the module is loaded!
 	
 	@private storeUserArguments( *userId, ruleId, mId, funcId, encData* )
-	@param {String} userId
-	@param {String} ruleId
-	@param {String} mId
-	@param {String} funcId
-	@param {object} encData
 	###
 	storeUserArguments: ( userId, ruleId, mId, funcId, encData ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId }, encData )"
@@ -413,9 +373,6 @@ class IndexedModules
 Appends a log entry.
 
 @public log( *userId, ruleId, moduleId, message* )
-@param {String} userId
-@param {String} ruleId
-@param {String} message
 ###
 exports.appendLog = ( userId, ruleId, moduleId, message ) =>
 	@db.append "#{ userId }:#{ ruleId }:log", 
@@ -424,20 +381,13 @@ exports.appendLog = ( userId, ruleId, moduleId, message ) =>
 ###
 Retrieves a log entry.
 
-@public getLog( *userId, ruleId* )
-@param {String} userId
-@param {String} ruleId
-@param {function} cb
+@public getLog( *userId, ruleId, cb* )
 ###
 exports.getLog = ( userId, ruleId, cb ) =>
 	@db.get "#{ userId }:#{ ruleId }:log", cb
 
 ###
 Resets a log entry.
-
-@public resetLog( *userId, ruleId* )
-@param {String} userId
-@param {String} ruleId
 ###
 exports.resetLog = ( userId, ruleId ) =>
 	@db.del "#{ userId }:#{ ruleId }:log", 
@@ -445,11 +395,6 @@ exports.resetLog = ( userId, ruleId ) =>
 
 ###
 Query the DB for a rule and pass it to cb(err, obj).
-
-@public getRule( *userId, ruleId, cb* )
-@param {String} userId
-@param {String} ruleId
-@param {function} cb
 ###
 exports.getRule = ( userId, ruleId, cb ) =>
 	@log.info "DB | getRule( '#{ userId }', '#{ ruleId }' )"
@@ -457,11 +402,6 @@ exports.getRule = ( userId, ruleId, cb ) =>
 
 ###
 Store a string representation of a rule in the DB.
-
-@public storeRule( *userId, ruleId, data* )
-@param {String} userId
-@param {String} ruleId
-@param {String} data
 ###
 exports.storeRule = ( userId, ruleId, data ) =>
 	@log.info "DB | storeRule( '#{ userId }', '#{ ruleId }' )"
@@ -472,10 +412,6 @@ exports.storeRule = ( userId, ruleId, data ) =>
 
 ###
 Returns all existing rule ID's for a user
-
-@public getRuleIds( *userId, cb* )
-@param {String} userId
-@param {function} cb
 ###
 exports.getRuleIds = ( userId, cb ) =>
 	@log.info "DB | getRuleIds( '#{ userId }' )"
@@ -483,10 +419,6 @@ exports.getRuleIds = ( userId, cb ) =>
 
 ###
 Delete a string representation of a rule.
-
-@public deleteRule( *userId, ruleId* )
-@param {String} userId
-@param {String} ruleId
 ###
 exports.deleteRule = ( userId, ruleId ) =>
 	@log.info "DB | deleteRule( '#{ userId }', '#{ ruleId }' )"
@@ -494,82 +426,11 @@ exports.deleteRule = ( userId, ruleId ) =>
 		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
 	@db.del "user:#{ userId }:rule:#{ ruleId }",
 		replyHandler "del 'user:#{ userId }:rule:#{ ruleId }'"
-
-	## This is not required anymore since we bind rules tightly to users
-	# We also need to delete all references in linked and active users
-	# @db.smembers "rule:#{ ruleId }:users", ( err, obj ) =>
-	# 	delLinkedUserRule = ( userId ) =>
-	# 		exports.resetLog userId, ruleId
-	# 		@db.srem "user:#{ userId }:rules", ruleId,
-	# 			replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
-	# 	delLinkedUserRule id  for id in obj
-	# @db.del "rule:#{ ruleId }:users", replyHandler "del 'rule:#{ ruleId }:users'"
-
-	# @db.smembers "rule:#{ ruleId }:active-users", ( err, obj ) =>
-	# 	delActiveUserRule = ( userId ) =>
-	# 		@db.srem "user:#{ userId }:active-rules", ruleId,
-	# 			replyHandler "srem 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
-	# 	delActiveUserRule id  for id in obj
-	# @db.del "rule:#{ ruleId }:active-users", 
-	# 	replyHandler "del 'rule:#{ ruleId }:active-users'"
-		#TODO remove module links and params and arguments
-
-# ###
-# Associate a rule to a user.
-
-# @public linkRule( *ruleId, userId* )
-# @param {String} ruleId
-# @param {String} userId
-# ###
-# exports.linkRule = ( ruleId, userId ) =>
-# 	@log.info "DB | linkRule: '#{ ruleId }' to user '#{ userId }'"
-# 	@db.sadd "rule:#{ ruleId }:users", userId,
-# 		replyHandler "sadd 'rule:#{ ruleId }:users' -> '#{ userId }'"
-# 	@db.sadd "user:#{ userId }:rules", ruleId,
-# 		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
-
-# ###
-# Get rules linked to a user and hand it to cb(err, obj).
-
-# @public getUserLinkRule( *userId, cb* )
-# @param {String} userId
-# @param {function} cb
-# ###
-# exports.getUserLinkedRules = ( userId, cb ) =>
-# 	@log.info "DB | getUserLinkedRules: smembers 'user:#{ userId }:rules'"
-# 	@db.smembers "user:#{ userId }:rules", cb
-
-# ###
-# Get users linked to a rule and hand it to cb(err, obj).
-
-# @public getRuleLinkedUsers( *ruleId, cb* )
-# @param {String} ruleId
-# @param {function} cb
-# ###
-# exports.getRuleLinkedUsers = ( ruleId, cb ) =>
-# 	@log.info "DB | getRuleLinkedUsers: smembers 'rule:#{ ruleId }:users'"
-# 	@db.smembers "rule:#{ ruleId }:users", cb
-
-# ###
-# Delete an association of a rule to a user.
-
-# @public unlinkRule( *ruleId, userId* )
-# @param {String} ruleId
-# @param {String} userId
-# ###
-# exports.unlinkRule = ( ruleId, userId ) =>
-# 	@log.info "DB | unlinkRule: '#{ ruleId }:#{ userId }'"
-# 	@db.srem "rule:#{ ruleId }:users", userId,
-# 		replyHandler "srem 'rule:#{ ruleId }:users' -> '#{ userId }'"
-# 	@db.srem "user:#{ userId }:rules", ruleId,
-# 		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
+	#TODO remove module links and params and arguments
+	
 
 # ###
 # Activate a rule.
-
-# @public activateRule( *ruleId, userId* )
-# @param {String} ruleId
-# @param {String} userId
 # ###
 # exports.activateRule = ( ruleId, userId ) =>
 # 	@log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
@@ -578,34 +439,9 @@ exports.deleteRule = ( userId, ruleId ) =>
 # 	@db.sadd "user:#{ userId }:active-rules", ruleId,
 # 		replyHandler "sadd 'user:#{ userId }:active-rules' -> '#{ ruleId }'"
 
-# ###
-# Get rules activated for a user and hand it to cb(err, obj).
-
-# @public getUserLinkRule( *userId, cb* )
-# @param {String} userId
-# @param {function} cb
-# ###
-# exports.getUserActivatedRules = ( userId, cb ) =>
-# 	@log.info "DB | getUserActivatedRules: smembers 'user:#{ userId }:active-rules'"
-# 	@db.smembers "user:#{ userId }:active-rules", cb
-
-# ###
-# Get users activated for a rule and hand it to cb(err, obj).
-
-# @public getRuleActivatedUsers ( *ruleId, cb* )
-# @param {String} ruleId
-# @param {function} cb
-# ###
-# exports.getRuleActivatedUsers = ( ruleId, cb ) =>
-# 	@log.info "DB | getRuleActivatedUsers: smembers 'rule:#{ ruleId }:active-users'"
-# 	@db.smembers "rule:#{ ruleId }:active-users", cb
 
 # ###
 # Deactivate a rule.
-
-# @public deactivateRule( *ruleId, userId* )
-# @param {String} ruleId
-# @param {String} userId
 # ###
 # exports.deactivateRule = ( ruleId, userId ) =>
 # 	@log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
@@ -647,7 +483,6 @@ Store a user object (needs to be a flat structure).
 The password should be hashed before it is passed to this function.
 
 @public storeUser( *objUser* )
-@param {Object} objUser
 ###
 exports.storeUser = ( objUser ) =>
 	@log.info "DB | storeUser: '#{ objUser.username }'"
@@ -665,7 +500,6 @@ exports.storeUser = ( objUser ) =>
 Fetch all user IDs and pass them to cb(err, obj).
 
 @public getUserIds( *cb* )
-@param {function} cb
 ###
 exports.getUserIds = ( cb ) =>
 	@log.info "DB | getUserIds"
@@ -675,8 +509,6 @@ exports.getUserIds = ( cb ) =>
 Fetch a user by id and pass it to cb(err, obj).
 
 @public getUser( *userId, cb* )
-@param {String} userId
-@param {function} cb
 ###
 exports.getUser = ( userId, cb ) =>
 	@log.info "DB | getUser: '#{ userId }'"
@@ -689,7 +521,6 @@ exports.getUser = ( userId, cb ) =>
 Deletes a user and all his associated linked and active rules.
 
 @public deleteUser( *userId* )
-@param {String} userId
 ###
 exports.deleteUser = ( userId ) =>
 	@log.info "DB | deleteUser: '#{ userId }'"
@@ -727,12 +558,9 @@ exports.deleteUser = ( userId ) =>
 Checks the credentials and on success returns the user object to the
 callback(err, obj) function. The password has to be hashed (SHA-3-512)
 beforehand by the instance closest to the user that enters the password,
-because we only store hashes of passwords for security6 reasons.
+because we only store hashes of passwords for security reasons.
 
 @public loginUser( *userId, password, cb* )
-@param {String} userId
-@param {String} password
-@param {function} cb
 ###
 exports.loginUser = ( userId, password, cb ) =>
 	@log.info "DB | User '#{ userId }' tries to log in"
@@ -751,9 +579,6 @@ exports.loginUser = ( userId, password, cb ) =>
 				cb (new Error 'User not found!'), null
 	@db.hgetall "user:#{ userId }", fCheck password
 
-#TODO implement functions required for user sessions?
-
-
 ###
 ## User Roles
 ###
@@ -762,8 +587,6 @@ exports.loginUser = ( userId, password, cb ) =>
 Associate a role with a user.
 
 @public storeUserRole( *userId, role* )
-@param {String} userId
-@param {String} role
 ###
 exports.storeUserRole = ( userId, role ) =>
 	@log.info "DB | storeUserRole: '#{ userId }:#{ role }'"
@@ -774,11 +597,9 @@ exports.storeUserRole = ( userId, role ) =>
 		replyHandler "sadd 'role:#{ role }:users' -> '#{ userId }'"
 
 ###
-Associate a role with a user.
+Deassociate a role from a user.
 
-@public storeUserRole( *userId, role* )
-@param {String} userId
-@param {String} role
+@public deleteRole( *userId, role* )
 ###
 exports.deleteRole = ( role ) =>
 	@log.info "DB | deleteRole: '#{ role }'"
@@ -793,9 +614,7 @@ exports.deleteRole = ( role ) =>
 ###
 Fetch all roles of a user and pass them to cb(err, obj).
 
-@public getUserRoles( *userId* )
-@param {String} userId
-@param {function} cb
+@public getUserRoles( *userId, cb* )
 ###
 exports.getUserRoles = ( userId, cb ) =>
 	@log.info "DB | getUserRoles: '#{ userId }'"
@@ -804,9 +623,7 @@ exports.getUserRoles = ( userId, cb ) =>
 ###
 Fetch all users of a role and pass them to cb(err, obj).
 
-@public getUserRoles( *role* )
-@param {String} role
-@param {function} cb
+@public getRoleUsers( *role, cb* )
 ###
 exports.getRoleUsers = ( role, cb ) =>
 	@log.info "DB | getRoleUsers: '#{ role }'"
@@ -815,9 +632,7 @@ exports.getRoleUsers = ( role, cb ) =>
 ###
 Remove a role from a user.
 
-@public removeRoleFromUser( *role, userId* )
-@param {String} role
-@param {String} userId
+@public removeUserRole( *userId, role* )
 ###
 exports.removeUserRole = ( userId, role ) =>
 	@log.info "DB | removeRoleFromUser: role '#{ role }', user '#{ userId }'"
@@ -828,11 +643,9 @@ exports.removeUserRole = ( userId, role ) =>
 
 
 ###
-Creates and stores a webhook.
+Stores a webhook.
 
-@public createWebhook( *username, hookname* )
-@param {String} username
-@param {String} hookname
+@public createWebhook( *username, hookid, hookname* )
 ###
 exports.createWebhook = ( username, hookid, hookname ) =>
 	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
@@ -843,62 +656,42 @@ exports.createWebhook = ( username, hookid, hookname ) =>
 
 ###
 Returns a webhook name.
-
-@public getWebhookName( *hookid* )
-@param {String} hookid
 ###
 exports.getWebhookName = ( hookid, cb ) =>
 	@db.hget "webhook:#{ hookid }", "hookname", cb
 
 ###
 Returns all webhook properties.
-
-@public getFullWebhookName( *hookid* )
-@param {String} hookid
 ###
 exports.getFullWebhook = ( hookid, cb ) =>
 	@db.hgetall "webhook:#{ hookid }", cb
 
 ###
 Returns all the user's webhooks by ID.
-
-@public getUserWebhookIDs( *username* )
-@param {String} username
 ###
 exports.getUserWebhookIDs = ( username, cb ) =>
 	@db.smembers "user:#{ username }:webhooks", cb
 
 ###
 Gets all the user's webhooks with names.
-
-@public getAllUserWebhookNames( *username* )
-@param {String} username
 ###
 exports.getAllUserWebhookNames = ( username, cb ) =>
 	getSetRecords "user:#{ username }:webhooks", exports.getWebhookName, cb
 
 ###
 Returns all webhook IDs.
-
-@public getAllWebhookIDs()
 ###
 exports.getAllWebhookIDs = ( cb ) =>
 	@db.smembers "webhooks", cb
 
 ###
 Returns all webhooks with names.
-
-@public getAllWebhooks()
 ###
 exports.getAllWebhooks = ( cb ) =>
 	getSetRecords "webhooks", exports.getFullWebhook, cb
 
 ###
 Delete a webhook.
-
-@public deleteWebhook( *username, hookid* )
-@param {String} username
-@param {String} hookid
 ###
 exports.deleteWebhook = ( username, hookid ) =>
 	@db.srem "webhooks", hookid, replyHandler "srem 'webhooks' -> '#{ hookid }'"

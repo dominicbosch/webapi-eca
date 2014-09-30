@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title>Mobile Page</title>
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
+    <link href='http://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="style.css">
+  </head>
+  <body id="mobile">
+    <h1>Mobile Page</h1>
+    <script>
+
+      var arrParams = window.location.search.substring( 1 ).split( '&' );
+      var oParams = {};
+      var hookid, arrKV;
+      for( var i = 0; i < arrParams.length; i++ ) {
+        arrKV = arrParams[ i ].split( '=' );
+        if( arrKV[ 0 ] === 'hookid' ) hookid = arrKV[ 1 ]
+      }
+      function displayPosition( position ) {
+        var lat = position.coords.latitude,
+            lon = position.coords.longitude;
+        $('#print').html("<h3>You're here!</h3>");
+        // $('#print').html("<table border='1'><tr><th>Timestamp</th><td>" + position.timestamp +
+        // "<tr><th>Latitude</th><td>" + lat + " deg</td></tr>" +
+        // "<tr><th>Longitude</th><td>" + lon + " deg</td></tr></table>");
+        
+        var img_url="http://maps.googleapis.com/maps/api/staticmap?center="
+        +lat+","+lon+"&zoom=15&size=400x300&sensor=false&maptype=roadmap&markers=color:orange|label:1|"+lat+","+lon;
+        
+        document.getElementById("mapholder").innerHTML="<img src='"+img_url+"'>";
+        var fPostPosition = function() {
+          if( !hookid ) $('#info').text("No Webhook defined!");
+          else {
+            $.post( '../webhooks/' + hookid, JSON.stringify({
+              timestamp: (new Date()).toISOString(),
+              datatype: 'geoposition',
+              latitude: lat,
+              longitude: lon
+            }))
+            .done( function( data ) {
+              dat = JSON.parse( data );
+              $( '#info' ).append( $( '<div>' ).text( dat.message ) );
+              $( '#info' ).append( $( '<div>' ).text( '{' ) );
+              for( prop in dat.evt ) {
+                $( '#info' ).append( $( '<div>' ).html( "&nbsp;&nbsp;&nbsp;&nbsp;"
+                  + prop + ': ' + JSON.stringify(dat.evt[ prop ]) ) );
+              }
+              $( '#info' ).append( $( '<div>' ).text( '}' ) );
+            })
+            .fail(function(err) {
+              $('#info').text("Error: " + err.responseText);
+            });
+            // Post position every 5 mins 
+            setTimeout( fPostPosition, 5 * 60 * 1000 );
+          }
+        }
+        fPostPosition()
+      }
+       
+      function displayError(positionError) {
+        console.log(positionError);
+        $('#info').text('Error: ' + positionError.message);
+      }
+       
+      var gl = navigator.geolocation;
+       
+      if (gl) {
+        gl.getCurrentPosition(displayPosition, displayError);
+      } else {
+        $('#info').text('Geolocation services are not supported by your web browser.');
+      }
+
+    </script>
+    <div id="print"></div>
+    <div id="mapholder"></div>
+    <br>
+    <div id="info"></div>
+  </body>
+</html>

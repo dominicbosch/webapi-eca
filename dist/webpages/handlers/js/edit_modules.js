@@ -1,0 +1,91 @@
+var fOnLoad;
+
+fOnLoad = function() {
+  var fErrHandler, fFetchModules, fUpdateModuleList;
+  document.title = 'Edit Modules';
+  $('#pagetitle').text("{{{user.username}}}, edit your Modules!");
+  $('#module_type').change(function() {
+    return fFetchModules();
+  });
+  fErrHandler = function(errMsg) {
+    return function(err) {
+      var fDelayed;
+      if (err.status === 401) {
+        return window.location.href = 'forge?page=edit_modules';
+      } else {
+        fDelayed = function() {
+          var msg, oErr;
+          if (err.responseText === '') {
+            msg = 'No Response from Server!';
+          } else {
+            try {
+              oErr = JSON.parse(err.responseText);
+              msg = oErr.message;
+            } catch (_error) {}
+          }
+          $('#info').text(errMsg + msg);
+          return $('#info').attr('class', 'error');
+        };
+        return setTimeout(fDelayed, 500);
+      }
+    };
+  };
+  fFetchModules = function() {
+    var cmd;
+    if ($('#module_type').val() === 'Event Poller') {
+      cmd = 'get_event_pollers';
+    } else {
+      cmd = 'get_action_dispatchers';
+    }
+    return $.post('/usercommand', {
+      command: cmd
+    }).done(fUpdateModuleList).fail(fErrHandler('Did not retrieve rules! '));
+  };
+  fUpdateModuleList = function(data) {
+    var img, inp, modName, oMods, tr, _results;
+    $('#tableModules tr').remove();
+    oMods = JSON.parse(data.message);
+    _results = [];
+    for (modName in oMods) {
+      tr = $('<tr>');
+      inp = $('<div>').text(modName);
+      img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'red_cross_small.png');
+      tr.append($('<td>').append(img));
+      img = $('<img>').attr('class', 'log').attr('title', 'Edit Module').attr('src', 'edit.png');
+      tr.append($('<td>').append(img));
+      tr.append($('<td>').append(inp));
+      _results.push($('#tableModules').append(tr));
+    }
+    return _results;
+  };
+  fFetchModules();
+  $('#tableModules').on('click', 'img.del', function() {
+    var cmd, data, modName;
+    modName = $('div', $(this).closest('tr')).text();
+    if (confirm("Do you really want to delete the Module '" + modName + "'? The module might still be active in some of your rules!")) {
+      if ($('#module_type').val() === 'Event Poller') {
+        cmd = 'delete_event_poller';
+      } else {
+        cmd = 'delete_action_dispatcher';
+      }
+      data = {
+        command: cmd,
+        body: JSON.stringify({
+          id: modName
+        })
+      };
+      return $.post('/usercommand', data).done(fFetchModules).fail(fErrHandler('Could not delete module! '));
+    }
+  });
+  return $('#tableModules').on('click', 'img.log', function() {
+    var modName;
+    modName = encodeURIComponent($('div', $(this).closest('tr')).text());
+    if ($('#module_type').val() === 'Event Poller') {
+      return window.location.href = 'forge?page=forge_module&type=event_poller&id=' + modName;
+    } else {
+      return window.location.href = 'forge?page=forge_module&type=action_dispatcher&id=' + modName;
+    }
+  });
+};
+
+window.addEventListener('load', fOnLoad, true);

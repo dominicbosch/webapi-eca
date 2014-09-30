@@ -2,4 +2,3 @@
 *.log
 .project
 .settings
-dist/*
