@@ -376,7 +376,7 @@ Appends a log entry.
 ###
 exports.appendLog = ( userId, ruleId, moduleId, message ) =>
 	@db.append "#{ userId }:#{ ruleId }:log", 
-		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message }\n"
+		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message.substring( 0, 1000 ) }\n"
 
 ###
 Retrieves a log entry.
@@ -641,6 +641,10 @@ exports.removeUserRole = ( userId, role ) =>
 	@db.srem "role:#{ role }:users", userId,
 		replyHandler "srem 'role:#{ role }:users' -> '#{ userId }'"
 
+###
+TODO: user should be able to select whether the events being sent to the webhook are available to all.
+private events need only to be checked against the user's rules
+###
 
 ###
 Stores a webhook.

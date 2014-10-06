@@ -465,7 +465,7 @@ Appends a log entry.
 
 exports.appendLog = (function(_this) {
   return function(userId, ruleId, moduleId, message) {
-    return _this.db.append("" + userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + message + "\n");
+    return _this.db.append("" + userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 1000)) + "\n");
   };
 })(this);
 
@@ -821,6 +821,12 @@ exports.removeUserRole = (function(_this) {
     return _this.db.srem("role:" + role + ":users", userId, replyHandler("srem 'role:" + role + ":users' -> '" + userId + "'"));
   };
 })(this);
+
+
+/*
+TODO: user should be able to select whether the events being sent to the webhook are available to all.
+private events need only to be checked against the user's rules
+ */
 
 
 /*

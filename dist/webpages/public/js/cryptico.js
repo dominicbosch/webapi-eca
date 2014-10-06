@@ -3533,8 +3533,13 @@ var cryptico = (function() {
 
 }());
 
-
-if( exports ) {
-    exports = module.exports = cryptico;
-}
-
+(function( root ) {
+    if( typeof exports !== 'undefined' ) {
+        if( typeof module !== 'undefined' && module.exports ) {
+            exports = module.exports = cryptico;
+        }
+        exports = cryptico;
+    } else {
+        root.cryptico = cryptico;
+    }
+})( this );

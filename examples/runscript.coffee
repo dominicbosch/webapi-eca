@@ -18,9 +18,10 @@ cs = require 'coffee-script'
 needle = require 'needle'
 crypto = require 'crypto-js'
 request = require 'request'
+cheerio = require 'cheerio'
 importio = require( 'import-io' ).client
 
-params = JSON.parse fs.readFileSync 'params.json', 'utf8'
+# params = JSON.parse fs.readFileSync 'params.json', 'utf8'
 arrArgs = JSON.parse fs.readFileSync 'arguments.json', 'utf8'
 
 code = fs.readFileSync process.argv[ 2 ], 'utf8'
@@ -28,9 +29,10 @@ src = cs.compile code
 
 sandbox = 
   id: 'test.vm'
-  params: params
+  # params: params
   needle: needle
   request: request
+  cheerio: cheerio
   cryptoJS: crypto
   importio: importio
   log: console.log
@@ -39,6 +41,7 @@ sandbox =
   exports: {}
   pushEvent: ( obj ) ->
     console.log obj
+
 
 vm.runInNewContext src, sandbox, sandbox.id
 

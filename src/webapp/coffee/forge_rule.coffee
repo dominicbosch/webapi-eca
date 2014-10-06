@@ -718,7 +718,7 @@ fOnLoad = () ->
 			$( '#info' ).attr 'class', 'error'
 			alert err.message
 
-# Edit a Rule
+# Preload editting of a Rule
 # -----------
 	if oParams.id
 		fIssueRequest
@@ -769,6 +769,9 @@ fOnLoad = () ->
 						domSectionSelectedActions.show()
 						for action in oRule.actions
 							arrName = action.split ' -> '
+							# FIXME we can only add this if the action is still existing! Therefore we should not allow to delete
+							# Actions and events but keep a version history and deprecate a module if really need be
+								# $( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
 							fAddSelectedAction action
 
 			fail: ( err ) ->
