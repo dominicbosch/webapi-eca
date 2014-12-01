@@ -90,7 +90,7 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 fPushEvent = ( userId, oRule, modType ) ->
 	( obj ) ->
 		timestamp = ( new Date() ).toISOString()
-		if modType is 'eventpoller'
+		if modType is 'eventtrigger'
 			db.pushEvent
 				eventname: oRule.eventname + '_created:' + oRule.timestamp
 				body: obj

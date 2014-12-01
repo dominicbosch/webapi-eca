@@ -29,7 +29,7 @@ logconf[ 'io-level' ] = process.argv[ 3 ]
 logconf[ 'file-level' ] = process.argv[ 4 ]
 logconf[ 'file-path' ] = process.argv[ 5 ]
 log = logger.getLogger logconf
-log.info 'EP | Event Poller starts up'
+log.info 'EP | Event Trigger Poller starts up'
 
 process.on 'uncaughtException', ( err ) ->
 	# TODO we'd have to wrap the dynamic-modules module in an own child process which
@@ -39,7 +39,7 @@ process.on 'uncaughtException', ( err ) ->
 	# the deferred token of the corresponding rule gets eliminated if it throws an error
 	# and the event polling won't continue fo this rule, which is fine for us, except that
 	# we do not have a good way to inform the user about his error.
-	log.error 'Probably one of the event pollers produced an error!'
+	log.error 'Probably one of the Event Triggers produced an error!'
 	log.error err
 
 # Initialize required modules (should be in cache already)
@@ -58,9 +58,9 @@ listUserModules = {}
 isRunning = true
 
 # Register disconnect action. Since no standalone mode is intended
-# the event poller will shut down
+# the event Trigger poller will shut down
 process.on 'disconnect', () ->
-	log.warn 'EP | Shutting down Event Poller'
+	log.warn 'EP | Shutting down Event Trigger Poller'
 	isRunning = false
 	# very important so the process doesnt linger on when the paren process is killed  
 	process.exit()
@@ -76,6 +76,9 @@ process.on 'message', ( msg ) ->
 		fLoadModule msg
 		# We fetch the module also if the rule was updated
 
+# TODO if server restarts we would have to start modules in the interval
+# that they were initially meant to (do not wait 24 hours until starting again)
+
 	# A rule was deleted
 	if msg.intevent is 'del'
 		delete listUserModules[msg.user][msg.ruleId]
@@ -86,7 +89,7 @@ process.on 'message', ( msg ) ->
 fLoadModule = ( msg ) ->
 	arrName = msg.rule.eventname.split ' -> '
 	fAnonymous = () ->
-		db.eventPollers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
+		db.eventTriggers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
 				log.info "EP | No module retrieved for #{ arrName[0] }, must be a custom event or Webhook"
 			else
@@ -96,8 +99,8 @@ fLoadModule = ( msg ) ->
 					msg.rule,                  	  # oRule
 					arrName[0],                   # moduleId
 					obj.lang,                     # script language
-					"eventpoller",                # the module type
-					db.eventPollers,              # the DB interface
+					"eventtrigger",                # the module type
+					db.eventTriggers,              # the DB interface
 					( result ) ->
 						if not result.answ is 200
 							log.error "EP | Compilation of code failed! #{ msg.user },
@@ -140,19 +143,19 @@ fLoadModule = ( msg ) ->
 						setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
 
 	if msg.intevent is 'new' or
-			not listUserModules[msg.user] or 
-			not listUserModules[msg.user][msg.rule.id]
+			not listUserModules[ msg.user ] or 
+			not listUserModules[ msg.user ][ msg.rule.id ]
 		fAnonymous()
 
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
 		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"
 		if isRunning and 
-				listUserModules[userId] and 
-				listUserModules[userId][ruleId]
+				listUserModules[ userId ] and 
+				listUserModules[ userId ][ ruleId ]
 			# If there was a rule update we only continue the latest setTimeout execution
-			if listUserModules[userId][ruleId].timestamp is timestamp	
-				oRule = listUserModules[userId][ruleId]
+			if listUserModules[ userId ][ ruleId ].timestamp is timestamp	
+				oRule = listUserModules[ userId ][ ruleId ]
 				fCallFunction userId, ruleId, oRule
 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.eventinterval
 			else
@@ -165,10 +168,10 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 fCallFunction = ( userId, ruleId, oRule ) ->
 	try
 		arrArgs = []
-		if oRule.funcArgs and oRule.funcArgs[oRule.pollfunc]
-			for oArg in oRule.funcArgs[oRule.pollfunc]
+		if oRule.funcArgs and oRule.funcArgs[ oRule.pollfunc ]
+			for oArg in oRule.funcArgs[ oRule.pollfunc ]
 				arrArgs.push oArg.value
-		oRule.module[oRule.pollfunc].apply this, arrArgs
+		oRule.module[ Rule.pollfunc ].apply this, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		throw err
@@ -193,7 +196,7 @@ pollLoop = () ->
     #   # Go through each of the users modules
     #   for ruleName, myRule of oRules
 
-    #     # Call the event poller module function
+    #     # Call the event Trigger poller module function
     #     fCallFunction myRule, ruleName, userName
 
     setTimeout pollLoop, 10000

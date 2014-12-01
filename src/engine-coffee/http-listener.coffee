@@ -36,7 +36,6 @@ Initializes the HTTP listener and its request handler.
 ###
 exports = module.exports = ( args ) =>
 	@log = args.logger
-	@arrWebhooks = args.webhooks
 	@shutDownSystem = args[ 'shutdown-function' ]
 	requestHandler args
 	initRouting args[ 'http-port' ]

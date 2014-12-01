@@ -4,7 +4,7 @@
     <title></title>
     <link href='http://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
     <link href='http://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
     <script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js' type='text/javascript'></script>
     <script type='text/javascript'>
       var checkIncludes = function () {
@@ -20,6 +20,7 @@
     </script>
     {{{remote_scripts}}}
     <script src="js/menubar.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/dialog.js" type="text/javascript" charset="utf-8"></script>
 
   </head>
   <body>
@@ -30,5 +31,14 @@
 	    <div id="pagetitle"></div>
       {{{content}}}
 		</div>
+    <div class="dialog">
+      <div class="window">
+        <h3>Welcome!</h3>
+        <p>It's really nice to have you here!</p>
+        <div style="text-align: center">
+          <button>OK!</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

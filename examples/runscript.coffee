@@ -45,7 +45,8 @@ sandbox =
 
 vm.runInNewContext src, sandbox, sandbox.id
 
-console.log sandbox.exports[ process.argv[ 3 ] ].apply null, arrArgs
+# console.log
+sandbox.exports[ process.argv[ 3 ] ].apply null, arrArgs
 
 console.log "If no error happened until here it seems the script
   compiled and ran correctly! Congrats!"

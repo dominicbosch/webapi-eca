@@ -1,4 +1,4 @@
-var arrKV, arrParams, domEventPollerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventPoller, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fClearInfo, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayError, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, oParams, param, strPublicKey, table, tr, _i, _len,
+var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fClearInfo, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayError, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, oParams, param, strPublicKey, table, tr, _i, _len,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 strPublicKey = '';
@@ -29,15 +29,15 @@ el = $('<select>').attr('type', 'text').attr('style', 'font-size:1em').attr('id'
 
 domSelectWebhook.append($('<h4>').text('Webhook Name : ').append(el));
 
-domSelectEventPoller = $('<div>');
+domSelectEventTrigger = $('<div>');
 
-el = $('<select>').attr('type', 'text').attr('style', 'font-size:1em').attr('id', 'select_eventpoller');
+el = $('<select>').attr('type', 'text').attr('style', 'font-size:1em').attr('id', 'select_eventtrigger');
 
 el.change(function() {
   return fFetchEventParams($(this).val());
 });
 
-domSelectEventPoller.append($('<h4>').text('Event Poller Name : ').append(el));
+domSelectEventTrigger.append($('<h4>').text('Event Trigger Name : ').append(el));
 
 domInputEventTiming = $('<div>').attr('class', 'indent20');
 
@@ -59,7 +59,7 @@ tr.append($('<td>').append($('<input>').attr('id', 'input_interval').attr('type'
 
 tr.append($('<td>').html(" <b>\"days hours:minutes\"</b>, default = 10 minutes"));
 
-domEventPollerParameters = $('<div>').attr('id', 'event_poller_params');
+domEventTriggerParameters = $('<div>').attr('id', 'event_trigger_params');
 
 domSectionSelectedActions = $('<div>');
 
@@ -215,39 +215,39 @@ fPrepareEventType = function(eventtype, cb) {
           return typeof cb === "function" ? cb() : void 0;
         }
       });
-    case 'Event Poller':
+    case 'Event Trigger':
       return fIssueRequest({
         data: {
-          command: 'get_event_pollers'
+          command: 'get_event_triggers'
         },
         done: function(data) {
           var err, events, evt, id, oEps, _j, _len1;
           try {
             oEps = JSON.parse(data.message);
             if (JSON.stringify(oEps) === '{}') {
-              fDisplayError('No Event Pollers found! Create one first!');
+              fDisplayError('No Event Triggers found! Create one first!');
               $('#select_event_type').val('');
             } else {
-              $('#event_parameters').append(domSelectEventPoller);
+              $('#event_parameters').append(domSelectEventTrigger);
               $('#event_parameters').append(domInputEventTiming.show());
-              $('#select_eventpoller option').remove();
+              $('#select_eventtrigger option').remove();
               for (id in oEps) {
                 events = oEps[id];
                 for (_j = 0, _len1 = events.length; _j < _len1; _j++) {
                   evt = events[_j];
-                  $('#select_eventpoller').append($('<option>').text(id + ' -> ' + evt));
+                  $('#select_eventtrigger').append($('<option>').text(id + ' -> ' + evt));
                 }
               }
-              fFetchEventParams($('option:selected', domSelectEventPoller).text());
+              fFetchEventParams($('option:selected', domSelectEventTrigger).text());
             }
           } catch (_error) {
             err = _error;
-            console.error('ERROR: non-object received for event poller from server: ' + data.message);
+            console.error('ERROR: non-object received for event trigger from server: ' + data.message);
           }
           return typeof cb === "function" ? cb() : void 0;
         },
         fail: function() {
-          fFailedRequest('Error fetching Event Poller');
+          fFailedRequest('Error fetching Event Trigger');
           return typeof cb === "function" ? cb() : void 0;
         }
       });
@@ -256,19 +256,19 @@ fPrepareEventType = function(eventtype, cb) {
 
 fFetchEventParams = function(name) {
   var arr;
-  $('#event_poller_params *').remove();
+  $('#event_trigger_params *').remove();
   if (name) {
-    $('#event_parameters').append(domEventPollerParameters);
+    $('#event_parameters').append(domEventTriggerParameters);
     arr = name.split(' -> ');
     fIssueRequest({
       data: {
-        command: 'get_event_poller_params',
+        command: 'get_event_trigger_params',
         body: JSON.stringify({
           id: arr[0]
         })
       },
       done: fDisplayEventParams(arr[0]),
-      fail: fFailedRequest('Error fetching Event Poller params')
+      fail: fFailedRequest('Error fetching Event Trigger params')
     });
     return fFetchEventFunctionArgs(arr);
   }
@@ -295,8 +295,8 @@ fDisplayEventParams = function(id) {
         table.append(tr);
       }
       if (i > 0) {
-        $('#event_poller_params').html('<b>Required User-specific Data:</b>');
-        $('#event_poller_params').append(table);
+        $('#event_trigger_params').html('<b>Required User-specific Data:</b>');
+        $('#event_trigger_params').append(table);
         return fFillEventParams(id);
       }
     }
@@ -306,7 +306,7 @@ fDisplayEventParams = function(id) {
 fFillEventParams = function(moduleId) {
   return fIssueRequest({
     data: {
-      command: 'get_event_poller_user_params',
+      command: 'get_event_trigger_user_params',
       body: JSON.stringify({
         id: moduleId
       })
@@ -317,7 +317,7 @@ fFillEventParams = function(moduleId) {
       _results = [];
       for (param in oParams) {
         oParam = oParams[param];
-        par = $("#event_poller_params tr").filter(function() {
+        par = $("#event_trigger_params tr").filter(function() {
           return $('td.key', this).text() === param;
         });
         $('input', par).val(oParam.value);
@@ -334,7 +334,7 @@ fFillEventParams = function(moduleId) {
 fFetchEventFunctionArgs = function(arrName) {
   return fIssueRequest({
     data: {
-      command: 'get_event_poller_function_arguments',
+      command: 'get_event_trigger_function_arguments',
       body: JSON.stringify({
         id: arrName[0]
       })
@@ -345,9 +345,9 @@ fFetchEventFunctionArgs = function(arrName) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
           if (oParams[arrName[1]].length > 0) {
-            $('#event_poller_params').append($("<b>").text('Required Rule-specific Data:'));
+            $('#event_trigger_params').append($("<b>").text('Required Rule-specific Data:'));
           }
-          table = $('<table>').appendTo($('#event_poller_params'));
+          table = $('<table>').appendTo($('#event_trigger_params'));
           _ref = oParams[arrName[1]];
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             functionArgument = _ref[_j];
@@ -363,7 +363,7 @@ fFetchEventFunctionArgs = function(arrName) {
           }
           return fIssueRequest({
             data: {
-              command: 'get_event_poller_user_arguments',
+              command: 'get_event_trigger_user_arguments',
               body: JSON.stringify({
                 ruleId: $('#input_id').val(),
                 moduleId: arrName[0]
@@ -374,7 +374,7 @@ fFetchEventFunctionArgs = function(arrName) {
         }
       }
     },
-    fail: fFailedRequest('Error fetching event poller function arguments')
+    fail: fFailedRequest('Error fetching event trigger function arguments')
   });
 };
 
@@ -385,7 +385,7 @@ fAddEventUserArgs = function(name) {
     _results = [];
     for (key in _ref) {
       arrFuncs = _ref[key];
-      par = $("#event_poller_params");
+      par = $("#event_trigger_params");
       _results.push((function() {
         var _j, _len1, _ref1, _results1;
         _ref1 = JSON.parse(arrFuncs);
@@ -412,7 +412,7 @@ fAddSelectedAction = function(name) {
   }).get();
   table = $('#selected_actions');
   tr = $('<tr>').appendTo(table);
-  img = $('<img>').attr('src', 'red_cross_small.png');
+  img = $('<img>').attr('src', 'images/red_cross_small.png');
   tr.append($('<td>').css('width', '20px').append(img));
   tr.append($('<td>').attr('class', 'title').text(name));
   td = $('<td>').attr('class', 'funcMappings').appendTo(tr);
@@ -600,7 +600,7 @@ fOnLoad = function() {
   document.title = 'Create Rules!';
   $('#pagetitle').text('{{{user.username}}}, create your ECA Rule!');
   editor = ace.edit("editor_conditions");
-  editor.setTheme("ace/theme/cimson_editor");
+  editor.setTheme("ace/theme/crimson_editor");
   editor.setFontSize("18px");
   editor.getSession().setMode("ace/mode/json");
   editor.setShowPrintMargin(false);
@@ -736,10 +736,10 @@ fOnLoad = function() {
         case 'Webhook':
           eventname = $('#select_eventhook').val();
           break;
-        case 'Event Poller':
-          eventname = $('#select_eventpoller').val();
+        case 'Event Trigger':
+          eventname = $('#select_eventtrigger').val();
           ep = {};
-          $("#event_poller_params tr").each(function() {
+          $("#event_trigger_params tr").each(function() {
             var encryptedParam, key, shielded, val;
             key = $(this).children('.key').text();
             val = $('input', this).val();
@@ -760,7 +760,7 @@ fOnLoad = function() {
           });
           evtFuncs = {};
           evtFuncs[eventname] = [];
-          $('#event_poller_params tr.funcMappings').each(function() {
+          $('#event_trigger_params tr.funcMappings').each(function() {
             return evtFuncs[eventname].push({
               argument: $('div.funcarg', this).text(),
               value: $('input[type=text]', this).val()
@@ -842,7 +842,7 @@ fOnLoad = function() {
           }
         };
       };
-      if ($('#select_event_type').val() === 'Event Poller') {
+      if ($('#select_event_type').val() === 'Event Trigger') {
         start = fConvertTimeToDate($('#input_start').val()).toISOString();
         mins = fConvertDayHourToMinutes($('#input_interval').val());
       }
@@ -893,9 +893,9 @@ fOnLoad = function() {
           return fPrepareEventType(oRule.eventtype, function() {
             var action, arrName, d, mins, _j, _len1, _ref, _results;
             switch (oRule.eventtype) {
-              case 'Event Poller':
-                $('select', domSelectEventPoller).val(oRule.eventname);
-                if ($('select', domSelectEventPoller).val() === oRule.eventname) {
+              case 'Event Trigger':
+                $('select', domSelectEventTrigger).val(oRule.eventname);
+                if ($('select', domSelectEventTrigger).val() === oRule.eventname) {
                   fFetchEventParams(oRule.eventname);
                   d = new Date(oRule.eventstart);
                   mins = d.getMinutes();
@@ -906,7 +906,7 @@ fOnLoad = function() {
                   $('#input_interval', domInputEventTiming).val(oRule.eventinterval);
                 } else {
                   window.scrollTo(0, 0);
-                  $('#info').text('Error loading Rule: Your Event Poller does not exist anymore!');
+                  $('#info').text('Error loading Rule: Your Event Trigger does not exist anymore!');
                   $('#info').attr('class', 'error');
                 }
                 break;

@@ -6,7 +6,11 @@ GULP FILE
 
 Type `gulp` in command line to get option list.
  */
-var argv, chalk, clean, coffee, dirDist, dirLib, dirSource, fCoffeePipe, fHandleError, fSimpleCoffeePipe, gulp, gulphelp, gutil, nodemon, plumber, uglify, watch;
+var argv, chalk, clean, coffee, dirDist, dirLib, dirSource, fCoffeePipe, fHandleError, fSimpleCoffeePipe, fs, gulp, gulphelp, gutil, nodemon, nodeunit, path, plumber, uglify, watch;
+
+fs = require('fs');
+
+path = require('path');
 
 argv = require('yargs').argv;
 
@@ -29,6 +33,8 @@ coffee = require('gulp-coffee');
 watch = require('gulp-watch');
 
 nodemon = require('gulp-nodemon');
+
+nodeunit = require('nodeunit');
 
 dirSource = 'src/';
 
@@ -164,8 +170,42 @@ gulp.task('deploy', 'Deploy the system into the dist folder', ['compile-engine',
 Run the system in the dist folder
  */
 
-gulp.task('run-system', 'Deploy the system into the dist folder', ['deploy'], function(cb) {
+gulp.task('run-system', 'Run the system in the dist folder', ['deploy'], function(cb) {
+  var lst;
+  lst = fs.readdirSync(dirDist + 'js');
+  console.log(lst);
   return nodemon({
     script: dirDist + 'js/webapi-eca.js'
   });
+});
+
+
+/*
+Unit TESTS!
+ */
+
+gulp.task('test', 'Run unit tests', function(cb) {
+  var args, cs, db, fEnd, fl;
+  process.chdir(__dirname);
+  global.pathToEngine = path.resolve(__dirname, 'dist', 'js');
+  db = require(path.join(global.pathToEngine, 'persistence'));
+  cs = require('coffee-script');
+  args = process.argv.slice(2);
+  fEnd = function() {
+    console.log("Shutting down DB from unit_test.sh script. \nThis might take as long as the event poller loop delay is...");
+    return db.shutDown();
+  };
+  if (typeof cs.register === "function") {
+    cs.register();
+  }
+  if (gutil.env.testfile) {
+    fl = path.resolve(gutil.env.testfile);
+    if (fs.existsSync(fl)) {
+      return nodeunit.reporters["default"].run([fl], null, fEnd);
+    } else {
+      return console.error('File not found!!');
+    }
+  } else {
+    return nodeunit.reporters["default"].run(['src/unittests'], null, fEnd);
+  }
 });

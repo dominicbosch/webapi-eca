@@ -33,8 +33,8 @@ http = require './http-listener'
 # - [Encryption](encryption.html)
 encryption = require './encryption'
 
-# - [Event Poller](event-poller.html) *(will be forked into a child process)*
-nameEP = 'event-poller'
+# - [Trigger Poller](trigger-poller.html) *(will be forked into a child process)*
+nameEP = 'trigger-poller'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 # [path](http://nodejs.org/api/path.html)
@@ -169,8 +169,8 @@ init = =>
 			#TODO We could in the future make the engine a child process as well
 			engine args
 			
-			# Start the event poller. The module manager will emit events for it
-			@log.info 'RS | Forking a child process for the event poller'
+			# Start the trigger poller. The components manager will emit events for it
+			@log.info 'RS | Forking a child process for the trigger poller'
 			# Grab all required log config fields
 			
 			cliArgs = [
@@ -190,12 +190,12 @@ init = =>
 				# - The keygen phrase, this has to be handled differently in the future!
 				args[ 'keygen' ]
 			]
-			# Initialize the event poller with the required CLI arguments
+			# Initialize the trigger poller with the required CLI arguments
 			poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs
 
-			# after the engine and the event poller have been initialized we can
+			# after the engine and the trigger poller have been initialized we can
 			# initialize the module manager and register event listener functions
-			# from engine and event poller
+			# from engine and trigger poller
 			@log.info 'RS | Initialzing module manager'
 			cm args
 			cm.addRuleListener engine.internalEvent

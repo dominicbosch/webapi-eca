@@ -110,7 +110,7 @@ fPushEvent = function(userId, oRule, modType) {
   return function(obj) {
     var timestamp;
     timestamp = (new Date()).toISOString();
-    if (modType === 'eventpoller') {
+    if (modType === 'eventtrigger') {
       return db.pushEvent({
         eventname: oRule.eventname + '_created:' + oRule.timestamp,
         body: obj

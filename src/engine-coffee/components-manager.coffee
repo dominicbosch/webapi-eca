@@ -4,8 +4,8 @@
 Components Manager
 ==================
 > The components manager takes care of the dynamic JS modules and the rules.
-> Event Poller and Action Dispatcher modules are loaded as strings and stored in the database,
-> then compiled into node modules and rules and used in the engine and event poller.
+> Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
+> then compiled into node modules and rules and used in the engine and event Trigger.
 
 ###
 
@@ -229,7 +229,7 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 # ------------------------------------------
 storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
-	# FIXME this is all clutered up! we only need id, eventname, conditions and actions as rules! everything else is eventpoller related
+	# FIXME this is all clutered up! we only need id, eventname, conditions and actions as rules! everything else is eventTrigger related
 		rule =
 			id: oBody.id
 			eventtype: oBody.eventtype
@@ -246,12 +246,12 @@ storeRule = ( user, oBody, callback ) =>
 		# if event module parameters were sent, store them
 		if oBody.eventparams
 			epModId = rule.eventname.split( ' -> ' )[ 0 ]
-			db.eventPollers.storeUserParams epModId, user.username, JSON.stringify oBody.eventparams
+			db.eventTriggers.storeUserParams epModId, user.username, JSON.stringify oBody.eventparams
 		oFuncArgs = oBody.eventfunctions
 		# if event function arguments were sent, store them
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
-			db.eventPollers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
+			db.eventTriggers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
 		
 		# if action module params were sent, store them
 		oParams = oBody.actionparams
@@ -292,45 +292,45 @@ commandFunctions =
 			code: 200
 			message: encryption.getPublicKey()
 
-# EVENT POLLERS
+# EVENT TRIGGERS
 # -------------
-	get_event_pollers: ( user, oBody, callback ) ->
-		getModules  user, oBody, db.eventPollers, callback
+	get_event_triggers: ( user, oBody, callback ) ->
+		getModules  user, oBody, db.eventTriggers, callback
 	
-	get_full_event_poller: ( user, oBody, callback ) ->
-		db.eventPollers.getModule user.username, oBody.id, ( err, obj ) ->
+	get_full_event_trigger: ( user, oBody, callback ) ->
+		db.eventTriggers.getModule user.username, oBody.id, ( err, obj ) ->
 			callback
 				code: 200
 				message: JSON.stringify obj
 	
-	get_event_poller_params: ( user, oBody, callback ) ->
-		getModuleParams user, oBody, db.eventPollers, callback
+	get_event_trigger_params: ( user, oBody, callback ) ->
+		getModuleParams user, oBody, db.eventTriggers, callback
 
-	get_event_poller_user_params: ( user, oBody, callback ) ->
-		getModuleUserParams user, oBody, db.eventPollers, callback
+	get_event_trigger_user_params: ( user, oBody, callback ) ->
+		getModuleUserParams user, oBody, db.eventTriggers, callback
 
-	get_event_poller_user_arguments: ( user, oBody, callback ) ->
-		getModuleUserArguments user, oBody, db.eventPollers, callback
+	get_event_trigger_user_arguments: ( user, oBody, callback ) ->
+		getModuleUserArguments user, oBody, db.eventTriggers, callback
 
-	get_event_poller_function_arguments: ( user, oBody, callback ) ->
+	get_event_trigger_function_arguments: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
+			db.eventTriggers.getModuleField user.username, oBody.id, 'functionArgs', ( err, obj ) ->
 				callback
 					code: 200
 					message: obj
 	
-	forge_event_poller: ( user, oBody, callback ) ->
-		forgeModule user, oBody, "eventpoller", db.eventPollers, callback
+	forge_event_trigger: ( user, oBody, callback ) ->
+		forgeModule user, oBody, "eventtrigger", db.eventTriggers, callback
  
-	delete_event_poller: ( user, oBody, callback ) ->
+	delete_event_trigger: ( user, oBody, callback ) ->
 		answ = hasRequiredParams [ 'id' ], oBody
 		if answ.code isnt 200
 			callback answ
 		else
-			db.eventPollers.deleteModule user.username, oBody.id
+			db.eventTriggers.deleteModule user.username, oBody.id
 			callback
 				code: 200
 				message: 'OK!'

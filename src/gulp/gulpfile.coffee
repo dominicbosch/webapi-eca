@@ -8,7 +8,8 @@ Type `gulp` in command line to get option list.
 ###
 
 
-# fs = require 'fs'
+fs = require 'fs'
+path = require 'path'
 # groc = require 'groc'
 argv = require( 'yargs' ).argv
 gulp = require 'gulp'
@@ -30,6 +31,7 @@ coffee = require 'gulp-coffee'
 # header = require 'gulp-header'
 watch = require 'gulp-watch'
 nodemon = require 'gulp-nodemon'
+nodeunit = require 'nodeunit'
 
 dirSource = 'src/'
 dirLib = 'lib/'
@@ -148,22 +150,50 @@ gulp.task 'deploy',
       .pipe gulp.dest dirDist + 'webpages/handlers/'
     gulp.src( dirSource + 'config/*' )
       .pipe gulp.dest dirDist + 'config'
-    # cb()
 
 
 ###
 Run the system in the dist folder
 ###
 gulp.task 'run-system',
-  'Deploy the system into the dist folder', 
+  'Run the system in the dist folder', 
   [ 'deploy' ],
   ( cb ) ->
+    lst = fs.readdirSync dirDist + 'js'
+    console.log lst
     nodemon
       script: dirDist + 'js/webapi-eca.js'
 
 
 
 
+
+###
+Unit TESTS!
+###
+gulp.task 'test',
+  'Run unit tests',
+  ( cb ) ->
+    process.chdir __dirname
+    global.pathToEngine = path.resolve __dirname, 'dist', 'js'
+    db = require path.join global.pathToEngine, 'persistence'
+    cs = require 'coffee-script'
+    args = process.argv.slice 2
+    fEnd = () ->
+      console.log """Shutting down DB from unit_test.sh script. 
+        This might take as long as the event poller loop delay is..."""
+      db.shutDown()
+       
+    cs.register?()
+    
+    if gutil.env.testfile
+      fl = path.resolve gutil.env.testfile
+      if fs.existsSync fl
+        nodeunit.reporters.default.run [ fl ], null, fEnd
+      else
+        console.error 'File not found!!'
+    else
+      nodeunit.reporters.default.run [ 'src/unittests' ], null, fEnd
 
 
 
@@ -352,33 +382,3 @@ gulp.task 'run-system',
 #     }
 #   );
 # });
-
-
-# Unit TESTS!
-# #!/usr/bin/env nodejs
-# process.chdir( __dirname );
-# var fs = require( 'fs' ),
-#   path = require( 'path' ),
-#   nodeunit = require( 'nodeunit' ),
-#   db = require( './js/persistence' ),
-#   cs = require('coffee-script'),
-#   args = process.argv.slice( 2 ),
-#   fEnd = function() {
-#     console.log( 'Shutting down DB from unit_test.sh script. '
-#       +'This might take as long as the event poller loop delay is...' );
-#     db.shutDown();
-#   };
-   
-# if (cs.register) {
-#   cs.register();
-# }
-# if( args[ 0 ] !== undefined ) {
-#   var fl = path.resolve( args[ 0 ] );
-#   if ( fs.existsSync( fl ) ) {
-#     nodeunit.reporters.default.run( [ fl ], null, fEnd );
-#   } else {
-#     console.error( 'File not found!!' );
-#   }
-# } else {
-#   nodeunit.reporters.default.run( [ 'testing' ], null, fEnd );
-# }

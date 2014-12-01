@@ -30,13 +30,13 @@ fOnLoad = () ->
 		for ruleName in data.message
 			tr = $ '<tr>'
 			img = $( '<img>' ).attr( 'class', 'del' )
-				.attr( 'title', 'Delete Rule' ).attr 'src', 'red_cross_small.png'
+				.attr( 'title', 'Delete Rule' ).attr 'src', 'images/red_cross_small.png'
 			tr.append( $( '<td>' ).append img )
 			img = $( '<img>' ).attr( 'class', 'edit' )
-				.attr( 'title', 'Edit Rule' ).attr 'src', 'edit.png'
+				.attr( 'title', 'Edit Rule' ).attr 'src', 'images/edit.png'
 			tr.append( $( '<td>' ).append img )
 			img = $( '<img>' ).attr( 'class', 'log' )
-				.attr( 'title', 'Show Rule Log' ).attr 'src', 'logicon.png'
+				.attr( 'title', 'Show Rule Log' ).attr 'src', 'images/logicon.png'
 			tr.append( $( '<td>' ).append img )
 			inp = $( '<div>' ).text ruleName
 			tr.append( $( '<td>' ).append inp )

@@ -23,8 +23,8 @@ fOnLoad = () ->
 				setTimeout fDelayed, 500
 
 	fFetchModules = () ->
-		if $( '#module_type' ).val() is 'Event Poller'
-			cmd = 'get_event_pollers'
+		if $( '#module_type' ).val() is 'Event Trigger'
+			cmd = 'get_event_triggers'
 		else
 			cmd = 'get_action_dispatchers'
 		$.post( '/usercommand', command: cmd )
@@ -38,10 +38,10 @@ fOnLoad = () ->
 			tr = $ '<tr>'
 			inp = $( '<div>' ).text modName
 			img = $( '<img>' ).attr( 'class', 'del' )
-				.attr( 'title', 'Delete Module' ).attr 'src', 'red_cross_small.png'
+				.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
 			tr.append( $( '<td>' ).append img )
 			img = $( '<img>' ).attr( 'class', 'log' )
-				.attr( 'title', 'Edit Module' ).attr 'src', 'edit.png'
+				.attr( 'title', 'Edit Module' ).attr 'src', 'images/edit.png'
 			tr.append( $( '<td>' ).append img )
 			tr.append( $( '<td>' ).append inp )
 			$( '#tableModules' ).append tr
@@ -52,8 +52,8 @@ fOnLoad = () ->
 		modName = $( 'div', $( this ).closest( 'tr' )).text()
 		if confirm  "Do you really want to delete the Module '#{ modName }'?
 				The module might still be active in some of your rules!"
-			if $( '#module_type' ).val() is 'Event Poller'
-				cmd = 'delete_event_poller'
+			if $( '#module_type' ).val() is 'Event Trigger'
+				cmd = 'delete_event_trigger'
 			else
 				cmd = 'delete_action_dispatcher'
 			data =
@@ -66,8 +66,8 @@ fOnLoad = () ->
 
 	$( '#tableModules' ).on 'click', 'img.log', () ->
 		modName = encodeURIComponent $( 'div', $( this ).closest( 'tr' )).text()
-		if $( '#module_type' ).val() is 'Event Poller'
-			window.location.href = 'forge?page=forge_module&type=event_poller&id=' + modName
+		if $( '#module_type' ).val() is 'Event Trigger'
+			window.location.href = 'forge?page=forge_module&type=event_trigger&id=' + modName
 		else
 			window.location.href = 'forge?page=forge_module&type=action_dispatcher&id=' + modName
 

@@ -2,7 +2,7 @@
 
 Persistence
 ============
-> Handles the connection to the database and provides functionalities for event pollers,
+> Handles the connection to the database and provides functionalities for event triggers,
 > action dispatchers, rules and the (hopefully encrypted) storing of user-specific parameters
 > per module.
 > General functionality as a wrapper for the module holds initialization,
@@ -40,7 +40,7 @@ exports = module.exports = ( args ) =>
 		if not args[ 'db-port' ]
 			args[ 'db-port' ] = 6379
 		@log = args.logger
-		exports.eventPollers = new IndexedModules 'event-poller', @log
+		exports.eventTriggers = new IndexedModules 'event-trigger', @log
 		exports.actionDispatchers = new IndexedModules 'action-dispatcher', @log
 		exports.initPort args[ 'db-port' ]
 
@@ -60,7 +60,7 @@ exports.initPort = ( port ) =>
 			@log.warn 'DB | Wrong port?'
 		else
 			@log.error err
-	exports.eventPollers.setDB @db
+	exports.eventTriggers.setDB @db
 	exports.actionDispatchers.setDB @db
 
 exports.selectDatabase = ( id ) =>
@@ -223,35 +223,50 @@ class IndexedModules
 	###
 	storeModule: ( userId, oModule ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
-		@db.sadd "user:#{ userId }:#{ @setname }s", oModule.id,
-			replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ oModule.id }"
-		@db.hmset "user:#{ userId }:#{ @setname }:#{ oModule.id }", oModule,
-			replyHandler "hmset 'user:#{ userId }:#{ @setname }:#{ oModule.id }' -> [oModule]"
+		# @db.sadd "user:#{ userId }:#{ @setname }s", oModule.id,
+		# 	replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ oModule.id }"
+		# @db.hmset "user:#{ userId }:#{ @setname }:#{ oModule.id }", oModule,
+		# 	replyHandler "hmset 'user:#{ userId }:#{ @setname }:#{ oModule.id }' -> [oModule]"
+		@db.sadd "#{ @setname }s", oModule.id,
+			replyHandler "sadd '#{ @setname }s' -> #{ oModule.id }"
+		@db.hmset "#{ @setname }:#{ oModule.id }", oModule,
+			replyHandler "hmset '#{ @setname }:#{ oModule.id }' -> [oModule]"
 
 	getModule: ( userId, mId, cb ) =>
+		# @log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
+		# @log.info "hgetall user:#{ userId }:#{ @setname }:#{ mId }"
+		# @db.hgetall "user:#{ userId }:#{ @setname }:#{ mId }", cb
 		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
-		@log.info "hgetall user:#{ userId }:#{ @setname }:#{ mId }"
-		@db.hgetall "user:#{ userId }:#{ @setname }:#{ mId }", cb
+		@log.info "hgetall #{ @setname }:#{ mId }"
+		@db.hgetall "#{ @setname }:#{ mId }", cb
 
 	getModuleField: ( userId, mId, field, cb ) =>
+		# @log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
+		# @db.hget "user:#{ userId }:#{ @setname }:#{ mId }", field, cb
 		@log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
-		@db.hget "user:#{ userId }:#{ @setname }:#{ mId }", field, cb
+		@db.hget "#{ @setname }:#{ mId }", field, cb
 
 	#TODO add testing
 	getAvailableModuleIds: ( userId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getAvailableModuleIds( #{ userId } )"
-		@db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
+		# @db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
+		@db.sunion "public-#{ @setname }s", "#{ @setname }s", cb
 
 	getModuleIds: ( userId, cb ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.getModuleIds()"
-		@db.smembers "user:#{ userId }:#{ @setname }s", cb
+		# @db.smembers "user:#{ userId }:#{ @setname }s", cb
+		@db.smembers "#{ @setname }s", cb
 
 	deleteModule: ( userId, mId ) =>
 		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ userId }, #{ mId } )"
-		@db.srem "user:#{ userId }:#{ @setname }s", mId,
-			replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> '#{ mId }'"
-		@db.del "user:#{ userId }:#{ @setname }:#{ mId }",
-			replyHandler "del 'user:#{ userId }:#{ @setname }:#{ mId }'"
+		# @db.srem "user:#{ userId }:#{ @setname }s", mId,
+		# 	replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> '#{ mId }'"
+		# @db.del "user:#{ userId }:#{ @setname }:#{ mId }",
+		# 	replyHandler "del 'user:#{ userId }:#{ @setname }:#{ mId }'"
+		@db.srem "#{ @setname }s", mId,
+			replyHandler "srem '#{ @setname }s' -> '#{ mId }'"
+		@db.del "#{ @setname }:#{ mId }",
+			replyHandler "del '#{ @setname }:#{ mId }'"
 		@deleteUserParams mId, userId
 		exports.getRuleIds userId, ( err, obj ) =>
 			for rule in obj

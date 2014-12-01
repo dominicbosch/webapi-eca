@@ -53,7 +53,7 @@ fProcessWebhookList = ( cb ) ->
 				tdName = $( '<div>' ).text hookname
 				tdUrl = $( '<input>' ).attr( 'style', 'width:600px' ).val "#{ hostUrl }/webhooks/#{ hookid }"
 				img = $( '<img>' ).attr( 'class', 'del' )
-					.attr( 'title', 'Delete Module' ).attr 'src', 'red_cross_small.png'
+					.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
 				tr.append( $( '<td>' ).append img )
 				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdName )
 				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdUrl )

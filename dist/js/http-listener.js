@@ -33,7 +33,6 @@ Initializes the HTTP listener and its request handler.
 exports = module.exports = (function(_this) {
   return function(args) {
     _this.log = args.logger;
-    _this.arrWebhooks = args.webhooks;
     _this.shutDownSystem = args['shutdown-function'];
     requestHandler(args);
     initRouting(args['http-port']);

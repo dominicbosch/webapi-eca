@@ -36,7 +36,7 @@ exports.getLogger = ( args ) =>
 	# in [webapi-eca](webapi-eca.html) or the configuration parameters in [config](config.html).
 	args = args ? {}
 	# We need to check for string 'true' also since the cliArgs passed to
-	# the event-poller will be strings
+	# the event-trigger will be strings
 	if args.nolog is true or  args.nolog is 'true'
 		# if the user doesn't want to have a log at all (e.g. during tests), it can be omitted with
 		# the nolog flag

@@ -26,7 +26,7 @@ http = require('./http-listener');
 
 encryption = require('./encryption');
 
-nameEP = 'event-poller';
+nameEP = 'trigger-poller';
 
 fs = require('fs');
 
@@ -163,7 +163,7 @@ init = (function(_this) {
       } else {
         _this.log.info('RS | Initialzing engine');
         engine(args);
-        _this.log.info('RS | Forking a child process for the event poller');
+        _this.log.info('RS | Forking a child process for the trigger poller');
         cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog'], args['db-select'], args['keygen']];
         poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
         _this.log.info('RS | Initialzing module manager');

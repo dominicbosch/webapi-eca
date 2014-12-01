@@ -34,10 +34,10 @@ logconf['file-path'] = process.argv[5];
 
 log = logger.getLogger(logconf);
 
-log.info('EP | Event Poller starts up');
+log.info('EP | Event Trigger Poller starts up');
 
 process.on('uncaughtException', function(err) {
-  log.error('Probably one of the event pollers produced an error!');
+  log.error('Probably one of the Event Triggers produced an error!');
   return log.error(err);
 });
 
@@ -61,7 +61,7 @@ listUserModules = {};
 isRunning = true;
 
 process.on('disconnect', function() {
-  log.warn('EP | Shutting down Event Poller');
+  log.warn('EP | Shutting down Event Trigger Poller');
   isRunning = false;
   return process.exit();
 });
@@ -83,11 +83,11 @@ fLoadModule = function(msg) {
   var arrName, fAnonymous;
   arrName = msg.rule.eventname.split(' -> ');
   fAnonymous = function() {
-    return db.eventPollers.getModule(msg.user, arrName[0], function(err, obj) {
+    return db.eventTriggers.getModule(msg.user, arrName[0], function(err, obj) {
       if (!obj) {
         return log.info("EP | No module retrieved for " + arrName[0] + ", must be a custom event or Webhook");
       } else {
-        return dynmod.compileString(obj.data, msg.user, msg.rule, arrName[0], obj.lang, "eventpoller", db.eventPollers, function(result) {
+        return dynmod.compileString(obj.data, msg.user, msg.rule, arrName[0], obj.lang, "eventtrigger", db.eventTriggers, function(result) {
           var nd, now, oUser, start;
           if (!result.answ === 200) {
             log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
@@ -157,7 +157,7 @@ fCallFunction = function(userId, ruleId, oRule) {
         arrArgs.push(oArg.value);
       }
     }
-    return oRule.module[oRule.pollfunc].apply(this, arrArgs);
+    return oRule.module[Rule.pollfunc].apply(this, arrArgs);
   } catch (_error) {
     err = _error;
     log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);

@@ -29,12 +29,12 @@ el = $( '<select>' ).attr( 'type', 'text' )
 	.attr( 'id', 'select_eventhook' )
 domSelectWebhook.append $( '<h4>' ).text( 'Webhook Name : ' ).append el
 
-domSelectEventPoller = $( '<div>' )
+domSelectEventTrigger = $( '<div>' )
 el = $( '<select>' ).attr( 'type', 'text' )
 	.attr( 'style', 'font-size:1em' )
-	.attr( 'id', 'select_eventpoller' )
+	.attr( 'id', 'select_eventtrigger' )
 el.change () ->	fFetchEventParams $( this ).val()
-domSelectEventPoller.append $( '<h4>' ).text( 'Event Poller Name : ' ).append el
+domSelectEventTrigger.append $( '<h4>' ).text( 'Event Trigger Name : ' ).append el
 
 domInputEventTiming = $( '<div>' ).attr( 'class', 'indent20' )
 table = $( '<table>' ).appendTo domInputEventTiming
@@ -48,7 +48,7 @@ tr.append $( '<td>' ).text "Interval : "
 tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_interval' ).attr( 'type', 'text' )
 tr.append $( '<td>' ).html " <b>\"days hours:minutes\"</b>, default = 10 minutes"
 
-domEventPollerParameters = $( '<div>' ).attr 'id', 'event_poller_params'
+domEventTriggerParameters = $( '<div>' ).attr 'id', 'event_trigger_params'
 
 domSectionSelectedActions = $( '<div>' )
 domSectionSelectedActions.append $( '<div>' ).html "<b>Selected Actions:</b>"
@@ -195,48 +195,48 @@ fPrepareEventType = ( eventtype, cb ) ->
 					fFailedRequest 'Unable to get webhooks!'
 					cb?()
 
-		when 'Event Poller'
+		when 'Event Trigger'
 			fIssueRequest
-				data: command: 'get_event_pollers'
+				data: command: 'get_event_triggers'
 				done: ( data ) ->
 					try
 						oEps = JSON.parse data.message
 						if JSON.stringify( oEps ) is '{}'
-							fDisplayError 'No Event Pollers found! Create one first!'
+							fDisplayError 'No Event Triggers found! Create one first!'
 							$( '#select_event_type' ).val ''
 
 						else
-							$( '#event_parameters' ).append domSelectEventPoller
+							$( '#event_parameters' ).append domSelectEventTrigger
 							$( '#event_parameters' ).append domInputEventTiming.show()
 
-							$( '#select_eventpoller option' ).remove()
+							$( '#select_eventtrigger option' ).remove()
 							for id, events of oEps
 								for evt in events
-									$( '#select_eventpoller' ).append $( '<option>' ).text id + ' -> ' + evt
+									$( '#select_eventtrigger' ).append $( '<option>' ).text id + ' -> ' + evt
 
-							fFetchEventParams $( 'option:selected', domSelectEventPoller ).text()
+							fFetchEventParams $( 'option:selected', domSelectEventTrigger ).text()
 
 					catch err
-						console.error 'ERROR: non-object received for event poller from server: ' + data.message
+						console.error 'ERROR: non-object received for event trigger from server: ' + data.message
 					cb?()
 
 				fail: () ->
-					fFailedRequest 'Error fetching Event Poller'
+					fFailedRequest 'Error fetching Event Trigger'
 					cb?()
 
-# Fetch the required Event Poller parameters
+# Fetch the required Event Trigger parameters
 fFetchEventParams = ( name ) ->
-	$( '#event_poller_params *' ).remove()
+	$( '#event_trigger_params *' ).remove()
 	if name
-		$( '#event_parameters' ).append domEventPollerParameters
+		$( '#event_parameters' ).append domEventTriggerParameters
 		arr = name.split ' -> '
 		fIssueRequest
 			data: 
-				command: 'get_event_poller_params'
+				command: 'get_event_trigger_params'
 				body: JSON.stringify
 					id: arr[ 0 ]
 			done: fDisplayEventParams arr[ 0 ]
-			fail: fFailedRequest 'Error fetching Event Poller params'
+			fail: fFailedRequest 'Error fetching Event Trigger params'
 		fFetchEventFunctionArgs arr
 
 fDisplayEventParams = ( id ) ->
@@ -256,20 +256,20 @@ fDisplayEventParams = ( id ) ->
 				tr.append $( '<td>' ).text( ' : ' ).append inp
 				table.append tr
 			if i > 0
-				$( '#event_poller_params' ).html '<b>Required User-specific Data:</b>'
-				$( '#event_poller_params' ).append table
+				$( '#event_trigger_params' ).html '<b>Required User-specific Data:</b>'
+				$( '#event_trigger_params' ).append table
 				fFillEventParams id
 
 fFillEventParams = ( moduleId ) ->
 	fIssueRequest
 		data:
-			command: 'get_event_poller_user_params'
+			command: 'get_event_trigger_user_params'
 			body: JSON.stringify
 				id: moduleId
 		done: ( data ) ->
 			oParams = JSON.parse data.message
 			for param, oParam of oParams
-				par = $( "#event_poller_params tr" ).filter () ->
+				par = $( "#event_trigger_params tr" ).filter () ->
 					$( 'td.key', this ).text() is param
 				$( 'input', par ).val oParam.value
 				$( 'input', par ).attr 'unchanged', 'true'
@@ -280,7 +280,7 @@ fFillEventParams = ( moduleId ) ->
 fFetchEventFunctionArgs = ( arrName ) ->
 	fIssueRequest
 		data:
-			command: 'get_event_poller_function_arguments'
+			command: 'get_event_trigger_function_arguments'
 			body: JSON.stringify
 				id: arrName[ 0 ]
 		done: ( data ) ->
@@ -288,8 +288,8 @@ fFetchEventFunctionArgs = ( arrName ) ->
 				oParams = JSON.parse data.message
 				if oParams[ arrName[ 1 ] ]
 					if oParams[ arrName[ 1 ] ].length > 0
-						$( '#event_poller_params' ).append $( "<b>" ).text 'Required Rule-specific Data:'
-					table = $( '<table>' ).appendTo $( '#event_poller_params' )
+						$( '#event_trigger_params' ).append $( "<b>" ).text 'Required Rule-specific Data:'
+					table = $( '<table>' ).appendTo $( '#event_trigger_params' )
 					for functionArgument in oParams[ arrName[ 1 ] ]
 						tr = $( '<tr>' ).attr( 'class', 'funcMappings' ).appendTo table
 						tr.append $( '<td>' ).css 'width', '20px'
@@ -302,18 +302,18 @@ fFetchEventFunctionArgs = ( arrName ) ->
 						tr.append td
 					fIssueRequest
 						data:
-							command: 'get_event_poller_user_arguments'
+							command: 'get_event_trigger_user_arguments'
 							body: JSON.stringify
 								ruleId: $( '#input_id' ).val()
 								moduleId: arrName[ 0 ]
 						done: fAddEventUserArgs arrName[ 1 ]
 
-		fail: fFailedRequest 'Error fetching event poller function arguments'
+		fail: fFailedRequest 'Error fetching event trigger function arguments'
 
 fAddEventUserArgs = ( name ) ->
 	( data ) ->
 		for key, arrFuncs of data.message
-			par = $ "#event_poller_params"
+			par = $ "#event_trigger_params"
 			for oFunc in JSON.parse arrFuncs
 				tr = $( "tr", par ).filter () ->
 					$( '.funcarg', this ).text() is "#{ oFunc.argument }"
@@ -332,7 +332,7 @@ fAddSelectedAction = ( name ) ->
 	).get()
 	table = $( '#selected_actions' )
 	tr = $( '<tr>' ).appendTo table
-	img = $( '<img>' ).attr 'src', 'red_cross_small.png'
+	img = $( '<img>' ).attr 'src', 'images/red_cross_small.png'
 	tr.append $( '<td>' ).css( 'width', '20px' ).append img
 	tr.append $( '<td>' ).attr( 'class', 'title').text name 
 	td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
@@ -460,7 +460,7 @@ fOnLoad = () ->
 
 	editor = ace.edit "editor_conditions"
 	# editor.setTheme "ace/theme/monokai"
-	editor.setTheme "ace/theme/cimson_editor"
+	editor.setTheme "ace/theme/crimson_editor"
 	editor.setFontSize "18px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
@@ -595,10 +595,10 @@ fOnLoad = () ->
 				when 'Webhook'
 					eventname = $( '#select_eventhook' ).val()
 
-				when 'Event Poller'
-					eventname = $( '#select_eventpoller' ).val()
+				when 'Event Trigger'
+					eventname = $( '#select_eventtrigger' ).val()
 					ep = {}
-					$( "#event_poller_params tr" ).each () ->
+					$( "#event_trigger_params tr" ).each () ->
 						key = $( this ).children( '.key' ).text()
 						val = $( 'input', this ).val()
 						if val is ''
@@ -615,7 +615,7 @@ fOnLoad = () ->
 
 					evtFuncs = {}
 					evtFuncs[ eventname ] = []
-					$( '#event_poller_params tr.funcMappings' ).each () ->
+					$( '#event_trigger_params tr.funcMappings' ).each () ->
 						evtFuncs[ eventname ].push
 							argument: $( 'div.funcarg', this ).text()
 							value: $( 'input[type=text]', this ).val()
@@ -689,7 +689,7 @@ fOnLoad = () ->
 					else
 						fFailedRequest( "#{ obj.id } not stored!" ) err
 
-			if $( '#select_event_type' ).val() is 'Event Poller'
+			if $( '#select_event_type' ).val() is 'Event Trigger'
 				start = fConvertTimeToDate( $( '#input_start' ).val() ).toISOString()
 				mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
 
@@ -735,9 +735,9 @@ fOnLoad = () ->
 					fPrepareEventType oRule.eventtype, () ->
 
 						switch oRule.eventtype
-							when 'Event Poller'
-								$( 'select', domSelectEventPoller ).val oRule.eventname
-								if $( 'select', domSelectEventPoller ).val() is oRule.eventname
+							when 'Event Trigger'
+								$( 'select', domSelectEventTrigger ).val oRule.eventname
+								if $( 'select', domSelectEventTrigger ).val() is oRule.eventname
 									fFetchEventParams oRule.eventname
 									d = new Date oRule.eventstart 
 									mins = d.getMinutes()
@@ -748,7 +748,7 @@ fOnLoad = () ->
 
 								else
 									window.scrollTo 0, 0
-									$( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
+									$( '#info' ).text 'Error loading Rule: Your Event Trigger does not exist anymore!'
 									$( '#info' ).attr 'class', 'error'
 
 							when 'Webhook'
@@ -771,7 +771,7 @@ fOnLoad = () ->
 							arrName = action.split ' -> '
 							# FIXME we can only add this if the action is still existing! Therefore we should not allow to delete
 							# Actions and events but keep a version history and deprecate a module if really need be
-								# $( '#info' ).text 'Error loading Rule: Your Event Poller does not exist anymore!'
+								# $( '#info' ).text 'Error loading Rule: Your Event Trigger does not exist anymore!'
 							fAddSelectedAction action
 
 			fail: ( err ) ->

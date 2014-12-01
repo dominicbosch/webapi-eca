@@ -1,7 +1,7 @@
 fs = require 'fs'
 path = require 'path'
 
-cryptico = require 'my-cryptico'
+cryptico = require path.join global.pathToEngine, 'cryptico'
 
 passPhrase = 'UNIT TESTING PASSWORD'
 numBits = 1024
@@ -9,7 +9,7 @@ oPrivateRSAkey = cryptico.generateRSAKey passPhrase, numBits
 strPublicKey = cryptico.publicKeyString oPrivateRSAkey
 
 try
-	data = fs.readFileSync path.resolve( 'testing', 'files', 'testObjects.json' ), 'utf8'
+	data = fs.readFileSync path.resolve( __dirname, 'files', 'testObjects.json' ), 'utf8'
 	try
 		objects = JSON.parse data
 	catch err
@@ -17,25 +17,26 @@ try
 catch err
 	console.log 'Error fetching standard objects file: ' + err.message
 
-logger = require path.join '..', 'js', 'logging'
+logger = require path.join global.pathToEngine, 'logging'
 log = logger.getLogger
 	nolog: true
 opts =
 	logger: log
 	keygen: passPhrase
 
-engine = require path.join '..', 'js', 'engine'
+engine = require path.join global.pathToEngine, 'engine'
 engine opts
 
-cm = require path.join '..', 'js', 'components-manager'
+cm = require path.join global.pathToEngine, 'components-manager'
 cm opts
 
 cm.addRuleListener engine.internalEvent
 
-db = require path.join '..', 'js', 'persistence'
+db = require path.join global.pathToEngine, 'persistence'
 db opts
 
-encryption = require path.join '..', 'js', 'encryption'
+console.log db
+encryption = require path.join global.pathToEngine, 'encryption'
 encryption opts
 
 oUser = objects.users.userOne

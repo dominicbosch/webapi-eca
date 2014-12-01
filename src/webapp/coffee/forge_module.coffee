@@ -5,8 +5,8 @@ for param in arrParams
 	arrKV = param.split '='
 	oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
 
-if oParams.type is 'event_poller'
-	moduleName = 'Event Poller'
+if oParams.type is 'event_trigger'
+	moduleName = 'Event Trigger'
 else
 	moduleName = 'Action Dispatcher'
 	oParams.type = 'action_dispatcher'
@@ -68,7 +68,7 @@ fOnLoad = () ->
 
 	fAddInputRow = ( tag ) ->
 		tr = $ '<tr>'
-		img = $( '<img>' ).attr( 'title', 'Remove?').attr 'src', 'red_cross_small.png'
+		img = $( '<img>' ).attr( 'title', 'Remove?').attr 'src', 'images/red_cross_small.png'
 		cb = $( '<input>' ).attr( 'type', 'checkbox' ).attr 'title', 'Password shielded input?'
 		inp = $( '<input>' ).attr( 'type', 'text' ).attr 'class', 'textinput'
 		tr.append( $( '<td>' ).append img )
@@ -171,7 +171,7 @@ fOnLoad = () ->
 		# We add the standard template, params and names
 		editor.setValue $( "#template_#{ oParams.type }" ).text()
 		editor.moveCursorTo 0, 0
-		if oParams.type is 'event_poller'
+		if oParams.type is 'event_trigger'
 			$( '#input_id' ).val 'EmailYak'
 			fAddUserParam 'apikey', true
 			fAddUserParam '', false

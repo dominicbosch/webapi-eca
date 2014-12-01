@@ -57,6 +57,11 @@ button {
 
 #menubar td {
   float: left;
+}
+
+#menubar a {
+  text-decoration: none;
+  color: #333;
   margin: 0px 5px 0px 5px;
   padding: 0px 10px 2px 10px;
   cursor: pointer;
@@ -68,7 +73,7 @@ button {
   -o-transition: all 0.30s ease-in-out;
 }
 
-#menubar td:hover {
+#menubar a:hover {
   background-color: #AAA;
 }
 
@@ -119,7 +124,7 @@ button {
   margin-left: 20px;
 }
 
-#event_poller_params {
+#event_trigger_params {
   padding-top: 10px;
 }
 
@@ -200,3 +205,27 @@ button {
   text-decoration: underline;
 }
 
+.dialog {
+  visibility: hidden;
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background-color: #F5F5CA;
+  max-width: 600px;
+  border: 3px dashed red;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.window h3 {
+  margin: 5px 0px 5px 0px;
+}

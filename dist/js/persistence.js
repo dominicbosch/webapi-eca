@@ -3,7 +3,7 @@
 
 Persistence
 ============
-> Handles the connection to the database and provides functionalities for event pollers,
+> Handles the connection to the database and provides functionalities for event triggers,
 > action dispatchers, rules and the (hopefully encrypted) storing of user-specific parameters
 > per module.
 > General functionality as a wrapper for the module holds initialization,
@@ -40,7 +40,7 @@ exports = module.exports = (function(_this) {
         args['db-port'] = 6379;
       }
       _this.log = args.logger;
-      exports.eventPollers = new IndexedModules('event-poller', _this.log);
+      exports.eventTriggers = new IndexedModules('event-trigger', _this.log);
       exports.actionDispatchers = new IndexedModules('action-dispatcher', _this.log);
       return exports.initPort(args['db-port']);
     }
@@ -71,7 +71,7 @@ exports.initPort = (function(_this) {
         return _this.log.error(err);
       }
     });
-    exports.eventPollers.setDB(_this.db);
+    exports.eventTriggers.setDB(_this.db);
     return exports.actionDispatchers.setDB(_this.db);
   };
 })(this);
@@ -299,35 +299,35 @@ IndexedModules = (function() {
 
   IndexedModules.prototype.storeModule = function(userId, oModule) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
-    this.db.sadd("user:" + userId + ":" + this.setname + "s", oModule.id, replyHandler("sadd 'user:" + userId + ":" + this.setname + "s' -> " + oModule.id));
-    return this.db.hmset("user:" + userId + ":" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset 'user:" + userId + ":" + this.setname + ":" + oModule.id + "' -> [oModule]"));
+    this.db.sadd("" + this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> " + oModule.id));
+    return this.db.hmset("" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
   };
 
   IndexedModules.prototype.getModule = function(userId, mId, cb) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
-    this.log.info("hgetall user:" + userId + ":" + this.setname + ":" + mId);
-    return this.db.hgetall("user:" + userId + ":" + this.setname + ":" + mId, cb);
+    this.log.info("hgetall " + this.setname + ":" + mId);
+    return this.db.hgetall("" + this.setname + ":" + mId, cb);
   };
 
   IndexedModules.prototype.getModuleField = function(userId, mId, field, cb) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + userId + ", " + mId + ", " + field + " )");
-    return this.db.hget("user:" + userId + ":" + this.setname + ":" + mId, field, cb);
+    return this.db.hget("" + this.setname + ":" + mId, field, cb);
   };
 
   IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
-    return this.db.sunion("public-" + this.setname + "s", "user:" + userId + ":" + this.setname + "s", cb);
+    return this.db.sunion("public-" + this.setname + "s", "" + this.setname + "s", cb);
   };
 
   IndexedModules.prototype.getModuleIds = function(userId, cb) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleIds()");
-    return this.db.smembers("user:" + userId + ":" + this.setname + "s", cb);
+    return this.db.smembers("" + this.setname + "s", cb);
   };
 
   IndexedModules.prototype.deleteModule = function(userId, mId) {
     this.log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + userId + ", " + mId + " )");
-    this.db.srem("user:" + userId + ":" + this.setname + "s", mId, replyHandler("srem 'user:" + userId + ":" + this.setname + "s' -> '" + mId + "'"));
-    this.db.del("user:" + userId + ":" + this.setname + ":" + mId, replyHandler("del 'user:" + userId + ":" + this.setname + ":" + mId + "'"));
+    this.db.srem("" + this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
+    this.db.del("" + this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
     this.deleteUserParams(mId, userId);
     return exports.getRuleIds(userId, (function(_this) {
       return function(err, obj) {
