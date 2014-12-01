@@ -101,6 +101,12 @@ button {
   color: #800;
 }
 
+.comment {
+  font-style: italic;
+  font-size: 0.75em;
+  max-width: 300px;
+}
+
 #mainbody {
   padding-left: 50px;
   padding-right: 50px;

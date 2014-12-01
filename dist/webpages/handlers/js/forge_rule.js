@@ -41,6 +41,8 @@ domSelectEventTrigger.append($('<h4>').text('Event Trigger Name : ').append(el))
 
 domInputEventTiming = $('<div>').attr('class', 'indent20');
 
+$('<div>').attr('class', 'comment').appendTo(domInputEventTiming);
+
 table = $('<table>').appendTo(domInputEventTiming);
 
 tr = $('<tr>').appendTo(table);
@@ -270,6 +272,18 @@ fFetchEventParams = function(name) {
       done: fDisplayEventParams(arr[0]),
       fail: fFailedRequest('Error fetching Event Trigger params')
     });
+    fIssueRequest({
+      data: {
+        command: 'get_event_trigger_comment',
+        body: JSON.stringify({
+          id: arr[0]
+        })
+      },
+      done: function(data) {
+        return $('.comment', domInputEventTiming).html(data.message.replace(/\n/g, '<br>'));
+      },
+      fail: fFailedRequest('Error fetching Event Trigger comment')
+    });
     return fFetchEventFunctionArgs(arr);
   }
 };
@@ -440,7 +454,7 @@ fFetchActionParams = function(modName) {
       })
     },
     done: function(data) {
-      var div, inp, name, shielded, subdiv, _results;
+      var comment, div, inp, name, shielded, subdiv, _results;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (JSON.stringify(oParams) !== '{}') {
@@ -448,6 +462,19 @@ fFetchActionParams = function(modName) {
           div = $('<div>').appendTo($('#action_dispatcher_params'));
           subdiv = $('<div> ').appendTo(div);
           subdiv.append($('<div>')).attr('class', 'modName underlined').text(modName);
+          comment = $('<div>').attr('class', 'comment indent20').appendTo(div);
+          fIssueRequest({
+            data: {
+              command: 'get_action_dispatcher_comment',
+              body: JSON.stringify({
+                id: modName
+              })
+            },
+            done: function(data) {
+              return comment.html(data.message.replace(/\n/g, '<br>'));
+            },
+            fail: fFailedRequest('Error fetching Event Trigger comment')
+          });
           table = $('<table>');
           div.append(table);
           _results = [];

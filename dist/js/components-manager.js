@@ -7,7 +7,7 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, forgeModule, fs, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, path, rh, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, path, rh, storeModule, storeRule;
 
 db = require('./persistence');
 
@@ -219,7 +219,20 @@ getModuleParams = function(user, oBody, dbMod, callback) {
   if (answ.code !== 200) {
     return callback(answ);
   } else {
-    return dbMod.getModuleField(user.username, oBody.id, "params", function(err, oBody) {
+    return dbMod.getModuleField(user.username, oBody.id, 'params', function(err, oBody) {
+      answ.message = oBody;
+      return callback(answ);
+    });
+  }
+};
+
+getModuleComment = function(user, oBody, dbMod, callback) {
+  var answ;
+  answ = hasRequiredParams(['id'], oBody);
+  if (answ.code !== 200) {
+    return callback(answ);
+  } else {
+    return dbMod.getModuleField(user.username, oBody.id, 'comment', function(err, oBody) {
       answ.message = oBody;
       return callback(answ);
     });
@@ -304,6 +317,7 @@ storeModule = (function(_this) {
         answ.message = " Module " + oBody.id + " successfully stored! Found following function(s): " + funcs;
         oBody.functions = JSON.stringify(funcs);
         oBody.functionArgs = JSON.stringify(cm.funcParams);
+        oBody.comment = cm.comment;
         dbMod.storeModule(user.username, oBody);
       }
       return callback(answ);
@@ -388,6 +402,9 @@ commandFunctions = {
   get_event_trigger_params: function(user, oBody, callback) {
     return getModuleParams(user, oBody, db.eventTriggers, callback);
   },
+  get_event_trigger_comment: function(user, oBody, callback) {
+    return getModuleComment(user, oBody, db.eventTriggers, callback);
+  },
   get_event_trigger_user_params: function(user, oBody, callback) {
     return getModuleUserParams(user, oBody, db.eventTriggers, callback);
   },
@@ -443,6 +460,9 @@ commandFunctions = {
   },
   get_action_dispatcher_params: function(user, oBody, callback) {
     return getModuleParams(user, oBody, db.actionDispatchers, callback);
+  },
+  get_action_dispatcher_comment: function(user, oBody, callback) {
+    return getModuleComment(user, oBody, db.actionDispatchers, callback);
   },
   get_action_dispatcher_user_params: function(user, oBody, callback) {
     return getModuleUserParams(user, oBody, db.actionDispatchers, callback);

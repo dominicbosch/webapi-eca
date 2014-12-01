@@ -6,7 +6,7 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var cs, db, encryption, exports, fPush, fPushEvent, fTryToLoadModule, getFunctionParamNames, loadEventTrigger, logFunction, regexpComments, vm;
+var cs, db, encryption, exports, fPush, fPushEvent, fTryToLoadModule, getFunctionParamNames, loadEventTrigger, logFunction, regexpComments, searchComment, vm;
 
 db = require('./persistence');
 
@@ -65,7 +65,8 @@ compile it first into JS.
 
 exports.compileString = (function(_this) {
   return function(src, userId, oRule, modId, lang, modType, dbMod, cb) {
-    var err;
+    var comment, err;
+    comment = searchComment(lang, src);
     if (lang === 'CoffeeScript') {
       try {
         _this.log.info("DM | Compiling module '" + modId + "' for user '" + userId + "'");
@@ -98,10 +99,10 @@ exports.compileString = (function(_this) {
           _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
           _this.log.warn(err);
         }
-        return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, oParams, cb);
+        return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, oParams, comment, cb);
       });
     } else {
-      return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, null, cb);
+      return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, null, comment, cb);
     }
   };
 })(this);
@@ -122,7 +123,7 @@ fPushEvent = function(userId, oRule, modType) {
 };
 
 fTryToLoadModule = (function(_this) {
-  return function(userId, oRule, modId, src, modType, dbMod, params, cb) {
+  return function(userId, oRule, modId, src, modType, dbMod, params, comment, cb) {
     var answ, err, fName, fRegisterArguments, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
     if (!params) {
       params = {};
@@ -196,7 +197,8 @@ fTryToLoadModule = (function(_this) {
       module: sandbox.exports,
       funcParams: oFuncParams,
       funcArgs: oFuncArgs,
-      logger: sandbox.log
+      logger: sandbox.log,
+      comment: comment
     });
   };
 })(this);
@@ -219,4 +221,26 @@ loadEventTrigger = function(oRule) {
   return context = {
     pushEvent: fPush(oRule.eventname)
   };
+};
+
+searchComment = function(lang, src) {
+  var arrSrc, comm, line, _i, _len;
+  arrSrc = src.split('\n');
+  comm = '';
+  for (_i = 0, _len = arrSrc.length; _i < _len; _i++) {
+    line = arrSrc[_i];
+    line = line.trim();
+    if (line !== '') {
+      if (lang === 'CoffeeScript') {
+        if (line.substring(0, 1) === '#') {
+          comm += line.substring(1) + '\n';
+        }
+      } else {
+        if (line.substring(0, 2) === '//') {
+          comm += line.substring(2) + '\n';
+        }
+      }
+    }
+  }
+  return comm;
 };

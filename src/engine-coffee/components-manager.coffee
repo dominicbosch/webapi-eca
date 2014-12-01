@@ -166,7 +166,16 @@ getModuleParams = ( user, oBody, dbMod, callback ) ->
 	if answ.code isnt 200
 		callback answ
 	else
-		dbMod.getModuleField user.username, oBody.id, "params", ( err, oBody ) ->
+		dbMod.getModuleField user.username, oBody.id, 'params', ( err, oBody ) ->
+			answ.message = oBody
+			callback answ
+
+getModuleComment = ( user, oBody, dbMod, callback ) ->
+	answ = hasRequiredParams [ 'id' ], oBody
+	if answ.code isnt 200
+		callback answ
+	else
+		dbMod.getModuleField user.username, oBody.id, 'comment', ( err, oBody ) ->
 			answ.message = oBody
 			callback answ
 
@@ -220,6 +229,7 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 				" Module #{ oBody.id } successfully stored! Found following function(s): #{ funcs }"
 			oBody.functions = JSON.stringify funcs
 			oBody.functionArgs = JSON.stringify cm.funcParams
+			oBody.comment = cm.comment
 			dbMod.storeModule user.username, oBody
 			# if oBody.public is 'true'
 			# 	dbMod.publish oBody.id
@@ -306,6 +316,9 @@ commandFunctions =
 	get_event_trigger_params: ( user, oBody, callback ) ->
 		getModuleParams user, oBody, db.eventTriggers, callback
 
+	get_event_trigger_comment: ( user, oBody, callback ) ->
+		getModuleComment user, oBody, db.eventTriggers, callback
+
 	get_event_trigger_user_params: ( user, oBody, callback ) ->
 		getModuleUserParams user, oBody, db.eventTriggers, callback
 
@@ -352,6 +365,9 @@ commandFunctions =
 
 	get_action_dispatcher_params: ( user, oBody, callback ) ->
 		getModuleParams user, oBody, db.actionDispatchers, callback
+
+	get_action_dispatcher_comment: ( user, oBody, callback ) ->
+		getModuleComment user, oBody, db.actionDispatchers, callback
 
 	get_action_dispatcher_user_params: ( user, oBody, callback ) ->
 		getModuleUserParams user, oBody, db.actionDispatchers, callback

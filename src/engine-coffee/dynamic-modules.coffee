@@ -58,6 +58,7 @@ compile it first into JS.
 @param {String} lang
 ###
 exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) =>
+	comment = searchComment lang, src
 	if lang is 'CoffeeScript'
 		try
 			@log.info "DM | Compiling module '#{ modId }' for user '#{ userId }'"
@@ -82,9 +83,9 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 			catch err
 				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
 				@log.warn err
-			fTryToLoadModule userId, oRule, modId, src, modType, dbMod, oParams, cb
+			fTryToLoadModule userId, oRule, modId, src, modType, dbMod, oParams, comment, cb
 	else
-		fTryToLoadModule userId, oRule, modId, src, modType, dbMod, null, cb
+		fTryToLoadModule userId, oRule, modId, src, modType, dbMod, null, comment, cb
 
 
 fPushEvent = ( userId, oRule, modType ) ->
@@ -116,7 +117,7 @@ fPushEvent = ( userId, oRule, modType ) ->
 # 		db.persistGetVar  userId, ruleId, modId, field, fObectify cb
 
 
-fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
+fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, comment, cb ) =>
 	if not params
 		params = {}
 
@@ -194,6 +195,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, cb ) =>
 		funcParams: oFuncParams
 		funcArgs: oFuncArgs
 		logger: sandbox.log
+		comment: comment
 
 
 
@@ -209,3 +211,18 @@ fPush = ( evtname ) ->
 loadEventTrigger = ( oRule ) ->
 	context =
 		pushEvent: fPush( oRule.eventname )
+
+
+searchComment = ( lang, src ) ->
+	arrSrc = src.split '\n'
+	comm = ''
+	for line in arrSrc
+		line = line.trim()
+		if line != ''
+			if lang == 'CoffeeScript'
+				if line.substring( 0, 1 ) == '#'
+					comm += line.substring( 1 ) + '\n'
+			else
+				if line.substring( 0, 2 ) == '//'
+					comm += line.substring( 2 ) + '\n'
+	comm
