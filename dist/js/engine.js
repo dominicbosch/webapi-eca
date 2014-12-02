@@ -330,7 +330,9 @@ processEvent = (function(_this) {
             }
           } else {
             _this.log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
+            arrArgs.push(null);
           }
+          arrArgs.push(evt);
           node.module[funcName].apply(_this, arrArgs);
           _this.log.info("EN | " + funcName + " finished execution");
         } catch (_error) {

@@ -171,7 +171,7 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 		if oRule.funcArgs and oRule.funcArgs[ oRule.pollfunc ]
 			for oArg in oRule.funcArgs[ oRule.pollfunc ]
 				arrArgs.push oArg.value
-		oRule.module[ Rule.pollfunc ].apply this, arrArgs
+		oRule.module[ oRule.pollfunc ].apply this, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		throw err

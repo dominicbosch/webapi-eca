@@ -89,23 +89,23 @@ are basically CRUD on rules.
 @param {Object} evt
 ###
 exports.internalEvent = ( evt ) =>
-	if not listUserRules[evt.user] and evt.intevent isnt 'del'
-		listUserRules[evt.user] = {}
+	if not listUserRules[ evt.user ] and evt.intevent isnt 'del'
+		listUserRules[ evt.user ] = {}
 		
-	oUser = listUserRules[evt.user]
+	oUser = listUserRules[ evt.user ]
 	oRule = evt.rule
-	if evt.intevent is 'new' or ( evt.intevent is 'init' and not oUser[oRule.id] )
-		oUser[oRule.id] = 
+	if evt.intevent is 'new' or ( evt.intevent is 'init' and not oUser[ oRule.id ] )
+		oUser[ oRule.id ] = 
 			rule: oRule
 			actions: {}
 		updateActionModules oRule.id
 
 	if evt.intevent is 'del' and oUser
-		delete oUser[evt.ruleId]
+		delete oUser[ evt.ruleId ]
 
 	# If a user is empty after all the updates above, we remove her from the list
 	if JSON.stringify( oUser ) is "{}"
-		delete listUserRules[evt.user]
+		delete listUserRules[ evt.user ]
 
 
 
@@ -123,9 +123,9 @@ updateActionModules = ( updatedRuleId ) =>
 
 		# Check whether the action is still existing in the rule
 		fRequired = ( actionName ) ->
-			for action in oUser[updatedRuleId].rule.actions
+			for action in oUser[ updatedRuleId ].rule.actions
 				# Since the event is in the format 'module -> function' we need to split the string
-				if (action.split ' -> ')[ 0 ] is actionName
+				if ( action.split ' -> ' )[ 0 ] is actionName
 					return true
 			false
 
@@ -264,6 +264,8 @@ processEvent = ( evt ) =>
 						# 	arrArgs.push oArg.value
 				else
 					@log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
+					arrArgs.push null
+				arrArgs.push evt
 				node.module[ funcName ].apply this, arrArgs
 				@log.info "EN | #{ funcName } finished execution"
 			catch err

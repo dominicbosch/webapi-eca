@@ -157,7 +157,7 @@ fCallFunction = function(userId, ruleId, oRule) {
         arrArgs.push(oArg.value);
       }
     }
-    return oRule.module[Rule.pollfunc].apply(this, arrArgs);
+    return oRule.module[oRule.pollfunc].apply(this, arrArgs);
   } catch (_error) {
     err = _error;
     log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
