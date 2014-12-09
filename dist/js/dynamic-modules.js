@@ -6,7 +6,7 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var cs, db, encryption, exports, fPush, fPushEvent, fTryToLoadModule, getFunctionParamNames, loadEventTrigger, logFunction, regexpComments, searchComment, vm;
+var createNodeModule, cs, db, encryption, exports, fPush, fPushEvent, getFunctionParamNames, loadEventTrigger, logFunction, regexpComments, searchComment, vm;
 
 db = require('./persistence');
 
@@ -28,6 +28,7 @@ Initializes the dynamic module handler.
 exports = module.exports = (function(_this) {
   return function(args) {
     _this.log = args.logger;
+    _this.usermodules = args.usermodules;
     return module.exports;
   };
 })(this);
@@ -99,10 +100,10 @@ exports.compileString = (function(_this) {
           _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
           _this.log.warn(err);
         }
-        return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, oParams, comment, cb);
+        return createNodeModule(src, userId, oRule, modId, modType, dbMod, oParams, comment, cb);
       });
     } else {
-      return fTryToLoadModule(userId, oRule, modId, src, modType, dbMod, null, comment, cb);
+      return createNodeModule(src, userId, oRule, modId, modType, dbMod, null, comment, cb);
     }
   };
 })(this);
@@ -122,9 +123,9 @@ fPushEvent = function(userId, oRule, modType) {
   };
 };
 
-fTryToLoadModule = (function(_this) {
-  return function(userId, oRule, modId, src, modType, dbMod, params, comment, cb) {
-    var answ, err, fName, fRegisterArguments, func, logFunc, msg, oFuncArgs, oFuncParams, sandbox, _ref;
+createNodeModule = (function(_this) {
+  return function(src, userId, oRule, modId, modType, dbMod, params, comment, cb) {
+    var answ, err, fName, fRegisterArguments, func, logFunc, mod, msg, oFuncArgs, oFuncParams, sandbox, _i, _len, _ref, _ref1;
     if (!params) {
       params = {};
     }
@@ -135,16 +136,6 @@ fTryToLoadModule = (function(_this) {
     _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
     logFunc = logFunction(userId, oRule.id, modId);
     sandbox = {
-      importio: require('import-io').client,
-      prettydiff: require('prettydiff'),
-      cryptoJS: require('crypto-js'),
-      deepdiff: require('deep-diff'),
-      jsselect: require('js-select'),
-      request: require('request'),
-      cheerio: require('cheerio'),
-      needle: require('needle'),
-      jsdom: require('jsdom'),
-      diff: require('diff'),
       id: "" + userId + "." + oRule.id + "." + modId + ".vm",
       params: params,
       log: logFunc,
@@ -153,6 +144,11 @@ fTryToLoadModule = (function(_this) {
       setTimeout: setTimeout,
       pushEvent: fPushEvent(userId, oRule, modType)
     };
+    _ref = _this.usermodules;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      mod = _ref[_i];
+      sandbox[mod] = require(mod);
+    }
     try {
       vm.runInNewContext(src, sandbox, sandbox.id);
     } catch (_error) {
@@ -167,9 +163,9 @@ fTryToLoadModule = (function(_this) {
     _this.log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
     oFuncParams = {};
     oFuncArgs = {};
-    _ref = sandbox.exports;
-    for (fName in _ref) {
-      func = _ref[fName];
+    _ref1 = sandbox.exports;
+    for (fName in _ref1) {
+      func = _ref1[fName];
       getFunctionParamNames(fName, func, oFuncParams);
     }
     if (dbMod) {
@@ -232,7 +228,7 @@ searchComment = function(lang, src) {
     line = line.trim();
     if (line !== '') {
       if (lang === 'CoffeeScript') {
-        if (line.substring(0, 1) === '#') {
+        if (line.substring(0, 1) === '#' && line.substring(1, 3) !== '###') {
           comm += line.substring(1) + '\n';
         }
       } else {

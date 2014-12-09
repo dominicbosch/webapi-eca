@@ -150,7 +150,7 @@ init = (function(_this) {
     args['db-port'] = parseInt(argv.d || conf.getDbPort());
     args['db-select'] = parseInt(argv.s || conf.fetchProp('db-select'));
     args['keygen'] = conf.getKeygenPassphrase();
-    args['webhooks'] = conf.fetchProp('webhooks');
+    args['usermodules'] = conf.fetchProp('usermodules');
     encryption(args);
     _this.log.info('RS | Initialzing DB');
     db(args);
@@ -164,7 +164,7 @@ init = (function(_this) {
         _this.log.info('RS | Initialzing engine');
         engine(args);
         _this.log.info('RS | Forking a child process for the trigger poller');
-        cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog'], args['db-select'], args['keygen']];
+        cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog'], args['db-select'], args['keygen'], args['usermodules'].join(',')];
         poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
         _this.log.info('RS | Initialzing module manager');
         cm(args);

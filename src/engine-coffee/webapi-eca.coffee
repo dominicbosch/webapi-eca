@@ -150,7 +150,7 @@ init = =>
 
 	#FIXME this has to come from user input for security reasons:
 	args[ 'keygen' ] = conf.getKeygenPassphrase()
-	args[ 'webhooks' ] = conf.fetchProp 'webhooks'
+	args[ 'usermodules' ] = conf.fetchProp 'usermodules'
 
 	encryption args
 	
@@ -189,6 +189,7 @@ init = =>
 				args[ 'db-select' ]
 				# - The keygen phrase, this has to be handled differently in the future!
 				args[ 'keygen' ]
+				args[ 'usermodules' ].join ','
 			]
 			# Initialize the trigger poller with the required CLI arguments
 			poller = cp.fork path.resolve( __dirname, nameEP ), cliArgs

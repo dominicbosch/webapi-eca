@@ -60,22 +60,21 @@ exports.addRuleListener = ( eh ) =>
 
 			# Fetch the rules object for each rule in each user
 			fFetchRule = ( rule ) =>
-					db.getRule user, rule, ( err, strRule ) =>
-						try 
-							oRule = JSON.parse strRule
-							db.resetLog user, oRule.id
-							eventInfo = ''
-							if oRule.eventstart
-                eventInfo = "Starting at #{ new Date( oRule.eventstart ) },
-                		Interval set to #{ oRule.eventinterval } minutes"
+				db.getRule user, rule, ( err, strRule ) =>
+					try 
+						oRule = JSON.parse strRule
+						db.resetLog user, oRule.id
+						eventInfo = ''
+						if oRule.eventstart
+							eventInfo = "Starting at #{ new Date( oRule.eventstart ) }, Interval set to #{ oRule.eventinterval } minutes"
 							db.appendLog user, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
 							eventEmitter.emit 'rule',
 								intevent: 'init'
 								user: user
 								rule: oRule
-						catch err
-							@log.warn "CM | There's an invalid rule in the system: #{ strRule }"
+					catch err
+						@log.warn "CM | There's an invalid rule in the system: #{ strRule }"
 
 			# Go through all rules for each user
 			fFetchRule rule for rule in rules

@@ -42,7 +42,7 @@ table = $( '<table>' ).appendTo domInputEventTiming
 tr = $( '<tr>' ).appendTo table
 tr.append $( '<td>' ).text "Start Time : "
 tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_start' ).attr( 'type', 'text' )
-tr.append $( '<td>' ).html " <b>\"hh:mm\"</b>, default = 12:00"
+tr.append $( '<td>' ).html " <b>\"hh:mm\"</b>, default = Immediately"
 
 tr = $( '<tr>' ).appendTo table
 tr.append $( '<td>' ).text "Interval : "
@@ -86,11 +86,10 @@ fIssueRequest = ( args ) ->
 
 # Convert a time string ( d h:m ) to a date
 fConvertTimeToDate = ( str ) ->
-	dateConv = new Date()
 	if not str
-		dateConv.setHours 12
-		dateConv.setMinutes 0
+		dateConv = null
 	else
+		dateConv = new Date()
 		arrInp = str.split ':'
 		# There's only one string entered: hour
 		if arrInp.length is 1
@@ -102,14 +101,14 @@ fConvertTimeToDate = ( str ) ->
 			m = Math.max 0, Math.min intMin, 59
 			dateConv.setMinutes m
 	
-	intHour = parseInt( txtHr ) || 12
-	h = Math.max 0, Math.min intHour, 24
-	dateConv.setHours h
+		intHour = parseInt( txtHr ) || 12
+		h = Math.max 0, Math.min intHour, 24
+		dateConv.setHours h
 
-	dateConv.setSeconds 0
-	dateConv.setMilliseconds 0
-	if dateConv < new Date()
-		dateConv.setDate dateConv.getDate() + 17
+		dateConv.setSeconds 0
+		dateConv.setMilliseconds 0
+		if dateConv < new Date()
+			dateConv.setDate dateConv.getDate() + 17
 	dateConv
 
 # Convert a day hour string ( h:m ) to minutes

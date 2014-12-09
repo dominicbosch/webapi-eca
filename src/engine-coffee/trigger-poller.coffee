@@ -46,6 +46,7 @@ process.on 'uncaughtException', ( err ) ->
 db logger: log
 dynmod
 	logger: log
+	usermodules: process.argv[ 9 ].split ','
 
 db.selectDatabase parseInt( process.argv[ 7 ] ) || 0
 	
@@ -91,56 +92,64 @@ fLoadModule = ( msg ) ->
 	fAnonymous = () ->
 		db.eventTriggers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
-				log.info "EP | No module retrieved for #{ arrName[0] }, must be a custom event or Webhook"
+				log.info "EP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
 			else
 				 # we compile the module and pass: 
-				dynmod.compileString obj.data,  # code
+				dynmod.compileString obj.data,    # code
 					msg.user,                     # userId
 					msg.rule,                  	  # oRule
-					arrName[0],                   # moduleId
+					arrName[ 0 ],                 # moduleId
 					obj.lang,                     # script language
-					"eventtrigger",                # the module type
-					db.eventTriggers,              # the DB interface
+					"eventtrigger",               # the module type
+					db.eventTriggers,             # the DB interface
 					( result ) ->
 						if not result.answ is 200
 							log.error "EP | Compilation of code failed! #{ msg.user },
-								#{ msg.rule.id }, #{ arrName[0] }"
+								#{ msg.rule.id }, #{ arrName[ 0 ] }"
 
 						# If user is not yet stored, we open a new object
-						if not listUserModules[msg.user]
-							listUserModules[msg.user] = {}
+						if not listUserModules[ msg.user ]
+							listUserModules[ msg.user ] = {}
 
-						oUser = listUserModules[msg.user]
+						oUser = listUserModules[ msg.user ]
 						# We open up a new object for the rule it
-						oUser[msg.rule.id] =
+						oUser[ msg.rule.id ] =
 							id: msg.rule.eventname
 							timestamp: msg.rule.timestamp
-							pollfunc: arrName[1]
+							pollfunc: arrName[ 1 ]
 							funcArgs: result.funcArgs
 							eventinterval: msg.rule.eventinterval * 60 * 1000
 							module: result.module
 							logger: result.logger
 
-						start = new Date msg.rule.eventstart
+						if msg.rule.eventstart
+							start = new Date msg.rule.eventstart
+						else
+							start = new Date msg.rule.timestamp
 						nd = new Date()
 						now = new Date()
 						if start < nd
 							# If the engine restarts start could be from last year even 
 							nd.setMilliseconds 0
-							nd.setSeconds 0
+							nd.setSeconds start.getSeconds()
 							nd.setMinutes start.getMinutes()
 							nd.setHours start.getHours()
 							# if it's still smaller we add one day
 							if nd < now
+								log.info 'SETTING NEW INTERVAL: ' + (nd.getDate() + 1)
 								nd.setDate nd.getDate() + 1
 						else
 							nd = start
 								
-						log.info "EP | New event module '#{ arrName[0] }' loaded for user #{ msg.user },
+						log.info "EP | New event module '#{ arrName[ 0 ] }' loaded for user #{ msg.user },
 							in rule #{ msg.rule.id }, registered at UTC|#{ msg.rule.timestamp },
 							starting at UTC|#{ start.toISOString() } ( which is in #{ ( nd - now ) / 1000 / 60 } minutes )
 							and polling every #{ msg.rule.eventinterval } minutes"
-						setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
+						if msg.rule.eventstart
+							setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
+						else
+							fCheckAndRun msg.user, msg.rule.id, msg.rule.timestamp
+
 
 	if msg.intevent is 'new' or
 			not listUserModules[ msg.user ] or 

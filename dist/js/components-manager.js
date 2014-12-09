@@ -67,13 +67,13 @@ exports.addRuleListener = (function(_this) {
               eventInfo = '';
               if (oRule.eventstart) {
                 eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
+                db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
+                return eventEmitter.emit('rule', {
+                  intevent: 'init',
+                  user: user,
+                  rule: oRule
+                });
               }
-              db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
-              return eventEmitter.emit('rule', {
-                intevent: 'init',
-                user: user,
-                rule: oRule
-              });
             } catch (_error) {
               err = _error;
               return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);

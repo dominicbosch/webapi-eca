@@ -46,7 +46,8 @@ db({
 });
 
 dynmod({
-  logger: log
+  logger: log,
+  usermodules: process.argv[9].split(',')
 });
 
 db.selectDatabase(parseInt(process.argv[7]) || 0);
@@ -105,22 +106,31 @@ fLoadModule = function(msg) {
             module: result.module,
             logger: result.logger
           };
-          start = new Date(msg.rule.eventstart);
+          if (msg.rule.eventstart) {
+            start = new Date(msg.rule.eventstart);
+          } else {
+            start = new Date(msg.rule.timestamp);
+          }
           nd = new Date();
           now = new Date();
           if (start < nd) {
             nd.setMilliseconds(0);
-            nd.setSeconds(0);
+            nd.setSeconds(start.getSeconds());
             nd.setMinutes(start.getMinutes());
             nd.setHours(start.getHours());
             if (nd < now) {
+              log.info('SETTING NEW INTERVAL: ' + (nd.getDate() + 1));
               nd.setDate(nd.getDate() + 1);
             }
           } else {
             nd = start;
           }
           log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.eventinterval + " minutes");
-          return setTimeout(fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp), nd - now);
+          if (msg.rule.eventstart) {
+            return setTimeout(fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp), nd - now);
+          } else {
+            return fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp);
+          }
         });
       }
     });

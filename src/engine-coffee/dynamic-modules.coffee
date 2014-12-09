@@ -32,6 +32,7 @@ Initializes the dynamic module handler.
 ###
 exports = module.exports = ( args ) =>
 	@log = args.logger
+	@usermodules = args.usermodules
 	module.exports
 
 logFunction = ( uId, rId, mId ) ->
@@ -83,9 +84,9 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 			catch err
 				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
 				@log.warn err
-			fTryToLoadModule userId, oRule, modId, src, modType, dbMod, oParams, comment, cb
+			createNodeModule src, userId, oRule, modId, modType, dbMod, oParams, comment, cb
 	else
-		fTryToLoadModule userId, oRule, modId, src, modType, dbMod, null, comment, cb
+		createNodeModule src, userId, oRule, modId, modType, dbMod, null, comment, cb
 
 
 fPushEvent = ( userId, oRule, modType ) ->
@@ -98,26 +99,7 @@ fPushEvent = ( userId, oRule, modType ) ->
 		else
 			db.pushEvent obj
 
-# fSetVar = ( userId, ruleId, modId ) ->
-# 	( field, data ) ->
-# 		db.persistSetVar  userId, ruleId, modId, field, JSON.stringify data
-		
-# fGetVar = ( userId, ruleId, modId ) ->
-# 	( field, cb ) ->
-# 		fObectify = ( cb ) ->
-# 			( err, str ) ->
-# 				if err
-# 					cb err
-# 				else
-# 					try
-# 						cb null, JSON.parse str
-# 					catch
-# 						cb err
-
-# 		db.persistGetVar  userId, ruleId, modId, field, fObectify cb
-
-
-fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, comment, cb ) =>
+createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment, cb ) =>
 	if not params
 		params = {}
 
@@ -130,16 +112,16 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, comment,
 	logFunc = logFunction userId, oRule.id, modId
 	# The sandbox contains the objects that are accessible to the user. Eventually they need to be required from a vm themselves 
 	sandbox = 
-		importio: require( 'import-io' ).client
-		prettydiff: require 'prettydiff'
-		cryptoJS: require 'crypto-js'
-		deepdiff: require 'deep-diff'
-		jsselect: require 'js-select'
-		request: require 'request'
-		cheerio: require 'cheerio'
-		needle: require 'needle'
-		jsdom: require 'jsdom'
-		diff: require 'diff'
+		# importio: require( 'import-io' ).client
+		# prettydiff: require 'prettydiff'
+		# cryptoJS: require 'crypto-js'
+		# deepdiff: require 'deep-diff'
+		# jsselect: require 'js-select'
+		# request: require 'request'
+		# cheerio: require 'cheerio'
+		# needle: require 'needle'
+		# jsdom: require 'jsdom'
+		# diff: require 'diff'
 		id: "#{ userId }.#{ oRule.id }.#{ modId }.vm"
 		params: params
 		log: logFunc
@@ -147,9 +129,7 @@ fTryToLoadModule = ( userId, oRule, modId, src, modType, dbMod, params, comment,
 		exports: {}
 		setTimeout: setTimeout # This one allows probably too much
 		pushEvent: fPushEvent userId, oRule, modType
-		# TODO garbage collect entries below if rule is setVar...
-		# deleted: fSetVar userId, oRule.id, modId
-		# getVar: fGetVar userId, oRule.id, modId
+	sandbox[ mod ] = require mod for mod in @usermodules
 
 #FIXME ENGINE BREAKS if non-existing module is used??? 
 
@@ -218,11 +198,11 @@ searchComment = ( lang, src ) ->
 	comm = ''
 	for line in arrSrc
 		line = line.trim()
-		if line != ''
-			if lang == 'CoffeeScript'
-				if line.substring( 0, 1 ) == '#'
+		if line isnt ''
+			if lang is 'CoffeeScript'
+				if line.substring( 0, 1 ) is '#' and line.substring( 1, 3 ) isnt '###' 
 					comm += line.substring( 1 ) + '\n'
 			else
-				if line.substring( 0, 2 ) == '//'
+				if line.substring( 0, 2 ) is '//'
 					comm += line.substring( 2 ) + '\n'
 	comm

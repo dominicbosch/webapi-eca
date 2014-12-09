@@ -1,13 +1,25 @@
 {
-  "http-port": 8080,
-  "db-port": 6379,
-  "db-select": 0,
-  "log": {
-    "nolog": "false",
-    "mode": "productive",
-    "io-level": "info",
-    "file-level": "info",
-    "file-path": "logs/server.log"
-  },
-  "keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
+	"http-port": 8080,
+	"db-port": 6379,
+	"db-select": 0,
+	"usermodules": [
+		"import-io",
+		"prettydiff",
+		"crypto-js",
+		"deep-diff",
+		"js-select",
+		"request",
+		"cheerio",
+		"needle",
+		"jsdom",
+		"diff"
+	],
+	"log": {
+		"nolog": "false",
+		"mode": "productive",
+		"io-level": "info",
+		"file-level": "info",
+		"file-path": "logs/server.log"
+	},
+	"keygen-passphrase": "[TODO this has to come from prompt when server is started!]"
 }
