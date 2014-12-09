@@ -35,7 +35,6 @@ ul, ol, dl, figure,
 }
 
 
-
 /**
  * Images
  */
@@ -67,6 +66,7 @@ ul, ol {
 }
 
 li {
+    line-height: 1.5;
     > ul,
     > ol {
          margin-bottom: 0;

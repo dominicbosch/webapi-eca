@@ -2,7 +2,8 @@
 layout: default
 title: HTML Scraping
 overview: true
-priority: 6
+folder: tutorial
+priority: 4
 ---
 
 

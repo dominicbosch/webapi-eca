@@ -3,6 +3,7 @@ layout: default
 title: System Installation
 overview: true
 priority: 1
+folder: administration
 ---
 
 

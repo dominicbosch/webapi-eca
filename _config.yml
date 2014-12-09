@@ -8,3 +8,12 @@ max_priority: 10
 github_username: dominicbosch
 email: dominic.bosch@stud.unibas.ch
 twitter_username: doms_frisbee
+navigation:
+- text: Documentation
+  folder: doc
+- text: Tutorials
+  folder: tutorial
+- text: Plugin Coding
+  folder: coding
+- text: Administration
+  folder: admin

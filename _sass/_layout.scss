@@ -2,9 +2,9 @@
  * Site header
  */
 .site-header {
-    border-top: 5px solid $grey-color-dark;
-    border-bottom: 1px solid $grey-color-light;
-    min-height: 56px;
+    //border-top: 5px solid $grey-color-dark;
+    //border-bottom: 1px solid $grey-color-light;
+    //min-height: 56px;
 
     // Positioning context for the mobile navigation icon
     position: relative;
@@ -25,30 +25,54 @@
 
 .site-nav {
     font-size: 14px;
-    float: right;
+    //float: right;
     //line-height: 56px;
 
-    .menu-icon {
-        display: none;
+
+    ul {
+        background-color: #DDD;
+        box-shadow: 0px 2px 2px 2px #DDD;
+        margin: 0;
+        padding: 5px 10px 5px 10px;
+
+        a {
+            
+            &.active {
+                font-weight: bold;
+                color: #017;
+            }
+        }
+
+        li {
+            position: relative;
+            display: inline;
+            padding: 10px 5px 10px 5px;
+            line-height: 1;
+
+
+            ul {
+                position: absolute;
+                left: 0;
+                display: none;
+                margin-top: 5px;
+
+                li {
+                    position: relative;
+                    display: block;
+                    padding: 2px 0px 2px 0px;
+                }
+            }
+        }
+    }
+
+    li:hover ul {
+        display: block;
     }
 
     .page-link {
-        color: #FFF;
-        background-color: #666;
-        padding: 2px 5px 2px 5px;
         white-space: nowrap;
-        font-weight: bold;
-        //line-height: $base-line-height;
-
-        // Gaps between nav items, but not on the first one
-        /*
-        &:not(:first-child) {
-            margin-left: 10px;
-        }
-        */
     }
 }
-
 
 
 /**

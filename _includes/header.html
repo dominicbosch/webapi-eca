@@ -1,29 +1,28 @@
+{% assign entries = site.pages | sort: "priority" %}
 <header class="site-header">
-
-  <div class="wrapper">
-
-    <a class="site-title" href="{{ site.baseurl }}/">{{ site.title }}</a>
-
-    <nav class="site-nav">
-
-      <div class="trigger">
-        {% for priority in (0..site.max_priority) %}
-          {% for page in site.pages %}
-            {% if page.priority %}
-            {% assign prio = page.priority %}
-            {% else %}
-            {% assign prio = site.max_priority %}
-            {% endif %}
-            {% if page.title %}
-              {% if prio == priority %}
-              <a class="page-link" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endfor %}
-      </div>
-    </nav>
-
-  </div>
-
+	<div class="wrapper">
+		<nav class="site-nav">
+			<ul>
+				<li>
+					<a href="{{ site.baseurl }}/">Home</a>
+				</li>
+  				{% for section in site.navigation %}
+  					{% assign link = '/pages/' | append: section.folder | append: '.html' %}
+					{% assign list = (entries | where: "folder", section.folder) %}
+					<li>
+						<a {% if page.url == link %}class="active"{% endif %} href="{{ site.baseurl | append: link }}">{{ section.text }}</a>
+						{% unless list == empty %}
+							<ul class="trigger">
+								{% for entry in list %}
+									<li>
+										<a class="page-link {% if page.url contains entry.url %}active{% endif %}" href="{{ site.baseurl | append: entry.url }}">{{ entry.title }}</a>
+									</li>
+								{% endfor %}
+							</ul>
+						{% endunless %}
+					</li>
+				{% endfor %}
+			</ul>
+		</nav>
+	</div>
 </header>
