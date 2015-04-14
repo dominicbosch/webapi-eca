@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{cite}
 \usepackage{courier}
+\usepackage{listings}
 \usepackage[toc,page]{appendix}
 
 \newcommand*{\createTitlePage}{\begingroup
@@ -53,7 +54,51 @@ Node.js
 \section{Installation}
 Crossplatform
 
-\section{Configuration}
+\section{Configurations}
+	All configurations can be done in the config folder of the project. There are three diffferent files which deal with different sorts of settings:
+	\begin{itemize}
+	  \item System: Parameters to run the system in different settings.
+	  \item User: The users that are allowed to access the system.
+	  \item Modules: The modules available for Event Triggers and Action Dispatchers
+	\end{itemize}
+
+	\subsection{System Configuration}
+		These configurations are made in the file \texttt{config/system.json}.
+\begin{lstlisting}
+{
+	"http-port": 8080,
+	"db-port": 6379,
+	"db-select": 0,
+	"keygenpp": "[Should come from command prompt!]",
+	"log": {
+		"mode": "productive",
+		"std-level": "info",
+		"file-level": "info",
+		"file-path": "logs/server.log"
+	}
+}
+\end{lstlisting}
+
+	\subsection{User Configuration}
+		These configurations are made in the file \texttt{config/users.json}.
+
+	\subsection{Modules Configuration}
+		These configurations are made in the file \texttt{config/modules.json}.
+		Modules defined in this file will be loaded by the Dynamic-Modules module of the engine
+		and made available to the program code of the custom Event Trigger and Action Invoker.
+		An entry looks as follows:
+\begin{lstlisting}
+	"importIO": {
+		"module": "import-io",
+		"description": "The import.io client"
+	},
+\end{lstlisting}
+		whereas the key of an entry (e.g. \texttt{\"importIO\"}) corresponds to the variable through which the module is accessible
+		through custom code. The \texttt{module} property (e.g. \texttt{\"import-io\"}) inside the entry
+		defines the name of the module as it is defined in the NPM repository and needs to be installed
+		first for the project (e.g. by typing \texttt{npm install import-io}), if it's not already in the package.json.
+
+
 
 \section{Application Architecture}
 The application is started through the webapi-eca module, which loads other modules such as the logging module, the configuration file handler, the persistence interface, the listener to HTTP requests and finally the ECA engine.
@@ -74,6 +119,11 @@ forks the event poller and sends him information about new rules so he can fetch
 \subsubsection{Persistence}
 The persistence module is an interface to a persistent storage.
 It stores the events in a queue, action dispatcher modules, event poller modules, rules, users and roles.
+
+Since the database is a key-value store for fast access, it is important to follow some guidelines. Every new entry needs to be indexed in a list.
+For example if there is a new user object to be stored, we store it under 
+
+
 Event Queue
 \texttt{event\_queue} (List): The event queue for all incoming events to be processed by the engine.
 Action Dispatchers
@@ -114,8 +164,12 @@ this also allows us to send privately stored modules and rules encrypted to the 
 
 \subsection{Message Formats}
 \subsubsection{Internal Events}
-\subsubsubsection{Event Poller}
-\subsubsubsection{Rule events}
+	\begin{itemize}
+	  \item Event Poller
+	  \item Rule Events
+	\end{itemize}
+
+
 \subsubsection{Client GUI}
 
 
