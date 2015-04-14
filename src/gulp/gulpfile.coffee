@@ -155,7 +155,7 @@ gulp.task 'deploy',
 ###
 Run the system in the dist folder
 ###
-gulp.task 'run-system',
+gulp.task 'start',
   'Run the system in the dist folder', 
   [ 'deploy' ],
   ( cb ) ->
