@@ -1,11 +1,11 @@
-var arrKV, arrParams, fClearInfo, fDisplayError, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, oParams, param, _i, _len;
+var arrKV, arrParams, fClearInfo, fDisplayError, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, i, len, oParams, param;
 
 arrParams = window.location.search.substring(1).split('&');
 
 oParams = {};
 
-for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-  param = arrParams[_i];
+for (i = 0, len = arrParams.length; i < len; i++) {
+  param = arrParams[i];
   arrKV = param.split('=');
   oParams[arrKV[0]] = arrKV[1];
 }
@@ -29,7 +29,7 @@ fDisplayError = function(msg) {
 
 fIssueRequest = function(args) {
   fClearInfo();
-  return $.post('/usercommand', args.body).done(args.done).fail(args.fail);
+  return $.post('/usercommand/' + args.command, args.data).done(args.done).fail(args.fail);
 };
 
 fFailedRequest = function(msg) {
@@ -44,9 +44,7 @@ fFailedRequest = function(msg) {
 
 fUpdateWebhookList = function(cb) {
   return fIssueRequest({
-    body: {
-      command: 'get_all_webhooks'
-    },
+    command: 'get_all_webhooks',
     done: fProcessWebhookList(cb),
     fail: fFailedRequest('Unable to get Webhook list')
   });
@@ -63,7 +61,7 @@ fProcessWebhookList = function(cb) {
         hookname = oHooks[hookid];
         tr = $('<tr>');
         tdName = $('<div>').text(hookname);
-        tdUrl = $('<input>').attr('style', 'width:600px').val("" + hostUrl + "/webhooks/" + hookid);
+        tdUrl = $('<input>').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
         img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'images/red_cross_small.png');
         tr.append($('<td>').append(img));
         tr.append($('<td>').attr('style', 'padding-left:10px').append(tdName));
@@ -84,7 +82,7 @@ fShowWebhookUsage = function(hookid, hookname) {
     b = $('<b>').text("This is the Webhook Url you can use for your Events '" + hookname + "' : ");
     $('#display_hookurl').append(b);
     $('#display_hookurl').append($('<br>'));
-    inp = $('<input>').attr('type', 'text').attr('style', 'width:600px').val("" + hostUrl + "/webhooks/" + hookid);
+    inp = $('<input>').attr('type', 'text').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
     $('#display_hookurl').append(inp);
     $('#display_hookurl').append($('<br>'));
     div = $('<div>');
@@ -108,8 +106,8 @@ fOnLoad = function() {
       return fDisplayError('Please provide an Event Name for your new Webhook!');
     } else {
       return fIssueRequest({
-        body: {
-          command: 'create_webhook',
+        command: 'create_webhook',
+        data: {
           body: JSON.stringify({
             hookname: hookname
           })
@@ -139,8 +137,8 @@ fOnLoad = function() {
       url = $('input', $(this).closest('tr')).val();
       arrUrl = url.split('/');
       return fIssueRequest({
-        body: {
-          command: 'delete_webhook',
+        command: 'delete_webhook',
+        data: {
           body: JSON.stringify({
             hookid: arrUrl[arrUrl.length - 1]
           })

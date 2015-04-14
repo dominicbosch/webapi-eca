@@ -29,17 +29,15 @@ fOnLoad = function() {
     };
   };
   fFetchRules = function() {
-    return $.post('/usercommand', {
-      command: 'get_rules'
-    }).done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
+    return $.post('/usercommand/get_rules').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateRuleList = function(data) {
-    var img, inp, ruleName, tr, _i, _len, _ref, _results;
+    var i, img, inp, len, ref, results, ruleName, tr;
     $('#tableRules tr').remove();
-    _ref = data.message;
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      ruleName = _ref[_i];
+    ref = data.message;
+    results = [];
+    for (i = 0, len = ref.length; i < len; i++) {
+      ruleName = ref[i];
       tr = $('<tr>');
       img = $('<img>').attr('class', 'del').attr('title', 'Delete Rule').attr('src', 'images/red_cross_small.png');
       tr.append($('<td>').append(img));
@@ -49,9 +47,9 @@ fOnLoad = function() {
       tr.append($('<td>').append(img));
       inp = $('<div>').text(ruleName);
       tr.append($('<td>').append(inp));
-      _results.push($('#tableRules').append(tr));
+      results.push($('#tableRules').append(tr));
     }
-    return _results;
+    return results;
   };
   fFetchRules();
   $('#tableRules').on('click', 'img.del', function() {
@@ -60,12 +58,11 @@ fOnLoad = function() {
     if (confirm("Do you really want to delete the rule '" + ruleName + "'?")) {
       $('#log_col').text("");
       data = {
-        command: 'delete_rule',
         body: JSON.stringify({
           id: ruleName
         })
       };
-      return $.post('/usercommand', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
+      return $.post('/usercommand/delete_rule', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
     }
   });
   $('#tableRules').on('click', 'img.edit', function() {
@@ -77,12 +74,11 @@ fOnLoad = function() {
     var data, ruleName;
     ruleName = $('div', $(this).closest('tr')).text();
     data = {
-      command: 'get_rule_log',
       body: JSON.stringify({
         id: ruleName
       })
     };
-    return $.post('/usercommand', data).done(function(data) {
+    return $.post('/usercommand/get_rule_log', data).done(function(data) {
       var log, ts;
       ts = (new Date()).toISOString();
       log = data.message.replace(new RegExp("\n", 'g'), "<br>");

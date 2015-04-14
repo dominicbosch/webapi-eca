@@ -22,7 +22,7 @@ fFindKeyStringPair = function(obj) {
 fOnLoad = function() {
   var editor;
   document.title = 'Push Events!';
-  $('#pagetitle').text('Push your own event directly into the engine!');
+  $('#pagetitle').text('Trigger your custom event in the engine!');
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/cimson_editor");
   editor.setFontSize("18px");

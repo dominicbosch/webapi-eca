@@ -1,11 +1,11 @@
-var arrKV, arrParams, fErrHandler, fOnLoad, moduleName, oParams, param, _i, _len;
+var arrKV, arrParams, fErrHandler, fOnLoad, i, len, moduleName, oParams, param;
 
 arrParams = window.location.search.substring(1).split('&');
 
 oParams = {};
 
-for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-  param = arrParams[_i];
+for (i = 0, len = arrParams.length; i < len; i++) {
+  param = arrParams[i];
   arrKV = param.split('=');
   oParams[arrKV[0]] = arrKV[1];
 }
@@ -130,7 +130,6 @@ fOnLoad = function() {
         return true;
       });
       obj = {
-        command: "forge_" + oParams.type,
         body: JSON.stringify({
           id: $('#input_id').val(),
           lang: $('#editor_mode').val(),
@@ -147,19 +146,19 @@ fOnLoad = function() {
               bod = JSON.parse(obj.body);
               bod.overwrite = true;
               obj.body = JSON.stringify(bod);
-              return $.post('/usercommand', obj).done(function(data) {
+              return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
                 $('#info').text(data.message);
                 $('#info').attr('class', 'success');
                 return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
-              }).fail(fErrHandler("" + moduleName + " not stored!"));
+              }).fail(fErrHandler(moduleName + " not stored!"));
             }
           } else {
-            return fErrHandler("" + moduleName + " not stored!")(err);
+            return fErrHandler(moduleName + " not stored!")(err);
           }
         };
       };
       window.scrollTo(0, 0);
-      return $.post('/usercommand', obj).done(function(data) {
+      return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
         $('#info').text(data.message);
         return $('#info').attr('class', 'success');
       }).fail(fCheckOverwrite(obj));
@@ -175,18 +174,17 @@ fOnLoad = function() {
   };
   if (oParams.id) {
     obj = {
-      command: "get_full_" + oParams.type,
       body: JSON.stringify({
         id: oParams.id
       })
     };
-    return $.post('/usercommand', obj).done(function(data) {
-      var oMod, shielded, _ref;
+    return $.post('/usercommand/get_full_' + oParams.type, obj).done(function(data) {
+      var oMod, ref, shielded;
       oMod = JSON.parse(data.message);
       if (oMod) {
-        _ref = JSON.parse(oMod.params);
-        for (param in _ref) {
-          shielded = _ref[param];
+        ref = JSON.parse(oMod.params);
+        for (param in ref) {
+          shielded = ref[param];
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.id);

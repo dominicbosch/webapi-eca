@@ -1,5 +1,5 @@
-var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fClearInfo, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayError, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, oParams, param, strPublicKey, table, tr, _i, _len,
-  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fClearInfo, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayError, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, j, len, oParams, param, strPublicKey, table, tr,
+  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 strPublicKey = '';
 
@@ -7,8 +7,8 @@ arrParams = window.location.search.substring(1).split('&');
 
 oParams = {};
 
-for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-  param = arrParams[_i];
+for (j = 0, len = arrParams.length; j < len; j++) {
+  param = arrParams[j];
   arrKV = param.split('=');
   oParams[arrKV[0]] = arrKV[1];
 }
@@ -37,7 +37,7 @@ el.change(function() {
   return fFetchEventParams($(this).val());
 });
 
-domSelectEventTrigger.append($('<h4>').text('Event Trigger Name : ').append(el));
+domSelectEventTrigger.append($('<h4>').text('Event Trigger : ').append(el));
 
 domInputEventTiming = $('<div>').attr('class', 'indent20');
 
@@ -104,7 +104,7 @@ fFailedRequest = function(msg) {
 
 fIssueRequest = function(args) {
   fClearInfo();
-  return $.post('/usercommand', args.data).done(args.done).fail(args.fail);
+  return $.post('/usercommand/' + args.command, args.data).done(args.done).fail(args.fail);
 };
 
 fConvertTimeToDate = function(str) {
@@ -184,9 +184,7 @@ fPrepareEventType = function(eventtype, cb) {
       return typeof cb === "function" ? cb() : void 0;
     case 'Webhook':
       return fIssueRequest({
-        data: {
-          command: 'get_all_webhooks'
-        },
+        command: 'get_all_webhooks',
         done: function(data) {
           var err, hookid, hookname, i, oHooks, selHook;
           try {
@@ -218,11 +216,9 @@ fPrepareEventType = function(eventtype, cb) {
       });
     case 'Event Trigger':
       return fIssueRequest({
-        data: {
-          command: 'get_event_triggers'
-        },
+        command: 'get_event_triggers',
         done: function(data) {
-          var err, events, evt, id, oEps, _j, _len1;
+          var err, events, evt, id, k, len1, oEps;
           try {
             oEps = JSON.parse(data.message);
             if (JSON.stringify(oEps) === '{}') {
@@ -234,8 +230,8 @@ fPrepareEventType = function(eventtype, cb) {
               $('#select_eventtrigger option').remove();
               for (id in oEps) {
                 events = oEps[id];
-                for (_j = 0, _len1 = events.length; _j < _len1; _j++) {
-                  evt = events[_j];
+                for (k = 0, len1 = events.length; k < len1; k++) {
+                  evt = events[k];
                   $('#select_eventtrigger').append($('<option>').text(id + ' -> ' + evt));
                 }
               }
@@ -262,8 +258,8 @@ fFetchEventParams = function(name) {
     $('#event_parameters').append(domEventTriggerParameters);
     arr = name.split(' -> ');
     fIssueRequest({
+      command: 'get_event_trigger_params',
       data: {
-        command: 'get_event_trigger_params',
         body: JSON.stringify({
           id: arr[0]
         })
@@ -272,8 +268,8 @@ fFetchEventParams = function(name) {
       fail: fFailedRequest('Error fetching Event Trigger params')
     });
     fIssueRequest({
+      command: 'get_event_trigger_comment',
       data: {
-        command: 'get_event_trigger_comment',
         body: JSON.stringify({
           id: arr[0]
         })
@@ -318,16 +314,16 @@ fDisplayEventParams = function(id) {
 
 fFillEventParams = function(moduleId) {
   return fIssueRequest({
+    command: 'get_event_trigger_user_params',
     data: {
-      command: 'get_event_trigger_user_params',
       body: JSON.stringify({
         id: moduleId
       })
     },
     done: function(data) {
-      var oParam, par, _results;
+      var oParam, par, results;
       oParams = JSON.parse(data.message);
-      _results = [];
+      results = [];
       for (param in oParams) {
         oParam = oParams[param];
         par = $("#event_trigger_params tr").filter(function() {
@@ -335,25 +331,25 @@ fFillEventParams = function(moduleId) {
         });
         $('input', par).val(oParam.value);
         $('input', par).attr('unchanged', 'true');
-        _results.push($('input', par).change(function() {
+        results.push($('input', par).change(function() {
           return $(this).attr('unchanged', 'false');
         }));
       }
-      return _results;
+      return results;
     }
   });
 };
 
 fFetchEventFunctionArgs = function(arrName) {
   return fIssueRequest({
+    command: 'get_event_trigger_function_arguments',
     data: {
-      command: 'get_event_trigger_function_arguments',
       body: JSON.stringify({
         id: arrName[0]
       })
     },
     done: function(data) {
-      var functionArgument, td, _j, _len1, _ref;
+      var functionArgument, k, len1, ref, td;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
@@ -361,9 +357,9 @@ fFetchEventFunctionArgs = function(arrName) {
             $('#event_trigger_params').append($("<b>").text('Required Rule-specific Data:'));
           }
           table = $('<table>').appendTo($('#event_trigger_params'));
-          _ref = oParams[arrName[1]];
-          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-            functionArgument = _ref[_j];
+          ref = oParams[arrName[1]];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            functionArgument = ref[k];
             tr = $('<tr>').attr('class', 'funcMappings').appendTo(table);
             tr.append($('<td>').css('width', '20px'));
             td = $('<td>').appendTo(tr);
@@ -375,8 +371,8 @@ fFetchEventFunctionArgs = function(arrName) {
             tr.append(td);
           }
           return fIssueRequest({
+            command: 'get_event_trigger_user_arguments',
             data: {
-              command: 'get_event_trigger_user_arguments',
               body: JSON.stringify({
                 ruleId: $('#input_id').val(),
                 moduleId: arrName[0]
@@ -393,32 +389,32 @@ fFetchEventFunctionArgs = function(arrName) {
 
 fAddEventUserArgs = function(name) {
   return function(data) {
-    var arrFuncs, key, oFunc, par, _ref, _results;
-    _ref = data.message;
-    _results = [];
-    for (key in _ref) {
-      arrFuncs = _ref[key];
+    var arrFuncs, key, oFunc, par, ref, results;
+    ref = data.message;
+    results = [];
+    for (key in ref) {
+      arrFuncs = ref[key];
       par = $("#event_trigger_params");
-      _results.push((function() {
-        var _j, _len1, _ref1, _results1;
-        _ref1 = JSON.parse(arrFuncs);
-        _results1 = [];
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          oFunc = _ref1[_j];
+      results.push((function() {
+        var k, len1, ref1, results1;
+        ref1 = JSON.parse(arrFuncs);
+        results1 = [];
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          oFunc = ref1[k];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
-          _results1.push($("input[type=text]", tr).val(oFunc.value));
+          results1.push($("input[type=text]", tr).val(oFunc.value));
         }
-        return _results1;
+        return results1;
       })());
     }
-    return _results;
+    return results;
   };
 };
 
 fAddSelectedAction = function(name) {
-  var arrEls, arrName, fDelayed, img, td, _ref;
+  var arrEls, arrName, fDelayed, img, ref, td;
   arrName = name.split(' -> ');
   arrEls = $("#action_dispatcher_params div.modName").map(function() {
     return $(this).text();
@@ -430,7 +426,7 @@ fAddSelectedAction = function(name) {
   tr.append($('<td>').attr('class', 'title').text(name));
   td = $('<td>').attr('class', 'funcMappings').appendTo(tr);
   fFetchActionFunctionArgs(td, arrName);
-  if (_ref = arrName[0], __indexOf.call(arrEls, _ref) < 0) {
+  if (ref = arrName[0], indexOf.call(arrEls, ref) < 0) {
     fFetchActionParams(arrName[0]);
   }
   $("#select_actions option").each(function() {
@@ -446,14 +442,14 @@ fAddSelectedAction = function(name) {
 
 fFetchActionParams = function(modName) {
   return fIssueRequest({
+    command: 'get_action_dispatcher_params',
     data: {
-      command: 'get_action_dispatcher_params',
       body: JSON.stringify({
         id: modName
       })
     },
     done: function(data) {
-      var comment, div, inp, name, shielded, subdiv, _results;
+      var comment, div, inp, name, results, shielded, subdiv;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (JSON.stringify(oParams) !== '{}') {
@@ -463,8 +459,8 @@ fFetchActionParams = function(modName) {
           subdiv.append($('<div>')).attr('class', 'modName underlined').text(modName);
           comment = $('<div>').attr('class', 'comment indent20').appendTo(div);
           fIssueRequest({
+            command: 'get_action_dispatcher_comment',
             data: {
-              command: 'get_action_dispatcher_comment',
               body: JSON.stringify({
                 id: modName
               })
@@ -476,7 +472,7 @@ fFetchActionParams = function(modName) {
           });
           table = $('<table>');
           div.append(table);
-          _results = [];
+          results = [];
           for (name in oParams) {
             shielded = oParams[name];
             tr = $('<tr>');
@@ -489,9 +485,9 @@ fFetchActionParams = function(modName) {
               inp.attr('type', 'text');
             }
             tr.append($('<td>').text(' : ').append(inp));
-            _results.push(table.append(tr));
+            results.push(table.append(tr));
           }
-          return _results;
+          return results;
         }
       }
     },
@@ -501,31 +497,31 @@ fFetchActionParams = function(modName) {
 
 fFetchActionFunctionArgs = function(tag, arrName) {
   return fIssueRequest({
+    command: 'get_action_dispatcher_function_arguments',
     data: {
-      command: 'get_action_dispatcher_function_arguments',
       body: JSON.stringify({
         id: arrName[0]
       })
     },
     done: function(data) {
-      var functionArgument, td, _j, _len1, _ref, _results;
+      var functionArgument, k, len1, ref, results, td;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
           table = $('<table>').appendTo(tag);
-          _ref = oParams[arrName[1]];
-          _results = [];
-          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-            functionArgument = _ref[_j];
+          ref = oParams[arrName[1]];
+          results = [];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            functionArgument = ref[k];
             tr = $('<tr>').appendTo(table);
             td = $('<td>').appendTo(tr);
             td.append($('<div>').attr('class', 'funcarg').text(functionArgument));
             tr.append(td);
             td = $('<td>').appendTo(tr);
             td.append($('<input>').attr('type', 'text'));
-            _results.push(tr.append(td));
+            results.push(tr.append(td));
           }
-          return _results;
+          return results;
         }
       }
     },
@@ -535,8 +531,8 @@ fFetchActionFunctionArgs = function(tag, arrName) {
 
 fFillActionFunction = function(name) {
   fIssueRequest({
+    command: 'get_action_dispatcher_user_params',
     data: {
-      command: 'get_action_dispatcher_user_params',
       body: JSON.stringify({
         id: name
       })
@@ -544,8 +540,8 @@ fFillActionFunction = function(name) {
     done: fAddActionUserParams(name)
   });
   return fIssueRequest({
+    command: 'get_action_dispatcher_user_arguments',
     data: {
-      command: 'get_action_dispatcher_user_arguments',
       body: JSON.stringify({
         ruleId: $('#input_id').val(),
         moduleId: name
@@ -557,12 +553,12 @@ fFillActionFunction = function(name) {
 
 fAddActionUserParams = function(name) {
   return function(data) {
-    var domMod, oParam, par, _results;
+    var domMod, oParam, par, results;
     oParams = JSON.parse(data.message);
     domMod = $("#action_dispatcher_params div").filter(function() {
       return $('div.modName', this).text() === name;
     });
-    _results = [];
+    results = [];
     for (param in oParams) {
       oParam = oParams[param];
       par = $("tr", domMod).filter(function() {
@@ -570,48 +566,46 @@ fAddActionUserParams = function(name) {
       });
       $('input', par).val(oParam.value);
       $('input', par).attr('unchanged', 'true');
-      _results.push($('input', par).change(function() {
+      results.push($('input', par).change(function() {
         return $(this).attr('unchanged', 'false');
       }));
     }
-    return _results;
+    return results;
   };
 };
 
 fAddActionUserArgs = function(name) {
   return function(data) {
-    var arrFuncs, key, oFunc, par, _ref, _results;
-    _ref = data.message;
-    _results = [];
-    for (key in _ref) {
-      arrFuncs = _ref[key];
+    var arrFuncs, key, oFunc, par, ref, results;
+    ref = data.message;
+    results = [];
+    for (key in ref) {
+      arrFuncs = ref[key];
       par = $("#selected_actions tr").filter(function() {
-        return $('td.title', this).text() === ("" + name + " -> " + key);
+        return $('td.title', this).text() === (name + " -> " + key);
       });
-      _results.push((function() {
-        var _j, _len1, _ref1, _results1;
-        _ref1 = JSON.parse(arrFuncs);
-        _results1 = [];
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          oFunc = _ref1[_j];
+      results.push((function() {
+        var k, len1, ref1, results1;
+        ref1 = JSON.parse(arrFuncs);
+        results1 = [];
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          oFunc = ref1[k];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
-          _results1.push($("input[type=text]", tr).val(oFunc.value));
+          results1.push($("input[type=text]", tr).val(oFunc.value));
         }
-        return _results1;
+        return results1;
       })());
     }
-    return _results;
+    return results;
   };
 };
 
 fOnLoad = function() {
   var editor, name;
   fIssueRequest({
-    data: {
-      command: 'get_public_key'
-    },
+    command: 'get_public_key',
     done: function(data) {
       return strPublicKey = data.message;
     },
@@ -663,11 +657,9 @@ fOnLoad = function() {
       });
   }
   fIssueRequest({
-    data: {
-      command: 'get_action_dispatchers'
-    },
+    command: 'get_action_dispatchers',
     done: function(data) {
-      var act, actions, arrEls, err, i, module, oAis, _results;
+      var act, actions, arrEls, err, i, module, oAis, results;
       try {
         oAis = JSON.parse(data.message);
       } catch (_error) {
@@ -676,28 +668,28 @@ fOnLoad = function() {
         return;
       }
       i = 0;
-      _results = [];
+      results = [];
       for (module in oAis) {
         actions = oAis[module];
-        _results.push((function() {
-          var _j, _len1, _results1;
-          _results1 = [];
-          for (_j = 0, _len1 = actions.length; _j < _len1; _j++) {
-            act = actions[_j];
+        results.push((function() {
+          var k, len1, results1;
+          results1 = [];
+          for (k = 0, len1 = actions.length; k < len1; k++) {
+            act = actions[k];
             i++;
             arrEls = $("#action_dispatcher_params div").filter(function() {
-              return $(this).text() === ("" + module + " -> " + act);
+              return $(this).text() === (module + " -> " + act);
             });
             if (arrEls.length === 0) {
-              _results1.push($('#select_actions').append($('<option>').text(module + ' -> ' + act)));
+              results1.push($('#select_actions').append($('<option>').text(module + ' -> ' + act)));
             } else {
-              _results1.push(void 0);
+              results1.push(void 0);
             }
           }
-          return _results1;
+          return results1;
         })());
       }
-      return _results;
+      return results;
     },
     fail: fFailedRequest('Error fetching Action Dispatchers')
   });
@@ -855,16 +847,17 @@ fOnLoad = function() {
               payl.overwrite = true;
               obj.body = JSON.stringify(payl);
               return fIssueRequest({
+                command: obj.command,
                 data: obj,
                 done: function(data) {
                   $('#info').text(data.message);
                   return $('#info').attr('class', 'success');
                 },
-                fail: fFailedRequest("" + obj.id + " not stored!")
+                fail: fFailedRequest(obj.id + " not stored!")
               });
             }
           } else {
-            return fFailedRequest("" + obj.id + " not stored!")(err);
+            return fFailedRequest(obj.id + " not stored!")(err);
           }
         };
       };
@@ -873,7 +866,6 @@ fOnLoad = function() {
         mins = fConvertDayHourToMinutes($('#input_interval').val());
       }
       obj = {
-        command: 'forge_rule',
         body: JSON.stringify({
           id: $('#input_id').val(),
           eventtype: eventtype,
@@ -889,6 +881,7 @@ fOnLoad = function() {
         })
       };
       return fIssueRequest({
+        command: 'forge_rule',
         data: obj,
         done: function(data) {
           $('#info').text(data.message);
@@ -905,8 +898,8 @@ fOnLoad = function() {
   });
   if (oParams.id) {
     return fIssueRequest({
+      command: 'get_rule',
       data: {
-        command: 'get_rule',
         body: JSON.stringify({
           id: oParams.id
         })
@@ -917,7 +910,7 @@ fOnLoad = function() {
         if (oRule) {
           $('#input_id').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, mins, _j, _len1, _ref, _results;
+            var action, arrName, d, k, len1, mins, ref, results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -949,14 +942,14 @@ fOnLoad = function() {
             }
             editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
             domSectionSelectedActions.show();
-            _ref = oRule.actions;
-            _results = [];
-            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-              action = _ref[_j];
+            ref = oRule.actions;
+            results = [];
+            for (k = 0, len1 = ref.length; k < len1; k++) {
+              action = ref[k];
               arrName = action.split(' -> ');
-              _results.push(fAddSelectedAction(action));
+              results.push(fAddSelectedAction(action));
             }
-            return _results;
+            return results;
           });
         }
       },

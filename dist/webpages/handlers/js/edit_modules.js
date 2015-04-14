@@ -37,15 +37,13 @@ fOnLoad = function() {
     } else {
       cmd = 'get_action_dispatchers';
     }
-    return $.post('/usercommand', {
-      command: cmd
-    }).done(fUpdateModuleList).fail(fErrHandler('Did not retrieve rules! '));
+    return $.post('/usercommand/' + cmd).done(fUpdateModuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateModuleList = function(data) {
-    var img, inp, modName, oMods, tr, _results;
+    var img, inp, modName, oMods, results, tr;
     $('#tableModules tr').remove();
     oMods = JSON.parse(data.message);
-    _results = [];
+    results = [];
     for (modName in oMods) {
       tr = $('<tr>');
       inp = $('<div>').text(modName);
@@ -54,9 +52,9 @@ fOnLoad = function() {
       img = $('<img>').attr('class', 'log').attr('title', 'Edit Module').attr('src', 'images/edit.png');
       tr.append($('<td>').append(img));
       tr.append($('<td>').append(inp));
-      _results.push($('#tableModules').append(tr));
+      results.push($('#tableModules').append(tr));
     }
-    return _results;
+    return results;
   };
   fFetchModules();
   $('#tableModules').on('click', 'img.del', function() {
@@ -69,12 +67,11 @@ fOnLoad = function() {
         cmd = 'delete_action_dispatcher';
       }
       data = {
-        command: cmd,
         body: JSON.stringify({
           id: modName
         })
       };
-      return $.post('/usercommand', data).done(fFetchModules).fail(fErrHandler('Could not delete module! '));
+      return $.post('/usercommand/' + cmd, data).done(fFetchModules).fail(fErrHandler('Could not delete module! '));
     }
   });
   return $('#tableModules').on('click', 'img.log', function() {
