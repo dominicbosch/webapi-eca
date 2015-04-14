@@ -7,7 +7,9 @@ HTTP Listener
 > (bound to a method) are then redirected to the appropriate handler which
 > takes care of the request.
  */
-var app, bodyParser, db, exports, express, initRouting, path, requestHandler, session;
+var app, bodyParser, db, exports, express, initRouting, log, path, requestHandler, session;
+
+log = require('./logging');
 
 requestHandler = require('./request-handler');
 
@@ -32,14 +34,13 @@ Initializes the HTTP listener and its request handler.
 @param {Object} args
  */
 
-exports = module.exports = (function(_this) {
+exports = module.exports;
+
+exports.init = (function(_this) {
   return function(args) {
-    _this.log = args.logger;
     _this.shutDownSystem = args['shutdown-function'];
-    requestHandler(args);
-    _this.userCommandRouter = args['user-router'];
-    initRouting(args['http-port']);
-    return module.exports;
+    requestHandler.init(args);
+    return initRouting(args['http-port']);
   };
 })(this);
 
@@ -65,7 +66,7 @@ initRouting = (function(_this) {
     app.use(bodyParser.urlencoded({
       extended: true
     }));
-    _this.log.info('HL | no session backbone');
+    log.info('HL | no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
     app.get('/admin', requestHandler.handleAdmin);
     app.get('/forge', requestHandler.handleForge);
@@ -78,7 +79,7 @@ initRouting = (function(_this) {
     app.post('/measurements', requestHandler.handleMeasurements);
     prt = parseInt(port) || 8111;
     server = app.listen(prt);
-    _this.log.info("HL | Started listening on port " + prt);
+    log.info("HL | Started listening on port " + prt);
     server.on('listening', function() {
       var addr;
       addr = server.address();
@@ -94,13 +95,13 @@ initRouting = (function(_this) {
        */
       switch (err.errno) {
         case 'EADDRINUSE':
-          _this.log.error(err, 'HL | http-port already in use, shutting down!');
+          log.error(err, 'HL | http-port already in use, shutting down!');
           break;
         case 'EACCES':
-          _this.log.error(err, 'HL | http-port not accessible, shutting down!');
+          log.error(err, 'HL | http-port not accessible, shutting down!');
           break;
         default:
-          _this.log.error(err, 'HL | Error in server, shutting down!');
+          log.error(err, 'HL | Error in server, shutting down!');
       }
       return _this.shutDownSystem();
     });

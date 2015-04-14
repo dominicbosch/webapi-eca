@@ -9,7 +9,9 @@ Engine
 
 TODO events should have: raising-time, reception-time and eventually sender-uri and recipient-uri
  */
-var db, dynmod, exports, isRunning, jsonQuery, listUserRules, numExecutingFunctions, oOperators, pollQueue, processEvent, updateActionModules, validConditions;
+var db, dynmod, exports, isRunning, jsonQuery, listUserRules, log, numExecutingFunctions, oOperators, pollQueue, processEvent, updateActionModules, validConditions;
+
+log = require('./logging');
 
 db = require('./persistence');
 
@@ -52,11 +54,11 @@ Initializes the Engine and starts polling the event queue for new events.
 @param {Object} args
  */
 
-exports = module.exports = (function(_this) {
-  return function(args) {
+exports = module.exports;
+
+exports.init = (function(_this) {
+  return function() {
     if (!isRunning) {
-      _this.log = args.logger;
-      dynmod(args);
       setTimeout(exports.startEngine, 10);
       return module.exports;
     }
@@ -168,14 +170,14 @@ updateActionModules = (function(_this) {
               if (obj) {
                 return dynmod.compileString(obj.data, userName, oMyRule.rule, moduleName, obj.lang, "actiondispatcher", db.actionDispatchers, function(result) {
                   if (result.answ.code === 200) {
-                    _this.log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
+                    log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
                   } else {
-                    _this.log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
+                    log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
                   }
                   return oMyRule.actions[moduleName] = result;
                 });
               } else {
-                return _this.log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
+                return log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
               }
             });
           }
@@ -301,13 +303,13 @@ processEvent = (function(_this) {
     fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
       var argument, arrArgs, arrSelectors, data, err, i, j, len, len1, oArg, ref, sel, selector;
       if (!node) {
-        _this.log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
+        log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
         return;
       }
       if (depth === arrPath.length) {
         try {
           numExecutingFunctions++;
-          _this.log.info("EN | " + funcName + " executes...");
+          log.info("EN | " + funcName + " executes...");
           arrArgs = [];
           if (node.funcArgs[funcName]) {
             ref = node.funcArgs[funcName];
@@ -329,25 +331,25 @@ processEvent = (function(_this) {
               arrArgs.push(argument);
             }
           } else {
-            _this.log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
+            log.warn("EN | Weird! arguments not loaded for function '" + funcName + "'!");
             arrArgs.push(null);
           }
           arrArgs.push(evt);
           node.module[funcName].apply(_this, arrArgs);
-          _this.log.info("EN | " + funcName + " finished execution");
+          log.info("EN | " + funcName + " finished execution");
         } catch (_error) {
           err = _error;
-          _this.log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
+          log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
           node.logger(err.message);
         }
         if (numExecutingFunctions-- % 100 === 0) {
-          return _this.log.warn("EN | The system is producing too many tokens! Currently: " + numExecutingFunctions);
+          return log.warn("EN | The system is producing too many tokens! Currently: " + numExecutingFunctions);
         }
       } else {
         return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
       }
     };
-    _this.log.info('EN | Processing event: ' + evt.eventname);
+    log.info('EN | Processing event: ' + evt.eventname);
     fCheckEventForUser = function(userName, oUser) {
       var action, arr, oMyRule, results, ruleEvent, ruleName;
       results = [];
@@ -358,7 +360,7 @@ processEvent = (function(_this) {
           ruleEvent += '_created:' + oMyRule.rule.timestamp;
         }
         if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
-          _this.log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
+          log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
           results.push((function() {
             var i, len, ref, results1;
             ref = oMyRule.rule.actions;

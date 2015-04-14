@@ -12,6 +12,8 @@ TODO events should have: raising-time, reception-time and eventually sender-uri 
 
 # **Loads Modules:**
 
+# - [Logging](logging.html)
+log = require './logging'
 # - [Persistence](persistence.html)
 db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
@@ -56,10 +58,9 @@ Initializes the Engine and starts polling the event queue for new events.
 
 @param {Object} args
 ###
-exports = module.exports = ( args ) =>
+exports = module.exports
+exports.init = () =>
 	if not isRunning
-		@log = args.logger
-		dynmod args
 		setTimeout exports.startEngine, 10 # Very important, this forks a token for the poll task
 		module.exports
 
@@ -158,14 +159,14 @@ updateActionModules = ( updatedRuleId ) =>
 								db.actionDispatchers,                  # the DB interface
 								( result ) =>
 									if result.answ.code is 200
-										@log.info "EN | Module '#{ moduleName }' successfully loaded for userName
+										log.info "EN | Module '#{ moduleName }' successfully loaded for userName
 											'#{ userName }' in rule '#{ oMyRule.rule.id }'"
 									else
-										@log.error "EN | Compilation of code failed! #{ userName },
+										log.error "EN | Compilation of code failed! #{ userName },
 											#{ oMyRule.rule.id }, #{ moduleName }: #{ result.answ.message }"
 									oMyRule.actions[moduleName] = result
 						else
-							@log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
+							log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
 
 			fAddIfNewOrNotExisting action for action in oMyRule.rule.actions
 
@@ -240,12 +241,12 @@ Handles retrieved events.
 processEvent = ( evt ) =>
 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
 		if not node
-			@log.error "EN | Didn't find property in user rule list: " + arrPath.join( ', ' ) + " at depth " + depth
+			log.error "EN | Didn't find property in user rule list: " + arrPath.join( ', ' ) + " at depth " + depth
 			return
 		if depth is arrPath.length
 			try
 				numExecutingFunctions++
-				@log.info "EN | #{ funcName } executes..."
+				log.info "EN | #{ funcName } executes..."
 				arrArgs = []
 				if node.funcArgs[ funcName ]
 					for oArg in node.funcArgs[ funcName ]
@@ -263,20 +264,20 @@ processEvent = ( evt ) =>
 						# else
 						# 	arrArgs.push oArg.value
 				else
-					@log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
+					log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
 					arrArgs.push null
 				arrArgs.push evt
 				node.module[ funcName ].apply this, arrArgs
-				@log.info "EN | #{ funcName } finished execution"
+				log.info "EN | #{ funcName } finished execution"
 			catch err
-				@log.info "EN | ERROR IN ACTION INVOKER: " + err.message
+				log.info "EN | ERROR IN ACTION INVOKER: " + err.message
 				node.logger err.message
 			if numExecutingFunctions-- % 100 is 0
-				@log.warn "EN | The system is producing too many tokens! Currently: #{ numExecutingFunctions }"
+				log.warn "EN | The system is producing too many tokens! Currently: #{ numExecutingFunctions }"
 		else
 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
-	@log.info 'EN | Processing event: ' + evt.eventname
+	log.info 'EN | Processing event: ' + evt.eventname
 	fCheckEventForUser = ( userName, oUser ) =>
 		for ruleName, oMyRule of oUser
 
@@ -285,7 +286,7 @@ processEvent = ( evt ) =>
 				ruleEvent += '_created:' + oMyRule.rule.timestamp
 			if evt.eventname is ruleEvent and validConditions evt, oMyRule.rule, userName, ruleName
 				
-				@log.info 'EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName
+				log.info 'EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName
 				
 				for action in oMyRule.rule.actions
 					arr = action.split ' -> '

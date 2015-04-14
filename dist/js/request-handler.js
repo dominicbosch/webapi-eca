@@ -8,7 +8,9 @@ Request Handler
 > pages as well as POST requests such as user login, module storing, event
 > invocation and also admin commands.
  */
-var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, mustache, path, pathUsers, renderPage;
+var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, log, mustache, path, pathUsers, renderPage;
+
+log = require('./logging');
 
 db = require('./persistence');
 
@@ -24,10 +26,11 @@ pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
 
 dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
 
-exports = module.exports = (function(_this) {
+exports = module.exports;
+
+exports.init = (function(_this) {
   return function(args) {
     var fStoreUser, oUser, user, users;
-    _this.log = args.logger;
     _this.objAdminCmds = {
       shutdown: function(obj, cb) {
         var data;
@@ -50,7 +53,7 @@ exports = module.exports = (function(_this) {
               roles = JSON.parse(obj.roles);
             } catch (_error) {
               err = _error;
-              this.log('RH | error parsing newuser roles: ' + err.message);
+              log('RH | error parsing newuser roles: ' + err.message);
               roles = [];
             }
           } else {
@@ -72,8 +75,8 @@ exports = module.exports = (function(_this) {
               };
               return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
                 if (err) {
-                  this.log.error("RH | Unable to write new user file! ");
-                  return this.log.error(err);
+                  log.error("RH | Unable to write new user file! ");
+                  return log.error(err);
                 }
               });
             };
@@ -98,7 +101,7 @@ exports = module.exports = (function(_this) {
     _this.allowedHooks = {};
     db.getAllWebhooks(function(err, oHooks) {
       if (oHooks) {
-        _this.log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
+        log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
         return _this.allowedHooks = oHooks;
       }
     });

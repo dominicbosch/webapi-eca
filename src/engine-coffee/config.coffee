@@ -13,95 +13,33 @@ Configuration
 fs = require 'fs'
 path = require 'path'
 
+oConfig = {}
+
 ###
-Module call
+init( configPath )
 -----------
 
-Calling the module as a function will act as a constructor and load the config file.
-It is possible to hand an args object with the properties nolog (true if no outputs shall
-be generated) and configPath for a custom configuration file path.
+Calling the init function will load the config file.
+It is possible to hand a configPath for a custom configuration file path.
 
 @param {Object} args
 ###
-exports = module.exports = ( args ) =>
-	args = args ? {}
-	if args.nolog
-		@nolog = true
-	if args.configPath
-		loadConfigFile args.configPath
+oConfig.init = ( filePath ) =>
+	if @isInitialized
+		console.error 'ERROR: Already initialized configuration!'
 	else
-		loadConfigFile path.join 'config', 'systems.json'
-	module.exports
-
-###
-Tries to load a configuration file from the path relative to this module's parent folder. 
-Reads the config file synchronously from the file system and try to parse it.
-
-@private loadConfigFile
-@param {String} configPath
-###
-loadConfigFile = ( configPath ) =>
-	# FIXME this needs to load the correct config file entry (testing/productive/whatever)
-	@config = null
-	confProperties = [
-		'log'
-		'http-port'
-		'db-port'
-	]
-	try
-		@config = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
-		@isReady = true
-		for prop in confProperties
-			if !@config[prop]
-				@isReady = false
-		if not @isReady and not @nolog
-			console.error "Missing property in config file, requires:\n" +
-				 " - #{ confProperties.join "\n - " }"
-	catch e
-		@isReady = false
-		if not @nolog
+		@isInitialized = true
+		configPath = path.resolve( filePath || path.join __dirname, '..', 'config', 'systems.json' )
+		try
+			oConffile = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
+			for prop, oValue of oConffile
+				oConfig[ prop ] = oValue
+			# We replace the config initialization routine
+			oConfig.init = () ->
+				console.error 'ERROR: Already initialized configuration!'
+			oConfig.isInit = true
+		catch e
+			oConfig = null
 			console.error "Failed loading config file: #{ e.message }"
-	
 
-###
-Fetch a property from the configuration
-
-@private fetchProp( *prop* )
-@param {String} prop
-###
-exports.fetchProp = ( prop ) => @config?[prop]
-
-###
-***Returns*** true if the config file is ready, else false
-
-@public isReady()
-###
-exports.isReady = => @isReady
-
-###
-***Returns*** the HTTP port
-
-@public getHttpPort()
-###
-exports.getHttpPort = -> exports.fetchProp 'http-port'
-
-###
-***Returns*** the DB port*
-
-@public getDBPort()
-###
-exports.getDbPort = -> exports.fetchProp 'db-port'
-
-###
-***Returns*** the log conf object
-
-@public getLogConf()
-###
-exports.getLogConf = -> exports.fetchProp 'log'
-
-###
-***Returns*** the crypto key
-
-@public getCryptoKey()
-###
-exports.getKeygenPassphrase = -> exports.fetchProp 'keygen-passphrase'
+exports = module.exports = oConfig

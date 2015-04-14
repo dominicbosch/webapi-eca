@@ -9,13 +9,14 @@ Encryption
 
 # - [cryptico](https://github.com/wwwtyro/cryptico)
 cryptico = require './cryptico'
+log = require './logging'
 
-exports = module.exports = ( args ) =>
-	@log = args.logger
-	@oPrivateRSAkey = cryptico.generateRSAKey args[ 'keygen' ], 1024
+exports = module.exports
+
+exports.init = ( keygenPassphrase ) ->
+	@oPrivateRSAkey = cryptico.generateRSAKey keygenPassphrase, 1024
 	@strPublicKey = cryptico.publicKeyString @oPrivateRSAkey
-	@log.info "DM | Public Key generated: #{ @strPublicKey }"
-	module.exports
+	log.info "DM | Public Key generated: #{ @strPublicKey }"
 
 exports.getPublicKey = () =>
 	@strPublicKey

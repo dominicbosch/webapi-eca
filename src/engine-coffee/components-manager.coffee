@@ -11,6 +11,8 @@ Components Manager
 
 # **Loads Modules:**
 
+# - [Logging](logging.html)
+log = require './logging'
 # - [Persistence](persistence.html)
 db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
@@ -29,20 +31,6 @@ events = require 'events'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 eventEmitter = new events.EventEmitter()
-
-###
-Module call
------------
-Initializes the Components Manager and constructs a new Event Emitter.
-
-@param {Object} args
-###
-exports = module.exports = ( args ) =>
-	@log = args.logger
-	db args
-	dynmod args
-	module.exports
-
 
 ###
 Add an event handler (eh) that listens for rules.
@@ -76,7 +64,7 @@ exports.addRuleListener = ( eh ) =>
 								user: user
 								rule: oRule
 					catch err
-						@log.warn "CM | There's an invalid rule in the system: #{ strRule }"
+						log.warn "CM | There's an invalid rule in the system: #{ strRule }"
 
 			# Go through all rules for each user
 			fFetchRule rule for rule in rules
@@ -274,7 +262,7 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 		if answ.code is 200
 			funcs = []
 			funcs.push name for name, id of cm.module
-			@log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
+			log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
 			answ.message = 
 				" Module #{ oBody.id } successfully stored! Found following function(s): #{ funcs }"
 			oBody.functions = JSON.stringify funcs

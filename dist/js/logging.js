@@ -1,4 +1,4 @@
-var bunyan, fs, path;
+var bunyan, exports, fs, path;
 
 fs = require('fs');
 
@@ -6,28 +6,18 @@ path = require('path');
 
 bunyan = require('bunyan');
 
-
-/*
-Returns a bunyan logger according to the given arguments.
-
-@public getLogger( *args* )
-@param {Object} args
- */
-
-exports.getLogger = (function(_this) {
-  return function(args) {
-    var e, emptylog, opt;
-    emptylog = {
-      trace: function() {},
-      debug: function() {},
-      info: function() {},
-      warn: function() {},
-      error: function() {},
-      fatal: function() {}
-    };
+exports = module.exports = {
+  trace: function() {},
+  debug: function() {},
+  info: function() {},
+  warn: function() {},
+  error: function() {},
+  fatal: function() {},
+  init: function(args) {
+    var e, func, logPath, opt, prop, ref;
     args = args != null ? args : {};
-    if (args.nolog === true || args.nolog === 'true') {
-      return emptylog;
+    if (args.nolog) {
+      return delete exports.init;
     } else {
       try {
         opt = {
@@ -37,33 +27,38 @@ exports.getLogger = (function(_this) {
           opt.src = true;
         }
         if (args['file-path']) {
-          _this.logPath = path.resolve(args['file-path']);
+          logPath = path.resolve(args['file-path']);
         } else {
-          _this.logPath = path.resolve(__dirname, '..', 'logs', 'server.log');
+          logPath = path.resolve(__dirname, '..', '..', 'logs', 'server.log');
         }
         try {
-          fs.writeFileSync(_this.logPath + '.temp', 'temp');
-          fs.unlinkSync(_this.logPath + '.temp');
+          fs.writeFileSync(logPath + '.temp', 'temp');
+          fs.unlinkSync(logPath + '.temp');
         } catch (_error) {
           e = _error;
-          console.error("Log folder '" + _this.logPath + "' is not writable");
-          return emptylog;
+          console.error("Log folder '" + logPath + "' is not writable");
+          return;
         }
         opt.streams = [
           {
-            level: args['io-level'],
+            level: args['std-level'],
             stream: process.stdout
           }, {
             level: args['file-level'],
-            path: _this.logPath
+            path: logPath
           }
         ];
-        return bunyan.createLogger(opt);
+        ref = bunyan.createLogger(opt);
+        for (prop in ref) {
+          func = ref[prop];
+          exports[prop] = func;
+        }
+        return delete exports.init;
       } catch (_error) {
         e = _error;
         console.error(e);
-        return emptylog;
+        return delete exports.init;
       }
     }
-  };
-})(this);
+  }
+};

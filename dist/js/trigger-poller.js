@@ -6,9 +6,11 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, hd, isRunning, listUserModules, log, logconf, logger, pollLoop;
+var config, db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, init, isRunning, listUserModules, log, pollLoop;
 
-logger = require('./logging');
+log = require('./logging');
+
+config = require('./config');
 
 db = require('./persistence');
 
@@ -16,49 +18,21 @@ dynmod = require('./dynamic-modules');
 
 encryption = require('./encryption');
 
-hd = require('heapdump');
-
-if (process.argv.length < 8) {
-  console.error('Not all arguments have been passed!');
-  process.exit();
-}
-
-logconf = {
-  mode: process.argv[2],
-  nolog: process.argv[6]
+init = function(args) {
+  if (!args) {
+    console.error('Not all arguments have been passed!');
+    process.exit();
+  }
+  log.init(args.log);
+  log.info('EP | Event Trigger Poller starts up');
+  process.on('uncaughtException', function(err) {
+    log.error('Probably one of the Event Triggers produced an error!');
+    return log.error(err);
+  });
+  db.init(args['db-port']);
+  db.selectDatabase(args['db-select']);
+  return encryption.init(args['keygenpp']);
 };
-
-logconf['io-level'] = process.argv[3];
-
-logconf['file-level'] = process.argv[4];
-
-logconf['file-path'] = process.argv[5];
-
-log = logger.getLogger(logconf);
-
-log.info('EP | Event Trigger Poller starts up');
-
-process.on('uncaughtException', function(err) {
-  log.error('Probably one of the Event Triggers produced an error!');
-  heapdump.writeSnapshot(__dirname + '/' + Date.now() + '.heapsnapshot');
-  return log.error(err);
-});
-
-db({
-  logger: log
-});
-
-dynmod({
-  logger: log,
-  usermodules: process.argv[9].split(',')
-});
-
-db.selectDatabase(parseInt(process.argv[7]) || 0);
-
-encryption({
-  logger: log,
-  keygen: process.argv[8]
-});
 
 listUserModules = {};
 
@@ -71,7 +45,10 @@ process.on('disconnect', function() {
 });
 
 process.on('message', function(msg) {
-  log.info("EP | Got info about new rule: " + msg.event);
+  if (msg.intevent === 'startup') {
+    init(msg.data);
+  }
+  log.info("EP | Got info about new rule: " + msg.intevent);
   if (msg.intevent === 'new' || msg.intevent === 'init') {
     fLoadModule(msg);
   }
@@ -145,12 +122,17 @@ fLoadModule = function(msg) {
 
 fCheckAndRun = function(userId, ruleId, timestamp) {
   return function() {
-    var oRule;
+    var e, oRule;
     log.info("EP | Check and run user " + userId + ", rule " + ruleId);
     if (isRunning && listUserModules[userId] && listUserModules[userId][ruleId]) {
       if (listUserModules[userId][ruleId].timestamp === timestamp) {
         oRule = listUserModules[userId][ruleId];
-        fCallFunction(userId, ruleId, oRule);
+        try {
+          fCallFunction(userId, ruleId, oRule);
+        } catch (_error) {
+          e = _error;
+          log.error('Error during execution of poller');
+        }
         return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.eventinterval);
       } else {
         return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + timestamp);
@@ -185,6 +167,8 @@ This function will loop infinitely every 10 seconds until isRunning is set to fa
 
 @private pollLoop()
  */
+
+console.log('Do we really need a poll loop in the trigger poller?');
 
 pollLoop = function() {
   if (isRunning) {

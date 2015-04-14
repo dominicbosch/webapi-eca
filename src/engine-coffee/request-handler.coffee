@@ -11,6 +11,8 @@ Request Handler
 
 # **Loads Modules:**
 
+# - [Logging](logging.html)
+log = require './logging'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
@@ -28,8 +30,8 @@ pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
 
 # Prepare the user command handlers which are invoked via HTTP requests.
 dirHandlers = path.resolve __dirname, '..', 'webpages', 'handlers'
-exports = module.exports = ( args ) => 
-	@log = args.logger
+exports = module.exports
+exports.init = ( args ) => 
 
 	# Register the shutdown handler to the admin command. 
 	@objAdminCmds =
@@ -49,7 +51,7 @@ exports = module.exports = ( args ) =>
 					try
 						roles = JSON.parse obj.roles
 					catch err
-						@log 'RH | error parsing newuser roles: ' + err.message
+						log 'RH | error parsing newuser roles: ' + err.message
 						roles = []
 				else
 					roles = []
@@ -67,8 +69,8 @@ exports = module.exports = ( args ) =>
 							roles: roles
 						fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
 							if err
-								@log.error "RH | Unable to write new user file! "
-								@log.error err
+								log.error "RH | Unable to write new user file! "
+								log.error err
 
 				fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
 			else
@@ -87,7 +89,7 @@ exports = module.exports = ( args ) =>
 	@allowedHooks = {}
 	db.getAllWebhooks ( err, oHooks ) =>
 		if oHooks
-			@log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
+			log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
 			@allowedHooks = oHooks
 	module.exports
 

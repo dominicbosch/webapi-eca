@@ -8,6 +8,10 @@ Dynamic Modules
 
 # **Loads Modules:**
 
+# - [Config](config.html)
+conf = require './config'
+# - [Logging](logging.html)
+log = require './logging'
 # - [Persistence](persistence.html)
 db = require './persistence'
 # - [Encryption](encryption.html)
@@ -21,19 +25,6 @@ vm = require 'vm'
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
-
-
-###
-Module call
------------
-Initializes the dynamic module handler.
-
-@param {Object} args
-###
-exports = module.exports = ( args ) =>
-	@log = args.logger
-	@usermodules = args.usermodules
-	module.exports
 
 logFunction = ( uId, rId, mId ) ->
 	( msg ) ->
@@ -62,7 +53,7 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 	comment = searchComment lang, src
 	if lang is 'CoffeeScript'
 		try
-			@log.info "DM | Compiling module '#{ modId }' for user '#{ userId }'"
+			log.info "DM | Compiling module '#{ modId }' for user '#{ userId }'"
 			src = cs.compile src
 		catch err
 			cb
@@ -72,7 +63,7 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 						err.location.first_line
 			return
 
-	@log.info "DM | Trying to fetch user specific module '#{ modId }' paramters for user '#{ userId }'"
+	log.info "DM | Trying to fetch user specific module '#{ modId }' paramters for user '#{ userId }'"
 	# dbMod is only attached if the module really gets loaded and needs to fetch user information from the database
 	if dbMod
 		dbMod.getUserParams modId, userId, ( err, obj ) =>
@@ -80,10 +71,10 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 				oParams = {}
 				for name, oParam of JSON.parse obj
 					oParams[ name ] = encryption.decrypt oParam.value
-				@log.info "DM | Loaded user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
+				log.info "DM | Loaded user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
 			catch err
-				@log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
-				@log.warn err
+				log.warn "DM | Error during parsing of user defined params for #{ userId }, #{ oRule.id }, #{ modId }"
+				log.warn err
 			createNodeModule src, userId, oRule, modId, modType, dbMod, oParams, comment, cb
 	else
 		createNodeModule src, userId, oRule, modId, modType, dbMod, null, comment, cb
@@ -107,7 +98,7 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 		code: 200
 		message: 'Successfully compiled'
 
-	@log.info "DM | Running module '#{ modId }' for user '#{ userId }'"
+	log.info "DM | Running module '#{ modId }' for user '#{ userId }'"
 	# The function used to provide logging mechanisms on a per rule basis
 	logFunc = logFunction userId, oRule.id, modId
 	# The sandbox contains the objects that are accessible to the user. Eventually they need to be required from a vm themselves 
@@ -129,7 +120,7 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 		exports: {}
 		setTimeout: setTimeout # This one allows probably too much
 		pushEvent: fPushEvent userId, oRule, modType
-	sandbox[ mod ] = require mod for mod in @usermodules
+	sandbox[ mod ] = require mod for mod in conf.usermodules
 
 #FIXME ENGINE BREAKS if non-existing module is used??? 
 
@@ -149,7 +140,7 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 			msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number'
 		answ.message = 'Loading Module failed: ' + msg
 
-	@log.info "DM | Module '#{ modId }' ran successfully for user '#{ userId }' in rule '#{ oRule.id }'"
+	log.info "DM | Module '#{ modId }' ran successfully for user '#{ userId }' in rule '#{ oRule.id }'"
 	oFuncParams = {}
 	oFuncArgs = {}
 	for fName, func of sandbox.exports
@@ -163,10 +154,10 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 				if obj
 					try
 						oFuncArgs[ fName ] = JSON.parse obj
-						@log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ oRule.id }, #{ modId }: #{ obj }"
+						log.info "DM | Found and attached user-specific arguments to #{ userId }, #{ oRule.id }, #{ modId }: #{ obj }"
 					catch err
-						@log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ oRule.id }, #{ modId }"
-						@log.warn err
+						log.warn "DM | Error during parsing of user-specific arguments for #{ userId }, #{ oRule.id }, #{ modId }"
+						log.warn err
 		for func of oFuncParams
 			dbMod.getUserArguments userId, oRule.id, modId, func, fRegisterArguments func
 	cb

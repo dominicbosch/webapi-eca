@@ -22,6 +22,9 @@ Persistence
 
 # **Loads Modules:**
 
+# - [Logging](logging.html)
+log = require './logging'
+
 # - External Modules:
 #   [redis](https://github.com/mranney/node_redis)
 redis = require 'redis'
@@ -33,19 +36,14 @@ Initializes the DB connection with the given `db-port` property in the `args` ob
 
 @param {Object} args
 ###
-exports = module.exports = ( args ) =>
+exports = module.exports
+
+exports.init = ( dbPort ) =>
 	if not @db
 		#TODO we need to have a secure concept here, private keys per user
-		#FIXME get rid of crpto
-		if not args[ 'db-port' ]
-			args[ 'db-port' ] = 6379
-		@log = args.logger
-		exports.eventTriggers = new IndexedModules 'event-trigger', @log
-		exports.actionDispatchers = new IndexedModules 'action-dispatcher', @log
-		exports.initPort args[ 'db-port' ]
-
-exports.getLogger = () =>
-	@log 
+		exports.eventTriggers = new IndexedModules 'event-trigger', log
+		exports.actionDispatchers = new IndexedModules 'action-dispatcher', log
+		exports.initPort dbPort
 
 exports.initPort = ( port ) =>
 	@connRefused = false
@@ -57,9 +55,9 @@ exports.initPort = ( port ) =>
 	@db.on 'error', ( err ) =>
 		if err.message.indexOf( 'ECONNREFUSED' ) > -1
 			@connRefused = true
-			@log.warn 'DB | Wrong port?'
+			log.warn 'DB | Wrong port?'
 		else
-			@log.error err
+			log.error err
 	exports.eventTriggers.setDB @db
 	exports.actionDispatchers.setDB @db
 
@@ -87,7 +85,7 @@ exports.isConnected = ( cb ) =>
 					cb new Error 'DB | Connection refused! Wrong port?'
 				else
 					if @db.connected
-						@log.info 'DB | Successfully connected to DB!'
+						log.info 'DB | Successfully connected to DB!'
 						cb()
 					else if numAttempts++ < 10
 						setTimeout fCheckConnection, 100
@@ -105,9 +103,9 @@ Abstracts logging for simple action replies from the DB.
 replyHandler = ( action ) =>
 	( err, reply ) =>
 		if err
-			@log.warn err, "during '#{ action }'"
+			log.warn err, "during '#{ action }'"
 		else
-			@log.info "DB | #{ action }: #{ reply }"
+			log.info "DB | #{ action }: #{ reply }"
 
 
 ###
@@ -118,10 +116,10 @@ Push an event into the event queue.
 ###
 exports.pushEvent = ( oEvent ) =>
 	if oEvent
-		@log.info "DB | Event pushed into the queue: '#{ oEvent.eventname }'"
+		log.info "DB | Event pushed into the queue: '#{ oEvent.eventname }'"
 		@db.rpush 'event_queue', JSON.stringify oEvent
 	else
-		@log.warn 'DB | Why would you give me an empty event...'
+		log.warn 'DB | Why would you give me an empty event...'
 
 
 ###
@@ -162,12 +160,12 @@ data objects via the provided function and returns the results to cb(err, obj).
 			the retrieved data or an error
 ###
 getSetRecords = ( set, fSingle, cb ) =>
-	@log.info "DB | Fetching set records: '#{ set }'"
+	log.info "DB | Fetching set records: '#{ set }'"
 	# Fetch all members of the set
 	@db.smembers set, ( err, arrReply ) =>
 		if err
 			# If an error happens we return it to the callback function
-			@log.warn err, "DB | fetching '#{ set }'"
+			log.warn err, "DB | fetching '#{ set }'"
 			cb err
 		else if arrReply.length == 0
 			# If the set was empty we return null to the callback
@@ -190,10 +188,10 @@ getSetRecords = ( set, fSingle, cb ) =>
 				( err, data ) =>
 					--semaphore
 					if err
-						@log.warn err, "DB | fetching single element: '#{ prop }'"
+						log.warn err, "DB | fetching single element: '#{ prop }'"
 					else if not data
 						# There was no data behind the key
-						@log.warn new Error "Empty key in DB: '#{ prop }'"
+						log.warn new Error "Empty key in DB: '#{ prop }'"
 					else
 						# We found a valid record and add it to the reply object
 						objReplies[ prop ] = data
@@ -208,11 +206,11 @@ getSetRecords = ( set, fSingle, cb ) =>
 
 
 class IndexedModules
-	constructor: ( @setname, @log ) ->
-		@log.info "DB | (IdxedMods) Instantiated indexed modules for '#{ @setname }'"
+	constructor: ( @setname, log ) ->
+		log.info "DB | (IdxedMods) Instantiated indexed modules for '#{ @setname }'"
 
 	setDB: ( @db ) ->
-		@log.info "DB | (IdxedMods) Registered new DB connection for '#{ @setname }'"
+		log.info "DB | (IdxedMods) Registered new DB connection for '#{ @setname }'"
 
 	###
 	Stores a module and links it to the user.
@@ -222,7 +220,7 @@ class IndexedModules
 	@param {object} oModule
 	###
 	storeModule: ( userId, oModule ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
+		log.info "DB | (IdxedMods) #{ @setname }.storeModule( #{ userId }, oModule )"
 		# @db.sadd "user:#{ userId }:#{ @setname }s", oModule.id,
 		# 	replyHandler "sadd 'user:#{ userId }:#{ @setname }s' -> #{ oModule.id }"
 		# @db.hmset "user:#{ userId }:#{ @setname }:#{ oModule.id }", oModule,
@@ -233,32 +231,32 @@ class IndexedModules
 			replyHandler "hmset '#{ @setname }:#{ oModule.id }' -> [oModule]"
 
 	getModule: ( userId, mId, cb ) =>
-		# @log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
-		# @log.info "hgetall user:#{ userId }:#{ @setname }:#{ mId }"
+		# log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
+		# log.info "hgetall user:#{ userId }:#{ @setname }:#{ mId }"
 		# @db.hgetall "user:#{ userId }:#{ @setname }:#{ mId }", cb
-		@log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
-		@log.info "hgetall #{ @setname }:#{ mId }"
+		log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
+		log.info "hgetall #{ @setname }:#{ mId }"
 		@db.hgetall "#{ @setname }:#{ mId }", cb
 
 	getModuleField: ( userId, mId, field, cb ) =>
-		# @log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
+		# log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
 		# @db.hget "user:#{ userId }:#{ @setname }:#{ mId }", field, cb
-		@log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"
 		@db.hget "#{ @setname }:#{ mId }", field, cb
 
 	#TODO add testing
 	getAvailableModuleIds: ( userId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getAvailableModuleIds( #{ userId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getAvailableModuleIds( #{ userId } )"
 		# @db.sunion "public-#{ @setname }s", "user:#{ userId }:#{ @setname }s", cb
 		@db.sunion "public-#{ @setname }s", "#{ @setname }s", cb
 
 	getModuleIds: ( userId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getModuleIds()"
+		log.info "DB | (IdxedMods) #{ @setname }.getModuleIds()"
 		# @db.smembers "user:#{ userId }:#{ @setname }s", cb
 		@db.smembers "#{ @setname }s", cb
 
 	deleteModule: ( userId, mId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ userId }, #{ mId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.deleteModule( #{ userId }, #{ mId } )"
 		# @db.srem "user:#{ userId }:#{ @setname }s", mId,
 		# 	replyHandler "srem 'user:#{ userId }:#{ @setname }s' -> '#{ mId }'"
 		# @db.del "user:#{ userId }:#{ @setname }:#{ mId }",
@@ -283,22 +281,22 @@ class IndexedModules
 	@param {object} encData
 	###
 	storeUserParams: ( mId, userId, encData ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.storeUserParams( #{ mId }, #{ userId }, encData )"
+		log.info "DB | (IdxedMods) #{ @setname }.storeUserParams( #{ mId }, #{ userId }, encData )"
 		@db.sadd "#{ @setname }-params", "#{ mId }:#{ userId }",
 			replyHandler "sadd '#{ @setname }-params' -> '#{ mId }:#{ userId }'"
 		@db.set "#{ @setname }-params:#{ mId }:#{ userId }", encData,
 			replyHandler "set '#{ @setname }-params:#{ mId }:#{ userId }' -> [encData]"
 
 	getUserParams: ( mId, userId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getUserParams( #{ mId }, #{ userId } )"
 		@db.get "#{ @setname }-params:#{ mId }:#{ userId }", cb
 
 	getUserParamsIds: ( cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getUserParamsIds()"
+		log.info "DB | (IdxedMods) #{ @setname }.getUserParamsIds()"
 		@db.smembers "#{ @setname }-params", cb
 
 	deleteUserParams: ( mId, userId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserParams( #{ mId }, #{ userId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.deleteUserParams( #{ mId }, #{ userId } )"
 		@db.srem "#{ @setname }-params", "#{ mId }:#{ userId }",
 			replyHandler "srem '#{ @setname }-params' -> '#{ mId }:#{ userId }'"
 		@db.del "#{ @setname }-params:#{ mId }:#{ userId }",
@@ -311,18 +309,18 @@ class IndexedModules
 	@private storeUserArguments( *userId, ruleId, mId, funcId, encData* )
 	###
 	storeUserArguments: ( userId, ruleId, mId, funcId, encData ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId }, encData )"
+		log.info "DB | (IdxedMods) #{ @setname }.storeUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId }, encData )"
 		@db.sadd "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", funcId,
 			replyHandler "sadd '#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions' -> '#{ funcId }'"
 		@db.set "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }", encData,
 			replyHandler "set '#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }' -> [encData]"
 
 	getUserArgumentsFunctions: ( userId, ruleId, mId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getUserArgumentsFunctions( #{ userId }, #{ ruleId }, #{ mId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getUserArgumentsFunctions( #{ userId }, #{ ruleId }, #{ mId } )"
 		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", cb
 
 	getAllModuleUserArguments: ( userId, ruleId, mId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getAllModuleUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getAllModuleUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
 		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
 			sem = obj.length
 			oAnswer = {}
@@ -339,11 +337,11 @@ class IndexedModules
 					@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }", fRegisterFunction func
 
 	getUserArguments: ( userId, ruleId, mId, funcId, cb ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.getUserArguments( #{ userId }, #{ ruleId }, #{ mId }, #{ funcId } )"
 		@db.get "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ funcId }", cb
 
 	deleteUserArguments: ( userId, ruleId, mId ) =>
-		@log.info "DB | (IdxedMods) #{ @setname }.deleteUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
+		log.info "DB | (IdxedMods) #{ @setname }.deleteUserArguments( #{ userId }, #{ ruleId }, #{ mId } )"
 		@db.smembers "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:functions", ( err, obj ) =>
 			for func in obj
 				@db.del "#{ @setname }:#{ userId }:#{ ruleId }:#{ mId }:function:#{ func }",
@@ -412,14 +410,14 @@ exports.resetLog = ( userId, ruleId ) =>
 Query the DB for a rule and pass it to cb(err, obj).
 ###
 exports.getRule = ( userId, ruleId, cb ) =>
-	@log.info "DB | getRule( '#{ userId }', '#{ ruleId }' )"
+	log.info "DB | getRule( '#{ userId }', '#{ ruleId }' )"
 	@db.get "user:#{ userId }:rule:#{ ruleId }", cb
 
 ###
 Store a string representation of a rule in the DB.
 ###
 exports.storeRule = ( userId, ruleId, data ) =>
-	@log.info "DB | storeRule( '#{ userId }', '#{ ruleId }' )"
+	log.info "DB | storeRule( '#{ userId }', '#{ ruleId }' )"
 	@db.sadd "user:#{ userId }:rules", "#{ ruleId }",
 		replyHandler "sadd 'user:#{ userId }:rules' -> '#{ ruleId }'"
 	@db.set "user:#{ userId }:rule:#{ ruleId }", data,
@@ -429,14 +427,14 @@ exports.storeRule = ( userId, ruleId, data ) =>
 Returns all existing rule ID's for a user
 ###
 exports.getRuleIds = ( userId, cb ) =>
-	@log.info "DB | getRuleIds( '#{ userId }' )"
+	log.info "DB | getRuleIds( '#{ userId }' )"
 	@db.smembers "user:#{ userId }:rules", cb
 
 ###
 Delete a string representation of a rule.
 ###
 exports.deleteRule = ( userId, ruleId ) =>
-	@log.info "DB | deleteRule( '#{ userId }', '#{ ruleId }' )"
+	log.info "DB | deleteRule( '#{ userId }', '#{ ruleId }' )"
 	@db.srem "user:#{ userId }:rules", ruleId,
 		replyHandler "srem 'user:#{ userId }:rules' -> '#{ ruleId }'"
 	@db.del "user:#{ userId }:rule:#{ ruleId }",
@@ -448,7 +446,7 @@ exports.deleteRule = ( userId, ruleId ) =>
 # Activate a rule.
 # ###
 # exports.activateRule = ( ruleId, userId ) =>
-# 	@log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
+# 	log.info "DB | activateRule: '#{ ruleId }' for '#{ userId }'"
 # 	@db.sadd "rule:#{ ruleId }:active-users", userId,
 # 		replyHandler "sadd 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
 # 	@db.sadd "user:#{ userId }:active-rules", ruleId,
@@ -459,7 +457,7 @@ exports.deleteRule = ( userId, ruleId ) =>
 # Deactivate a rule.
 # ###
 # exports.deactivateRule = ( ruleId, userId ) =>
-# 	@log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
+# 	log.info "DB | deactivateRule: '#{ ruleId }' for '#{ userId }'"
 # 	@db.srem "rule:#{ ruleId }:active-users", userId,
 # 		replyHandler "srem 'rule:#{ ruleId }:active-users' -> '#{ userId }'"
 # 	@db.srem "user:#{ userId }:active-rules", ruleId,
@@ -473,7 +471,7 @@ Fetch all active ruleIds and pass them to cb(err, obj).
 ###
 # TODO we should add an active flag to rules
 exports.getAllActivatedRuleIdsPerUser = ( cb ) =>
-	@log.info "DB | Fetching all active rules"
+	log.info "DB | Fetching all active rules"
 	@db.smembers 'users', ( err, obj ) =>
 		result = {}
 		if obj.length is 0
@@ -500,7 +498,7 @@ The password should be hashed before it is passed to this function.
 @public storeUser( *objUser* )
 ###
 exports.storeUser = ( objUser ) =>
-	@log.info "DB | storeUser: '#{ objUser.username }'"
+	log.info "DB | storeUser: '#{ objUser.username }'"
 	if objUser and objUser.username and objUser.password
 		@db.sadd 'users', objUser.username,
 			replyHandler "sadd 'users' -> '#{ objUser.username }'"
@@ -509,7 +507,7 @@ exports.storeUser = ( objUser ) =>
 		@db.hset "user:#{ objUser.username }", "roles", JSON.stringify( objUser.roles ),
 			replyHandler "hset 'user:#{ objUser.username }' field 'roles' -> [objUser]"
 	else
-		@log.warn new Error 'DB | username or password was missing'
+		log.warn new Error 'DB | username or password was missing'
 
 ###
 Fetch all user IDs and pass them to cb(err, obj).
@@ -517,7 +515,7 @@ Fetch all user IDs and pass them to cb(err, obj).
 @public getUserIds( *cb* )
 ###
 exports.getUserIds = ( cb ) =>
-	@log.info "DB | getUserIds"
+	log.info "DB | getUserIds"
 	@db.smembers "users", cb
 	
 ###
@@ -526,7 +524,7 @@ Fetch a user by id and pass it to cb(err, obj).
 @public getUser( *userId, cb* )
 ###
 exports.getUser = ( userId, cb ) =>
-	@log.info "DB | getUser: '#{ userId }'"
+	log.info "DB | getUser: '#{ userId }'"
 	@db.hgetall "user:#{ userId }", ( err, obj ) =>
 		try
 			obj.roles = JSON.parse obj.roles
@@ -538,7 +536,7 @@ Deletes a user and all his associated linked and active rules.
 @public deleteUser( *userId* )
 ###
 exports.deleteUser = ( userId ) =>
-	@log.info "DB | deleteUser: '#{ userId }'"
+	log.info "DB | deleteUser: '#{ userId }'"
 	@db.srem "users", userId, replyHandler "srem 'users' -> '#{ userId }'"
 	@db.del "user:#{ userId }", replyHandler "del 'user:#{ userId }'"
 
@@ -578,14 +576,14 @@ because we only store hashes of passwords for security reasons.
 @public loginUser( *userId, password, cb* )
 ###
 exports.loginUser = ( userId, password, cb ) =>
-	@log.info "DB | User '#{ userId }' tries to log in"
+	log.info "DB | User '#{ userId }' tries to log in"
 	fCheck = ( pw ) =>
 		( err, obj ) =>
 			if err 
 				cb err, null
 			else if obj and obj.password
 				if pw is obj.password
-					@log.info "DB | User '#{ obj.username }' logged in!" 
+					log.info "DB | User '#{ obj.username }' logged in!" 
 					obj.roles = JSON.parse obj.roles
 					cb null, obj
 				else
@@ -604,7 +602,7 @@ Associate a role with a user.
 @public storeUserRole( *userId, role* )
 ###
 exports.storeUserRole = ( userId, role ) =>
-	@log.info "DB | storeUserRole: '#{ userId }:#{ role }'"
+	log.info "DB | storeUserRole: '#{ userId }:#{ role }'"
 	@db.sadd 'roles', role, replyHandler "sadd '#{ role }' to 'roles'"
 	@db.sadd "user:#{ userId }:roles", role,
 		replyHandler "sadd 'user:#{ userId }:roles' -> '#{ role }'"
@@ -617,7 +615,7 @@ Deassociate a role from a user.
 @public deleteRole( *userId, role* )
 ###
 exports.deleteRole = ( role ) =>
-	@log.info "DB | deleteRole: '#{ role }'"
+	log.info "DB | deleteRole: '#{ role }'"
 	@db.smembers "role:#{ role }:users", ( err, obj ) =>
 		delUserRole = ( userId ) =>
 			@db.srem "user:#{ userId }:roles", role,
@@ -632,7 +630,7 @@ Fetch all roles of a user and pass them to cb(err, obj).
 @public getUserRoles( *userId, cb* )
 ###
 exports.getUserRoles = ( userId, cb ) =>
-	@log.info "DB | getUserRoles: '#{ userId }'"
+	log.info "DB | getUserRoles: '#{ userId }'"
 	@db.smembers "user:#{ userId }:roles", cb
 	
 ###
@@ -641,7 +639,7 @@ Fetch all users of a role and pass them to cb(err, obj).
 @public getRoleUsers( *role, cb* )
 ###
 exports.getRoleUsers = ( role, cb ) =>
-	@log.info "DB | getRoleUsers: '#{ role }'"
+	log.info "DB | getRoleUsers: '#{ role }'"
 	@db.smembers "role:#{ role }:users", cb
 
 ###
@@ -650,7 +648,7 @@ Remove a role from a user.
 @public removeUserRole( *userId, role* )
 ###
 exports.removeUserRole = ( userId, role ) =>
-	@log.info "DB | removeRoleFromUser: role '#{ role }', user '#{ userId }'"
+	log.info "DB | removeRoleFromUser: role '#{ role }', user '#{ userId }'"
 	@db.srem "user:#{ userId }:roles", role,
 		replyHandler "srem 'user:#{ userId }:roles' -> '#{ role }'"
 	@db.srem "role:#{ role }:users", userId,

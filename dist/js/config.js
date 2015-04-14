@@ -5,143 +5,50 @@ Configuration
 =============
 > Loads the configuration file and acts as an interface to it.
  */
-var exports, fs, loadConfigFile, path;
+var exports, fs, oConfig, path;
 
 fs = require('fs');
 
 path = require('path');
 
+oConfig = {};
+
 
 /*
-Module call
+init( configPath )
 -----------
 
-Calling the module as a function will act as a constructor and load the config file.
-It is possible to hand an args object with the properties nolog (true if no outputs shall
-be generated) and configPath for a custom configuration file path.
+Calling the init function will load the config file.
+It is possible to hand a configPath for a custom configuration file path.
 
 @param {Object} args
  */
 
-exports = module.exports = (function(_this) {
-  return function(args) {
-    args = args != null ? args : {};
-    if (args.nolog) {
-      _this.nolog = true;
-    }
-    if (args.configPath) {
-      loadConfigFile(args.configPath);
+oConfig.init = (function(_this) {
+  return function(filePath) {
+    var configPath, e, oConffile, oValue, prop;
+    if (_this.isInitialized) {
+      return console.error('ERROR: Already initialized configuration!');
     } else {
-      loadConfigFile(path.join('config', 'systems.json'));
-    }
-    return module.exports;
-  };
-})(this);
-
-
-/*
-Tries to load a configuration file from the path relative to this module's parent folder. 
-Reads the config file synchronously from the file system and try to parse it.
-
-@private loadConfigFile
-@param {String} configPath
- */
-
-loadConfigFile = (function(_this) {
-  return function(configPath) {
-    var confProperties, e, i, len, prop;
-    _this.config = null;
-    confProperties = ['log', 'http-port', 'db-port'];
-    try {
-      _this.config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', configPath)));
-      _this.isReady = true;
-      for (i = 0, len = confProperties.length; i < len; i++) {
-        prop = confProperties[i];
-        if (!_this.config[prop]) {
-          _this.isReady = false;
+      _this.isInitialized = true;
+      configPath = path.resolve(filePath || path.join(__dirname, '..', 'config', 'systems.json'));
+      try {
+        oConffile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', configPath)));
+        for (prop in oConffile) {
+          oValue = oConffile[prop];
+          oConfig[prop] = oValue;
         }
-      }
-      if (!_this.isReady && !_this.nolog) {
-        return console.error("Missing property in config file, requires:\n" + (" - " + (confProperties.join("\n - "))));
-      }
-    } catch (_error) {
-      e = _error;
-      _this.isReady = false;
-      if (!_this.nolog) {
+        oConfig.init = function() {
+          return console.error('ERROR: Already initialized configuration!');
+        };
+        return oConfig.isInit = true;
+      } catch (_error) {
+        e = _error;
+        oConfig = null;
         return console.error("Failed loading config file: " + e.message);
       }
     }
   };
 })(this);
 
-
-/*
-Fetch a property from the configuration
-
-@private fetchProp( *prop* )
-@param {String} prop
- */
-
-exports.fetchProp = (function(_this) {
-  return function(prop) {
-    var ref;
-    return (ref = _this.config) != null ? ref[prop] : void 0;
-  };
-})(this);
-
-
-/*
-***Returns*** true if the config file is ready, else false
-
-@public isReady()
- */
-
-exports.isReady = (function(_this) {
-  return function() {
-    return _this.isReady;
-  };
-})(this);
-
-
-/*
-***Returns*** the HTTP port
-
-@public getHttpPort()
- */
-
-exports.getHttpPort = function() {
-  return exports.fetchProp('http-port');
-};
-
-
-/*
-***Returns*** the DB port*
-
-@public getDBPort()
- */
-
-exports.getDbPort = function() {
-  return exports.fetchProp('db-port');
-};
-
-
-/*
-***Returns*** the log conf object
-
-@public getLogConf()
- */
-
-exports.getLogConf = function() {
-  return exports.fetchProp('log');
-};
-
-
-/*
-***Returns*** the crypto key
-
-@public getCryptoKey()
- */
-
-exports.getKeygenPassphrase = function() {
-  return exports.fetchProp('keygen-passphrase');
-};
+exports = module.exports = oConfig;

@@ -5,19 +5,19 @@ Encryption
 ===============
 > Handles RSA encryption and decryption of user specific parameters.
  */
-var cryptico, exports;
+var cryptico, exports, log;
 
 cryptico = require('./cryptico');
 
-exports = module.exports = (function(_this) {
-  return function(args) {
-    _this.log = args.logger;
-    _this.oPrivateRSAkey = cryptico.generateRSAKey(args['keygen'], 1024);
-    _this.strPublicKey = cryptico.publicKeyString(_this.oPrivateRSAkey);
-    _this.log.info("DM | Public Key generated: " + _this.strPublicKey);
-    return module.exports;
-  };
-})(this);
+log = require('./logging');
+
+exports = module.exports;
+
+exports.init = function(keygenPassphrase) {
+  this.oPrivateRSAkey = cryptico.generateRSAKey(keygenPassphrase, 1024);
+  this.strPublicKey = cryptico.publicKeyString(this.oPrivateRSAkey);
+  return log.info("DM | Public Key generated: " + this.strPublicKey);
+};
 
 exports.getPublicKey = (function(_this) {
   return function() {

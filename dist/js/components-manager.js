@@ -7,7 +7,9 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, path, rh, router, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, router, storeModule, storeRule;
+
+log = require('./logging');
 
 db = require('./persistence');
 
@@ -26,24 +28,6 @@ events = require('events');
 express = require('express');
 
 eventEmitter = new events.EventEmitter();
-
-
-/*
-Module call
------------
-Initializes the Components Manager and constructs a new Event Emitter.
-
-@param {Object} args
- */
-
-exports = module.exports = (function(_this) {
-  return function(args) {
-    _this.log = args.logger;
-    db(args);
-    dynmod(args);
-    return module.exports;
-  };
-})(this);
 
 
 /*
@@ -78,7 +62,7 @@ exports.addRuleListener = (function(_this) {
               }
             } catch (_error) {
               err = _error;
-              return _this.log.warn("CM | There's an invalid rule in the system: " + strRule);
+              return log.warn("CM | There's an invalid rule in the system: " + strRule);
             }
           });
         };
@@ -348,7 +332,7 @@ storeModule = (function(_this) {
           id = ref[name];
           funcs.push(name);
         }
-        _this.log.info("CM | Storing new module with functions " + (funcs.join(', ')));
+        log.info("CM | Storing new module with functions " + (funcs.join(', ')));
         answ.message = " Module " + oBody.id + " successfully stored! Found following function(s): " + funcs;
         oBody.functions = JSON.stringify(funcs);
         oBody.functionArgs = JSON.stringify(cm.funcParams);

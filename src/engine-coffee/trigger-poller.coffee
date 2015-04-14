@@ -11,53 +11,37 @@ Dynamic Modules
 # - [Logging](logging.html), [Persistence](persistence.html),
 # [Encryption](encryption.html)
 # and [Dynamic Modules](dynamic-modules.html)
-logger = require './logging'
+log = require './logging'
+config = require './config'
 db = require './persistence'
 dynmod = require './dynamic-modules'
 encryption = require './encryption'
 
-# - External Modules:
-#   [heapdump](https://github.com/bnoordhuis/node-heapdump)
-hd = require 'heapdump'
+init = ( args ) ->
+	# If we do not receive all required arguments we shut down immediately
+	if not args
+		console.error 'Not all arguments have been passed!'
+		process.exit()
 
-# If we do not receive all required arguments we shut down immediately
-if process.argv.length < 8
-	console.error 'Not all arguments have been passed!'
-	process.exit()
+	log.init args.log
+	log.info 'EP | Event Trigger Poller starts up'
 
-# Fetch all the command line arguments to the process to init the logger
-logconf =
-	mode: process.argv[ 2 ]
-	nolog: process.argv[ 6 ]
-logconf[ 'io-level' ] = process.argv[ 3 ]
-logconf[ 'file-level' ] = process.argv[ 4 ]
-logconf[ 'file-path' ] = process.argv[ 5 ]
-log = logger.getLogger logconf
-log.info 'EP | Event Trigger Poller starts up'
+	process.on 'uncaughtException', ( err ) ->
+		# TODO we'd have to wrap the dynamic-modules module in an own child process which
+		# we could let crash, create log info about what dynamic module caused the crash and
+		# then restart the dynamic-modules module, passing the crash info to the logger of the
+		# rule that caused this issue. on the other hand we're just fine like this since only
+		# the deferred token of the corresponding rule gets eliminated if it throws an error
+		# and the event polling won't continue fo this rule, which is fine for us, except that
+		# we do not have a good way to inform the user about his error.
+		log.error 'Probably one of the Event Triggers produced an error!'
+		log.error err
 
-process.on 'uncaughtException', ( err ) ->
-	# TODO we'd have to wrap the dynamic-modules module in an own child process which
-	# we could let crash, create log info about what dynamic module caused the crash and
-	# then restart the dynamic-modules module, passing the crash info to the logger of the
-	# rule that caused this issue. on the other hand we're just fine like this since only
-	# the deferred token of the corresponding rule gets eliminated if it throws an error
-	# and the event polling won't continue fo this rule, which is fine for us, except that
-	# we do not have a good way to inform the user about his error.
-	log.error 'Probably one of the Event Triggers produced an error!'
-	heapdump.writeSnapshot __dirname + '/' + Date.now() + '.heapsnapshot'
-	log.error err
-
-# Initialize required modules (should be in cache already)
-db logger: log
-dynmod
-	logger: log
-	usermodules: process.argv[ 9 ].split ','
-
-db.selectDatabase parseInt( process.argv[ 7 ] ) || 0
-	
-encryption
-	logger: log
-	keygen: process.argv[ 8 ]
+	# Initialize required modules (should be in cache already)
+	db.init args[ 'db-port' ]
+	db.selectDatabase args[ 'db-select' ]
+		
+	encryption.init args[ 'keygenpp' ]
 
 # Initialize module local variables and 
 listUserModules = {}
@@ -73,8 +57,9 @@ process.on 'disconnect', () ->
 
 # If the process receives a message it is concerning the rules
 process.on 'message', ( msg ) ->
-	log.info "EP | Got info about new rule: #{ msg.event }"
-
+	if msg.intevent is 'startup'
+		init msg.data
+	log.info "EP | Got info about new rule: #{ msg.intevent }"
 	# Let's split the event string to find module and function in an array
 
 	# A initialization notification or a new rule
@@ -170,7 +155,11 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 			# If there was a rule update we only continue the latest setTimeout execution
 			if listUserModules[ userId ][ ruleId ].timestamp is timestamp	
 				oRule = listUserModules[ userId ][ ruleId ]
-				fCallFunction userId, ruleId, oRule
+				try
+					fCallFunction userId, ruleId, oRule
+				catch e
+					log.error 'Error during execution of poller'
+				
 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.eventinterval
 			else
 				log.info "EP | We found a newer polling interval and discontinue this one which
@@ -195,6 +184,7 @@ This function will loop infinitely every 10 seconds until isRunning is set to fa
 
 @private pollLoop()
 ###
+console.log 'Do we really need a poll loop in the trigger poller?'
 pollLoop = () ->
   # We only loop if we're running
   if isRunning

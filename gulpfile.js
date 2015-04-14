@@ -125,7 +125,7 @@ gulp.task('compile', 'Compile the system\'s coffee files in the project', functi
 
 gulp.task('deploy', 'Deploy all system resources into the distribution folder', ['compile'], function(cb) {
   var fetchStream, isComplete, semaphore;
-  semaphore = 6;
+  semaphore = 4;
   isComplete = function() {
     if (--semaphore === 0) {
       return cb();
@@ -148,11 +148,9 @@ gulp.task('deploy', 'Deploy all system resources into the distribution folder', 
     }
     return stream;
   };
-  fetchStream(paths.src + 'client/static/**/*').pipe(gulp.dest(paths.dist + 'client/static/')).on('end', isComplete);
-  fetchStream(paths.src + 'client/views/**/*').pipe(gulp.dest(paths.dist + 'client/views/')).on('end', isComplete);
   fetchStream(paths.src + 'webapp/static/**/*').pipe(gulp.dest(paths.dist + 'webpages/public/')).on('end', isComplete);
   fetchStream(paths.src + 'webapp/handlers/**/*').pipe(gulp.dest(paths.dist + 'webpages/handlers/')).on('end', isComplete);
-  fetchStream(paths.lib + '*').pipe(gulp.dest(paths.distEngine)).pipe(gulp.dest(paths.dist + 'webpages/public/js')).pipe(gulp.dest(paths.dist + 'client/static/js')).on('end', isComplete);
+  fetchStream(paths.lib + '*').pipe(gulp.dest(paths.distEngine)).pipe(gulp.dest(paths.dist + 'webpages/public/js')).on('end', isComplete);
   fetchStream(paths.src + 'config/*').pipe(gulp.dest(paths.dist + 'config')).on('end', isComplete);
   if (argv.watch) {
     cb();

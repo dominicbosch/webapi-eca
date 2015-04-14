@@ -10,6 +10,8 @@ HTTP Listener
 
 # **Loads Modules:**
 
+# - [Logging](logging.html)
+log = require './logging'
 # - [Request Handler](request-handler.html)
 requestHandler = require './request-handler'
 # - [Persistence](persistence.html)
@@ -26,9 +28,6 @@ session = require 'express-session'
 bodyParser = require 'body-parser'
 app = express()
 
-#TODO use RedisStore for persistent sessions
-#RedisStore = require('connect-redis')(express),
-
 ###
 Module call
 -----------
@@ -36,13 +35,11 @@ Initializes the HTTP listener and its request handler.
 
 @param {Object} args
 ###
-exports = module.exports = ( args ) =>
-	@log = args.logger
+exports = module.exports
+exports.init = ( args ) =>
 	@shutDownSystem = args[ 'shutdown-function' ]
-	requestHandler args
-	@userCommandRouter = args[ 'user-router' ]
+	requestHandler.init args
 	initRouting args[ 'http-port' ]
-	module.exports
 
 ###
 Initializes the request routing and starts listening on the given port.
@@ -62,7 +59,7 @@ initRouting = ( port ) =>
 	app.use bodyParser.urlencoded extended: true
 
 	#At the moment there's no redis session backbone (didn't work straight away)
-	@log.info 'HL | no session backbone'
+	log.info 'HL | no session backbone'
 
 	# **Accepted requests to paths:**
 
@@ -94,7 +91,7 @@ initRouting = ( port ) =>
 
 	prt = parseInt( port ) || 8111 # inbound event channel
 	server = app.listen prt
-	@log.info "HL | Started listening on port #{ prt }"
+	log.info "HL | Started listening on port #{ prt }"
 
 	server.on 'listening', () =>
 		addr = server.address()
@@ -107,11 +104,11 @@ initRouting = ( port ) =>
 		###
 		switch err.errno
 			when 'EADDRINUSE'
-				@log.error err, 'HL | http-port already in use, shutting down!'
+				log.error err, 'HL | http-port already in use, shutting down!'
 			when 'EACCES'
-				@log.error err, 'HL | http-port not accessible, shutting down!'
+				log.error err, 'HL | http-port not accessible, shutting down!'
 			else
-				@log.error err, 'HL | Error in server, shutting down!'
+				log.error err, 'HL | Error in server, shutting down!'
 		@shutDownSystem()
 
 

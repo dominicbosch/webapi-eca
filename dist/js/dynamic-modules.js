@@ -6,7 +6,11 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var createNodeModule, cs, db, encryption, exports, fPush, fPushEvent, getFunctionParamNames, loadEventTrigger, logFunction, regexpComments, searchComment, vm;
+var conf, createNodeModule, cs, db, encryption, fPush, fPushEvent, getFunctionParamNames, loadEventTrigger, log, logFunction, regexpComments, searchComment, vm;
+
+conf = require('./config');
+
+log = require('./logging');
 
 db = require('./persistence');
 
@@ -15,23 +19,6 @@ encryption = require('./encryption');
 vm = require('vm');
 
 cs = require('coffee-script');
-
-
-/*
-Module call
------------
-Initializes the dynamic module handler.
-
-@param {Object} args
- */
-
-exports = module.exports = (function(_this) {
-  return function(args) {
-    _this.log = args.logger;
-    _this.usermodules = args.usermodules;
-    return module.exports;
-  };
-})(this);
 
 logFunction = function(uId, rId, mId) {
   return function(msg) {
@@ -70,7 +57,7 @@ exports.compileString = (function(_this) {
     comment = searchComment(lang, src);
     if (lang === 'CoffeeScript') {
       try {
-        _this.log.info("DM | Compiling module '" + modId + "' for user '" + userId + "'");
+        log.info("DM | Compiling module '" + modId + "' for user '" + userId + "'");
         src = cs.compile(src);
       } catch (_error) {
         err = _error;
@@ -83,7 +70,7 @@ exports.compileString = (function(_this) {
         return;
       }
     }
-    _this.log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
+    log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
     if (dbMod) {
       return dbMod.getUserParams(modId, userId, function(err, obj) {
         var name, oParam, oParams, ref;
@@ -94,11 +81,11 @@ exports.compileString = (function(_this) {
             oParam = ref[name];
             oParams[name] = encryption.decrypt(oParam.value);
           }
-          _this.log.info("DM | Loaded user defined params for " + userId + ", " + oRule.id + ", " + modId);
+          log.info("DM | Loaded user defined params for " + userId + ", " + oRule.id + ", " + modId);
         } catch (_error) {
           err = _error;
-          _this.log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
-          _this.log.warn(err);
+          log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
+          log.warn(err);
         }
         return createNodeModule(src, userId, oRule, modId, modType, dbMod, oParams, comment, cb);
       });
@@ -133,7 +120,7 @@ createNodeModule = (function(_this) {
       code: 200,
       message: 'Successfully compiled'
     };
-    _this.log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
+    log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
     logFunc = logFunction(userId, oRule.id, modId);
     sandbox = {
       id: userId + "." + oRule.id + "." + modId + ".vm",
@@ -144,7 +131,7 @@ createNodeModule = (function(_this) {
       setTimeout: setTimeout,
       pushEvent: fPushEvent(userId, oRule, modType)
     };
-    ref = _this.usermodules;
+    ref = conf.usermodules;
     for (i = 0, len = ref.length; i < len; i++) {
       mod = ref[i];
       sandbox[mod] = require(mod);
@@ -160,7 +147,7 @@ createNodeModule = (function(_this) {
       }
       answ.message = 'Loading Module failed: ' + msg;
     }
-    _this.log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
+    log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
     oFuncParams = {};
     oFuncArgs = {};
     ref1 = sandbox.exports;
@@ -175,11 +162,11 @@ createNodeModule = (function(_this) {
           if (obj) {
             try {
               oFuncArgs[fName] = JSON.parse(obj);
-              return _this.log.info("DM | Found and attached user-specific arguments to " + userId + ", " + oRule.id + ", " + modId + ": " + obj);
+              return log.info("DM | Found and attached user-specific arguments to " + userId + ", " + oRule.id + ", " + modId + ": " + obj);
             } catch (_error) {
               err = _error;
-              _this.log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + oRule.id + ", " + modId);
-              return _this.log.warn(err);
+              log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + oRule.id + ", " + modId);
+              return log.warn(err);
             }
           }
         };

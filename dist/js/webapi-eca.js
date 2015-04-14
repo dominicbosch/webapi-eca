@@ -10,9 +10,9 @@ WebAPI-ECA Engine
 >
 > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
  */
-var argv, cm, conf, cp, db, encryption, engine, fs, http, init, logconf, logger, nameEP, opt, optimist, path, procCmds, shutDown, usage;
+var argv, cm, conf, cp, db, e, encryption, engine, fs, http, init, log, nameEP, opt, optimist, path, shutDown, usage;
 
-logger = require('./logging');
+log = require('./logging');
 
 conf = require('./config');
 
@@ -35,8 +35,6 @@ path = require('path');
 cp = require('child_process');
 
 optimist = require('optimist');
-
-procCmds = {};
 
 
 /*
@@ -71,8 +69,8 @@ opt = {
     describe: 'Specify a log mode: [development|productive]'
   },
   'i': {
-    alias: 'log-io-level',
-    describe: 'Specify the log level for the I/O'
+    alias: 'log-std-level',
+    describe: 'Specify the log level for the standard I/O'
   },
   'f': {
     alias: 'log-file-level',
@@ -95,42 +93,45 @@ if (argv.help) {
   process.exit();
 }
 
-conf(argv.c);
+conf.init(argv.c);
 
-if (!conf.isReady()) {
+if (!conf.isInit) {
   console.error('FAIL: Config file not ready! Shutting down...');
   process.exit();
 }
 
-logconf = conf.getLogConf();
+conf['http-port'] = parseInt(argv.w || conf['http-port'] || 8125);
 
-if (argv.m) {
-  logconf['mode'] = argv.m;
+conf['db-port'] = parseInt(argv.d || conf['db-port'] || 6379);
+
+conf['db-select'] = parseInt(argv.s || conf['db-select'] || 0);
+
+if (!conf.log) {
+  conf.log = {};
 }
 
-if (argv.i) {
-  logconf['io-level'] = argv.i;
+conf.log['mode'] = argv.m || conf.log['mode'] || 'productive';
+
+conf.log['std-level'] = argv.i || conf.log['std-level'] || 'error';
+
+conf.log['file-level'] = argv.f || conf.log['file-level'] || 'warn';
+
+conf.log['file-path'] = argv.p || conf.log['file-path'] || 'warn';
+
+conf.log['nolog'] = argv.n || conf.log['nolog'];
+
+if (!conf.log.nolog) {
+  try {
+    fs.unlinkSync(path.resolve(conf.log['file-path']));
+  } catch (_error) {
+    e = _error;
+    console.log(e);
+  }
 }
 
-if (argv.f) {
-  logconf['file-level'] = argv.f;
-}
+log.init(conf.log);
 
-if (argv.p) {
-  logconf['file-path'] = argv.p;
-}
-
-if (argv.n) {
-  logconf['nolog'] = true;
-}
-
-try {
-  fs.unlinkSync(path.resolve(__dirname, '..', 'logs', logconf['file-path']));
-} catch (_error) {}
-
-this.log = logger.getLogger(logconf);
-
-this.log.info('RS | STARTING SERVER');
+log.info('RS | STARTING SERVER');
 
 
 /*
@@ -141,41 +142,41 @@ This function is invoked right after the module is loaded and starts the server.
 
 init = (function(_this) {
   return function() {
-    var args;
-    args = {
-      logger: _this.log,
-      logconf: logconf
-    };
-    args['http-port'] = parseInt(argv.w || conf.getHttpPort());
-    args['db-port'] = parseInt(argv.d || conf.getDbPort());
-    args['db-select'] = parseInt(argv.s || conf.fetchProp('db-select'));
-    args['keygen'] = conf.getKeygenPassphrase();
-    args['usermodules'] = conf.fetchProp('usermodules');
-    encryption(args);
-    _this.log.info('RS | Initialzing DB');
-    db(args);
+    encryption.init(conf['keygenpp']);
+    log.info('RS | Initialzing DB');
+    db.init(conf['db-port']);
     return db.isConnected(function(err) {
-      var cliArgs, poller;
-      db.selectDatabase(parseInt(args['db-select']) || 0);
+      var poller;
+      db.selectDatabase(conf['db-select']);
       if (err) {
-        _this.log.error('RS | No DB connection, shutting down system!');
+        log.error('RS | No DB connection, shutting down system!');
         return shutDown();
       } else {
-        _this.log.info('RS | Initialzing engine');
-        engine(args);
-        _this.log.info('RS | Forking a child process for the trigger poller');
-        cliArgs = [args.logconf['mode'], args.logconf['io-level'], args.logconf['file-level'], args.logconf['file-path'], args.logconf['nolog'], args['db-select'], args['keygen'], args['usermodules'].join(',')];
-        poller = cp.fork(path.resolve(__dirname, nameEP), cliArgs);
-        _this.log.info('RS | Initialzing module manager');
-        cm(args);
+        log.info('RS | Initialzing engine');
+        engine.init();
+        log.info('RS | Forking a child process for the trigger poller');
+        poller = cp.fork(path.resolve(__dirname, nameEP));
+        poller.send({
+          intevent: 'startup',
+          data: conf
+        });
+        fs.unlink('proc.pid', function(err) {
+          if (err) {
+            console.log(err);
+          }
+          return fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
+        });
+        log.info('RS | Initialzing module manager');
         cm.addRuleListener(engine.internalEvent);
         cm.addRuleListener(function(evt) {
           return poller.send(evt);
         });
-        _this.log.info('RS | Initialzing http listener');
-        args['user-router'] = cm.router;
-        args['shutdown-function'] = shutDown;
-        return http(args);
+        log.info('RS | Initialzing http listener');
+        return http.init({
+          'http-port': conf['http-port'],
+          'request-service': cm.processRequest,
+          'shutdown-function': shutDown
+        });
       }
     });
   };
@@ -190,7 +191,7 @@ Shuts down the server.
 
 shutDown = (function(_this) {
   return function() {
-    _this.log.warn('RS | Received shut down command!');
+    log.warn('RS | Received shut down command!');
     if (db != null) {
       db.shutDown();
     }
@@ -208,13 +209,20 @@ from the parent process (e.g. the testing suite)
  */
 
 process.on('message', function(cmd) {
-  return typeof procCmds[cmd] === "function" ? procCmds[cmd]() : void 0;
+  if (cmd === 'die') {
+    log.warn('RS | GOT DIE COMMAND');
+    return shutDown();
+  }
 });
 
-process.on('SIGINT', shutDown);
+process.on('SIGINT', function() {
+  log.warn('RS | GOT SIGINT');
+  return shutDown();
+});
 
-process.on('SIGTERM', shutDown);
-
-procCmds.die = shutDown;
+process.on('SIGTERM', function() {
+  log.warn('RS | GOT SIGTERM');
+  return shutDown();
+});
 
 init();

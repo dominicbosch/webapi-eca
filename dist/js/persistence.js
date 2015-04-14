@@ -19,8 +19,10 @@ Persistence
 > (e.g. action-dispatcher:probinder). 
 >
  */
-var IndexedModules, exports, getSetRecords, redis, replyHandler,
+var IndexedModules, exports, getSetRecords, log, redis, replyHandler,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+log = require('./logging');
 
 redis = require('redis');
 
@@ -33,23 +35,15 @@ Initializes the DB connection with the given `db-port` property in the `args` ob
 @param {Object} args
  */
 
-exports = module.exports = (function(_this) {
-  return function(args) {
-    if (!_this.db) {
-      if (!args['db-port']) {
-        args['db-port'] = 6379;
-      }
-      _this.log = args.logger;
-      exports.eventTriggers = new IndexedModules('event-trigger', _this.log);
-      exports.actionDispatchers = new IndexedModules('action-dispatcher', _this.log);
-      return exports.initPort(args['db-port']);
-    }
-  };
-})(this);
+exports = module.exports;
 
-exports.getLogger = (function(_this) {
-  return function() {
-    return _this.log;
+exports.init = (function(_this) {
+  return function(dbPort) {
+    if (!_this.db) {
+      exports.eventTriggers = new IndexedModules('event-trigger', log);
+      exports.actionDispatchers = new IndexedModules('action-dispatcher', log);
+      return exports.initPort(dbPort);
+    }
   };
 })(this);
 
@@ -66,9 +60,9 @@ exports.initPort = (function(_this) {
     _this.db.on('error', function(err) {
       if (err.message.indexOf('ECONNREFUSED') > -1) {
         _this.connRefused = true;
-        return _this.log.warn('DB | Wrong port?');
+        return log.warn('DB | Wrong port?');
       } else {
-        return _this.log.error(err);
+        return log.error(err);
       }
     });
     exports.eventTriggers.setDB(_this.db);
@@ -110,7 +104,7 @@ exports.isConnected = (function(_this) {
             return cb(new Error('DB | Connection refused! Wrong port?'));
           } else {
             if (_this.db.connected) {
-              _this.log.info('DB | Successfully connected to DB!');
+              log.info('DB | Successfully connected to DB!');
               return cb();
             } else if (numAttempts++ < 10) {
               return setTimeout(fCheckConnection, 100);
@@ -137,9 +131,9 @@ replyHandler = (function(_this) {
   return function(action) {
     return function(err, reply) {
       if (err) {
-        return _this.log.warn(err, "during '" + action + "'");
+        return log.warn(err, "during '" + action + "'");
       } else {
-        return _this.log.info("DB | " + action + ": " + reply);
+        return log.info("DB | " + action + ": " + reply);
       }
     };
   };
@@ -156,10 +150,10 @@ Push an event into the event queue.
 exports.pushEvent = (function(_this) {
   return function(oEvent) {
     if (oEvent) {
-      _this.log.info("DB | Event pushed into the queue: '" + oEvent.eventname + "'");
+      log.info("DB | Event pushed into the queue: '" + oEvent.eventname + "'");
       return _this.db.rpush('event_queue', JSON.stringify(oEvent));
     } else {
-      return _this.log.warn('DB | Why would you give me an empty event...');
+      return log.warn('DB | Why would you give me an empty event...');
     }
   };
 })(this);
@@ -219,11 +213,11 @@ data objects via the provided function and returns the results to cb(err, obj).
 
 getSetRecords = (function(_this) {
   return function(set, fSingle, cb) {
-    _this.log.info("DB | Fetching set records: '" + set + "'");
+    log.info("DB | Fetching set records: '" + set + "'");
     return _this.db.smembers(set, function(err, arrReply) {
       var fCallback, i, len, objReplies, reply, results, semaphore;
       if (err) {
-        _this.log.warn(err, "DB | fetching '" + set + "'");
+        log.warn(err, "DB | fetching '" + set + "'");
         return cb(err);
       } else if (arrReply.length === 0) {
         return cb();
@@ -239,9 +233,9 @@ getSetRecords = (function(_this) {
           return function(err, data) {
             --semaphore;
             if (err) {
-              _this.log.warn(err, "DB | fetching single element: '" + prop + "'");
+              log.warn(err, "DB | fetching single element: '" + prop + "'");
             } else if (!data) {
-              _this.log.warn(new Error("Empty key in DB: '" + prop + "'"));
+              log.warn(new Error("Empty key in DB: '" + prop + "'"));
             } else {
               objReplies[prop] = data;
             }
@@ -264,7 +258,6 @@ getSetRecords = (function(_this) {
 IndexedModules = (function() {
   function IndexedModules(setname, log) {
     this.setname = setname;
-    this.log = log;
     this.deleteUserArguments = bind(this.deleteUserArguments, this);
     this.getUserArguments = bind(this.getUserArguments, this);
     this.getAllModuleUserArguments = bind(this.getAllModuleUserArguments, this);
@@ -280,12 +273,12 @@ IndexedModules = (function() {
     this.getModuleField = bind(this.getModuleField, this);
     this.getModule = bind(this.getModule, this);
     this.storeModule = bind(this.storeModule, this);
-    this.log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
+    log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
   }
 
   IndexedModules.prototype.setDB = function(db) {
     this.db = db;
-    return this.log.info("DB | (IdxedMods) Registered new DB connection for '" + this.setname + "'");
+    return log.info("DB | (IdxedMods) Registered new DB connection for '" + this.setname + "'");
   };
 
 
@@ -298,34 +291,34 @@ IndexedModules = (function() {
    */
 
   IndexedModules.prototype.storeModule = function(userId, oModule) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
+    log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
     this.db.sadd(this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> " + oModule.id));
     return this.db.hmset(this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
   };
 
   IndexedModules.prototype.getModule = function(userId, mId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
-    this.log.info("hgetall " + this.setname + ":" + mId);
+    log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
+    log.info("hgetall " + this.setname + ":" + mId);
     return this.db.hgetall(this.setname + ":" + mId, cb);
   };
 
   IndexedModules.prototype.getModuleField = function(userId, mId, field, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + userId + ", " + mId + ", " + field + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + userId + ", " + mId + ", " + field + " )");
     return this.db.hget(this.setname + ":" + mId, field, cb);
   };
 
   IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
     return this.db.sunion("public-" + this.setname + "s", this.setname + "s", cb);
   };
 
   IndexedModules.prototype.getModuleIds = function(userId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getModuleIds()");
+    log.info("DB | (IdxedMods) " + this.setname + ".getModuleIds()");
     return this.db.smembers(this.setname + "s", cb);
   };
 
   IndexedModules.prototype.deleteModule = function(userId, mId) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + userId + ", " + mId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + userId + ", " + mId + " )");
     this.db.srem(this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
     this.db.del(this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
     this.deleteUserParams(mId, userId);
@@ -356,23 +349,23 @@ IndexedModules = (function() {
    */
 
   IndexedModules.prototype.storeUserParams = function(mId, userId, encData) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserParams( " + mId + ", " + userId + ", encData )");
+    log.info("DB | (IdxedMods) " + this.setname + ".storeUserParams( " + mId + ", " + userId + ", encData )");
     this.db.sadd(this.setname + "-params", mId + ":" + userId, replyHandler("sadd '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
     return this.db.set(this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set '" + this.setname + "-params:" + mId + ":" + userId + "' -> [encData]"));
   };
 
   IndexedModules.prototype.getUserParams = function(mId, userId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getUserParams( " + mId + ", " + userId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserParams( " + mId + ", " + userId + " )");
     return this.db.get(this.setname + "-params:" + mId + ":" + userId, cb);
   };
 
   IndexedModules.prototype.getUserParamsIds = function(cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getUserParamsIds()");
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserParamsIds()");
     return this.db.smembers(this.setname + "-params", cb);
   };
 
   IndexedModules.prototype.deleteUserParams = function(mId, userId) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams( " + mId + ", " + userId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams( " + mId + ", " + userId + " )");
     this.db.srem(this.setname + "-params", mId + ":" + userId, replyHandler("srem '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
     return this.db.del(this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
   };
@@ -386,18 +379,18 @@ IndexedModules = (function() {
    */
 
   IndexedModules.prototype.storeUserArguments = function(userId, ruleId, mId, funcId, encData) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + ", encData )");
+    log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + ", encData )");
     this.db.sadd(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", funcId, replyHandler("sadd '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions' -> '" + funcId + "'"));
     return this.db.set(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, encData, replyHandler("set '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId + "' -> [encData]"));
   };
 
   IndexedModules.prototype.getUserArgumentsFunctions = function(userId, ruleId, mId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
     return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
   };
 
   IndexedModules.prototype.getAllModuleUserArguments = function(userId, ruleId, mId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getAllModuleUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getAllModuleUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
     return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
       return function(err, obj) {
         var fRegisterFunction, func, i, len, oAnswer, results, sem;
@@ -428,12 +421,12 @@ IndexedModules = (function() {
   };
 
   IndexedModules.prototype.getUserArguments = function(userId, ruleId, mId, funcId, cb) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + " )");
     return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, cb);
   };
 
   IndexedModules.prototype.deleteUserArguments = function(userId, ruleId, mId) {
-    this.log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
     return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
       return function(err, obj) {
         var func, i, len, results;
@@ -500,7 +493,7 @@ Query the DB for a rule and pass it to cb(err, obj).
 
 exports.getRule = (function(_this) {
   return function(userId, ruleId, cb) {
-    _this.log.info("DB | getRule( '" + userId + "', '" + ruleId + "' )");
+    log.info("DB | getRule( '" + userId + "', '" + ruleId + "' )");
     return _this.db.get("user:" + userId + ":rule:" + ruleId, cb);
   };
 })(this);
@@ -512,7 +505,7 @@ Store a string representation of a rule in the DB.
 
 exports.storeRule = (function(_this) {
   return function(userId, ruleId, data) {
-    _this.log.info("DB | storeRule( '" + userId + "', '" + ruleId + "' )");
+    log.info("DB | storeRule( '" + userId + "', '" + ruleId + "' )");
     _this.db.sadd("user:" + userId + ":rules", "" + ruleId, replyHandler("sadd 'user:" + userId + ":rules' -> '" + ruleId + "'"));
     return _this.db.set("user:" + userId + ":rule:" + ruleId, data, replyHandler("set 'user:" + userId + ":rule:" + ruleId + "' -> [data]"));
   };
@@ -525,7 +518,7 @@ Returns all existing rule ID's for a user
 
 exports.getRuleIds = (function(_this) {
   return function(userId, cb) {
-    _this.log.info("DB | getRuleIds( '" + userId + "' )");
+    log.info("DB | getRuleIds( '" + userId + "' )");
     return _this.db.smembers("user:" + userId + ":rules", cb);
   };
 })(this);
@@ -537,7 +530,7 @@ Delete a string representation of a rule.
 
 exports.deleteRule = (function(_this) {
   return function(userId, ruleId) {
-    _this.log.info("DB | deleteRule( '" + userId + "', '" + ruleId + "' )");
+    log.info("DB | deleteRule( '" + userId + "', '" + ruleId + "' )");
     _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules' -> '" + ruleId + "'"));
     return _this.db.del("user:" + userId + ":rule:" + ruleId, replyHandler("del 'user:" + userId + ":rule:" + ruleId + "'"));
   };
@@ -553,7 +546,7 @@ Fetch all active ruleIds and pass them to cb(err, obj).
 
 exports.getAllActivatedRuleIdsPerUser = (function(_this) {
   return function(cb) {
-    _this.log.info("DB | Fetching all active rules");
+    log.info("DB | Fetching all active rules");
     return _this.db.smembers('users', function(err, obj) {
       var fProcessAnswer, i, len, result, results, semaphore, user;
       result = {};
@@ -599,13 +592,13 @@ The password should be hashed before it is passed to this function.
 
 exports.storeUser = (function(_this) {
   return function(objUser) {
-    _this.log.info("DB | storeUser: '" + objUser.username + "'");
+    log.info("DB | storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
       _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
       return _this.db.hset("user:" + objUser.username, "roles", JSON.stringify(objUser.roles), replyHandler("hset 'user:" + objUser.username + "' field 'roles' -> [objUser]"));
     } else {
-      return _this.log.warn(new Error('DB | username or password was missing'));
+      return log.warn(new Error('DB | username or password was missing'));
     }
   };
 })(this);
@@ -619,7 +612,7 @@ Fetch all user IDs and pass them to cb(err, obj).
 
 exports.getUserIds = (function(_this) {
   return function(cb) {
-    _this.log.info("DB | getUserIds");
+    log.info("DB | getUserIds");
     return _this.db.smembers("users", cb);
   };
 })(this);
@@ -633,7 +626,7 @@ Fetch a user by id and pass it to cb(err, obj).
 
 exports.getUser = (function(_this) {
   return function(userId, cb) {
-    _this.log.info("DB | getUser: '" + userId + "'");
+    log.info("DB | getUser: '" + userId + "'");
     return _this.db.hgetall("user:" + userId, function(err, obj) {
       try {
         obj.roles = JSON.parse(obj.roles);
@@ -652,7 +645,7 @@ Deletes a user and all his associated linked and active rules.
 
 exports.deleteUser = (function(_this) {
   return function(userId) {
-    _this.log.info("DB | deleteUser: '" + userId + "'");
+    log.info("DB | deleteUser: '" + userId + "'");
     _this.db.srem("users", userId, replyHandler("srem 'users' -> '" + userId + "'"));
     _this.db.del("user:" + userId, replyHandler("del 'user:" + userId + "'"));
     _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
@@ -710,14 +703,14 @@ because we only store hashes of passwords for security reasons.
 exports.loginUser = (function(_this) {
   return function(userId, password, cb) {
     var fCheck;
-    _this.log.info("DB | User '" + userId + "' tries to log in");
+    log.info("DB | User '" + userId + "' tries to log in");
     fCheck = function(pw) {
       return function(err, obj) {
         if (err) {
           return cb(err, null);
         } else if (obj && obj.password) {
           if (pw === obj.password) {
-            _this.log.info("DB | User '" + obj.username + "' logged in!");
+            log.info("DB | User '" + obj.username + "' logged in!");
             obj.roles = JSON.parse(obj.roles);
             return cb(null, obj);
           } else {
@@ -746,7 +739,7 @@ Associate a role with a user.
 
 exports.storeUserRole = (function(_this) {
   return function(userId, role) {
-    _this.log.info("DB | storeUserRole: '" + userId + ":" + role + "'");
+    log.info("DB | storeUserRole: '" + userId + ":" + role + "'");
     _this.db.sadd('roles', role, replyHandler("sadd '" + role + "' to 'roles'"));
     _this.db.sadd("user:" + userId + ":roles", role, replyHandler("sadd 'user:" + userId + ":roles' -> '" + role + "'"));
     return _this.db.sadd("role:" + role + ":users", userId, replyHandler("sadd 'role:" + role + ":users' -> '" + userId + "'"));
@@ -762,7 +755,7 @@ Deassociate a role from a user.
 
 exports.deleteRole = (function(_this) {
   return function(role) {
-    _this.log.info("DB | deleteRole: '" + role + "'");
+    log.info("DB | deleteRole: '" + role + "'");
     _this.db.smembers("role:" + role + ":users", function(err, obj) {
       var delUserRole, i, id, len, results;
       delUserRole = function(userId) {
@@ -788,7 +781,7 @@ Fetch all roles of a user and pass them to cb(err, obj).
 
 exports.getUserRoles = (function(_this) {
   return function(userId, cb) {
-    _this.log.info("DB | getUserRoles: '" + userId + "'");
+    log.info("DB | getUserRoles: '" + userId + "'");
     return _this.db.smembers("user:" + userId + ":roles", cb);
   };
 })(this);
@@ -802,7 +795,7 @@ Fetch all users of a role and pass them to cb(err, obj).
 
 exports.getRoleUsers = (function(_this) {
   return function(role, cb) {
-    _this.log.info("DB | getRoleUsers: '" + role + "'");
+    log.info("DB | getRoleUsers: '" + role + "'");
     return _this.db.smembers("role:" + role + ":users", cb);
   };
 })(this);
@@ -816,7 +809,7 @@ Remove a role from a user.
 
 exports.removeUserRole = (function(_this) {
   return function(userId, role) {
-    _this.log.info("DB | removeRoleFromUser: role '" + role + "', user '" + userId + "'");
+    log.info("DB | removeRoleFromUser: role '" + role + "', user '" + userId + "'");
     _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
     return _this.db.srem("role:" + role + ":users", userId, replyHandler("srem 'role:" + role + ":users' -> '" + userId + "'"));
   };
