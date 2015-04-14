@@ -7,7 +7,7 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, router, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, router, storeModule, storeRule;
 
 log = require('./logging');
 
@@ -28,6 +28,8 @@ events = require('events');
 express = require('express');
 
 eventEmitter = new events.EventEmitter();
+
+exports = module.exports;
 
 
 /*

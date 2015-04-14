@@ -18,7 +18,7 @@ $( document ).ready(function() {
   var link = $( '<td>' );
   link.append( $( '<a>' ).text( 'Logout' )
     .click( function() {
-      $.post( '/logout' ).done( function() {
+      $.post( '/session/logout' ).done( function() {
         window.location.href = document.URL;
       });
     })

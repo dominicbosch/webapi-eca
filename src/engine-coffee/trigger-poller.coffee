@@ -27,6 +27,8 @@ init = ( args ) ->
 	log.info 'EP | Event Trigger Poller starts up'
 
 	process.on 'uncaughtException', ( err ) ->
+		log.error 'CURRENT STATE:'
+		log.error JSON.stringify @currentState, null, 2
 		# TODO we'd have to wrap the dynamic-modules module in an own child process which
 		# we could let crash, create log info about what dynamic module caused the crash and
 		# then restart the dynamic-modules module, passing the crash info to the logger of the
@@ -174,6 +176,10 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 		if oRule.funcArgs and oRule.funcArgs[ oRule.pollfunc ]
 			for oArg in oRule.funcArgs[ oRule.pollfunc ]
 				arrArgs.push oArg.value
+		@currentState =
+			rule: ruleId
+			func: oRule.pollfunc
+			user: userId
 		oRule.module[ oRule.pollfunc ].apply this, arrArgs
 	catch err
 		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"

@@ -32,13 +32,14 @@ events = require 'events'
 express = require 'express'
 eventEmitter = new events.EventEmitter()
 
+exports = module.exports
+
 ###
 Add an event handler (eh) that listens for rules.
 
 @public addRuleListener ( *eh* )
 @param {function} eh
 ###
-
 exports.addRuleListener = ( eh ) =>
 	eventEmitter.addListener 'rule', eh
 
@@ -112,7 +113,7 @@ exports.processRequest = ( user, oReq, callback ) ->
 # ###
 
 
-exports.router = router = express.Router();
+exports.router = router = express.Router()
 
 router.use ( req, res, next ) ->
 	if req.session and req.session.user

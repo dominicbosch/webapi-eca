@@ -42,6 +42,7 @@ nameEP = 'trigger-poller'
 fs = require 'fs'
 path = require 'path'
 cp = require 'child_process'
+# heapdump = require 'heapdump'
 
 # - External Modules: [optimist](https://github.com/substack/node-optimist)
 optimist = require 'optimist'
@@ -198,6 +199,12 @@ shutDown = () =>
 	log.warn 'RS | Received shut down command!'
 	db?.shutDown()
 	engine.shutDown()
+	# heapdump.writeSnapshot path.resolve( __dirname, '..', '..', 'logs', Date.now() + '.heapsnapshot' ), ( err, fn ) ->
+		# if err
+		# 	log.warn 'RS | HEAPDUMP written to ' + fn
+		# else
+		# 	log.error 'RS | HEAPDUMP failed'
+
 	# We need to call process.exit() since the express server in the http-listener
 	# can't be stopped gracefully. Why would you stop this system anyways!?? 
 	process.exit()
@@ -221,6 +228,6 @@ process.on 'SIGINT', () ->
 process.on 'SIGTERM', () ->
 	log.warn 'RS | GOT SIGTERM'
 	shutDown()
-
+	
 # *Start initialization*
 init()

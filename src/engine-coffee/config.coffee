@@ -29,7 +29,7 @@ oConfig.init = ( filePath ) =>
 		console.error 'ERROR: Already initialized configuration!'
 	else
 		@isInitialized = true
-		configPath = path.resolve( filePath || path.join __dirname, '..', 'config', 'systems.json' )
+		configPath = path.resolve( filePath || path.join __dirname, '..', 'config', 'system.json' )
 		try
 			oConffile = JSON.parse fs.readFileSync path.resolve __dirname, '..', configPath
 			for prop, oValue of oConffile

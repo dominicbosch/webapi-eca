@@ -1,0 +1,12 @@
+{
+	"http-port": 8080,
+	"db-port": 6379,
+	"db-select": 0,
+	"log": {
+		"mode": "productive",
+		"std-level": "info",
+		"file-level": "info",
+		"file-path": "logs/server.log"
+	},
+	"keygenpp": "[TODO this has to come from prompt when server is started!]"
+}

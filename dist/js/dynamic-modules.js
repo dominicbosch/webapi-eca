@@ -6,9 +6,7 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var conf, createNodeModule, cs, db, encryption, fPush, fPushEvent, getFunctionParamNames, loadEventTrigger, log, logFunction, regexpComments, searchComment, vm;
-
-conf = require('./config');
+var createNodeModule, cs, db, encryption, fPush, fPushEvent, fs, getFunctionParamNames, loadEventTrigger, log, logFunction, oModules, path, regexpComments, searchComment, vm;
 
 log = require('./logging');
 
@@ -18,7 +16,13 @@ encryption = require('./encryption');
 
 vm = require('vm');
 
+fs = require('fs');
+
+path = require('path');
+
 cs = require('coffee-script');
+
+oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
 
 logFunction = function(uId, rId, mId) {
   return function(msg) {
@@ -112,7 +116,7 @@ fPushEvent = function(userId, oRule, modType) {
 
 createNodeModule = (function(_this) {
   return function(src, userId, oRule, modId, modType, dbMod, params, comment, cb) {
-    var answ, err, fName, fRegisterArguments, func, i, len, logFunc, mod, msg, oFuncArgs, oFuncParams, ref, ref1, sandbox;
+    var answ, err, fName, fRegisterArguments, func, i, len, logFunc, mod, msg, oFuncArgs, oFuncParams, ref, sandbox;
     if (!params) {
       params = {};
     }
@@ -131,9 +135,8 @@ createNodeModule = (function(_this) {
       setTimeout: setTimeout,
       pushEvent: fPushEvent(userId, oRule, modType)
     };
-    ref = conf.usermodules;
-    for (i = 0, len = ref.length; i < len; i++) {
-      mod = ref[i];
+    for (i = 0, len = oModules.length; i < len; i++) {
+      mod = oModules[i];
       sandbox[mod] = require(mod);
     }
     try {
@@ -150,9 +153,9 @@ createNodeModule = (function(_this) {
     log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
     oFuncParams = {};
     oFuncArgs = {};
-    ref1 = sandbox.exports;
-    for (fName in ref1) {
-      func = ref1[fName];
+    ref = sandbox.exports;
+    for (fName in ref) {
+      func = ref[fName];
       getFunctionParamNames(fName, func, oFuncParams);
     }
     if (dbMod) {

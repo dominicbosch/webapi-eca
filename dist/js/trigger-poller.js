@@ -26,6 +26,8 @@ init = function(args) {
   log.init(args.log);
   log.info('EP | Event Trigger Poller starts up');
   process.on('uncaughtException', function(err) {
+    log.error('CURRENT STATE:');
+    log.error(JSON.stringify(this.currentState, null, 2));
     log.error('Probably one of the Event Triggers produced an error!');
     return log.error(err);
   });
@@ -152,6 +154,11 @@ fCallFunction = function(userId, ruleId, oRule) {
         arrArgs.push(oArg.value);
       }
     }
+    this.currentState = {
+      rule: ruleId,
+      func: oRule.pollfunc,
+      user: userId
+    };
     return oRule.module[oRule.pollfunc].apply(this, arrArgs);
   } catch (_error) {
     err = _error;

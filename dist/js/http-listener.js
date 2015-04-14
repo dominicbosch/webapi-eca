@@ -7,13 +7,23 @@ HTTP Listener
 > (bound to a method) are then redirected to the appropriate handler which
 > takes care of the request.
  */
-var app, bodyParser, db, exports, express, initRouting, log, path, requestHandler, session;
+var app, bodyParser, db, exports, express, initRouting, log, path, requestHandler, serveAdmin, serveCodePlugins, serveRules, serveSession, serveWebhooks, session;
 
 log = require('./logging');
 
 requestHandler = require('./request-handler');
 
 db = require('./persistence');
+
+serveSession = require('./serve-session');
+
+serveRules = require('./serve-rules');
+
+serveWebhooks = require('./serve-webhooks');
+
+serveCodePlugins = require('./serve-codeplugins');
+
+serveAdmin = require('./serve-admin');
 
 path = require('path');
 
@@ -70,13 +80,14 @@ initRouting = (function(_this) {
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
     app.get('/admin', requestHandler.handleAdmin);
     app.get('/forge', requestHandler.handleForge);
-    app.post('/login', requestHandler.handleLogin);
-    app.post('/logout', requestHandler.handleLogout);
-    app.use('/usercommand', _this.userCommandRouter);
+    app.use('/session', serveSession);
+    app.use('/rules', serveRules);
+    app.use('/webhooks', serveWebhooks);
+    app.use('/codeplugin', serveCodePlugins);
+    app.use('/admin', serveAdmin);
     app.post('/admincommand', requestHandler.handleAdminCommand);
     app.post('/event', requestHandler.handleEvent);
     app.post('/webhooks/*', requestHandler.handleWebhooks);
-    app.post('/measurements', requestHandler.handleMeasurements);
     prt = parseInt(port) || 8111;
     server = app.listen(prt);
     log.info("HL | Started listening on port " + prt);

@@ -1,0 +1,46 @@
+{
+	"importIO": {
+		"module": "import-io",
+		"description": "The import.io client"
+	},
+	"prettydiff": {
+		"module": "prettydiff",
+		"description": ""
+	},
+	"crypto": {
+		"module": "crypto-js",
+		"description": ""
+	},
+	"deepdiff": {
+		"module": "deep-diff",
+		"description": ""
+	},
+	"jsSelect": {
+		"module": "js-select",
+		"description": ""
+	},
+	"keen": {
+		"module": "keen-js",
+		"description": ""
+	},
+	"request": {
+		"module": "request",
+		"description": ""
+	},
+	"cheerio": {
+		"module": "cheerio",
+		"description": ""
+	},
+	"needle": {
+		"module": "needle",
+		"description": ""
+	},
+	"jsdom": {
+		"module": "jsdom",
+		"description": ""
+	},
+	"diff": {
+		"module": "diff",
+		"description": ""
+	}
+}

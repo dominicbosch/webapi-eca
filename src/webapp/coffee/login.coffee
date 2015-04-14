@@ -12,7 +12,7 @@ fOnLoad = () ->
 		data =
 			username: $( '#username' ).val()
 			password: hp.toString()
-		$.post( '/login', JSON.stringify( data ) )
+		$.post( '/session/login', JSON.stringify( data ) )
 			.done ( data ) ->
 				window.location.href = document.URL
 			.fail ( err ) ->

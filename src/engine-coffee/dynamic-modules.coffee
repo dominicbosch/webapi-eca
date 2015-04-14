@@ -8,8 +8,6 @@ Dynamic Modules
 
 # **Loads Modules:**
 
-# - [Config](config.html)
-conf = require './config'
 # - [Logging](logging.html)
 log = require './logging'
 # - [Persistence](persistence.html)
@@ -18,13 +16,18 @@ db = require './persistence'
 encryption = require './encryption'
 
 # - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
-#   [events](http://nodejs.org/api/events.html)
+#   [fs](http://nodejs.org/api/fs.html),
+#   [path](http://nodejs.org/api/path.html) and
 vm = require 'vm'
+fs = require 'fs'
+path = require 'path'
 
 # - External Modules: [coffee-script](http://coffeescript.org/),
 #       [crypto-js](https://www.npmjs.org/package/crypto-js) and
 #       [import-io](https://www.npmjs.org/package/import-io)
 cs = require 'coffee-script'
+
+oModules = JSON.parse fs.readFileSync path.resolve __dirname, '..', 'config', 'modules.json'
 
 logFunction = ( uId, rId, mId ) ->
 	( msg ) ->
@@ -103,16 +106,6 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 	logFunc = logFunction userId, oRule.id, modId
 	# The sandbox contains the objects that are accessible to the user. Eventually they need to be required from a vm themselves 
 	sandbox = 
-		# importio: require( 'import-io' ).client
-		# prettydiff: require 'prettydiff'
-		# cryptoJS: require 'crypto-js'
-		# deepdiff: require 'deep-diff'
-		# jsselect: require 'js-select'
-		# request: require 'request'
-		# cheerio: require 'cheerio'
-		# needle: require 'needle'
-		# jsdom: require 'jsdom'
-		# diff: require 'diff'
 		id: "#{ userId }.#{ oRule.id }.#{ modId }.vm"
 		params: params
 		log: logFunc
@@ -120,7 +113,8 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 		exports: {}
 		setTimeout: setTimeout # This one allows probably too much
 		pushEvent: fPushEvent userId, oRule, modType
-	sandbox[ mod ] = require mod for mod in conf.usermodules
+	# Attach all modules that are allowed for the coders, as defined in config/modules.json
+	sandbox[ mod ] = require mod for mod in oModules
 
 #FIXME ENGINE BREAKS if non-existing module is used??? 
 

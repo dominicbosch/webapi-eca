@@ -17,6 +17,12 @@ requestHandler = require './request-handler'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
+serveSession = require './serve-session'
+serveRules = require './serve-rules'
+serveWebhooks = require './serve-webhooks'
+serveCodePlugins = require './serve-codeplugins'
+serveAdmin = require './serve-admin'
+
 # - Node.js Modules: [path](http://nodejs.org/api/path.html)
 path = require 'path'
 
@@ -26,6 +32,7 @@ path = require 'path'
 express = require 'express'
 session = require 'express-session'
 bodyParser = require 'body-parser'
+
 app = express()
 
 ###
@@ -74,20 +81,23 @@ initRouting = ( port ) =>
 
 	# POST Requests
 
-	# - **`POST` to _"/login"_:** Credentials will be verified
-	app.post '/login', requestHandler.handleLogin
-	# - **`POST` to _"/logout"_:** User will be logged out
-	app.post '/logout', requestHandler.handleLogout
+	# - **`POST` to _"/session"_:** Session handling
+	app.use '/session', serveSession
+	app.use '/rules', serveRules
+	app.use '/webhooks', serveWebhooks
+	app.use '/codeplugin', serveCodePlugins
+	app.use '/admin', serveAdmin
 	# - **`POST` to _"/usercommand"_:** User requests are possible for all users with an account
-	app.use '/usercommand', @userCommandRouter
+	# app.use '/usercommand', @userCommandRouter
+
+	## FIXME remove all redundant routes
+
 	# - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
 	app.post '/admincommand', requestHandler.handleAdminCommand
 	# - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
 	app.post '/event', requestHandler.handleEvent
 	# - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
 	app.post '/webhooks/*', requestHandler.handleWebhooks
-	# - **`POST` to _"/measurements/*"_:** We also want to record measurements
-	app.post '/measurements', requestHandler.handleMeasurements
 
 	prt = parseInt( port ) || 8111 # inbound event channel
 	server = app.listen prt
