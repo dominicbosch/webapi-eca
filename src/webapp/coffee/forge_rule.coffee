@@ -34,7 +34,7 @@ el = $( '<select>' ).attr( 'type', 'text' )
 	.attr( 'style', 'font-size:1em' )
 	.attr( 'id', 'select_eventtrigger' )
 el.change () ->	fFetchEventParams $( this ).val()
-domSelectEventTrigger.append $( '<h4>' ).text( 'Event Trigger Name : ' ).append el
+domSelectEventTrigger.append $( '<h4>' ).text( 'Event Trigger : ' ).append el
 
 domInputEventTiming = $( '<div>' ).attr( 'class', 'indent20' )
 $( '<div>' ).attr( 'class', 'comment' ).appendTo domInputEventTiming
@@ -80,7 +80,7 @@ fFailedRequest = ( msg ) ->
 
 fIssueRequest = ( args ) ->
 	fClearInfo()
-	$.post( '/usercommand', args.data )
+	$.post( '/usercommand/' + args.command, args.data )
 		.done args.done
 		.fail args.fail
 
@@ -168,7 +168,7 @@ fPrepareEventType = ( eventtype, cb ) ->
 		# The user wants a webhook as event producer
 		when 'Webhook'
 			fIssueRequest
-				data: command: 'get_all_webhooks'
+				command: 'get_all_webhooks'
 				done: ( data ) ->
 					try
 						oHooks = JSON.parse data.message
@@ -197,7 +197,7 @@ fPrepareEventType = ( eventtype, cb ) ->
 
 		when 'Event Trigger'
 			fIssueRequest
-				data: command: 'get_event_triggers'
+				command: 'get_event_triggers'
 				done: ( data ) ->
 					try
 						oEps = JSON.parse data.message
@@ -231,15 +231,15 @@ fFetchEventParams = ( name ) ->
 		$( '#event_parameters' ).append domEventTriggerParameters
 		arr = name.split ' -> '
 		fIssueRequest
+			command: 'get_event_trigger_params'
 			data: 
-				command: 'get_event_trigger_params'
 				body: JSON.stringify
 					id: arr[ 0 ]
 			done: fDisplayEventParams arr[ 0 ]
 			fail: fFailedRequest 'Error fetching Event Trigger params'
 		fIssueRequest
+			command: 'get_event_trigger_comment'
 			data: 
-				command: 'get_event_trigger_comment'
 				body: JSON.stringify
 					id: arr[ 0 ]
 			done: ( data ) ->
@@ -270,8 +270,8 @@ fDisplayEventParams = ( id ) ->
 
 fFillEventParams = ( moduleId ) ->
 	fIssueRequest
+		command: 'get_event_trigger_user_params'
 		data:
-			command: 'get_event_trigger_user_params'
 			body: JSON.stringify
 				id: moduleId
 		done: ( data ) ->
@@ -287,8 +287,8 @@ fFillEventParams = ( moduleId ) ->
 # Fetch function arguments required for an event polling function
 fFetchEventFunctionArgs = ( arrName ) ->
 	fIssueRequest
+		command: 'get_event_trigger_function_arguments'
 		data:
-			command: 'get_event_trigger_function_arguments'
 			body: JSON.stringify
 				id: arrName[ 0 ]
 		done: ( data ) ->
@@ -309,8 +309,8 @@ fFetchEventFunctionArgs = ( arrName ) ->
 						td.append $( '<input>' ).attr 'type', 'text'
 						tr.append td
 					fIssueRequest
+						command: 'get_event_trigger_user_arguments'
 						data:
-							command: 'get_event_trigger_user_arguments'
 							body: JSON.stringify
 								ruleId: $( '#input_id' ).val()
 								moduleId: arrName[ 0 ]
@@ -357,8 +357,8 @@ fAddSelectedAction = ( name ) ->
 
 fFetchActionParams = ( modName ) ->
 	fIssueRequest
+		command: 'get_action_dispatcher_params'
 		data: 
-			command: 'get_action_dispatcher_params'
 			body: JSON.stringify
 				id: modName
 		done: ( data ) ->
@@ -373,8 +373,8 @@ fFetchActionParams = ( modName ) ->
 
 					comment = $( '<div>' ).attr( 'class', 'comment indent20' ).appendTo div
 					fIssueRequest
+						command: 'get_action_dispatcher_comment'
 						data: 
-							command: 'get_action_dispatcher_comment'
 							body: JSON.stringify
 								id: modName
 						done: ( data ) ->
@@ -399,8 +399,8 @@ fFetchActionParams = ( modName ) ->
 
 fFetchActionFunctionArgs = ( tag, arrName ) ->
 	fIssueRequest
+		command: 'get_action_dispatcher_function_arguments'
 		data: 
-			command: 'get_action_dispatcher_function_arguments'
 			body: JSON.stringify
 				id: arrName[ 0 ]
 		done: ( data ) ->
@@ -420,15 +420,15 @@ fFetchActionFunctionArgs = ( tag, arrName ) ->
 
 fFillActionFunction = ( name ) ->
 	fIssueRequest
+		command: 'get_action_dispatcher_user_params'
 		data: 
-			command: 'get_action_dispatcher_user_params'
 			body: JSON.stringify
 				id: name
 		done: fAddActionUserParams name
 
 	fIssueRequest
+		command: 'get_action_dispatcher_user_arguments'
 		data:
-			command: 'get_action_dispatcher_user_arguments'
 			body: JSON.stringify
 				ruleId: $( '#input_id' ).val()
 				moduleId: name
@@ -466,7 +466,7 @@ fAddActionUserArgs = ( name ) ->
 fOnLoad = () ->
 	# Fetch the public key from the engine
 	fIssueRequest
-		data: command: 'get_public_key'
+		command: 'get_public_key'
 		done: ( data ) ->
 			strPublicKey = data.message
 		fail: ( err ) ->
@@ -536,8 +536,7 @@ fOnLoad = () ->
 # ACTIONS
 
 	fIssueRequest
-		data:
-			command: 'get_action_dispatchers'
+		command: 'get_action_dispatchers'
 		done: ( data ) ->
 			try
 				oAis = JSON.parse data.message
@@ -701,6 +700,7 @@ fOnLoad = () ->
 							payl.overwrite = true
 							obj.body = JSON.stringify payl
 							fIssueRequest
+								command: obj.command
 								data: obj
 								done: ( data ) ->
 									$( '#info' ).text data.message
@@ -714,7 +714,6 @@ fOnLoad = () ->
 				mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
 
 			obj = 
-				command: 'forge_rule'
 				body: JSON.stringify
 					id: $( '#input_id' ).val()
 					eventtype: eventtype
@@ -728,6 +727,7 @@ fOnLoad = () ->
 					actionparams: ap
 					actionfunctions: actFuncs
 			fIssueRequest
+				command: 'forge_rule'
 				data: obj
 				done: ( data ) ->
 					$( '#info' ).text data.message
@@ -742,8 +742,8 @@ fOnLoad = () ->
 # -----------
 	if oParams.id
 		fIssueRequest
+			command: 'get_rule'
 			data: 
-				command: 'get_rule'
 				body: JSON.stringify
 					id: oParams.id
 			done: ( data ) ->

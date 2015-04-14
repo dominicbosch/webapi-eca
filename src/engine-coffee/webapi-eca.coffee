@@ -204,7 +204,7 @@ init = =>
 
 			@log.info 'RS | Initialzing http listener'
 			# The request handler passes certain requests to the components manager
-			args[ 'request-service' ] = cm.processRequest
+			args[ 'user-router' ] = cm.router
 			# We give the HTTP listener the ability to shutdown the whole system
 			args[ 'shutdown-function' ] = shutDown
 			http args

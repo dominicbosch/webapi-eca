@@ -16,10 +16,8 @@ db = require './persistence'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
-#   [querystring](http://nodejs.org/api/querystring.html)
 fs = require 'fs'
 path = require 'path'
-qs = require 'querystring'
 
 # - External Modules: [mustache](https://github.com/janl/mustache.js) and
 #   [crypto-js](https://github.com/evanvosberg/crypto-js)
@@ -32,9 +30,6 @@ pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
 dirHandlers = path.resolve __dirname, '..', 'webpages', 'handlers'
 exports = module.exports = ( args ) => 
 	@log = args.logger
-
-	# Register the request service
-	@userRequestHandler = args[ 'request-service' ]
 
 	# Register the shutdown handler to the admin command. 
 	@objAdminCmds =
@@ -271,30 +266,6 @@ exports.handleForge = ( req, resp ) ->
 		page = 'login'
 	renderPage page, req, resp
 
-###
-Handles the user command requests.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleUser( *req, resp* )
-###
-exports.handleUserCommand = ( req, resp ) =>
-	if req.session and req.session.user
-		body = ''
-		#Append data to body while receiving fragments
-		req.on 'data', ( data ) ->
-			body += data
-		req.on 'end', =>
-			obj = qs.parse body
-			# Let the user request handler service answer the request
-			@userRequestHandler req.session.user, obj, ( obj ) ->
-				resp.send obj.code, obj
-	else
-		resp.send 401, 'Login first!'
-
 
 ###
 Present the admin console to the user if he's allowed to see it.
@@ -335,7 +306,9 @@ exports.handleAdminCommand = ( req, resp ) =>
 		req.on 'data', ( data ) ->
 			body += data
 		req.on 'end', =>
-			obj = qs.parse body
+			console.log 'RH | body is ' + typeof body
+			obj = body
+			# obj = qs.parse body
 			@log.info 'RH | Received admin request: ' + obj.command
 			arrCmd = obj.command.split( ' ' )
 			if not arrCmd[ 0 ] or not @objAdminCmds[ arrCmd[ 0 ] ]
@@ -353,54 +326,6 @@ exports.handleAdminCommand = ( req, resp ) =>
 		resp.send 401, 'You need to be logged in as admin!'
 
 
-# Parse events and register to user if it's a user specific event
-parsePushAndAnswerEvent = ( eventname, username, body, resp ) ->
-	# Currently we allow JSON and form data to arrive at webhooks. 
-	# TODO We should allow to choose arriving formats, such as xml too
-	# TODO We should implement body selectors for webhooks as well to
-	# add flexibility in the way the data arrives
-	if typeof body is 'string'
-		try
-			body = JSON.parse body
-		catch err
-			try
-				body = qs.parse body
-			catch err
-				resp.send 400, 'Badly formed event!'
-				return
-
-	obj =
-		eventname: eventname
-		body: body
-	if username
-		obj.username = username
-	db.pushEvent obj
-	resp.send 200, JSON.stringify
-		message: "Thank you for the event: '#{ eventname }'"
-		evt: obj
-	obj
-
-
-###
-Handles measurement posts
-###
-# This should be discontinued since this is not a feature the engine should support.
-# Rather we implement the possibility to store variables persistently
-# module wise in a rule.
-exports.handleMeasurements = ( req, resp ) =>
-	body = ''
-	req.on 'data', ( data ) ->
-		body += data
-
-	req.on 'end', =>
-		# It does not only look like a quick hack, it is one...
-		obj = parsePushAndAnswerEvent 'uptimestatistics', null, body, resp
-		# if obj.eventname is 'uptimestatistics'
-			# This is a hack to quickly allow storing of public accessible data
-		# @log.info 'Storing uptime stats'
-		fPath = path.resolve __dirname, '..', 'webpages', 'public', 'data', 'histochart.json'
-		fs.writeFile fPath, JSON.stringify( obj.body, undefined, 2 ), 'utf8'
-
 ###
 Handles webhook posts
 ###
@@ -412,7 +337,15 @@ exports.handleWebhooks = ( req, resp ) =>
 		req.on 'data', ( data ) ->
 			body += data
 		req.on 'end', () ->
-			parsePushAndAnswerEvent oHook.hookname, oHook.username, body, resp
+			obj =
+				eventname: oHook.hookname
+				body: body
+			if oHook.username
+				obj.username = oHook.username
+			db.pushEvent obj
+			resp.send 200, JSON.stringify
+				message: "Thank you for the event: '#{ oHook.hookname }'"
+				evt: obj
 	else
 		resp.send 404, "Webhook not existing!"
 

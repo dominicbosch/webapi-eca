@@ -27,7 +27,7 @@ fOnLoad = () ->
 			cmd = 'get_event_triggers'
 		else
 			cmd = 'get_action_dispatchers'
-		$.post( '/usercommand', command: cmd )
+		$.post( '/usercommand/' + cmd )
 			.done fUpdateModuleList
 			.fail fErrHandler 'Did not retrieve rules! '
 
@@ -57,10 +57,9 @@ fOnLoad = () ->
 			else
 				cmd = 'delete_action_dispatcher'
 			data =
-				command: cmd
 				body: JSON.stringify
 					id: modName
-			$.post( '/usercommand', data )
+			$.post( '/usercommand/' + cmd, data )
 				.done fFetchModules
 				.fail fErrHandler 'Could not delete module! '
 

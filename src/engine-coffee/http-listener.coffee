@@ -15,13 +15,15 @@ requestHandler = require './request-handler'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
-# - Node.js Modules: [path](http://nodejs.org/api/path.html) and
-#   [querystring](http://nodejs.org/api/querystring.html)
+# - Node.js Modules: [path](http://nodejs.org/api/path.html)
 path = require 'path'
-qs = require 'querystring'
 
 # - External Modules: [express](http://expressjs.com/api.html)
+#   [body-parser](https://github.com/expressjs/body-parser)
+
 express = require 'express'
+session = require 'express-session'
+bodyParser = require 'body-parser'
 app = express()
 
 #TODO use RedisStore for persistent sessions
@@ -38,6 +40,7 @@ exports = module.exports = ( args ) =>
 	@log = args.logger
 	@shutDownSystem = args[ 'shutdown-function' ]
 	requestHandler args
+	@userCommandRouter = args[ 'user-router' ]
 	initRouting args[ 'http-port' ]
 	module.exports
 
@@ -48,11 +51,15 @@ Initializes the request routing and starts listening on the given port.
 @private initRouting( *fShutDown* )
 ###
 initRouting = ( port ) =>
-	# Add cookie support for session handling.
-	app.use express.cookieParser()
-	#TODO The session secret approach needs to be fixed!
 	sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
-	app.use express.session { secret: sess_sec }
+	sessionMiddleware = session 
+		secret: sess_sec
+		resave: false
+		saveUninitialized: true
+	app.use sessionMiddleware
+
+	app.use bodyParser.json()
+	app.use bodyParser.urlencoded extended: true
 
 	#At the moment there's no redis session backbone (didn't work straight away)
 	@log.info 'HL | no session backbone'
@@ -75,7 +82,7 @@ initRouting = ( port ) =>
 	# - **`POST` to _"/logout"_:** User will be logged out
 	app.post '/logout', requestHandler.handleLogout
 	# - **`POST` to _"/usercommand"_:** User requests are possible for all users with an account
-	app.post '/usercommand', requestHandler.handleUserCommand
+	app.use '/usercommand', @userCommandRouter
 	# - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
 	app.post '/admincommand', requestHandler.handleAdminCommand
 	# - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage

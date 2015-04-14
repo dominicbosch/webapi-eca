@@ -22,7 +22,7 @@ fDisplayError = ( msg ) ->
 
 fIssueRequest = ( args ) ->
 	fClearInfo()
-	$.post( '/usercommand', args.body )
+	$.post( '/usercommand/' + args.command, args.data )
 		.done args.done
 		.fail args.fail
 
@@ -37,8 +37,7 @@ fFailedRequest = ( msg ) ->
 
 fUpdateWebhookList = ( cb ) ->
 	fIssueRequest
-		body: 
-			command: 'get_all_webhooks'
+		command: 'get_all_webhooks'
 		done: fProcessWebhookList cb
 		fail: fFailedRequest 'Unable to get Webhook list'
 
@@ -100,8 +99,8 @@ fOnLoad = () ->
 		else
 			# $( '#display_hookurl *' ).remove()
 			fIssueRequest
-				body: 
-					command: 'create_webhook'
+				command: 'create_webhook'
+				data: 
 					body: JSON.stringify
 						hookname: hookname
 				done: ( data ) ->
@@ -121,8 +120,8 @@ fOnLoad = () ->
 			url = $( 'input', $( this ).closest( 'tr' ) ).val()
 			arrUrl = url.split '/'
 			fIssueRequest
-				body: 
-					command: 'delete_webhook'
+				command: 'delete_webhook'
+				data: 
 					body: JSON.stringify
 						hookid: arrUrl[ arrUrl.length - 1 ]
 

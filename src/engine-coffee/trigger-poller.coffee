@@ -16,6 +16,10 @@ db = require './persistence'
 dynmod = require './dynamic-modules'
 encryption = require './encryption'
 
+# - External Modules:
+#   [heapdump](https://github.com/bnoordhuis/node-heapdump)
+hd = require 'heapdump'
+
 # If we do not receive all required arguments we shut down immediately
 if process.argv.length < 8
 	console.error 'Not all arguments have been passed!'
@@ -40,6 +44,7 @@ process.on 'uncaughtException', ( err ) ->
 	# and the event polling won't continue fo this rule, which is fine for us, except that
 	# we do not have a good way to inform the user about his error.
 	log.error 'Probably one of the Event Triggers produced an error!'
+	heapdump.writeSnapshot __dirname + '/' + Date.now() + '.heapsnapshot'
 	log.error err
 
 # Initialize required modules (should be in cache already)

@@ -3,3 +3,4 @@
 .project
 .settings
 proc.pid
+node_modules/

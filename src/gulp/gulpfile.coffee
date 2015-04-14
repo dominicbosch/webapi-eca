@@ -13,7 +13,7 @@ path = require 'path'
 # groc = require 'groc'
 argv = require( 'yargs' ).argv
 gulp = require 'gulp'
-clean = require 'gulp-clean'
+del = require 'del'
 # gulpif = require 'gulp-if'
 plumber = require 'gulp-plumber'
 gutil = require 'gulp-util'
@@ -95,12 +95,12 @@ Clean everything up
 gulp.task 'clean-engine',
   'Clean deployed engine resources',
   ( cb ) ->
-    gulp.src( dirDist + 'js', read: false ).pipe clean()
+  	del dirDist + 'js'
 
 gulp.task 'clean-webapp',
   'Clean deployed webapp resources',
   ( cb ) ->
-    gulp.src( dirDist + 'webapp', read: false ).pipe clean()
+  	del dirDist + 'webapp'
 
 
 ###

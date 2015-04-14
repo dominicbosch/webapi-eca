@@ -21,7 +21,7 @@ fOnLoad = () ->
 				setTimeout fDelayed, 500
 
 	fFetchRules = () ->
-		$.post( '/usercommand', command: 'get_rules' )
+		$.post( '/usercommand/get_rules' )
 			.done fUpdateRuleList
 			.fail fErrHandler 'Did not retrieve rules! '
 
@@ -49,10 +49,9 @@ fOnLoad = () ->
 		if confirm  "Do you really want to delete the rule '#{ ruleName }'?"
 			$( '#log_col' ).text ""
 			data =
-				command: 'delete_rule'
 				body: JSON.stringify
 					id: ruleName
-			$.post( '/usercommand', data )
+			$.post( '/usercommand/delete_rule', data )
 				.done fFetchRules
 				.fail fErrHandler 'Could not delete rule! '
 
@@ -63,10 +62,9 @@ fOnLoad = () ->
 	$( '#tableRules' ).on 'click', 'img.log', () ->
 		ruleName = $( 'div', $( this ).closest( 'tr' )).text()
 		data =
-			command: 'get_rule_log'
 			body: JSON.stringify
 				id: ruleName
-		$.post( '/usercommand', data )
+		$.post( '/usercommand/get_rule_log', data )
 			.done ( data ) ->
 				ts = ( new Date() ).toISOString()
 				log = data.message.replace new RegExp("\n", 'g'), "<br>"

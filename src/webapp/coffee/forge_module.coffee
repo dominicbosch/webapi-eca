@@ -108,7 +108,6 @@ fOnLoad = () ->
 					listParams[val] = shld
 				true
 			obj =
-				command: "forge_#{ oParams.type }"
 				body: JSON.stringify
 					id: $( '#input_id' ).val()
 					lang: $( '#editor_mode' ).val()
@@ -122,7 +121,7 @@ fOnLoad = () ->
 							bod = JSON.parse obj.body
 							bod.overwrite = true
 							obj.body = JSON.stringify bod
-							$.post( '/usercommand', obj )
+							$.post( '/usercommand/forge_' + oParams.type, obj )
 								.done ( data ) ->
 									$( '#info' ).text data.message
 									$( '#info' ).attr 'class', 'success'
@@ -132,7 +131,7 @@ fOnLoad = () ->
 					else
 						fErrHandler( "#{ moduleName } not stored!" ) err
 			window.scrollTo 0, 0
-			$.post( '/usercommand', obj )
+			$.post( '/usercommand/forge_' + oParams.type, obj )
 				.done ( data ) ->
 					$( '#info' ).text data.message
 					$( '#info' ).attr 'class', 'success'
@@ -148,11 +147,10 @@ fOnLoad = () ->
 
 	if oParams.id
 		obj =
-			command: "get_full_#{ oParams.type }"
 			body: JSON.stringify 
 				id: oParams.id
 
-		$.post( '/usercommand', obj )
+		$.post( '/usercommand/get_full_' + oParams.type, obj )
 			.done ( data ) ->
 				oMod = JSON.parse data.message
 				if oMod

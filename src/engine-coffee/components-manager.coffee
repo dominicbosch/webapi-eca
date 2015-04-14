@@ -26,6 +26,8 @@ rh = require './request-handler'
 fs = require 'fs'
 path = require 'path'
 events = require 'events'
+# - External Modules: [express](http://expressjs.com/api.html)
+express = require 'express'
 eventEmitter = new events.EventEmitter()
 
 ###
@@ -104,14 +106,63 @@ exports.processRequest = ( user, oReq, callback ) ->
 		return callback
 			code: 404
 			message: 'You had a strange body in your request!'
-	if commandFunctions[oReq.command]
 
 		# If the command function was registered we invoke it
-		commandFunctions[oReq.command] user, dat, callback
+	commandFunctions[oReq.command] user, dat, callback
+
+
+
+# ###
+# Handles the user command requests.
+
+# *Requires
+# the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
+# and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
+# objects.*
+
+# @public handleUser( *req, resp* )
+# ###
+
+
+exports.router = router = express.Router();
+
+router.use ( req, res, next ) ->
+	if req.session and req.session.user
+		next()
 	else
-		callback
-			code: 404
-			message: 'What do you want from me?'
+		res.status( 401 ).send 'Login first!'
+
+router.post 'get_public_key', ( req, res ) ->
+	obj =
+		code: 200
+		message: encryption.getPublicKey()
+	res.status( obj.code ).send obj
+
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+# router.post 'get_public_key', ( req, res ) ->
+		
+exports.handleUserCommand = ( req, resp ) =>
+	if req.session and req.session.user
+		body = ''
+		#Append data to body while receiving fragments
+		req.on 'data', ( data ) ->
+			body += data
+		req.on 'end', =>
+			obj = qs.parse body
+			# Let the user request handler service answer the request
+			@userRequestHandler req.session.user, obj, ( obj ) ->
+				resp.send obj.code, obj
+	else
+		resp.send 401, 'Login first!'
+
+
+
 
 ###
 Checks whether all required parameters are present in the body.
@@ -239,6 +290,9 @@ storeModule = ( user, oBody, modType, dbMod, callback ) =>
 storeRule = ( user, oBody, callback ) =>
 	# This is how a rule is stored in the database
 	# FIXME this is all clutered up! we only need id, eventname, conditions and actions as rules! everything else is eventTrigger related
+	db.getRule oBody.id, user.username, ( oldRule ) ->
+		epModId = oldRule.eventname.split( ' -> ' )[ 0 ]
+		db.deleteUserArguments user.username, oBody.id, epModId
 		rule =
 			id: oBody.id
 			eventtype: oBody.eventtype
@@ -256,8 +310,13 @@ storeRule = ( user, oBody, callback ) =>
 		if oBody.eventparams
 			epModId = rule.eventname.split( ' -> ' )[ 0 ]
 			db.eventTriggers.storeUserParams epModId, user.username, JSON.stringify oBody.eventparams
+		else
+			db.eventTriggers.deleteUserParams epModId, user.username
+
 		oFuncArgs = oBody.eventfunctions
 		# if event function arguments were sent, store them
+
+		db.eventTriggers.deleteUserArguments user.username, rule.id, arr[ 0 ]
 		for id, args of oFuncArgs
 			arr = id.split ' -> '
 			db.eventTriggers.storeUserArguments user.username, rule.id, arr[ 0 ], arr[ 1 ], JSON.stringify args 
@@ -296,10 +355,6 @@ storeRule = ( user, oBody, callback ) =>
 # Those are the answers to user requests.
 
 commandFunctions =
-	get_public_key: ( user, oBody, callback ) ->
-		callback
-			code: 200
-			message: encryption.getPublicKey()
 
 # EVENT TRIGGERS
 # -------------
