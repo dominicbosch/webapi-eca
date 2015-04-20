@@ -90,7 +90,7 @@ paths =
 	srcWebAppCoffee: 'src/webapp/coffee/*.coffee'
 	dist: 'dist/'
 	distEngine: 'dist/js'
-	distWebApp: 'dist/webpages/public/js'
+	distWebApp: 'dist/static/js'
 
 
 gulp.task 'compile-gulp', 'Compile GULP coffee file', ( cb ) ->
@@ -131,14 +131,14 @@ gulp.task 'deploy', 'Deploy all system resources into the distribution folder', 
 		stream
 
 	fetchStream( paths.src + 'webapp/static/**/*' )
-		.pipe (gulp.dest paths.dist + 'webpages/public/')
+		.pipe( gulp.dest paths.dist + 'static/' )
 		.on 'end', isComplete
 	fetchStream( paths.src + 'webapp/views/**/*' )
-		.pipe (gulp.dest paths.dist + 'webpages/views/')
+		.pipe( gulp.dest paths.dist + 'js/views/' )
 		.on 'end', isComplete
 	fetchStream( paths.lib + '*' )
 		.pipe( gulp.dest paths.distEngine )
-		.pipe( gulp.dest paths.dist + 'webpages/public/js/lib')
+		.pipe( gulp.dest paths.dist + 'static/js/lib' )
 		.on 'end', isComplete
 	fetchStream( paths.src + 'config/*' )
 		.pipe( gulp.dest paths.dist + 'config')

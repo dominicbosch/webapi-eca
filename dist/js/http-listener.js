@@ -64,16 +64,20 @@ exports.init = (function(_this) {
     }
     app.engine('html', swig.renderFile);
     app.set('view engine', 'html');
-    app.set('views', path.join(__dirname, '..', 'webpages', 'views'));
+    app.set('views', path.resolve(__dirname, 'views'));
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({
       extended: true
     }));
     log.info('HL | no session backbone');
-    app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
-    app.get('/views/*', function(req, res) {
-      return res.render(view, req.session.pub);
+    app.get('/', function(req, res) {
+      return res.render('index', req.session.pub);
     });
+    app.get('/views/*', function(req, res) {
+      log.info(req.params[0]);
+      return res.render(req.params[0], req.session.pub);
+    });
+    app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
     log.info('LOADING WEB SERVICES: ');
     arrServices = fs.readdirSync(path.resolve(__dirname, 'services')).filter(function(d) {
       return d.substring(d.length - 3) === '.js';

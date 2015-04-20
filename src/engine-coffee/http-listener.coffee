@@ -61,7 +61,7 @@ exports.init = ( conf ) =>
 
 	app.engine 'html', swig.renderFile
 	app.set 'view engine', 'html'
-	app.set 'views', path.join __dirname, '..', 'webpages', 'views'
+	app.set 'views', path.resolve __dirname, 'views'
 
 	app.use bodyParser.json()
 	app.use bodyParser.urlencoded extended: true
@@ -71,14 +71,17 @@ exports.init = ( conf ) =>
 
 	# **Requests Routing table:**
 
-	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
-	app.use '/', express.static path.resolve __dirname, '..', 'webpages', 'public'
 	
 	# Redirect the views that will be loaded by the swig templating engine
+	app.get '/', (req, res) ->
+		res.render 'index', req.session.pub
+
 	app.get '/views/*', ( req, res ) ->
-		res.render view, req.session.pub
+		log.info req.params[ 0 ]
+		res.render req.params[ 0 ], req.session.pub
 
-
+	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
+	app.use '/', express.static path.resolve __dirname, '..', 'static'
 
 
 	# Dynamically load all services from the services folder

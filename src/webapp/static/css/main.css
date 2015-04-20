@@ -1,11 +1,4 @@
 
-body {
-  font-family: 'Roboto', sans-serif, "Times New Roman", Georgia, Serif;
-  /*font-size: 0.9em;*/
-  margin: 0px;
-  /*background-color: #EEF;*/
-}
-
 h4 {
   margin-top: 5px;
   margin-bottom: 5px;
@@ -16,7 +9,7 @@ h4 {
   background: #fff;
   border-bottom: 1px solid #666;
 }
-
+/*
 input[type=text],
 input[type=password] {
   -webkit-transition: all 0.30s ease-in-out;
@@ -54,7 +47,6 @@ button {
 }
 
 #menubar {
-	/*font-size: 0.85em;*/
   font-weight: bold;
 	padding: 0px;
   width: 100%;
@@ -216,7 +208,7 @@ button {
   font-weight: bold;
   text-decoration: underline;
 }
-
+*/
 .dialog {
   visibility: hidden;
   position: absolute;
