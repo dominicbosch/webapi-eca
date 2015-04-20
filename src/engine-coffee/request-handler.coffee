@@ -119,49 +119,6 @@ exports.handleEvent = ( req, resp ) ->
 		else
 			resp.send 400, 'Your event was missing important parameters!'
 
-###
-Associates the user object with the session if login is successful.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleLogin( *req, resp* )
-###
-exports.handleLogin = ( req, resp ) =>
-	body = ''
-	req.on 'data', ( data ) -> body += data
-	req.on 'end', =>
-		obj = JSON.parse body
-		db.loginUser obj.username, obj.password, ( err, usr ) =>
-			if err
-				# Tapping on fingers, at least in log...
-				@log.warn "RH | AUTH-UH-OH ( #{ obj.username } ): #{ err.message }"
-			else
-				# no error, so we can associate the user object from the DB to the session
-				req.session.user = usr
-			if req.session.user
-				resp.send 'OK!'
-			else
-				resp.send 401, 'NO!'
-
-###
-A post request retrieved on this handler causes the user object to be
-purged from the session, thus the user will be logged out.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleLogout( *req, resp* )
-###
-exports.handleLogout = ( req, resp ) ->
-	if req.session 
-		req.session.user = null
-		resp.send 'Bye!'
-
 
 ###
 Resolves the path to a handler webpage.
@@ -268,27 +225,6 @@ exports.handleForge = ( req, resp ) ->
 		page = 'login'
 	renderPage page, req, resp
 
-
-###
-Present the admin console to the user if he's allowed to see it.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleForge( *req, resp* )
-###
-exports.handleAdmin = ( req, resp ) ->
-	if not req.session.user
-		page = 'login'
-	#TODO isAdmin should come from the db role
-	else if req.session.user.roles.indexOf( "admin" ) is -1
-		page = 'login'
-		msg = 'You need to be admin for this page!'
-	else
-		page = 'admin'
-	renderPage page, req, resp, msg
 
 ###
 Handles the admin command requests.

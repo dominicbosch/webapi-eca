@@ -129,7 +129,7 @@ conf.log[ 'file-path' ] = argv.p || conf.log[ 'file-path' ] || 'warn'
 conf.log[ 'nolog' ] = argv.n || conf.log[ 'nolog' ]
 if not conf.log.nolog
 	try
-		fs.unlinkSync path.resolve conf.log[ 'file-path' ]
+		fs.writeFileSync path.resolve( conf.log[ 'file-path' ] ), ''
 	catch e
 		console.log e
 
@@ -187,8 +187,6 @@ init = =>
 				'http-port': conf[ 'http-port' ]
 				# The request handler passes certain requests to the components manager
 				'request-service': cm.processRequest
-				# We give the HTTP listener the ability to shutdown the whole system
-				'shutdown-function': shutDown
 
 ###
 Shuts down the server.
@@ -220,7 +218,7 @@ process.on 'message', ( cmd ) ->
 	if cmd is 'die'
 		log.warn 'RS | GOT DIE COMMAND'
 		shutDown()
-		
+
 process.on 'SIGINT', () ->
 	log.warn 'RS | GOT SIGINT'
 	shutDown()

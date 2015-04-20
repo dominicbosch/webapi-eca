@@ -48,7 +48,6 @@ exports = module.exports;
 
 exports.init = (function(_this) {
   return function(args) {
-    _this.shutDownSystem = args['shutdown-function'];
     requestHandler.init(args);
     return initRouting(args['http-port']);
   };
@@ -78,7 +77,6 @@ initRouting = (function(_this) {
     }));
     log.info('HL | no session backbone');
     app.use('/', express["static"](path.resolve(__dirname, '..', 'webpages', 'public')));
-    app.get('/admin', requestHandler.handleAdmin);
     app.get('/forge', requestHandler.handleForge);
     app.use('/session', serveSession);
     app.use('/rules', serveRules);
@@ -95,7 +93,8 @@ initRouting = (function(_this) {
       var addr;
       addr = server.address();
       if (addr.port !== port) {
-        return _this.shutDownSystem();
+        log.error(err, 'HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!');
+        return process.exit();
       }
     });
     return server.on('error', function(err) {
@@ -106,15 +105,15 @@ initRouting = (function(_this) {
        */
       switch (err.errno) {
         case 'EADDRINUSE':
-          log.error(err, 'HL | http-port already in use, shutting down!');
+          log.error(err, 'HL | HTTP-PORT ALREADY IN USE!!! Shutting down!');
           break;
         case 'EACCES':
-          log.error(err, 'HL | http-port not accessible, shutting down!');
+          log.error(err, 'HL | HTTP-PORT NOT ACCSESSIBLE!!! Shutting down!');
           break;
         default:
-          log.error(err, 'HL | Error in server, shutting down!');
+          log.error(err, 'HL | UNHANDLED SERVER ERROR!!! Shutting down!');
       }
-      return _this.shutDownSystem();
+      return process.exit();
     });
   };
 })(this);

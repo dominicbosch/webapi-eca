@@ -1,7 +1,6 @@
 $( document ).ready(function() {
 	var dialog = window.dialog = (function() {
-		var pubFuncs = {},
-			el = $( '.dialog' );
+		var el = $( '.dialog' );
 
 		return {
 			show: function( title, text, cb ) {

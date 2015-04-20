@@ -145,64 +145,6 @@ exports.handleEvent = function(req, resp) {
 
 
 /*
-Associates the user object with the session if login is successful.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleLogin( *req, resp* )
- */
-
-exports.handleLogin = (function(_this) {
-  return function(req, resp) {
-    var body;
-    body = '';
-    req.on('data', function(data) {
-      return body += data;
-    });
-    return req.on('end', function() {
-      var obj;
-      obj = JSON.parse(body);
-      return db.loginUser(obj.username, obj.password, function(err, usr) {
-        if (err) {
-          _this.log.warn("RH | AUTH-UH-OH ( " + obj.username + " ): " + err.message);
-        } else {
-          req.session.user = usr;
-        }
-        if (req.session.user) {
-          return resp.send('OK!');
-        } else {
-          return resp.send(401, 'NO!');
-        }
-      });
-    });
-  };
-})(this);
-
-
-/*
-A post request retrieved on this handler causes the user object to be
-purged from the session, thus the user will be logged out.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleLogout( *req, resp* )
- */
-
-exports.handleLogout = function(req, resp) {
-  if (req.session) {
-    req.session.user = null;
-    return resp.send('Bye!');
-  }
-};
-
-
-/*
 Resolves the path to a handler webpage.
 
 @private getHandlerPath( *name* )
@@ -321,31 +263,6 @@ exports.handleForge = function(req, resp) {
     page = 'login';
   }
   return renderPage(page, req, resp);
-};
-
-
-/*
-Present the admin console to the user if he's allowed to see it.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleForge( *req, resp* )
- */
-
-exports.handleAdmin = function(req, resp) {
-  var msg, page;
-  if (!req.session.user) {
-    page = 'login';
-  } else if (req.session.user.roles.indexOf("admin") === -1) {
-    page = 'login';
-    msg = 'You need to be admin for this page!';
-  } else {
-    page = 'admin';
-  }
-  return renderPage(page, req, resp, msg);
 };
 
 

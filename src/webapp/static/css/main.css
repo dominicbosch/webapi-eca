@@ -3,12 +3,18 @@ body {
   font-family: 'Roboto', sans-serif, "Times New Roman", Georgia, Serif;
   /*font-size: 0.9em;*/
   margin: 0px;
-  background-color: #EEF;
+  /*background-color: #EEF;*/
 }
 
 h4 {
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+#header {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #666;
 }
 
 input[type=text],

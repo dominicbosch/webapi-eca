@@ -122,7 +122,7 @@ conf.log['nolog'] = argv.n || conf.log['nolog'];
 
 if (!conf.log.nolog) {
   try {
-    fs.unlinkSync(path.resolve(conf.log['file-path']));
+    fs.writeFileSync(path.resolve(conf.log['file-path']), '');
   } catch (_error) {
     e = _error;
     console.log(e);
@@ -174,8 +174,7 @@ init = (function(_this) {
         log.info('RS | Initialzing http listener');
         return http.init({
           'http-port': conf['http-port'],
-          'request-service': cm.processRequest,
-          'shutdown-function': shutDown
+          'request-service': cm.processRequest
         });
       }
     });

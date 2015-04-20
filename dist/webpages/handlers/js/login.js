@@ -15,7 +15,7 @@ fOnLoad = function() {
       username: $('#username').val(),
       password: hp.toString()
     };
-    return $.post('/session/login', JSON.stringify(data)).done(function(data) {
+    return $.post('/session/login', data).done(function(data) {
       return window.location.href = document.URL;
     }).fail(function(err) {
       return alert('Authentication not successful!');

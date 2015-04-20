@@ -44,7 +44,6 @@ Initializes the HTTP listener and its request handler.
 ###
 exports = module.exports
 exports.init = ( args ) =>
-	@shutDownSystem = args[ 'shutdown-function' ]
 	requestHandler.init args
 	initRouting args[ 'http-port' ]
 
@@ -70,12 +69,10 @@ initRouting = ( port ) =>
 
 	# **Accepted requests to paths:**
 
-	# GET Requests
+	# Requests Routing table:
 
-	# - **`GET` to _"/"_:** Static redirect to the _"webpages/public"_ directory
+	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
 	app.use '/', express.static path.resolve __dirname, '..', 'webpages', 'public'
-	# - **`GET` to _"/admin"_:** Displays the admin console if user is admin
-	app.get '/admin', requestHandler.handleAdmin
 	# - **`GET` to _"/forge"_:** Displays different forge pages
 	app.get '/forge', requestHandler.handleForge
 
@@ -84,15 +81,16 @@ initRouting = ( port ) =>
 	# - **`POST` to _"/session"_:** Session handling
 	app.use '/session', serveSession
 	app.use '/rules', serveRules
+	# - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
 	app.use '/webhooks', serveWebhooks
 	app.use '/codeplugin', serveCodePlugins
+	# - **`POST` to _"/admin"_:** Admin requests are only possible for admins
 	app.use '/admin', serveAdmin
 	# - **`POST` to _"/usercommand"_:** User requests are possible for all users with an account
 	# app.use '/usercommand', @userCommandRouter
 
 	## FIXME remove all redundant routes
 
-	# - **`POST` to _"/admincommand"_:** Admin requests are only possible for admins
 	app.post '/admincommand', requestHandler.handleAdminCommand
 	# - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
 	app.post '/event', requestHandler.handleEvent
@@ -106,7 +104,9 @@ initRouting = ( port ) =>
 	server.on 'listening', () =>
 		addr = server.address()
 		if addr.port isnt port
-			@shutDownSystem()
+			log.error err, 'HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!'
+			process.exit()
+
 	server.on 'error', ( err ) =>
 		###
 		Error handling of the express port listener requires special attention,
@@ -114,12 +114,12 @@ initRouting = ( port ) =>
 		###
 		switch err.errno
 			when 'EADDRINUSE'
-				log.error err, 'HL | http-port already in use, shutting down!'
+				log.error err, 'HL | HTTP-PORT ALREADY IN USE!!! Shutting down!'
 			when 'EACCES'
-				log.error err, 'HL | http-port not accessible, shutting down!'
+				log.error err, 'HL | HTTP-PORT NOT ACCSESSIBLE!!! Shutting down!'
 			else
-				log.error err, 'HL | Error in server, shutting down!'
-		@shutDownSystem()
+				log.error err, 'HL | UNHANDLED SERVER ERROR!!! Shutting down!'
+		process.exit()
 
 
 #
