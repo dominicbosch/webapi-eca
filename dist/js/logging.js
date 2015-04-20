@@ -15,19 +15,18 @@ exports = module.exports = {
   fatal: function() {},
   init: function(args) {
     var e, func, logPath, opt, prop, ref;
-    args = args != null ? args : {};
-    if (args.nolog) {
+    if (args.log.nolog) {
       return delete exports.init;
     } else {
       try {
         opt = {
-          name: "webapi-eca"
+          name: 'webapi-eca'
         };
-        if (args['mode'] === 'development') {
+        if (args.log.trace === 'on') {
           opt.src = true;
         }
-        if (args['file-path']) {
-          logPath = path.resolve(args['file-path']);
+        if (args.log['file-path']) {
+          logPath = path.resolve(args.log['file-path']);
         } else {
           logPath = path.resolve(__dirname, '..', '..', 'logs', 'server.log');
         }
@@ -41,10 +40,10 @@ exports = module.exports = {
         }
         opt.streams = [
           {
-            level: args['std-level'],
+            level: args.log['std-level'],
             stream: process.stdout
           }, {
-            level: args['file-level'],
+            level: args.log['file-level'],
             path: logPath
           }
         ];

@@ -65,8 +65,8 @@ opt = {
     describe: 'Specify a database identifier'
   },
   'm': {
-    alias: 'log-mode',
-    describe: 'Specify a log mode: [development|productive]'
+    alias: 'mode',
+    describe: 'Specify a run mode: [development|productive]'
   },
   'i': {
     alias: 'log-std-level',
@@ -79,6 +79,10 @@ opt = {
   'p': {
     alias: 'log-file-path',
     describe: 'Specify the path to the log file within the "logs" folder'
+  },
+  't': {
+    alias: 'log-trace',
+    describe: 'Whether full tracing should be enabled [on|off]. do not use in productive mode.'
   },
   'n': {
     alias: 'nolog',
@@ -110,7 +114,7 @@ if (!conf.log) {
   conf.log = {};
 }
 
-conf.log['mode'] = argv.m || conf.log['mode'] || 'productive';
+conf.mode = argv.m || conf.mode || 'productive';
 
 conf.log['std-level'] = argv.i || conf.log['std-level'] || 'error';
 
@@ -118,18 +122,20 @@ conf.log['file-level'] = argv.f || conf.log['file-level'] || 'warn';
 
 conf.log['file-path'] = argv.p || conf.log['file-path'] || 'warn';
 
-conf.log['nolog'] = argv.n || conf.log['nolog'];
+conf.log.trace = argv.t || conf.log.trace || 'off';
+
+conf.log.nolog = argv.n || conf.log.nolog;
 
 if (!conf.log.nolog) {
   try {
-    fs.writeFileSync(path.resolve(conf.log['file-path']), '');
+    fs.writeFileSync(path.resolve(conf.log['file-path']), ' ');
   } catch (_error) {
     e = _error;
     console.log(e);
   }
 }
 
-log.init(conf.log);
+log.init(conf);
 
 log.info('RS | STARTING SERVER');
 
@@ -172,10 +178,7 @@ init = (function(_this) {
           return poller.send(evt);
         });
         log.info('RS | Initialzing http listener');
-        return http.init({
-          'http-port': conf['http-port'],
-          'request-service': cm.processRequest
-        });
+        return http.init(conf);
       }
     });
   };

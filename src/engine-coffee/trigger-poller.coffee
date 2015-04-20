@@ -23,7 +23,7 @@ init = ( args ) ->
 		console.error 'Not all arguments have been passed!'
 		process.exit()
 
-	log.init args.log
+	log.init args
 	log.info 'EP | Event Trigger Poller starts up'
 
 	process.on 'uncaughtException', ( err ) ->

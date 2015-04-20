@@ -39,6 +39,7 @@ exports = module.exports;
 
 exports.init = (function(_this) {
   return function(dbPort) {
+    log.info('INIT DB');
     if (!_this.db) {
       exports.eventTriggers = new IndexedModules('event-trigger', log);
       exports.actionDispatchers = new IndexedModules('action-dispatcher', log);

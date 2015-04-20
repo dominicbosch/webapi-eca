@@ -8,7 +8,7 @@ Request Handler
 > pages as well as POST requests such as user login, module storing, event
 > invocation and also admin commands.
  */
-var crypto, db, dirHandlers, exports, fs, getHandlerPath, getRemoteScripts, getScript, getTemplate, log, mustache, path, pathUsers, renderPage;
+var crypto, db, dirHandlers, exports, fs, log, path, pathUsers;
 
 log = require('./logging');
 
@@ -18,8 +18,6 @@ fs = require('fs');
 
 path = require('path');
 
-mustache = require('mustache');
-
 crypto = require('crypto-js');
 
 pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
@@ -28,86 +26,86 @@ dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
 
 exports = module.exports;
 
-exports.init = (function(_this) {
-  return function(args) {
-    var fStoreUser, oUser, user, users;
-    _this.objAdminCmds = {
-      shutdown: function(obj, cb) {
-        var data;
-        data = {
-          code: 200,
-          message: 'Shutting down... BYE!'
-        };
-        setTimeout(args['shutdown-function'], 500);
-        return cb(null, data);
-      },
-      newuser: function(obj, cb) {
-        var data, err, fPersistNewUser, oUser, roles;
-        data = {
-          code: 200,
-          message: 'User stored thank you!'
-        };
-        if (obj.username && obj.password) {
-          if (obj.roles) {
-            try {
-              roles = JSON.parse(obj.roles);
-            } catch (_error) {
-              err = _error;
-              log('RH | error parsing newuser roles: ' + err.message);
-              roles = [];
-            }
-          } else {
-            roles = [];
-          }
-          oUser = {
-            username: obj.username,
-            password: obj.password,
-            roles: roles
-          };
-          db.storeUser(oUser);
-          fPersistNewUser = function(username, password, roles) {
-            return function(err, data) {
-              var users;
-              users = JSON.parse(data);
-              users[username] = {
-                password: password,
-                roles: roles
-              };
-              return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
-                if (err) {
-                  log.error("RH | Unable to write new user file! ");
-                  return log.error(err);
-                }
-              });
-            };
-          };
-          fs.readFile(pathUsers, 'utf8', fPersistNewUser(obj.username, obj.password, roles));
-        } else {
-          data.code = 401;
-          data.message = 'Missing parameter for this command';
-        }
-        return cb(null, data);
-      }
-    };
-    users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-    fStoreUser = function(username, oUser) {
-      oUser.username = username;
-      return db.storeUser(oUser);
-    };
-    for (user in users) {
-      oUser = users[user];
-      fStoreUser(user, oUser);
-    }
-    _this.allowedHooks = {};
-    db.getAllWebhooks(function(err, oHooks) {
+exports.init = function() {
+  var fStoreUser, oUser, user, users;
+  users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+  fStoreUser = function(username, oUser) {
+    oUser.username = username;
+    return db.storeUser(oUser);
+  };
+  for (user in users) {
+    oUser = users[user];
+    fStoreUser(user, oUser);
+  }
+  this.allowedHooks = {};
+  return db.getAllWebhooks((function(_this) {
+    return function(err, oHooks) {
       if (oHooks) {
         log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
         return _this.allowedHooks = oHooks;
       }
-    });
-    return module.exports;
-  };
-})(this);
+    };
+  })(this));
+};
+
+this.objAdminCmds = {
+  shutdown: function(obj, cb) {
+    var data;
+    data = {
+      code: 200,
+      message: 'Shutting down... BYE!'
+    };
+    setTimeout(process.exit, 500);
+    return cb(null, data);
+  },
+  newuser: function(obj, cb) {
+    var data, err, fPersistNewUser, oUser, roles;
+    data = {
+      code: 200,
+      message: 'User stored thank you!'
+    };
+    if (obj.username && obj.password) {
+      if (obj.roles) {
+        try {
+          roles = JSON.parse(obj.roles);
+        } catch (_error) {
+          err = _error;
+          log('RH | error parsing newuser roles: ' + err.message);
+          roles = [];
+        }
+      } else {
+        roles = [];
+      }
+      oUser = {
+        username: obj.username,
+        password: obj.password,
+        roles: roles
+      };
+      db.storeUser(oUser);
+      fPersistNewUser = function(username, password, roles) {
+        return function(err, data) {
+          var users;
+          users = JSON.parse(data);
+          users[username] = {
+            password: password,
+            roles: roles
+          };
+          return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
+            if (err) {
+              log.error("RH | Unable to write new user file! ");
+              return log.error(err);
+            }
+          });
+        };
+      };
+      fs.readFile(pathUsers, 'utf8', fPersistNewUser(obj.username, obj.password, roles));
+    } else {
+      data.code = 401;
+      data.message = 'Missing parameter for this command';
+    }
+    return cb(null, data);
+  }
+};
 
 
 /*
@@ -141,107 +139,6 @@ exports.handleEvent = function(req, resp) {
       return resp.send(400, 'Your event was missing important parameters!');
     }
   });
-};
-
-
-/*
-Resolves the path to a handler webpage.
-
-@private getHandlerPath( *name* )
-@param {String} name
- */
-
-getHandlerPath = function(name) {
-  return path.join(dirHandlers, name + '.html');
-};
-
-
-/*
-Fetches a template.
-
-@private getTemplate( *name* )
-@param {String} name
- */
-
-getTemplate = function(name) {
-  var pth;
-  pth = path.join(dirHandlers, 'templates', name + '.html');
-  return fs.readFileSync(pth, 'utf8');
-};
-
-
-/*
-Fetches a script.
-
-@private getScript( *name* )
-@param {String} name
- */
-
-getScript = function(name) {
-  var pth;
-  pth = path.join(dirHandlers, 'js', name + '.js');
-  return fs.readFileSync(pth, 'utf8');
-};
-
-
-/*
-Fetches remote scripts snippets.
-
-@private getRemoteScripts( *name* )
-@param {String} name
- */
-
-getRemoteScripts = function(name) {
-  var pth;
-  pth = path.join(dirHandlers, 'remote-scripts', name + '.html');
-  return fs.readFileSync(pth, 'utf8');
-};
-
-
-/*
-Renders a page, with helps of mustache, depending on the user session and returns it.
-
-@private renderPage( *name, sess, msg* )
-@param {String} name
-@param {Object} sess
-@param {Object} msg
- */
-
-renderPage = function(name, req, resp, msg) {
-  var code, content, data, err, menubar, page, pageElements, pathSkel, remote_scripts, script, skeleton;
-  pathSkel = path.join(dirHandlers, 'skeleton.html');
-  skeleton = fs.readFileSync(pathSkel, 'utf8');
-  code = 200;
-  data = {
-    message: msg,
-    user: req.session.user
-  };
-  try {
-    script = getScript(name);
-  } catch (_error) {}
-  try {
-    remote_scripts = getRemoteScripts(name);
-  } catch (_error) {}
-  try {
-    content = getTemplate(name);
-  } catch (_error) {
-    err = _error;
-    content = getTemplate('error');
-    script = getScript('error');
-    code = 404;
-    data.message = 'Invalid Page!';
-  }
-  if (req.session.user) {
-    menubar = getTemplate('menubar');
-  }
-  pageElements = {
-    content: content,
-    script: script,
-    remote_scripts: remote_scripts,
-    menubar: menubar
-  };
-  page = mustache.render(skeleton, pageElements);
-  return resp.send(code, mustache.render(page, data));
 };
 
 

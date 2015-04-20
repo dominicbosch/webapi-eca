@@ -39,6 +39,7 @@ Initializes the DB connection with the given `db-port` property in the `args` ob
 exports = module.exports
 
 exports.init = ( dbPort ) =>
+	log.info 'INIT DB'
 	if not @db
 		#TODO we need to have a secure concept here, private keys per user
 		exports.eventTriggers = new IndexedModules 'event-trigger', log

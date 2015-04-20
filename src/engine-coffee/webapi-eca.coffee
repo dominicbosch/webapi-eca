@@ -77,10 +77,10 @@ opt =
 		alias : 'db-select',
 		describe: 'Specify a database identifier'
 
-#  `-m`, `--log-mode`: Specify a log mode: [development|productive]
+#  `-m`, `--mode`: Specify a run mode: [development|productive]
 	'm':
-		alias : 'log-mode',
-		describe: 'Specify a log mode: [development|productive]'
+		alias : 'mode',
+		describe: 'Specify a run mode: [development|productive]'
 
 #  `-i`, `--log-std-level`: Specify the log level for the I/O. in development expensive origin
 #                           lookups are made and added to the log entries
@@ -97,6 +97,11 @@ opt =
 	'p':
 		alias : 'log-file-path',
 		describe: 'Specify the path to the log file within the "logs" folder'
+
+#  `-t`, `--log-trace`: Whether full tracing should be enabled, don't use in productive mode
+	't':
+		alias : 'log-trace',
+		describe: 'Whether full tracing should be enabled [on|off]. do not use in productive mode.'
 
 #  `-n`, `--nolog`: Set this true if no output shall be generated
 	'n':
@@ -122,19 +127,20 @@ conf[ 'db-select' ] = parseInt argv.s || conf[ 'db-select' ] || 0
 
 if not conf.log
 	conf.log = {}
-conf.log[ 'mode' ] = argv.m || conf.log[ 'mode' ] || 'productive'
+conf.mode = argv.m || conf.mode || 'productive'
 conf.log[ 'std-level' ] = argv.i || conf.log[ 'std-level' ] || 'error'
 conf.log[ 'file-level' ] = argv.f || conf.log[ 'file-level' ] || 'warn'
 conf.log[ 'file-path' ] = argv.p || conf.log[ 'file-path' ] || 'warn'
-conf.log[ 'nolog' ] = argv.n || conf.log[ 'nolog' ]
+conf.log.trace = argv.t || conf.log.trace || 'off'
+conf.log.nolog = argv.n || conf.log.nolog
 if not conf.log.nolog
 	try
-		fs.writeFileSync path.resolve( conf.log[ 'file-path' ] ), ''
+		fs.writeFileSync path.resolve( conf.log[ 'file-path' ] ), ' '
 	catch e
 		console.log e
 
 # Initialize the logger
-log.init conf.log
+log.init conf
 log.info 'RS | STARTING SERVER'
 
 ###
@@ -182,11 +188,8 @@ init = =>
 			cm.addRuleListener engine.internalEvent
 			cm.addRuleListener ( evt ) -> poller.send evt
 
-			log.info 'RS | Initialzing http listener'
-			http.init 
-				'http-port': conf[ 'http-port' ]
-				# The request handler passes certain requests to the components manager
-				'request-service': cm.processRequest
+			log.info 'RS | Initialzing http listener'			
+			http.init conf
 
 ###
 Shuts down the server.

@@ -2,11 +2,12 @@
 	"http-port": 8080,
 	"db-port": 6379,
 	"db-select": 0,
+	"mode": "development",
 	"log": {
-		"mode": "productive",
 		"std-level": "info",
 		"file-level": "info",
-		"file-path": "logs/server.log"
+		"file-path": "logs/server.log",
+		"trace": "off"
 	},
 	"keygenpp": "[TODO this has to come from prompt when server is started!]"
 }

@@ -21,9 +21,7 @@ db = require './persistence'
 fs = require 'fs'
 path = require 'path'
 
-# - External Modules: [mustache](https://github.com/janl/mustache.js) and
-#   [crypto-js](https://github.com/evanvosberg/crypto-js)
-mustache = require 'mustache'
+# - External Modules: [crypto-js](https://github.com/evanvosberg/crypto-js)
 crypto = require 'crypto-js'
 
 pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
@@ -31,53 +29,7 @@ pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
 # Prepare the user command handlers which are invoked via HTTP requests.
 dirHandlers = path.resolve __dirname, '..', 'webpages', 'handlers'
 exports = module.exports
-exports.init = ( args ) => 
-
-	# Register the shutdown handler to the admin command. 
-	@objAdminCmds =
-		shutdown: ( obj, cb ) ->
-			data =
-				code: 200
-				message: 'Shutting down... BYE!'
-			setTimeout args[ 'shutdown-function' ], 500
-			cb null, data
-
-		newuser: ( obj, cb ) ->
-			data =
-				code: 200
-				message: 'User stored thank you!'
-			if obj.username and obj.password
-				if obj.roles
-					try
-						roles = JSON.parse obj.roles
-					catch err
-						log 'RH | error parsing newuser roles: ' + err.message
-						roles = []
-				else
-					roles = []
-				oUser = 
-					username: obj.username
-					password: obj.password
-					roles: roles
-				db.storeUser oUser
-
-				fPersistNewUser = ( username, password, roles ) ->
-					( err, data ) -> 
-						users = JSON.parse data
-						users[ username ] =
-							password: password
-							roles: roles
-						fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
-							if err
-								log.error "RH | Unable to write new user file! "
-								log.error err
-
-				fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
-			else
-				data.code = 401
-				data.message = 'Missing parameter for this command' 
-			cb null, data
-
+exports.init = () ->
 	# Load the standard users from the user config file
 	users = JSON.parse fs.readFileSync pathUsers, 'utf8'
 	fStoreUser = ( username, oUser ) ->
@@ -91,7 +43,52 @@ exports.init = ( args ) =>
 		if oHooks
 			log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
 			@allowedHooks = oHooks
-	module.exports
+
+# Register the shutdown handler to the admin command. 
+@objAdminCmds =
+	shutdown: ( obj, cb ) ->
+		data =
+			code: 200
+			message: 'Shutting down... BYE!'
+		setTimeout process.exit, 500
+		cb null, data
+
+	newuser: ( obj, cb ) ->
+		data =
+			code: 200
+			message: 'User stored thank you!'
+		if obj.username and obj.password
+			if obj.roles
+				try
+					roles = JSON.parse obj.roles
+				catch err
+					log 'RH | error parsing newuser roles: ' + err.message
+					roles = []
+			else
+				roles = []
+			oUser = 
+				username: obj.username
+				password: obj.password
+				roles: roles
+			db.storeUser oUser
+
+			fPersistNewUser = ( username, password, roles ) ->
+				( err, data ) -> 
+					users = JSON.parse data
+					users[ username ] =
+						password: password
+						roles: roles
+					fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
+						if err
+							log.error "RH | Unable to write new user file! "
+							log.error err
+
+			fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
+		else
+			data.code = 401
+			data.message = 'Missing parameter for this command' 
+		cb null, data
+
 
 
 ###
@@ -119,95 +116,6 @@ exports.handleEvent = ( req, resp ) ->
 		else
 			resp.send 400, 'Your event was missing important parameters!'
 
-
-###
-Resolves the path to a handler webpage.
-
-@private getHandlerPath( *name* )
-@param {String} name
-###
-getHandlerPath = ( name ) ->
-	path.join dirHandlers, name + '.html'
-
-###
-Fetches a template.
-
-@private getTemplate( *name* )
-@param {String} name
-###
-getTemplate = ( name ) ->
-	pth = path.join dirHandlers, 'templates', name + '.html'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Fetches a script.
-
-@private getScript( *name* )
-@param {String} name
-###
-getScript = ( name ) ->
-	pth = path.join dirHandlers, 'js', name + '.js'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Fetches remote scripts snippets.
-
-@private getRemoteScripts( *name* )
-@param {String} name
-###
-getRemoteScripts = ( name ) ->
-	pth = path.join dirHandlers, 'remote-scripts', name + '.html'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Renders a page, with helps of mustache, depending on the user session and returns it.
-
-@private renderPage( *name, sess, msg* )
-@param {String} name
-@param {Object} sess
-@param {Object} msg
-###
-renderPage = ( name, req, resp, msg ) ->
-	# Grab the skeleton
-	pathSkel = path.join dirHandlers, 'skeleton.html'
-	skeleton = fs.readFileSync pathSkel, 'utf8'
-	code = 200
-	data =
-		message: msg
-		user: req.session.user
-
-	# Try to grab the script belonging to this page. But don't bother if it's not existing
-	try
-		script = getScript name
-	# Try to grab the remote scripts belonging to this page. But don't bother if it's not existing
-	try
-		remote_scripts = getRemoteScripts name
-
-	# Now try to find the page the user requested.
-	try
-		content = getTemplate name
-	catch err
-		# If the page doesn't exist we return the error page, load the error script into it
-		# and render the error page with some additional data
-		content = getTemplate 'error'
-		script = getScript 'error'
-		code = 404
-		data.message = 'Invalid Page!'
-
-	if req.session.user
-		menubar = getTemplate 'menubar'
-
-	pageElements =
-		content: content
-		script: script
-		remote_scripts: remote_scripts
-		menubar: menubar
-
-	# First we render the page by including all page elements into the skeleton
-	page = mustache.render skeleton, pageElements
-
-	# Then we complete the rendering by adding the data, and send the result to the user
-	resp.send code, mustache.render page, data
 
 ###
 Present the desired forge page to the user.
