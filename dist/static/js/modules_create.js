@@ -1,1 +1,216 @@
-var arrKV,arrParams,fErrHandler,fOnLoad,i,len,moduleName,oParams,param;for(arrParams=window.location.search.substring(1).split("&"),oParams={},i=0,len=arrParams.length;len>i;i++)param=arrParams[i],arrKV=param.split("="),oParams[arrKV[0]]=arrKV[1];"event_trigger"===oParams.type?moduleName="Event Trigger":(moduleName="Action Dispatcher",oParams.type="action_dispatcher"),oParams.id&&(oParams.id=decodeURIComponent(oParams.id)),fErrHandler=function(e){return function(t){var r;return 401===t.status?window.location.href="forge?page=forge_module?type="+oParams.type:($("#log_col").text(""),r=function(){var r,a;if(""===t.responseText)r="No Response from Server!";else try{a=JSON.parse(t.responseText),r=a.message}catch(o){}return $("#info").text(e+r),$("#info").attr("class","error")},setTimeout(r,500))}},fOnLoad=function(){var e,t,r,a,o;return document.title="Create "+moduleName,$("#pagetitle").text("{{{user.username}}}, create your custom "+moduleName+"!"),e=ace.edit("editor"),e.setTheme("ace/theme/cimson_editor"),e.getSession().setMode("ace/mode/coffee"),e.setFontSize("18px"),e.setShowPrintMargin(!1),e.session.setUseSoftTabs(!1),$("#editor_mode").change(function(t){return e.getSession().setMode("CoffeeScript"===$(this).val()?"ace/mode/coffee":"ace/mode/javascript")}),$("#editor_theme").change(function(t){return e.setTheme("ace/theme/"+$(this).val())}),$("#editor_font").change(function(t){return e.setFontSize($(this).val())}),a=function(){return $("#tableParams tr").each(function(e){return $(this).is(":last-child")?($("img",this).hide(),$("input[type=checkbox]",this).hide()):($("img",this).show(),$("input[type=checkbox]",this).show())})},t=function(e){var t,r,o,i;return i=$("<tr>"),r=$("<img>").attr("title","Remove?").attr("src","images/red_cross_small.png"),t=$("<input>").attr("type","checkbox").attr("title","Password shielded input?"),o=$("<input>").attr("type","text").attr("class","textinput"),i.append($("<td>").append(r)),i.append($("<td>").append(t)),i.append($("<td>").append(o)),e.append(i),a(),i},$("#tableParams").on("click","img",function(){var e;return e=$(this).closest("tr"),e.is(":last-child")||e.remove(),a()}),$("#tableParams").on("keyup","input",function(e){var r,a;if(r=e.keyCode||e.which,9!==r){if(a=$(this).closest("tr"),a.is(":last-child"))return t(a.parent());if(""===$(this).val()&&!a.is(":only-child"))return a.remove()}}),a(),$("#but_submit").click(function(){var t,r,a;return""===$("#input_id").val()?alert("Please enter an "+moduleName+" name!"):(r={},$("#tableParams tr").each(function(){var e,t;return t=$("input.textinput",this).val(),e=$("input[type=checkbox]",this).is(":checked"),""!==t&&(r[t]=e),!0}),a={body:JSON.stringify({id:$("#input_id").val(),lang:$("#editor_mode").val(),"public":$("#is_public").is(":checked"),data:e.getValue(),params:JSON.stringify(r)})},t=function(e){return function(t){var r;return 409!==t.status?fErrHandler(moduleName+" not stored!")(t):confirm("Are you sure you want to overwrite the existing module?")?(r=JSON.parse(e.body),r.overwrite=!0,e.body=JSON.stringify(r),$.post("/usercommand/forge_"+oParams.type,e).done(function(e){return $("#info").text(e.message),$("#info").attr("class","success"),alert("You need to update the rules that use this module in order for the changes to be applied to them!")}).fail(fErrHandler(moduleName+" not stored!"))):void 0}},window.scrollTo(0,0),$.post("/usercommand/forge_"+oParams.type,a).done(function(e){return $("#info").text(e.message),$("#info").attr("class","success")}).fail(t(a)))}),r=function(e,r){var a;return a=t($("#tableParams")),$("input.textinput",a).val(e),r?$("input[type=checkbox]",a).prop("checked",!0):void 0},oParams.id?(o={body:JSON.stringify({id:oParams.id})},$.post("/usercommand/get_full_"+oParams.type,o).done(function(t){var a,o,i;if(a=JSON.parse(t.message)){o=JSON.parse(a.params);for(param in o)i=o[param],r(param,i);$("#input_id").val(a.id),$("#editor_mode").val(a.lang),"true"===a["public"]&&$("#is_public").prop("checked",!0),e.setValue(a.data),e.moveCursorTo(0,0)}return r("",!1)}).fail(fErrHandler("Could not get module "+oParams.id+"!"))):(e.setValue($("#template_"+oParams.type).text()),e.moveCursorTo(0,0),"event_trigger"===oParams.type?($("#input_id").val("EmailYak"),r("apikey",!0),r("",!1)):($("#input_id").val("ProBinder"),r("username",!1),r("password",!0),r("",!1)))},window.addEventListener("load",fOnLoad,!0);
+var arrKV, arrParams, fErrHandler, fOnLoad, i, len, moduleName, oParams, param;
+
+arrParams = window.location.search.substring(1).split('&');
+
+oParams = {};
+
+for (i = 0, len = arrParams.length; i < len; i++) {
+  param = arrParams[i];
+  arrKV = param.split('=');
+  oParams[arrKV[0]] = arrKV[1];
+}
+
+if (oParams.type === 'event_trigger') {
+  moduleName = 'Event Trigger';
+} else {
+  moduleName = 'Action Dispatcher';
+  oParams.type = 'action_dispatcher';
+}
+
+if (oParams.id) {
+  oParams.id = decodeURIComponent(oParams.id);
+}
+
+fErrHandler = function(errMsg) {
+  return function(err) {
+    var fDelayed;
+    if (err.status === 401) {
+      return window.location.href = "forge?page=forge_module?type=" + oParams.type;
+    } else {
+      $('#log_col').text("");
+      fDelayed = function() {
+        var msg, oErr;
+        if (err.responseText === '') {
+          msg = 'No Response from Server!';
+        } else {
+          try {
+            oErr = JSON.parse(err.responseText);
+            msg = oErr.message;
+          } catch (_error) {}
+        }
+        $('#info').text(errMsg + msg);
+        return $('#info').attr('class', 'error');
+      };
+      return setTimeout(fDelayed, 500);
+    }
+  };
+};
+
+fOnLoad = function() {
+  var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj;
+  document.title = "Create " + moduleName;
+  $('#pagetitle').text("{{{user.username}}}, create your custom " + moduleName + "!");
+  editor = ace.edit("editor");
+  editor.setTheme("ace/theme/cimson_editor");
+  editor.getSession().setMode("ace/mode/coffee");
+  editor.setFontSize("18px");
+  editor.setShowPrintMargin(false);
+  editor.session.setUseSoftTabs(false);
+  $('#editor_mode').change(function(el) {
+    if ($(this).val() === 'CoffeeScript') {
+      return editor.getSession().setMode("ace/mode/coffee");
+    } else {
+      return editor.getSession().setMode("ace/mode/javascript");
+    }
+  });
+  $('#editor_theme').change(function(el) {
+    return editor.setTheme("ace/theme/" + $(this).val());
+  });
+  $('#editor_font').change(function(el) {
+    return editor.setFontSize($(this).val());
+  });
+  fChangeInputVisibility = function() {
+    return $('#tableParams tr').each(function(id) {
+      if ($(this).is(':last-child' || $(this).is(':only-child'))) {
+        $('img', this).hide();
+        return $('input[type=checkbox]', this).hide();
+      } else {
+        $('img', this).show();
+        return $('input[type=checkbox]', this).show();
+      }
+    });
+  };
+  fAddInputRow = function(tag) {
+    var cb, img, inp, tr;
+    tr = $('<tr>');
+    img = $('<img>').attr('title', 'Remove?').attr('src', 'images/red_cross_small.png');
+    cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
+    inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
+    tr.append($('<td>').append(img));
+    tr.append($('<td>').append(cb));
+    tr.append($('<td>').append(inp));
+    tag.append(tr);
+    fChangeInputVisibility();
+    return tr;
+  };
+  $('#tableParams').on('click', 'img', function() {
+    var par;
+    par = $(this).closest('tr');
+    if (!par.is(':last-child')) {
+      par.remove();
+    }
+    return fChangeInputVisibility();
+  });
+  $('#tableParams').on('keyup', 'input', function(e) {
+    var code, par;
+    code = e.keyCode || e.which;
+    if (code !== 9) {
+      par = $(this).closest('tr');
+      if (par.is(':last-child')) {
+        return fAddInputRow(par.parent());
+      } else if ($(this).val() === '' && !par.is(':only-child')) {
+        return par.remove();
+      }
+    }
+  });
+  fChangeInputVisibility();
+  $('#but_submit').click(function() {
+    var fCheckOverwrite, listParams, obj;
+    if ($('#input_id').val() === '') {
+      return alert("Please enter an " + moduleName + " name!");
+    } else {
+      listParams = {};
+      $('#tableParams tr').each(function() {
+        var shld, val;
+        val = $('input.textinput', this).val();
+        shld = $('input[type=checkbox]', this).is(':checked');
+        if (val !== "") {
+          listParams[val] = shld;
+        }
+        return true;
+      });
+      obj = {
+        body: JSON.stringify({
+          id: $('#input_id').val(),
+          lang: $('#editor_mode').val(),
+          "public": $('#is_public').is(':checked'),
+          data: editor.getValue(),
+          params: JSON.stringify(listParams)
+        })
+      };
+      fCheckOverwrite = function(obj) {
+        return function(err) {
+          var bod;
+          if (err.status === 409) {
+            if (confirm('Are you sure you want to overwrite the existing module?')) {
+              bod = JSON.parse(obj.body);
+              bod.overwrite = true;
+              obj.body = JSON.stringify(bod);
+              return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
+                $('#info').text(data.message);
+                $('#info').attr('class', 'success');
+                return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
+              }).fail(fErrHandler(moduleName + " not stored!"));
+            }
+          } else {
+            return fErrHandler(moduleName + " not stored!")(err);
+          }
+        };
+      };
+      window.scrollTo(0, 0);
+      return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
+        $('#info').text(data.message);
+        return $('#info').attr('class', 'success');
+      }).fail(fCheckOverwrite(obj));
+    }
+  });
+  fAddUserParam = function(param, shielded) {
+    var tr;
+    tr = fAddInputRow($('#tableParams'));
+    $('input.textinput', tr).val(param);
+    if (shielded) {
+      return $('input[type=checkbox]', tr).prop('checked', true);
+    }
+  };
+  if (oParams.id) {
+    obj = {
+      body: JSON.stringify({
+        id: oParams.id
+      })
+    };
+    return $.post('/usercommand/get_full_' + oParams.type, obj).done(function(data) {
+      var oMod, ref, shielded;
+      oMod = JSON.parse(data.message);
+      if (oMod) {
+        ref = JSON.parse(oMod.params);
+        for (param in ref) {
+          shielded = ref[param];
+          fAddUserParam(param, shielded);
+        }
+        $('#input_id').val(oMod.id);
+        $('#editor_mode').val(oMod.lang);
+        if (oMod["public"] === 'true') {
+          $('#is_public').prop('checked', true);
+        }
+        editor.setValue(oMod.data);
+        editor.moveCursorTo(0, 0);
+      }
+      return fAddUserParam('', false);
+    }).fail(fErrHandler("Could not get module " + oParams.id + "!"));
+  } else {
+    editor.setValue($("#template_" + oParams.type).text());
+    editor.moveCursorTo(0, 0);
+    if (oParams.type === 'event_trigger') {
+      $('#input_id').val('EmailYak');
+      fAddUserParam('apikey', true);
+      return fAddUserParam('', false);
+    } else {
+      $('#input_id').val('ProBinder');
+      fAddUserParam('username', false);
+      fAddUserParam('password', true);
+      return fAddUserParam('', false);
+    }
+  }
+};
+
+window.addEventListener('load', fOnLoad, true);

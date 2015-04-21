@@ -173,6 +173,11 @@ gulp.task('develop', 'Run the system in the dist folder and restart when files c
     ext: 'js',
     stdout: false
   }).on('readable', function() {
+    var bun;
+    bun = cp.spawn('./node_modules/bunyan/bin/bunyan', [], {
+      stdio: ['pipe', process.stdout, process.stderr]
+    });
+    this.stdout.pipe(bun.stdin);
     return this.stderr.pipe(gutil.buffer(function(err, files) {
       return gutil.log(chalk.bgRed(files.join('\n')));
     }));
@@ -188,7 +193,7 @@ gulp.task('start', 'Run the system in the dist folder', ['deploy'], function() {
   if (argv.productive) {
     arrArgs = ['./dist/js/webapi-eca', "-w", "8080", "-d", "6379", "-m", "productive", "-i", "error", "-f", "warn"];
   } else {
-    arrArgs = ['./dist/js/webapi-eca', "-w", "8080", "-d", "6379", "-m", "development", "-i", "info", "-f", "warn"];
+    arrArgs = ['./dist/js/webapi-eca', "-w", "8080", "-d", "6379", "-m", "development", "-i", "info", "-f", "warn", "-t", "on"];
   }
   eca = cp.spawn('node', arrArgs);
   bun = cp.spawn('./node_modules/bunyan/bin/bunyan', [], {

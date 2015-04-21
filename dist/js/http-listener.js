@@ -1,1 +1,133 @@
-var app,bodyParser,db,express,fs,getHandlerPath,getRemoteScripts,getScript,getTemplate,log,path,renderPage,requestHandler,session,swig;log=require("./logging"),requestHandler=require("./request-handler"),db=require("./persistence"),path=require("path"),fs=require("fs"),express=require("express"),session=require("express-session"),bodyParser=require("body-parser"),swig=require("swig"),app=express(),renderPage=express(),exports.init=function(e){return function(e){var r,t,s,n,a,i,o,p,u;for(requestHandler.init(),p="149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw",u=session({secret:p,resave:!1,saveUninitialized:!0}),app.use(u),"productive"===e.mode?process.on("uncaughtException",function(e){return log.error("This is a general exception catcher, but should really be removed in the future!"),log.error("Error: "),log.error(e)}):(app.set("view cache",!1),swig.setDefaults({cache:!1})),app.engine("html",swig.renderFile),app.set("view engine","html"),app.set("views",path.resolve(__dirname,"views")),app.use(bodyParser.json()),app.use(bodyParser.urlencoded({extended:!0})),log.info("HL | no session backbone"),app.get("/",function(e,r){return r.render("index",e.session.pub)}),app.get("/views/*",function(e,r){return log.info(e.params[0]),r.render(e.params[0],e.session.pub)}),app.use("/",express["static"](path.resolve(__dirname,"..","static"))),log.info("LOADING WEB SERVICES: "),r=fs.readdirSync(path.resolve(__dirname,"services")).filter(function(e){return".js"===e.substring(e.length-3)}),s=0,n=r.length;n>s;s++)t=r[s],log.info("  -> "+t),o=t.substring(0,t.length-3),app.use(o,require(path.resolve(__dirname,"services",t)));return app.get("/forge",requestHandler.handleForge),app.post("/admincommand",requestHandler.handleAdminCommand),app.post("/event",requestHandler.handleEvent),app.post("/webhooks/*",requestHandler.handleWebhooks),app.get("*",function(e,r,t){var s;return s=new Error,s.status=404,t(s)}),app.use(function(e,r,t,s){return 404!==e.status?s():t.status(404).send(e.message||"** no unicorns here **")}),a=parseInt(e["http-port"])||8111,i=app.listen(a),log.info("HL | Started listening on port "+a),i.on("listening",function(){var r;return r=i.address(),r.port!==e["http-port"]?(log.error(r.port,e["http-port"]),log.error("HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!"),process.exit()):void 0}),i.on("error",function(e){switch(e.errno){case"EADDRINUSE":log.error(e,"HL | HTTP-PORT ALREADY IN USE!!! Shutting down!");break;case"EACCES":log.error(e,"HL | HTTP-PORT NOT ACCSESSIBLE!!! Shutting down!");break;default:log.error(e,"HL | UNHANDLED SERVER ERROR!!! Shutting down!")}return process.exit()})}}(this),getHandlerPath=function(e){return path.join(dirHandlers,e+".html")},getTemplate=function(e){var r;return r=path.join(dirHandlers,"templates",e+".html"),fs.readFileSync(r,"utf8")},getScript=function(e){var r;return r=path.join(dirHandlers,"js",e+".js"),fs.readFileSync(r,"utf8")},getRemoteScripts=function(e){var r;return r=path.join(dirHandlers,"remote-scripts",e+".html"),fs.readFileSync(r,"utf8")},renderPage.get=function(e,r){var t,s,n,a,i,o,p,u,d,l,g;u=path.join(dirHandlers,"skeleton.html"),g=fs.readFileSync(u,"utf8"),t=200,n={message:msg,user:e.session.user};try{l=getScript(name)}catch(c){}try{d=getRemoteScripts(name)}catch(c){}try{s=getTemplate(name)}catch(c){a=c,s=getTemplate("error"),l=getScript("error"),t=404,n.message="Invalid Page!"}return e.session.user&&(i=getTemplate("menubar")),p={content:s,script:l,remote_scripts:d,menubar:i},o=mustache.render(g,p),r.send(t,mustache.render(o,n))};
+
+/*
+
+HTTP Listener
+=============
+> Receives the HTTP requests to the server at the given port. The requests
+> (bound to a method) are then redirected to the appropriate handler which
+> takes care of the request.
+ */
+var app, bodyParser, db, express, fs, log, path, requestHandler, session, swig;
+
+log = require('./logging');
+
+requestHandler = require('./request-handler');
+
+db = require('./persistence');
+
+path = require('path');
+
+fs = require('fs');
+
+express = require('express');
+
+session = require('express-session');
+
+bodyParser = require('body-parser');
+
+swig = require('swig');
+
+app = express();
+
+
+/*
+Initializes the request routing and starts listening on the given port.
+
+@param {int} port
+@private initRouting( *fShutDown* )
+ */
+
+exports.init = (function(_this) {
+  return function(conf) {
+    var arrServices, fileName, i, len, prt, server, servicePath, sess_sec, sessionMiddleware;
+    requestHandler.init();
+    if (conf.mode === 'productive') {
+      process.on('uncaughtException', function(e) {
+        log.error('This is a general exception catcher, but should really be removed in the future!');
+        log.error('Error: ');
+        return log.error(e);
+      });
+    } else {
+      app.set('view cache', false);
+      swig.setDefaults({
+        cache: false
+      });
+    }
+    app.engine('html', swig.renderFile);
+    app.set('view engine', 'html');
+    app.set('views', __dirname + '/views');
+    sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw";
+    sessionMiddleware = session({
+      secret: sess_sec,
+      resave: false,
+      saveUninitialized: true
+    });
+    app.use(sessionMiddleware);
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({
+      extended: true
+    }));
+    log.info('HL | no session backbone');
+    app.get('/', function(req, res) {
+      return res.render('index', req.session.pub);
+    });
+    app.get('/views/*', function(req, res) {
+      return log.info(res.render(req.params[0], req.session.pub));
+    });
+    app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
+    log.info('LOADING WEB SERVICES: ');
+    arrServices = fs.readdirSync(path.resolve(__dirname, 'services')).filter(function(d) {
+      return d.substring(d.length - 3) === '.js';
+    });
+    for (i = 0, len = arrServices.length; i < len; i++) {
+      fileName = arrServices[i];
+      log.info('  -> ' + fileName);
+      servicePath = fileName.substring(0, fileName.length - 3);
+      app.use(servicePath, require(path.resolve(__dirname, 'services', fileName)));
+    }
+    app.get('/forge', requestHandler.handleForge);
+    app.post('/admincommand', requestHandler.handleAdminCommand);
+    app.post('/event', requestHandler.handleEvent);
+    app.post('/webhooks/*', requestHandler.handleWebhooks);
+    app.get('*', function(req, res, next) {
+      var err;
+      err = new Error();
+      err.status = 404;
+      return next(err);
+    });
+    app.use(function(err, req, res, next) {
+      res.status(404);
+      return res.render('error');
+    });
+    prt = parseInt(conf['http-port']) || 8111;
+    server = app.listen(prt);
+    log.info("HL | Started listening on port " + prt);
+    server.on('listening', function() {
+      var addr;
+      addr = server.address();
+      if (addr.port !== conf['http-port']) {
+        log.error(addr.port, conf['http-port']);
+        log.error('HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!');
+        return process.exit();
+      }
+    });
+    return server.on('error', function(err) {
+
+      /*
+      		Error handling of the express port listener requires special attention,
+      		thus we have to catch the error, which is issued if the port is already in use.
+       */
+      switch (err.errno) {
+        case 'EADDRINUSE':
+          log.error(err, 'HL | HTTP-PORT ALREADY IN USE!!! Shutting down!');
+          break;
+        case 'EACCES':
+          log.error(err, 'HL | HTTP-PORT NOT ACCSESSIBLE!!! Shutting down!');
+          break;
+        default:
+          log.error(err, 'HL | UNHANDLED SERVER ERROR!!! Shutting down!');
+      }
+      return process.exit();
+    });
+  };
+})(this);

@@ -1,1 +1,232 @@
-var createNodeModule,cs,db,encryption,fPush,fPushEvent,fs,getFunctionParamNames,loadEventTrigger,log,logFunction,oModules,path,regexpComments,searchComment,vm;log=require("./logging"),db=require("./persistence"),encryption=require("./encryption"),vm=require("vm"),fs=require("fs"),path=require("path"),cs=require("coffee-script"),oModules=JSON.parse(fs.readFileSync(path.resolve(__dirname,"..","config","modules.json"))),logFunction=function(e,r,n){return function(o){return db.appendLog(e,r,n,o)}},regexpComments=/((\/\/.*$)|(\/\*[\s\S]*?\*\/))/gm,getFunctionParamNames=function(e,r,n){var o,t;return o=r.toString().replace(regexpComments,""),t=o.slice(o.indexOf("(")+1,o.indexOf(")")).match(/([^\s,]+)/g),t||(t=[]),n[e]=t},exports.compileString=function(e){return function(e,r,n,o,t,i,u,s){var a,c;if(a=searchComment(t,e),"CoffeeScript"===t)try{log.info("DM | Compiling module '"+o+"' for user '"+r+"'"),e=cs.compile(e)}catch(f){return c=f,void s({answ:{code:400,message:"Compilation of CoffeeScript failed at line "+c.location.first_line}})}return log.info("DM | Trying to fetch user specific module '"+o+"' paramters for user '"+r+"'"),u?u.getUserParams(o,r,function(t,c){var f,g,l,d;try{l={},d=JSON.parse(c);for(f in d)g=d[f],l[f]=encryption.decrypt(g.value);log.info("DM | Loaded user defined params for "+r+", "+n.id+", "+o)}catch(m){t=m,log.warn("DM | Error during parsing of user defined params for "+r+", "+n.id+", "+o),log.warn(t)}return createNodeModule(e,r,n,o,i,u,l,a,s)}):createNodeModule(e,r,n,o,i,u,null,a,s)}}(this),fPushEvent=function(e,r,n){return function(e){var o;return o=(new Date).toISOString(),db.pushEvent("eventtrigger"===n?{eventname:r.eventname+"_created:"+r.timestamp,body:e}:e)}},createNodeModule=function(e){return function(e,r,n,o,t,i,u,s,a){var c,f,g,l,d,m,p,h,v,y,M,b,S,C;for(u||(u={}),c={code:200,message:"Successfully compiled"},log.info("DM | Running module '"+o+"' for user '"+r+"'"),h=logFunction(r,n.id,o),C={id:r+"."+n.id+"."+o+".vm",params:u,log:h,debug:console.log,exports:{},setTimeout:setTimeout,pushEvent:fPushEvent(r,n,t)},m=0,p=oModules.length;p>m;m++)v=oModules[m],C[v]=require(v);try{vm.runInNewContext(e,C,C.id)}catch(E){f=E,c.code=400,y=f.message,y||(y="Try to run the script locally to track the error! Sadly we cannot provide the line number"),c.message="Loading Module failed: "+y}log.info("DM | Module '"+o+"' ran successfully for user '"+r+"' in rule '"+n.id+"'"),b={},M={},S=C.exports;for(g in S)d=S[g],getFunctionParamNames(g,d,b);if(i){M={},l=function(e){return function(t,i){if(i)try{return M[e]=JSON.parse(i),log.info("DM | Found and attached user-specific arguments to "+r+", "+n.id+", "+o+": "+i)}catch(u){return t=u,log.warn("DM | Error during parsing of user-specific arguments for "+r+", "+n.id+", "+o),log.warn(t)}}};for(d in b)i.getUserArguments(r,n.id,o,d,l(d))}return a({answ:c,module:C.exports,funcParams:b,funcArgs:M,logger:C.log,comment:s})}}(this),fPush=function(e){return function(r){return db.pushEvent(e?{eventname:e,body:r}:r)}},loadEventTrigger=function(e){var r;return r={pushEvent:fPush(e.eventname)}},searchComment=function(e,r){var n,o,t,i,u;for(n=r.split("\n"),o="",t=0,i=n.length;i>t;t++)u=n[t],u=u.trim(),""!==u&&("CoffeeScript"===e?"#"===u.substring(0,1)&&"###"!==u.substring(1,3)&&(o+=u.substring(1)+"\n"):"//"===u.substring(0,2)&&(o+=u.substring(2)+"\n"));return o};
+
+/*
+
+Dynamic Modules
+===============
+> Compiles CoffeeScript modules and loads JS modules in a VM, together
+> with only a few allowed node.js modules.
+ */
+var createNodeModule, cs, db, encryption, fPush, fPushEvent, fs, getFunctionParamNames, loadEventTrigger, log, logFunction, oModules, path, regexpComments, searchComment, vm;
+
+log = require('./logging');
+
+db = require('./persistence');
+
+encryption = require('./encryption');
+
+vm = require('vm');
+
+fs = require('fs');
+
+path = require('path');
+
+cs = require('coffee-script');
+
+oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
+
+logFunction = function(uId, rId, mId) {
+  return function(msg) {
+    return db.appendLog(uId, rId, mId, msg);
+  };
+};
+
+regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+
+getFunctionParamNames = function(fName, func, oFuncs) {
+  var fnStr, result;
+  fnStr = func.toString().replace(regexpComments, '');
+  result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(/([^\s,]+)/g);
+  if (!result) {
+    result = [];
+  }
+  return oFuncs[fName] = result;
+};
+
+
+/*
+Try to run a JS module from a string, together with the
+given parameters. If it is written in CoffeeScript we
+compile it first into JS.
+
+@public compileString ( *src, id, params, lang* )
+@param {String} src
+@param {String} id
+@param {Object} params
+@param {String} lang
+ */
+
+exports.compileString = (function(_this) {
+  return function(src, userId, oRule, modId, lang, modType, dbMod, cb) {
+    var comment, err;
+    comment = searchComment(lang, src);
+    if (lang === 'CoffeeScript') {
+      try {
+        log.info("DM | Compiling module '" + modId + "' for user '" + userId + "'");
+        src = cs.compile(src);
+      } catch (_error) {
+        err = _error;
+        cb({
+          answ: {
+            code: 400,
+            message: 'Compilation of CoffeeScript failed at line ' + err.location.first_line
+          }
+        });
+        return;
+      }
+    }
+    log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
+    if (dbMod) {
+      return dbMod.getUserParams(modId, userId, function(err, obj) {
+        var name, oParam, oParams, ref;
+        try {
+          oParams = {};
+          ref = JSON.parse(obj);
+          for (name in ref) {
+            oParam = ref[name];
+            oParams[name] = encryption.decrypt(oParam.value);
+          }
+          log.info("DM | Loaded user defined params for " + userId + ", " + oRule.id + ", " + modId);
+        } catch (_error) {
+          err = _error;
+          log.warn("DM | Error during parsing of user defined params for " + userId + ", " + oRule.id + ", " + modId);
+          log.warn(err);
+        }
+        return createNodeModule(src, userId, oRule, modId, modType, dbMod, oParams, comment, cb);
+      });
+    } else {
+      return createNodeModule(src, userId, oRule, modId, modType, dbMod, null, comment, cb);
+    }
+  };
+})(this);
+
+fPushEvent = function(userId, oRule, modType) {
+  return function(obj) {
+    var timestamp;
+    timestamp = (new Date()).toISOString();
+    if (modType === 'eventtrigger') {
+      return db.pushEvent({
+        eventname: oRule.eventname + '_created:' + oRule.timestamp,
+        body: obj
+      });
+    } else {
+      return db.pushEvent(obj);
+    }
+  };
+};
+
+createNodeModule = (function(_this) {
+  return function(src, userId, oRule, modId, modType, dbMod, params, comment, cb) {
+    var answ, err, fName, fRegisterArguments, func, i, len, logFunc, mod, msg, oFuncArgs, oFuncParams, ref, sandbox;
+    if (!params) {
+      params = {};
+    }
+    answ = {
+      code: 200,
+      message: 'Successfully compiled'
+    };
+    log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
+    logFunc = logFunction(userId, oRule.id, modId);
+    sandbox = {
+      id: userId + "." + oRule.id + "." + modId + ".vm",
+      params: params,
+      log: logFunc,
+      debug: console.log,
+      exports: {},
+      setTimeout: setTimeout,
+      pushEvent: fPushEvent(userId, oRule, modType)
+    };
+    for (i = 0, len = oModules.length; i < len; i++) {
+      mod = oModules[i];
+      sandbox[mod] = require(mod);
+    }
+    try {
+      vm.runInNewContext(src, sandbox, sandbox.id);
+    } catch (_error) {
+      err = _error;
+      answ.code = 400;
+      msg = err.message;
+      if (!msg) {
+        msg = 'Try to run the script locally to track the error! Sadly we cannot provide the line number';
+      }
+      answ.message = 'Loading Module failed: ' + msg;
+    }
+    log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
+    oFuncParams = {};
+    oFuncArgs = {};
+    ref = sandbox.exports;
+    for (fName in ref) {
+      func = ref[fName];
+      getFunctionParamNames(fName, func, oFuncParams);
+    }
+    if (dbMod) {
+      oFuncArgs = {};
+      fRegisterArguments = function(fName) {
+        return function(err, obj) {
+          if (obj) {
+            try {
+              oFuncArgs[fName] = JSON.parse(obj);
+              return log.info("DM | Found and attached user-specific arguments to " + userId + ", " + oRule.id + ", " + modId + ": " + obj);
+            } catch (_error) {
+              err = _error;
+              log.warn("DM | Error during parsing of user-specific arguments for " + userId + ", " + oRule.id + ", " + modId);
+              return log.warn(err);
+            }
+          }
+        };
+      };
+      for (func in oFuncParams) {
+        dbMod.getUserArguments(userId, oRule.id, modId, func, fRegisterArguments(func));
+      }
+    }
+    return cb({
+      answ: answ,
+      module: sandbox.exports,
+      funcParams: oFuncParams,
+      funcArgs: oFuncArgs,
+      logger: sandbox.log,
+      comment: comment
+    });
+  };
+})(this);
+
+fPush = function(evtname) {
+  return function(obj) {
+    if (evtname) {
+      return db.pushEvent({
+        eventname: evtname,
+        body: obj
+      });
+    } else {
+      return db.pushEvent(obj);
+    }
+  };
+};
+
+loadEventTrigger = function(oRule) {
+  var context;
+  return context = {
+    pushEvent: fPush(oRule.eventname)
+  };
+};
+
+searchComment = function(lang, src) {
+  var arrSrc, comm, i, len, line;
+  arrSrc = src.split('\n');
+  comm = '';
+  for (i = 0, len = arrSrc.length; i < len; i++) {
+    line = arrSrc[i];
+    line = line.trim();
+    if (line !== '') {
+      if (lang === 'CoffeeScript') {
+        if (line.substring(0, 1) === '#' && line.substring(1, 3) !== '###') {
+          comm += line.substring(1) + '\n';
+        }
+      } else {
+        if (line.substring(0, 2) === '//') {
+          comm += line.substring(2) + '\n';
+        }
+      }
+    }
+  }
+  return comm;
+};

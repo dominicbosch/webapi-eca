@@ -162,10 +162,34 @@ gulp.task 'develop',
 			ext: 'js'
 			stdout: false
 		.on 'readable', () ->
+			bun = cp.spawn './node_modules/bunyan/bin/bunyan', [], stdio: [ 'pipe', process.stdout, process.stderr ]
+			this.stdout.pipe bun.stdin
 			# this.stdout.pipe fs.createWriteStream 'devel_output.txt'
 			# this.stderr.pipe fs.createWriteStream 'devel_err.txt'
 			this.stderr.pipe gutil.buffer ( err, files ) ->
 				gutil.log chalk.bgRed files.join '\n'
+
+
+# gulp.task 'debug', 
+# 	'Run the system in the dist folder and restart when files change in the folders', 
+# 	[ 'compile-gulp', 'deploy' ],
+# 	() ->
+# 		gutil.log chalk.bgGreen 'STARTING UP the System for development!!!'
+# 		if not argv.watch
+# 			gutil.log chalk.bgYellow '... Maybe you want to execute this task with the "--watch" flag!'
+# 		nodemon
+# 			script: paths.dist + 'js/webapi-eca.js'
+# 			watch: [ 'dist/js' ]
+# 			ext: 'js'
+# 			stdout: false
+# 			exec: [ '--debug' ]
+# 		.on 'readable', () ->
+# 			bun = cp.spawn './node_modules/bunyan/bin/bunyan', [], stdio: [ 'pipe', process.stdout, process.stderr ]
+# 			this.stdout.pipe bun.stdin
+# 			# this.stdout.pipe fs.createWriteStream 'devel_output.txt'
+# 			# this.stderr.pipe fs.createWriteStream 'devel_err.txt'
+# 			this.stderr.pipe gutil.buffer ( err, files ) ->
+# 				gutil.log chalk.bgRed files.join '\n'
 
 
 gulp.task 'start', 'Run the system in the dist folder', [ 'deploy' ], () ->
@@ -189,7 +213,8 @@ gulp.task 'start', 'Run the system in the dist folder', [ 'deploy' ], () ->
 			"-d", "6379",
 			"-m", "development",
 			"-i", "info",
-			"-f", "warn"
+			"-f", "warn",
+			"-t", "on"
 		]
 
 	eca = cp.spawn 'node', arrArgs

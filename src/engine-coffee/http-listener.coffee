@@ -32,7 +32,6 @@ bodyParser = require 'body-parser'
 swig = require 'swig'
 
 app = express()
-renderPage = express()
 
 ###
 Initializes the request routing and starts listening on the given port.
@@ -42,13 +41,6 @@ Initializes the request routing and starts listening on the given port.
 ###
 exports.init = ( conf ) =>
 	requestHandler.init()
-
-	sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
-	sessionMiddleware = session 
-		secret: sess_sec
-		resave: false
-		saveUninitialized: true
-	app.use sessionMiddleware
 
 	if conf.mode is 'productive'
 		process.on 'uncaughtException', ( e ) ->
@@ -61,7 +53,14 @@ exports.init = ( conf ) =>
 
 	app.engine 'html', swig.renderFile
 	app.set 'view engine', 'html'
-	app.set 'views', path.resolve __dirname, 'views'
+	app.set 'views', __dirname + '/views'
+
+	sess_sec = "149u*y8C:@kmN/520Gt\\v'+KFBnQ!\\r<>5X/xRI`sT<Iw"
+	sessionMiddleware = session 
+		secret: sess_sec
+		resave: false
+		saveUninitialized: true
+	app.use sessionMiddleware
 
 	app.use bodyParser.json()
 	app.use bodyParser.urlencoded extended: true
@@ -73,16 +72,14 @@ exports.init = ( conf ) =>
 
 	
 	# Redirect the views that will be loaded by the swig templating engine
-	app.get '/', (req, res) ->
+	app.get '/', ( req, res ) ->
 		res.render 'index', req.session.pub
 
 	app.get '/views/*', ( req, res ) ->
-		log.info req.params[ 0 ]
-		res.render req.params[ 0 ], req.session.pub
+		log.info res.render req.params[ 0 ], req.session.pub
 
 	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
 	app.use '/', express.static path.resolve __dirname, '..', 'static'
-
 
 	# Dynamically load all services from the services folder
 	log.info 'LOADING WEB SERVICES: '
@@ -96,8 +93,6 @@ exports.init = ( conf ) =>
 
 	# - **`GET` to _"/forge"_:** Displays different forge pages
 	app.get '/forge', requestHandler.handleForge
-
-
 
 
 	## FIXME remove all redundant routes
@@ -117,9 +112,8 @@ exports.init = ( conf ) =>
 
 	# Handle 404 errors
 	app.use ( err, req, res, next ) ->
-		if err.status isnt 404
-			return next()
-		res.status( 404 ).send err.message || '** no unicorns here **'
+		res.status 404 
+		res.render 'error'
 
 	prt = parseInt( conf[ 'http-port' ] ) || 8111 # inbound event channel
 	server = app.listen prt
@@ -148,87 +142,3 @@ exports.init = ( conf ) =>
 
 
 
-
-###
-Resolves the path to a handler webpage.
-
-@private getHandlerPath( *name* )
-@param {String} name
-###
-getHandlerPath = ( name ) ->
-	path.join dirHandlers, name + '.html'
-
-###
-Fetches a template.
-
-@private getTemplate( *name* )
-@param {String} name
-###
-getTemplate = ( name ) ->
-	pth = path.join dirHandlers, 'templates', name + '.html'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Fetches a script.
-
-@private getScript( *name* )
-@param {String} name
-###
-getScript = ( name ) ->
-	pth = path.join dirHandlers, 'js', name + '.js'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Fetches remote scripts snippets.
-
-@private getRemoteScripts( *name* )
-@param {String} name
-###
-getRemoteScripts = ( name ) ->
-	pth = path.join dirHandlers, 'remote-scripts', name + '.html'
-	fs.readFileSync pth, 'utf8'
-	
-###
-Renders a page, with helps of mustache, depending on the user session and returns it.
-###
-renderPage.get = ( req, res ) ->
-	# Grab the skeleton
-	pathSkel = path.join dirHandlers, 'skeleton.html'
-	skeleton = fs.readFileSync pathSkel, 'utf8'
-	code = 200
-	data =
-		message: msg
-		user: req.session.user
-
-	# Try to grab the script belonging to this page. But don't bother if it's not existing
-	try
-		script = getScript name
-	# Try to grab the remote scripts belonging to this page. But don't bother if it's not existing
-	try
-		remote_scripts = getRemoteScripts name
-
-	# Now try to find the page the user requested.
-	try
-		content = getTemplate name
-	catch err
-		# If the page doesn't exist we return the error page, load the error script into it
-		# and render the error page with some additional data
-		content = getTemplate 'error'
-		script = getScript 'error'
-		code = 404
-		data.message = 'Invalid Page!'
-
-	if req.session.user
-		menubar = getTemplate 'menubar'
-
-	pageElements =
-		content: content
-		script: script
-		remote_scripts: remote_scripts
-		menubar: menubar
-
-	# First we render the page by including all page elements into the skeleton
-	page = mustache.render skeleton, pageElements
-
-	# Then we complete the rendering by adding the data, and send the result to the user
-	res.send code, mustache.render page, data

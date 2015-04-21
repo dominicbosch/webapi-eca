@@ -1,1 +1,931 @@
-var IndexedModules,exports,getSetRecords,log,redis,replyHandler,bind=function(e,t){return function(){return e.apply(t,arguments)}};log=require("./logging"),redis=require("redis"),exports=module.exports,exports.init=function(e){return function(t){return log.info("INIT DB"),e.db?void 0:(exports.eventTriggers=new IndexedModules("event-trigger",log),exports.actionDispatchers=new IndexedModules("action-dispatcher",log),exports.initPort(t))}}(this),exports.initPort=function(e){return function(t){var r;return e.connRefused=!1,null!=(r=e.db)&&r.quit(),e.db=redis.createClient(t,"localhost",{connect_timeout:2e3}),e.db.on("error",function(t){return t.message.indexOf("ECONNREFUSED")>-1?(e.connRefused=!0,log.warn("DB | Wrong port?")):log.error(t)}),exports.eventTriggers.setDB(e.db),exports.actionDispatchers.setDB(e.db)}}(this),exports.selectDatabase=function(e){return function(t){return e.db.select(t)}}(this),exports.isConnected=function(e){return function(t){var r,s;return e.db?e.db.connected?t():(s=0,r=function(){var n;return e.connRefused?(null!=(n=e.db)&&n.quit(),t(new Error("DB | Connection refused! Wrong port?"))):e.db.connected?(log.info("DB | Successfully connected to DB!"),t()):s++<10?setTimeout(r,100):t(new Error("DB | Connection to DB failed!"))},setTimeout(r,100)):t(new Error("DB | DB initialization did not occur or failed miserably!"))}}(this),replyHandler=function(e){return function(e){return function(t,r){return t?log.warn(t,"during '"+e+"'"):log.info("DB | "+e+": "+r)}}}(this),exports.pushEvent=function(e){return function(t){return t?(log.info("DB | Event pushed into the queue: '"+t.eventname+"'"),e.db.rpush("event_queue",JSON.stringify(t))):log.warn("DB | Why would you give me an empty event...")}}(this),exports.popEvent=function(e){return function(t){var r;return r=function(e){return function(t,r){var s,n;try{return n=JSON.parse(r),e(t,n)}catch(o){return s=o,e(s)}}},e.db.lpop("event_queue",r(t))}}(this),exports.purgeEventQueue=function(e){return function(){return e.db.del("event_queue",replyHandler("purging event queue"))}}(this),getSetRecords=function(e){return function(t,r,s){return log.info("DB | Fetching set records: '"+t+"'"),e.db.smembers(t,function(e,n){var o,u,i,d,l,a,h;if(e)return log.warn(e,"DB | fetching '"+t+"'"),s(e);if(0===n.length)return s();for(h=n.length,d={},setTimeout(function(){return h>0?s(new Error("Timeout fetching '"+t+"'")):void 0},2e3),o=function(e){return function(t,r){return--h,t?log.warn(t,"DB | fetching single element: '"+e+"'"):r?d[e]=r:log.warn(new Error("Empty key in DB: '"+e+"'")),0===h?s(null,d):void 0}},a=[],u=0,i=n.length;i>u;u++)l=n[u],a.push(r(l,o(l)));return a})}}(this),IndexedModules=function(){function e(e,t){this.setname=e,this.deleteUserArguments=bind(this.deleteUserArguments,this),this.getUserArguments=bind(this.getUserArguments,this),this.getAllModuleUserArguments=bind(this.getAllModuleUserArguments,this),this.getUserArgumentsFunctions=bind(this.getUserArgumentsFunctions,this),this.storeUserArguments=bind(this.storeUserArguments,this),this.deleteUserParams=bind(this.deleteUserParams,this),this.getUserParamsIds=bind(this.getUserParamsIds,this),this.getUserParams=bind(this.getUserParams,this),this.storeUserParams=bind(this.storeUserParams,this),this.deleteModule=bind(this.deleteModule,this),this.getModuleIds=bind(this.getModuleIds,this),this.getAvailableModuleIds=bind(this.getAvailableModuleIds,this),this.getModuleField=bind(this.getModuleField,this),this.getModule=bind(this.getModule,this),this.storeModule=bind(this.storeModule,this),t.info("DB | (IdxedMods) Instantiated indexed modules for '"+this.setname+"'")}return e.prototype.setDB=function(e){return this.db=e,log.info("DB | (IdxedMods) Registered new DB connection for '"+this.setname+"'")},e.prototype.storeModule=function(e,t){return log.info("DB | (IdxedMods) "+this.setname+".storeModule( "+e+", oModule )"),this.db.sadd(this.setname+"s",t.id,replyHandler("sadd '"+this.setname+"s' -> "+t.id)),this.db.hmset(this.setname+":"+t.id,t,replyHandler("hmset '"+this.setname+":"+t.id+"' -> [oModule]"))},e.prototype.getModule=function(e,t,r){return log.info("DB | (IdxedMods) "+this.setname+".getModule( "+e+", "+t+" )"),log.info("hgetall "+this.setname+":"+t),this.db.hgetall(this.setname+":"+t,r)},e.prototype.getModuleField=function(e,t,r,s){return log.info("DB | (IdxedMods) "+this.setname+".getModuleField( "+e+", "+t+", "+r+" )"),this.db.hget(this.setname+":"+t,r,s)},e.prototype.getAvailableModuleIds=function(e,t){return log.info("DB | (IdxedMods) "+this.setname+".getAvailableModuleIds( "+e+" )"),this.db.sunion("public-"+this.setname+"s",this.setname+"s",t)},e.prototype.getModuleIds=function(e,t){return log.info("DB | (IdxedMods) "+this.setname+".getModuleIds()"),this.db.smembers(this.setname+"s",t)},e.prototype.deleteModule=function(e,t){return log.info("DB | (IdxedMods) "+this.setname+".deleteModule( "+e+", "+t+" )"),this.db.srem(this.setname+"s",t,replyHandler("srem '"+this.setname+"s' -> '"+t+"'")),this.db.del(this.setname+":"+t,replyHandler("del '"+this.setname+":"+t+"'")),this.deleteUserParams(t,e),exports.getRuleIds(e,function(r){return function(s,n){var o,u,i,d;for(i=[],o=0,u=n.length;u>o;o++)d=n[o],i.push(r.getUserArgumentsFunctions(e,d,t,function(s,n){return r.deleteUserArguments(e,d,t)}));return i}}(this))},e.prototype.storeUserParams=function(e,t,r){return log.info("DB | (IdxedMods) "+this.setname+".storeUserParams( "+e+", "+t+", encData )"),this.db.sadd(this.setname+"-params",e+":"+t,replyHandler("sadd '"+this.setname+"-params' -> '"+e+":"+t+"'")),this.db.set(this.setname+"-params:"+e+":"+t,r,replyHandler("set '"+this.setname+"-params:"+e+":"+t+"' -> [encData]"))},e.prototype.getUserParams=function(e,t,r){return log.info("DB | (IdxedMods) "+this.setname+".getUserParams( "+e+", "+t+" )"),this.db.get(this.setname+"-params:"+e+":"+t,r)},e.prototype.getUserParamsIds=function(e){return log.info("DB | (IdxedMods) "+this.setname+".getUserParamsIds()"),this.db.smembers(this.setname+"-params",e)},e.prototype.deleteUserParams=function(e,t){return log.info("DB | (IdxedMods) "+this.setname+".deleteUserParams( "+e+", "+t+" )"),this.db.srem(this.setname+"-params",e+":"+t,replyHandler("srem '"+this.setname+"-params' -> '"+e+":"+t+"'")),this.db.del(this.setname+"-params:"+e+":"+t,replyHandler("del '"+this.setname+"-params:"+e+":"+t+"'"))},e.prototype.storeUserArguments=function(e,t,r,s,n){return log.info("DB | (IdxedMods) "+this.setname+".storeUserArguments( "+e+", "+t+", "+r+", "+s+", encData )"),this.db.sadd(this.setname+":"+e+":"+t+":"+r+":functions",s,replyHandler("sadd '"+this.setname+":"+e+":"+t+":"+r+":functions' -> '"+s+"'")),this.db.set(this.setname+":"+e+":"+t+":"+r+":function:"+s,n,replyHandler("set '"+this.setname+":"+e+":"+t+":"+r+":function:"+s+"' -> [encData]"))},e.prototype.getUserArgumentsFunctions=function(e,t,r,s){return log.info("DB | (IdxedMods) "+this.setname+".getUserArgumentsFunctions( "+e+", "+t+", "+r+" )"),this.db.get(this.setname+":"+e+":"+t+":"+r+":functions",s)},e.prototype.getAllModuleUserArguments=function(e,t,r,s){return log.info("DB | (IdxedMods) "+this.setname+".getAllModuleUserArguments( "+e+", "+t+", "+r+" )"),this.db.smembers(this.setname+":"+e+":"+t+":"+r+":functions",function(n){return function(o,u){var i,d,l,a,h,g,f;if(f=u.length,h={},0===f)return s(null,h);for(g=[],l=0,a=u.length;a>l;l++)d=u[l],i=function(e){return function(t,r){return r&&(h[e]=r),0===--f?s(null,h):void 0}},g.push(n.db.get(n.setname+":"+e+":"+t+":"+r+":function:"+d,i(d)));return g}}(this))},e.prototype.getUserArguments=function(e,t,r,s,n){return log.info("DB | (IdxedMods) "+this.setname+".getUserArguments( "+e+", "+t+", "+r+", "+s+" )"),this.db.get(this.setname+":"+e+":"+t+":"+r+":function:"+s,n)},e.prototype.deleteUserArguments=function(e,t,r){return log.info("DB | (IdxedMods) "+this.setname+".deleteUserArguments( "+e+", "+t+", "+r+" )"),this.db.smembers(this.setname+":"+e+":"+t+":"+r+":functions",function(s){return function(n,o){var u,i,d,l;for(l=[],i=0,d=o.length;d>i;i++)u=o[i],l.push(s.db.del(s.setname+":"+e+":"+t+":"+r+":function:"+u,replyHandler("del '"+s.setname+":"+e+":"+t+":"+r+":function:"+u+"'")));return l}}(this))},e}(),exports.appendLog=function(e){return function(t,r,s,n){return e.db.append(t+":"+r+":log","[UTC|"+(new Date).toISOString()+"] {"+s+"} "+n.substring(0,1e3)+"\n")}}(this),exports.getLog=function(e){return function(t,r,s){return e.db.get(t+":"+r+":log",s)}}(this),exports.resetLog=function(e){return function(t,r){return e.db.del(t+":"+r+":log",replyHandler("del '"+t+":"+r+":log'"))}}(this),exports.getRule=function(e){return function(t,r,s){return log.info("DB | getRule( '"+t+"', '"+r+"' )"),e.db.get("user:"+t+":rule:"+r,s)}}(this),exports.storeRule=function(e){return function(t,r,s){return log.info("DB | storeRule( '"+t+"', '"+r+"' )"),e.db.sadd("user:"+t+":rules",""+r,replyHandler("sadd 'user:"+t+":rules' -> '"+r+"'")),e.db.set("user:"+t+":rule:"+r,s,replyHandler("set 'user:"+t+":rule:"+r+"' -> [data]"))}}(this),exports.getRuleIds=function(e){return function(t,r){return log.info("DB | getRuleIds( '"+t+"' )"),e.db.smembers("user:"+t+":rules",r)}}(this),exports.deleteRule=function(e){return function(t,r){return log.info("DB | deleteRule( '"+t+"', '"+r+"' )"),e.db.srem("user:"+t+":rules",r,replyHandler("srem 'user:"+t+":rules' -> '"+r+"'")),e.db.del("user:"+t+":rule:"+r,replyHandler("del 'user:"+t+":rule:"+r+"'"))}}(this),exports.getAllActivatedRuleIdsPerUser=function(e){return function(t){return log.info("DB | Fetching all active rules"),e.db.smembers("users",function(r,s){var n,o,u,i,d,l,a;if(i={},0===s.length)return t(null,i);for(l=s.length,d=[],o=0,u=s.length;u>o;o++)a=s[o],n=function(e){return function(r){return function(r,s){return s.length>0&&(i[e]=s),0===--l?t(null,i):void 0}}(this)},d.push(e.db.smembers("user:"+a+":rules",n(a)));return d})}}(this),exports.storeUser=function(e){return function(t){return log.info("DB | storeUser: '"+t.username+"'"),t&&t.username&&t.password?(e.db.sadd("users",t.username,replyHandler("sadd 'users' -> '"+t.username+"'")),e.db.hmset("user:"+t.username,t,replyHandler("hmset 'user:"+t.username+"' -> [objUser]")),e.db.hset("user:"+t.username,"roles",JSON.stringify(t.roles),replyHandler("hset 'user:"+t.username+"' field 'roles' -> [objUser]"))):log.warn(new Error("DB | username or password was missing"))}}(this),exports.getUserIds=function(e){return function(t){return log.info("DB | getUserIds"),e.db.smembers("users",t)}}(this),exports.getUser=function(e){return function(t,r){return log.info("DB | getUser: '"+t+"'"),e.db.hgetall("user:"+t,function(e,t){try{t.roles=JSON.parse(t.roles)}catch(s){}return r(e,t)})}}(this),exports.deleteUser=function(e){return function(t){return log.info("DB | deleteUser: '"+t+"'"),e.db.srem("users",t,replyHandler("srem 'users' -> '"+t+"'")),e.db.del("user:"+t,replyHandler("del 'user:"+t+"'")),e.db.smembers("user:"+t+":rules",function(r,s){var n,o,u,i,d;for(n=function(r){return e.db.srem("rule:"+r+":users",t,replyHandler("srem 'rule:"+r+":users' -> '"+t+"'"))},d=[],o=0,i=s.length;i>o;o++)u=s[o],d.push(n(u));return d}),e.db.del("user:"+t+":rules",replyHandler("del 'user:"+t+":rules'")),e.db.smembers("user:"+t+":active-rules",function(r,s){var n,o,u,i,d;for(n=function(r){return e.db.srem("rule:"+r+":active-users",t,replyHandler("srem 'rule:"+r+":active-users' -> '"+t+"'"))},d=[],o=0,i=s.length;i>o;o++)u=s[o],d.push(n(u));return d}),e.db.del("user:"+t+":active-rules",replyHandler("del user:"+t+":active-rules")),e.db.smembers("user:"+t+":roles",function(r,s){var n,o,u,i,d;for(n=function(r){return e.db.srem("role:"+r+":users",t,replyHandler("srem 'role:"+r+":users' -> '"+t+"'"))},d=[],o=0,i=s.length;i>o;o++)u=s[o],d.push(n(u));return d}),e.db.del("user:"+t+":roles",replyHandler("del 'user:"+t+":roles'"))}}(this),exports.loginUser=function(e){return function(t,r,s){var n;return log.info("DB | User '"+t+"' tries to log in"),n=function(e){return function(t,r){return t?s(t,null):r&&r.password?e===r.password?(log.info("DB | User '"+r.username+"' logged in!"),r.roles=JSON.parse(r.roles),s(null,r)):s(new Error("Wrong credentials!"),null):s(new Error("User not found!"),null)}},e.db.hgetall("user:"+t,n(r))}}(this),exports.storeUserRole=function(e){return function(t,r){return log.info("DB | storeUserRole: '"+t+":"+r+"'"),e.db.sadd("roles",r,replyHandler("sadd '"+r+"' to 'roles'")),e.db.sadd("user:"+t+":roles",r,replyHandler("sadd 'user:"+t+":roles' -> '"+r+"'")),e.db.sadd("role:"+r+":users",t,replyHandler("sadd 'role:"+r+":users' -> '"+t+"'"))}}(this),exports.deleteRole=function(e){return function(t){return log.info("DB | deleteRole: '"+t+"'"),e.db.smembers("role:"+t+":users",function(r,s){var n,o,u,i,d;for(n=function(r){return e.db.srem("user:"+r+":roles",t,replyHandler("srem 'user:"+r+":roles' -> '"+t+"'"))},d=[],o=0,i=s.length;i>o;o++)u=s[o],d.push(n(u));return d}),e.db.srem("roles",t,replyHandler("srem 'roles' -> '"+t+"'"))}}(this),exports.getUserRoles=function(e){return function(t,r){return log.info("DB | getUserRoles: '"+t+"'"),e.db.smembers("user:"+t+":roles",r)}}(this),exports.getRoleUsers=function(e){return function(t,r){return log.info("DB | getRoleUsers: '"+t+"'"),e.db.smembers("role:"+t+":users",r)}}(this),exports.removeUserRole=function(e){return function(t,r){return log.info("DB | removeRoleFromUser: role '"+r+"', user '"+t+"'"),e.db.srem("user:"+t+":roles",r,replyHandler("srem 'user:"+t+":roles' -> '"+r+"'")),e.db.srem("role:"+r+":users",t,replyHandler("srem 'role:"+r+":users' -> '"+t+"'"))}}(this),exports.createWebhook=function(e){return function(t,r,s){return e.db.sadd("webhooks",r,replyHandler("sadd 'webhooks' -> '"+r+"'")),e.db.sadd("user:"+t+":webhooks",r,replyHandler("sadd 'user:"+t+":webhooks' -> '"+r+"'")),e.db.hmset("webhook:"+r,"hookname",s,"username",t,replyHandler("set webhook:"+r+" -> ["+s+", "+t+"]"))}}(this),exports.getWebhookName=function(e){return function(t,r){return e.db.hget("webhook:"+t,"hookname",r)}}(this),exports.getFullWebhook=function(e){return function(t,r){return e.db.hgetall("webhook:"+t,r)}}(this),exports.getUserWebhookIDs=function(e){return function(t,r){return e.db.smembers("user:"+t+":webhooks",r)}}(this),exports.getAllUserWebhookNames=function(e){return function(e,t){return getSetRecords("user:"+e+":webhooks",exports.getWebhookName,t)}}(this),exports.getAllWebhookIDs=function(e){return function(t){return e.db.smembers("webhooks",t)}}(this),exports.getAllWebhooks=function(e){return function(e){return getSetRecords("webhooks",exports.getFullWebhook,e)}}(this),exports.deleteWebhook=function(e){return function(t,r){return e.db.srem("webhooks",r,replyHandler("srem 'webhooks' -> '"+r+"'")),e.db.srem("user:"+t+":webhooks",r,replyHandler("srem 'user:"+t+":webhooks' -> '"+r+"'")),e.db.del("webhook:"+r,replyHandler("del webhook:"+r))}}(this),exports.shutDown=function(e){return function(){var t;return null!=(t=e.db)?t.quit():void 0}}(this);
+
+/*
+
+Persistence
+============
+> Handles the connection to the database and provides functionalities for event triggers,
+> action dispatchers, rules and the (hopefully encrypted) storing of user-specific parameters
+> per module.
+> General functionality as a wrapper for the module holds initialization,
+> the retrieval of modules and shut down.
+> 
+> The general structure for linked data is that the key is stored in a set.
+> By fetching all set entries we can then fetch all elements, which is
+> automated in this function.
+> For example, modules of the same group, e.g. action dispatchers are registered in an
+> unordered set in the database, from where they can be retrieved again. For example
+> a new action dispatcher has its ID (e.g 'probinder') first registered in the set
+> 'action-dispatchers' and then stored in the db with the key 'action-dispatcher:' + ID
+> (e.g. action-dispatcher:probinder). 
+>
+ */
+var IndexedModules, exports, getSetRecords, log, redis, replyHandler,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+log = require('./logging');
+
+redis = require('redis');
+
+
+/*
+Module call
+-----------
+Initializes the DB connection with the given `db-port` property in the `args` object.
+
+@param {Object} args
+ */
+
+exports = module.exports;
+
+exports.init = (function(_this) {
+  return function(dbPort) {
+    log.info('INIT DB');
+    if (!_this.db) {
+      exports.eventTriggers = new IndexedModules('event-trigger', log);
+      exports.actionDispatchers = new IndexedModules('action-dispatcher', log);
+      return exports.initPort(dbPort);
+    }
+  };
+})(this);
+
+exports.initPort = (function(_this) {
+  return function(port) {
+    var ref;
+    _this.connRefused = false;
+    if ((ref = _this.db) != null) {
+      ref.quit();
+    }
+    _this.db = redis.createClient(port, 'localhost', {
+      connect_timeout: 2000
+    });
+    _this.db.on('error', function(err) {
+      if (err.message.indexOf('ECONNREFUSED') > -1) {
+        _this.connRefused = true;
+        return log.warn('DB | Wrong port?');
+      } else {
+        return log.error(err);
+      }
+    });
+    exports.eventTriggers.setDB(_this.db);
+    return exports.actionDispatchers.setDB(_this.db);
+  };
+})(this);
+
+exports.selectDatabase = (function(_this) {
+  return function(id) {
+    return _this.db.select(id);
+  };
+})(this);
+
+
+/*
+Checks whether the db is connected and passes either an error on failure after
+ten attempts within five seconds, or nothing on success to the callback(err).
+
+@public isConnected( *cb* )
+@param {function} cb
+ */
+
+exports.isConnected = (function(_this) {
+  return function(cb) {
+    var fCheckConnection, numAttempts;
+    if (!_this.db) {
+      return cb(new Error('DB | DB initialization did not occur or failed miserably!'));
+    } else {
+      if (_this.db.connected) {
+        return cb();
+      } else {
+        numAttempts = 0;
+        fCheckConnection = function() {
+          var ref;
+          if (_this.connRefused) {
+            if ((ref = _this.db) != null) {
+              ref.quit();
+            }
+            return cb(new Error('DB | Connection refused! Wrong port?'));
+          } else {
+            if (_this.db.connected) {
+              log.info('DB | Successfully connected to DB!');
+              return cb();
+            } else if (numAttempts++ < 10) {
+              return setTimeout(fCheckConnection, 100);
+            } else {
+              return cb(new Error('DB | Connection to DB failed!'));
+            }
+          }
+        };
+        return setTimeout(fCheckConnection, 100);
+      }
+    }
+  };
+})(this);
+
+
+/*
+Abstracts logging for simple action replies from the DB.
+
+@private replyHandler( *action* )
+@param {String} action
+ */
+
+replyHandler = (function(_this) {
+  return function(action) {
+    return function(err, reply) {
+      if (err) {
+        return log.warn(err, "during '" + action + "'");
+      } else {
+        return log.info("DB | " + action + ": " + reply);
+      }
+    };
+  };
+})(this);
+
+
+/*
+Push an event into the event queue.
+
+@public pushEvent( *oEvent* )
+@param {Object} oEvent
+ */
+
+exports.pushEvent = (function(_this) {
+  return function(oEvent) {
+    if (oEvent) {
+      log.info("DB | Event pushed into the queue: '" + oEvent.eventname + "'");
+      return _this.db.rpush('event_queue', JSON.stringify(oEvent));
+    } else {
+      return log.warn('DB | Why would you give me an empty event...');
+    }
+  };
+})(this);
+
+
+/*
+Pop an event from the event queue and pass it to cb(err, obj).
+
+@public popEvent( *cb* )
+@param {function} cb
+ */
+
+exports.popEvent = (function(_this) {
+  return function(cb) {
+    var makeObj;
+    makeObj = function(pcb) {
+      return function(err, obj) {
+        var er, oEvt;
+        try {
+          oEvt = JSON.parse(obj);
+          return pcb(err, oEvt);
+        } catch (_error) {
+          er = _error;
+          return pcb(er);
+        }
+      };
+    };
+    return _this.db.lpop('event_queue', makeObj(cb));
+  };
+})(this);
+
+
+/*
+Purge the event queue.
+
+@public purgeEventQueue()
+ */
+
+exports.purgeEventQueue = (function(_this) {
+  return function() {
+    return _this.db.del('event_queue', replyHandler('purging event queue'));
+  };
+})(this);
+
+
+/*
+Fetches all linked data set keys from a linking set, fetches the single
+data objects via the provided function and returns the results to cb(err, obj).
+
+@private getSetRecords( *set, fSingle, cb* )
+@param {String} set the set name how it is stored in the DB
+@param {function} fSingle a function to retrieve a single data element
+			per set entry
+@param {function} cb the callback(err, obj) function that receives all
+			the retrieved data or an error
+ */
+
+getSetRecords = (function(_this) {
+  return function(set, fSingle, cb) {
+    log.info("DB | Fetching set records: '" + set + "'");
+    return _this.db.smembers(set, function(err, arrReply) {
+      var fCallback, i, len, objReplies, reply, results, semaphore;
+      if (err) {
+        log.warn(err, "DB | fetching '" + set + "'");
+        return cb(err);
+      } else if (arrReply.length === 0) {
+        return cb();
+      } else {
+        semaphore = arrReply.length;
+        objReplies = {};
+        setTimeout(function() {
+          if (semaphore > 0) {
+            return cb(new Error("Timeout fetching '" + set + "'"));
+          }
+        }, 2000);
+        fCallback = function(prop) {
+          return function(err, data) {
+            --semaphore;
+            if (err) {
+              log.warn(err, "DB | fetching single element: '" + prop + "'");
+            } else if (!data) {
+              log.warn(new Error("Empty key in DB: '" + prop + "'"));
+            } else {
+              objReplies[prop] = data;
+            }
+            if (semaphore === 0) {
+              return cb(null, objReplies);
+            }
+          };
+        };
+        results = [];
+        for (i = 0, len = arrReply.length; i < len; i++) {
+          reply = arrReply[i];
+          results.push(fSingle(reply, fCallback(reply)));
+        }
+        return results;
+      }
+    });
+  };
+})(this);
+
+IndexedModules = (function() {
+  function IndexedModules(setname, log) {
+    this.setname = setname;
+    this.deleteUserArguments = bind(this.deleteUserArguments, this);
+    this.getUserArguments = bind(this.getUserArguments, this);
+    this.getAllModuleUserArguments = bind(this.getAllModuleUserArguments, this);
+    this.getUserArgumentsFunctions = bind(this.getUserArgumentsFunctions, this);
+    this.storeUserArguments = bind(this.storeUserArguments, this);
+    this.deleteUserParams = bind(this.deleteUserParams, this);
+    this.getUserParamsIds = bind(this.getUserParamsIds, this);
+    this.getUserParams = bind(this.getUserParams, this);
+    this.storeUserParams = bind(this.storeUserParams, this);
+    this.deleteModule = bind(this.deleteModule, this);
+    this.getModuleIds = bind(this.getModuleIds, this);
+    this.getAvailableModuleIds = bind(this.getAvailableModuleIds, this);
+    this.getModuleField = bind(this.getModuleField, this);
+    this.getModule = bind(this.getModule, this);
+    this.storeModule = bind(this.storeModule, this);
+    log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
+  }
+
+  IndexedModules.prototype.setDB = function(db) {
+    this.db = db;
+    return log.info("DB | (IdxedMods) Registered new DB connection for '" + this.setname + "'");
+  };
+
+
+  /*
+  	Stores a module and links it to the user.
+  	
+  	@private storeModule( *userId, oModule* )
+  	@param {String} userId
+  	@param {object} oModule
+   */
+
+  IndexedModules.prototype.storeModule = function(userId, oModule) {
+    log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
+    this.db.sadd(this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> " + oModule.id));
+    return this.db.hmset(this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
+  };
+
+  IndexedModules.prototype.getModule = function(userId, mId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
+    log.info("hgetall " + this.setname + ":" + mId);
+    return this.db.hgetall(this.setname + ":" + mId, cb);
+  };
+
+  IndexedModules.prototype.getModuleField = function(userId, mId, field, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + userId + ", " + mId + ", " + field + " )");
+    return this.db.hget(this.setname + ":" + mId, field, cb);
+  };
+
+  IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
+    return this.db.sunion("public-" + this.setname + "s", this.setname + "s", cb);
+  };
+
+  IndexedModules.prototype.getModuleIds = function(userId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getModuleIds()");
+    return this.db.smembers(this.setname + "s", cb);
+  };
+
+  IndexedModules.prototype.deleteModule = function(userId, mId) {
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + userId + ", " + mId + " )");
+    this.db.srem(this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
+    this.db.del(this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
+    this.deleteUserParams(mId, userId);
+    return exports.getRuleIds(userId, (function(_this) {
+      return function(err, obj) {
+        var i, len, results, rule;
+        results = [];
+        for (i = 0, len = obj.length; i < len; i++) {
+          rule = obj[i];
+          results.push(_this.getUserArgumentsFunctions(userId, rule, mId, function(err, obj) {
+            return _this.deleteUserArguments(userId, rule, mId);
+          }));
+        }
+        return results;
+      };
+    })(this));
+  };
+
+
+  /*
+  	Stores user params for a module. They are expected to be RSA encrypted with helps of
+  	the provided cryptico JS library and will only be decrypted right before the module is loaded!
+  	
+  	@private storeUserParams( *mId, userId, encData* )
+  	@param {String} mId
+  	@param {String} userId
+  	@param {object} encData
+   */
+
+  IndexedModules.prototype.storeUserParams = function(mId, userId, encData) {
+    log.info("DB | (IdxedMods) " + this.setname + ".storeUserParams( " + mId + ", " + userId + ", encData )");
+    this.db.sadd(this.setname + "-params", mId + ":" + userId, replyHandler("sadd '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
+    return this.db.set(this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set '" + this.setname + "-params:" + mId + ":" + userId + "' -> [encData]"));
+  };
+
+  IndexedModules.prototype.getUserParams = function(mId, userId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserParams( " + mId + ", " + userId + " )");
+    return this.db.get(this.setname + "-params:" + mId + ":" + userId, cb);
+  };
+
+  IndexedModules.prototype.getUserParamsIds = function(cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserParamsIds()");
+    return this.db.smembers(this.setname + "-params", cb);
+  };
+
+  IndexedModules.prototype.deleteUserParams = function(mId, userId) {
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams( " + mId + ", " + userId + " )");
+    this.db.srem(this.setname + "-params", mId + ":" + userId, replyHandler("srem '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
+    return this.db.del(this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
+  };
+
+
+  /*
+  	Stores user arguments for a function within a module. They are expected to be RSA encrypted with helps of
+  	the provided cryptico JS library and will only be decrypted right before the module is loaded!
+  	
+  	@private storeUserArguments( *userId, ruleId, mId, funcId, encData* )
+   */
+
+  IndexedModules.prototype.storeUserArguments = function(userId, ruleId, mId, funcId, encData) {
+    log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + ", encData )");
+    this.db.sadd(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", funcId, replyHandler("sadd '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions' -> '" + funcId + "'"));
+    return this.db.set(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, encData, replyHandler("set '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId + "' -> [encData]"));
+  };
+
+  IndexedModules.prototype.getUserArgumentsFunctions = function(userId, ruleId, mId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
+    return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
+  };
+
+  IndexedModules.prototype.getAllModuleUserArguments = function(userId, ruleId, mId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getAllModuleUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+    return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
+      return function(err, obj) {
+        var fRegisterFunction, func, i, len, oAnswer, results, sem;
+        sem = obj.length;
+        oAnswer = {};
+        if (sem === 0) {
+          return cb(null, oAnswer);
+        } else {
+          results = [];
+          for (i = 0, len = obj.length; i < len; i++) {
+            func = obj[i];
+            fRegisterFunction = function(func) {
+              return function(err, obj) {
+                if (obj) {
+                  oAnswer[func] = obj;
+                }
+                if (--sem === 0) {
+                  return cb(null, oAnswer);
+                }
+              };
+            };
+            results.push(_this.db.get(_this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
+          }
+          return results;
+        }
+      };
+    })(this));
+  };
+
+  IndexedModules.prototype.getUserArguments = function(userId, ruleId, mId, funcId, cb) {
+    log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + " )");
+    return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, cb);
+  };
+
+  IndexedModules.prototype.deleteUserArguments = function(userId, ruleId, mId) {
+    log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
+    return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
+      return function(err, obj) {
+        var func, i, len, results;
+        results = [];
+        for (i = 0, len = obj.length; i < len; i++) {
+          func = obj[i];
+          results.push(_this.db.del(_this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func + "'")));
+        }
+        return results;
+      };
+    })(this));
+  };
+
+  return IndexedModules;
+
+})();
+
+
+/*
+## Rules
+ */
+
+
+/*
+Appends a log entry.
+
+@public log( *userId, ruleId, moduleId, message* )
+ */
+
+exports.appendLog = (function(_this) {
+  return function(userId, ruleId, moduleId, message) {
+    return _this.db.append(userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 1000)) + "\n");
+  };
+})(this);
+
+
+/*
+Retrieves a log entry.
+
+@public getLog( *userId, ruleId, cb* )
+ */
+
+exports.getLog = (function(_this) {
+  return function(userId, ruleId, cb) {
+    return _this.db.get(userId + ":" + ruleId + ":log", cb);
+  };
+})(this);
+
+
+/*
+Resets a log entry.
+ */
+
+exports.resetLog = (function(_this) {
+  return function(userId, ruleId) {
+    return _this.db.del(userId + ":" + ruleId + ":log", replyHandler("del '" + userId + ":" + ruleId + ":log'"));
+  };
+})(this);
+
+
+/*
+Query the DB for a rule and pass it to cb(err, obj).
+ */
+
+exports.getRule = (function(_this) {
+  return function(userId, ruleId, cb) {
+    log.info("DB | getRule( '" + userId + "', '" + ruleId + "' )");
+    return _this.db.get("user:" + userId + ":rule:" + ruleId, cb);
+  };
+})(this);
+
+
+/*
+Store a string representation of a rule in the DB.
+ */
+
+exports.storeRule = (function(_this) {
+  return function(userId, ruleId, data) {
+    log.info("DB | storeRule( '" + userId + "', '" + ruleId + "' )");
+    _this.db.sadd("user:" + userId + ":rules", "" + ruleId, replyHandler("sadd 'user:" + userId + ":rules' -> '" + ruleId + "'"));
+    return _this.db.set("user:" + userId + ":rule:" + ruleId, data, replyHandler("set 'user:" + userId + ":rule:" + ruleId + "' -> [data]"));
+  };
+})(this);
+
+
+/*
+Returns all existing rule ID's for a user
+ */
+
+exports.getRuleIds = (function(_this) {
+  return function(userId, cb) {
+    log.info("DB | getRuleIds( '" + userId + "' )");
+    return _this.db.smembers("user:" + userId + ":rules", cb);
+  };
+})(this);
+
+
+/*
+Delete a string representation of a rule.
+ */
+
+exports.deleteRule = (function(_this) {
+  return function(userId, ruleId) {
+    log.info("DB | deleteRule( '" + userId + "', '" + ruleId + "' )");
+    _this.db.srem("user:" + userId + ":rules", ruleId, replyHandler("srem 'user:" + userId + ":rules' -> '" + ruleId + "'"));
+    return _this.db.del("user:" + userId + ":rule:" + ruleId, replyHandler("del 'user:" + userId + ":rule:" + ruleId + "'"));
+  };
+})(this);
+
+
+/*
+Fetch all active ruleIds and pass them to cb(err, obj).
+
+@public getAllActivatedRuleIds( *cb* )
+@param {function} cb
+ */
+
+exports.getAllActivatedRuleIdsPerUser = (function(_this) {
+  return function(cb) {
+    log.info("DB | Fetching all active rules");
+    return _this.db.smembers('users', function(err, obj) {
+      var fProcessAnswer, i, len, result, results, semaphore, user;
+      result = {};
+      if (obj.length === 0) {
+        return cb(null, result);
+      } else {
+        semaphore = obj.length;
+        results = [];
+        for (i = 0, len = obj.length; i < len; i++) {
+          user = obj[i];
+          fProcessAnswer = function(user) {
+            return (function(_this) {
+              return function(err, obj) {
+                if (obj.length > 0) {
+                  result[user] = obj;
+                }
+                if (--semaphore === 0) {
+                  return cb(null, result);
+                }
+              };
+            })(this);
+          };
+          results.push(_this.db.smembers("user:" + user + ":rules", fProcessAnswer(user)));
+        }
+        return results;
+      }
+    });
+  };
+})(this);
+
+
+/*
+## Users
+ */
+
+
+/*
+Store a user object (needs to be a flat structure).
+The password should be hashed before it is passed to this function.
+
+@public storeUser( *objUser* )
+ */
+
+exports.storeUser = (function(_this) {
+  return function(objUser) {
+    log.info("DB | storeUser: '" + objUser.username + "'");
+    if (objUser && objUser.username && objUser.password) {
+      _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
+      _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
+      return _this.db.hset("user:" + objUser.username, "roles", JSON.stringify(objUser.roles), replyHandler("hset 'user:" + objUser.username + "' field 'roles' -> [objUser]"));
+    } else {
+      return log.warn(new Error('DB | username or password was missing'));
+    }
+  };
+})(this);
+
+
+/*
+Fetch all user IDs and pass them to cb(err, obj).
+
+@public getUserIds( *cb* )
+ */
+
+exports.getUserIds = (function(_this) {
+  return function(cb) {
+    log.info("DB | getUserIds");
+    return _this.db.smembers("users", cb);
+  };
+})(this);
+
+
+/*
+Fetch a user by id and pass it to cb(err, obj).
+
+@public getUser( *userId, cb* )
+ */
+
+exports.getUser = (function(_this) {
+  return function(userId, cb) {
+    log.info("DB | getUser: '" + userId + "'");
+    return _this.db.hgetall("user:" + userId, function(err, obj) {
+      try {
+        obj.roles = JSON.parse(obj.roles);
+      } catch (_error) {}
+      return cb(err, obj);
+    });
+  };
+})(this);
+
+
+/*
+Deletes a user and all his associated linked and active rules.
+
+@public deleteUser( *userId* )
+ */
+
+exports.deleteUser = (function(_this) {
+  return function(userId) {
+    log.info("DB | deleteUser: '" + userId + "'");
+    _this.db.srem("users", userId, replyHandler("srem 'users' -> '" + userId + "'"));
+    _this.db.del("user:" + userId, replyHandler("del 'user:" + userId + "'"));
+    _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
+      var delLinkedRuleUser, i, id, len, results;
+      delLinkedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users' -> '" + userId + "'"));
+      };
+      results = [];
+      for (i = 0, len = obj.length; i < len; i++) {
+        id = obj[i];
+        results.push(delLinkedRuleUser(id));
+      }
+      return results;
+    });
+    _this.db.del("user:" + userId + ":rules", replyHandler("del 'user:" + userId + ":rules'"));
+    _this.db.smembers("user:" + userId + ":active-rules", function(err, obj) {
+      var delActivatedRuleUser, i, id, len, results;
+      delActivatedRuleUser = function(ruleId) {
+        return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users' -> '" + userId + "'"));
+      };
+      results = [];
+      for (i = 0, len = obj.length; i < len; i++) {
+        id = obj[i];
+        results.push(delActivatedRuleUser(id));
+      }
+      return results;
+    });
+    _this.db.del("user:" + userId + ":active-rules", replyHandler("del user:" + userId + ":active-rules"));
+    _this.db.smembers("user:" + userId + ":roles", function(err, obj) {
+      var delRoleUser, i, id, len, results;
+      delRoleUser = function(roleId) {
+        return _this.db.srem("role:" + roleId + ":users", userId, replyHandler("srem 'role:" + roleId + ":users' -> '" + userId + "'"));
+      };
+      results = [];
+      for (i = 0, len = obj.length; i < len; i++) {
+        id = obj[i];
+        results.push(delRoleUser(id));
+      }
+      return results;
+    });
+    return _this.db.del("user:" + userId + ":roles", replyHandler("del 'user:" + userId + ":roles'"));
+  };
+})(this);
+
+
+/*
+Checks the credentials and on success returns the user object to the
+callback(err, obj) function. The password has to be hashed (SHA-3-512)
+beforehand by the instance closest to the user that enters the password,
+because we only store hashes of passwords for security reasons.
+
+@public loginUser( *userId, password, cb* )
+ */
+
+exports.loginUser = (function(_this) {
+  return function(userId, password, cb) {
+    var fCheck;
+    log.info("DB | User '" + userId + "' tries to log in");
+    fCheck = function(pw) {
+      return function(err, obj) {
+        if (err) {
+          return cb(err, null);
+        } else if (obj && obj.password) {
+          if (pw === obj.password) {
+            log.info("DB | User '" + obj.username + "' logged in!");
+            obj.roles = JSON.parse(obj.roles);
+            return cb(null, obj);
+          } else {
+            return cb(new Error('Wrong credentials!'), null);
+          }
+        } else {
+          return cb(new Error('User not found!'), null);
+        }
+      };
+    };
+    return _this.db.hgetall("user:" + userId, fCheck(password));
+  };
+})(this);
+
+
+/*
+## User Roles
+ */
+
+
+/*
+Associate a role with a user.
+
+@public storeUserRole( *userId, role* )
+ */
+
+exports.storeUserRole = (function(_this) {
+  return function(userId, role) {
+    log.info("DB | storeUserRole: '" + userId + ":" + role + "'");
+    _this.db.sadd('roles', role, replyHandler("sadd '" + role + "' to 'roles'"));
+    _this.db.sadd("user:" + userId + ":roles", role, replyHandler("sadd 'user:" + userId + ":roles' -> '" + role + "'"));
+    return _this.db.sadd("role:" + role + ":users", userId, replyHandler("sadd 'role:" + role + ":users' -> '" + userId + "'"));
+  };
+})(this);
+
+
+/*
+Deassociate a role from a user.
+
+@public deleteRole( *userId, role* )
+ */
+
+exports.deleteRole = (function(_this) {
+  return function(role) {
+    log.info("DB | deleteRole: '" + role + "'");
+    _this.db.smembers("role:" + role + ":users", function(err, obj) {
+      var delUserRole, i, id, len, results;
+      delUserRole = function(userId) {
+        return _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
+      };
+      results = [];
+      for (i = 0, len = obj.length; i < len; i++) {
+        id = obj[i];
+        results.push(delUserRole(id));
+      }
+      return results;
+    });
+    return _this.db.srem("roles", role, replyHandler("srem 'roles' -> '" + role + "'"));
+  };
+})(this);
+
+
+/*
+Fetch all roles of a user and pass them to cb(err, obj).
+
+@public getUserRoles( *userId, cb* )
+ */
+
+exports.getUserRoles = (function(_this) {
+  return function(userId, cb) {
+    log.info("DB | getUserRoles: '" + userId + "'");
+    return _this.db.smembers("user:" + userId + ":roles", cb);
+  };
+})(this);
+
+
+/*
+Fetch all users of a role and pass them to cb(err, obj).
+
+@public getRoleUsers( *role, cb* )
+ */
+
+exports.getRoleUsers = (function(_this) {
+  return function(role, cb) {
+    log.info("DB | getRoleUsers: '" + role + "'");
+    return _this.db.smembers("role:" + role + ":users", cb);
+  };
+})(this);
+
+
+/*
+Remove a role from a user.
+
+@public removeUserRole( *userId, role* )
+ */
+
+exports.removeUserRole = (function(_this) {
+  return function(userId, role) {
+    log.info("DB | removeRoleFromUser: role '" + role + "', user '" + userId + "'");
+    _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
+    return _this.db.srem("role:" + role + ":users", userId, replyHandler("srem 'role:" + role + ":users' -> '" + userId + "'"));
+  };
+})(this);
+
+
+/*
+TODO: user should be able to select whether the events being sent to the webhook are available to all.
+private events need only to be checked against the user's rules
+ */
+
+
+/*
+Stores a webhook.
+
+@public createWebhook( *username, hookid, hookname* )
+ */
+
+exports.createWebhook = (function(_this) {
+  return function(username, hookid, hookname) {
+    _this.db.sadd("webhooks", hookid, replyHandler("sadd 'webhooks' -> '" + hookid + "'"));
+    _this.db.sadd("user:" + username + ":webhooks", hookid, replyHandler("sadd 'user:" + username + ":webhooks' -> '" + hookid + "'"));
+    return _this.db.hmset("webhook:" + hookid, 'hookname', hookname, 'username', username, replyHandler("set webhook:" + hookid + " -> [" + hookname + ", " + username + "]"));
+  };
+})(this);
+
+
+/*
+Returns a webhook name.
+ */
+
+exports.getWebhookName = (function(_this) {
+  return function(hookid, cb) {
+    return _this.db.hget("webhook:" + hookid, "hookname", cb);
+  };
+})(this);
+
+
+/*
+Returns all webhook properties.
+ */
+
+exports.getFullWebhook = (function(_this) {
+  return function(hookid, cb) {
+    return _this.db.hgetall("webhook:" + hookid, cb);
+  };
+})(this);
+
+
+/*
+Returns all the user's webhooks by ID.
+ */
+
+exports.getUserWebhookIDs = (function(_this) {
+  return function(username, cb) {
+    return _this.db.smembers("user:" + username + ":webhooks", cb);
+  };
+})(this);
+
+
+/*
+Gets all the user's webhooks with names.
+ */
+
+exports.getAllUserWebhookNames = (function(_this) {
+  return function(username, cb) {
+    return getSetRecords("user:" + username + ":webhooks", exports.getWebhookName, cb);
+  };
+})(this);
+
+
+/*
+Returns all webhook IDs.
+ */
+
+exports.getAllWebhookIDs = (function(_this) {
+  return function(cb) {
+    return _this.db.smembers("webhooks", cb);
+  };
+})(this);
+
+
+/*
+Returns all webhooks with names.
+ */
+
+exports.getAllWebhooks = (function(_this) {
+  return function(cb) {
+    return getSetRecords("webhooks", exports.getFullWebhook, cb);
+  };
+})(this);
+
+
+/*
+Delete a webhook.
+ */
+
+exports.deleteWebhook = (function(_this) {
+  return function(username, hookid) {
+    _this.db.srem("webhooks", hookid, replyHandler("srem 'webhooks' -> '" + hookid + "'"));
+    _this.db.srem("user:" + username + ":webhooks", hookid, replyHandler("srem 'user:" + username + ":webhooks' -> '" + hookid + "'"));
+    return _this.db.del("webhook:" + hookid, replyHandler("del webhook:" + hookid));
+  };
+})(this);
+
+
+/*
+Shuts down the db link.
+
+@public shutDown()
+ */
+
+exports.shutDown = (function(_this) {
+  return function() {
+    var ref;
+    return (ref = _this.db) != null ? ref.quit() : void 0;
+  };
+})(this);
