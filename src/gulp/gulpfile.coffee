@@ -33,6 +33,8 @@ coffee = require 'gulp-coffee'
 watch = require 'gulp-watch'
 nodemon = require 'gulp-nodemon'
 nodeunit = require 'nodeunit'
+cp = require 'child_process'
+bunyan = require 'bunyan'
 
 if argv.watch
 	gutil.log ""
@@ -147,20 +149,52 @@ gulp.task 'deploy', 'Deploy all system resources into the distribution folder', 
 		cb()
 	null
 
-gulp.task 'start', 'Run the system in the dist folder and restart when files change in the folders', [ 'compile-gulp', 'deploy' ], () ->
+gulp.task 'develop', 
+	'Run the system in the dist folder and restart when files change in the folders', 
+	[ 'compile-gulp', 'deploy' ],
+	() ->
+		gutil.log chalk.bgGreen 'STARTING UP the System for development!!!'
+		if not argv.watch
+			gutil.log chalk.bgYellow '... Maybe you want to execute this task with the "--watch" flag!'
+		nodemon
+			script: paths.dist + 'js/webapi-eca.js'
+			watch: [ 'dist/js' ]
+			ext: 'js'
+			stdout: false
+		.on 'readable', () ->
+			# this.stdout.pipe fs.createWriteStream 'devel_output.txt'
+			# this.stderr.pipe fs.createWriteStream 'devel_err.txt'
+			this.stderr.pipe gutil.buffer ( err, files ) ->
+				gutil.log chalk.bgRed files.join '\n'
+
+
+gulp.task 'start', 'Run the system in the dist folder', [ 'deploy' ], () ->
 	gutil.log chalk.bgGreen 'STARTING UP the System!!!'
-	if not argv.watch
-		gutil.log chalk.bgYellow '... Maybe you want to execute this task with the "--watch" flag!'
-	nodemon
-		script: paths.dist + 'js/webapi-eca.js'
-		watch: [ 'dist/js' ]
-		ext: 'js'
-		stdout: false
-	.on 'readable', () ->
-		# this.stdout.pipe fs.createWriteStream 'devel_output.txt'
-		# this.stderr.pipe fs.createWriteStream 'devel_err.txt'
-		this.stderr.pipe gutil.buffer ( err, files ) ->
-			gutil.log chalk.bgRed files.join '\n'
+	if argv.watch
+		gutil.log chalk.bgYellow """The system will not be restarted when files change! 
+			The changes will only be deployed"""
+	if argv.productive
+		arrArgs = [
+			'./dist/js/webapi-eca',
+			"-w", "8080",
+			"-d", "6379",
+			"-m", "productive",
+			"-i", "error",
+			"-f", "warn"
+		]
+	else
+		arrArgs = [
+			'./dist/js/webapi-eca',
+			"-w", "8080",
+			"-d", "6379",
+			"-m", "development",
+			"-i", "info",
+			"-f", "warn"
+		]
+
+	eca = cp.spawn 'node', arrArgs
+	bun = cp.spawn './node_modules/bunyan/bin/bunyan', [], stdio: [ 'pipe', process.stdout, process.stderr ]
+	eca.stdout.pipe bun.stdin
 
 
 ###

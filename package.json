@@ -4,6 +4,10 @@
   "description": "An ECA inference engine as a middleware between Web API's",
   "version": "0.2.0",
   "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/js/webapi-eca"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/dominicbosch/webapi-eca.git"

@@ -6,7 +6,7 @@ GULP FILE
 
 Type `gulp` in command line to get option list.
  */
-var argv, chalk, coffee, debug, del, fHandleError, fSimpleCoffeePipe, fs, gulp, gulphelp, gutil, nodemon, nodeunit, path, paths, plumber, uglify, watch;
+var argv, bunyan, chalk, coffee, cp, debug, del, fHandleError, fSimpleCoffeePipe, fs, gulp, gulphelp, gutil, nodemon, nodeunit, path, paths, plumber, uglify, watch;
 
 fs = require('fs');
 
@@ -37,6 +37,10 @@ watch = require('gulp-watch');
 nodemon = require('gulp-nodemon');
 
 nodeunit = require('nodeunit');
+
+cp = require('child_process');
+
+bunyan = require('bunyan');
 
 if (argv.watch) {
   gutil.log("");
@@ -158,8 +162,8 @@ gulp.task('deploy', 'Deploy all system resources into the distribution folder', 
   return null;
 });
 
-gulp.task('start', 'Run the system in the dist folder and restart when files change in the folders', ['compile-gulp', 'deploy'], function() {
-  gutil.log(chalk.bgGreen('STARTING UP the System!!!'));
+gulp.task('develop', 'Run the system in the dist folder and restart when files change in the folders', ['compile-gulp', 'deploy'], function() {
+  gutil.log(chalk.bgGreen('STARTING UP the System for development!!!'));
   if (!argv.watch) {
     gutil.log(chalk.bgYellow('... Maybe you want to execute this task with the "--watch" flag!'));
   }
@@ -173,6 +177,24 @@ gulp.task('start', 'Run the system in the dist folder and restart when files cha
       return gutil.log(chalk.bgRed(files.join('\n')));
     }));
   });
+});
+
+gulp.task('start', 'Run the system in the dist folder', ['deploy'], function() {
+  var arrArgs, bun, eca;
+  gutil.log(chalk.bgGreen('STARTING UP the System!!!'));
+  if (argv.watch) {
+    gutil.log(chalk.bgYellow("The system will not be restarted when files change! \nThe changes will only be deployed"));
+  }
+  if (argv.productive) {
+    arrArgs = ['./dist/js/webapi-eca', "-w", "8080", "-d", "6379", "-m", "productive", "-i", "error", "-f", "warn"];
+  } else {
+    arrArgs = ['./dist/js/webapi-eca', "-w", "8080", "-d", "6379", "-m", "development", "-i", "info", "-f", "warn"];
+  }
+  eca = cp.spawn('node', arrArgs);
+  bun = cp.spawn('./node_modules/bunyan/bin/bunyan', [], {
+    stdio: ['pipe', process.stdout, process.stderr]
+  });
+  return eca.stdout.pipe(bun.stdin);
 });
 
 
