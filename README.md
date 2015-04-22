@@ -31,6 +31,10 @@ Download and install dependencies:
 
     cd webapi-eca
     npm install
+    
+In case you receive an error containing following warning "WARN This failure might be due to the use of legacy binary "node"": 
+
+    install nodejs-legacy
 
 Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`.
 
