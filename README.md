@@ -32,7 +32,7 @@ Download and install dependencies:
     cd webapi-eca
     npm install
     
-In case you receive an error containing following warning "WARN This failure might be due to the use of legacy binary "node"": 
+In case you receive an error containing 'WARN This failure might be due to the use of legacy binary "node"', try to solve it with nodejs-legacy: 
 
     install nodejs-legacy
 
