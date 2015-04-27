@@ -4,16 +4,9 @@
 	max-height: 80px;
 }
 
-.error {
-	color: #911;
-}
-
-.row {
-	padding-bottom: 10px;
-}
-
 nav.navbar {
 	min-height: 0;
+	margin-bottom: 0;
 }
 
 .navbar-nav > li > a {
@@ -21,15 +14,42 @@ nav.navbar {
 	padding-bottom: 10px;
 }
 
+.navbar-toggle {
+	margin-left: 1%;
+	float: left;
+}
+
+#info {
+	height: 1.5em;
+	padding-left: 20px;
+	font-family: Tahoma, sans-serif;
+	font-size: 0.75em;
+	font-weight: bold;
+	color: #fff;
+}
+
+.error {
+	background-color: #933;
+}
+
+.success {
+	background-color: #150;
+}
+
+.row {
+	padding-bottom: 10px;
+}
+
+h1 {
+	margin-top: 5px;
+	font-size: 2em;
+}
+
 #mainbody {
 	padding-left: 2%;
 	padding-right: 2%;
 }
 
-.navbar-toggle {
-	margin-left: 1%;
-	float: left;
-}
 
 #editor {
 	border: 1px solid lightgray;
@@ -122,15 +142,6 @@ button {
 
 #menubar a:hover {
 	background-color: #AAA;
-}
-
-#info {
-	height: 20px;
-	padding-left: 20px;
-	line-height: 2em;
-	font-family: Tahoma, sans-serif;
-	font-size: 0.75em;
-	font-weight: bold;
 }
 
 .neutral {

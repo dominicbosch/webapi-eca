@@ -111,34 +111,21 @@ this.objAdminCmds = {
 /*
 Handles possible events that were posted to this server and pushes them into the
 event queue.
-@public handleEvent( *req, resp* )
  */
 
-exports.handleEvent = function(req, resp) {
-  var body;
-  body = '';
-  req.on('data', function(data) {
-    return body += data;
-  });
-  return req.on('end', function() {
-    var answ, err, obj;
-    try {
-      obj = JSON.parse(body);
-    } catch (_error) {
-      err = _error;
-      resp.send(400, 'Badly formed event!');
-    }
-    if (obj && obj.eventname && !err) {
-      answ = {
-        code: 200,
-        message: "Thank you for the event: " + obj.eventname
-      };
-      resp.send(answ.code, answ);
-      return db.pushEvent(obj);
-    } else {
-      return resp.send(400, 'Your event was missing important parameters!');
-    }
-  });
+exports.handleEvent = function(req, res) {
+  var answ;
+  console.log(req.body);
+  if (req.body && req.body.eventname) {
+    answ = {
+      code: 200,
+      message: "Thank you for the event: " + req.body.eventname
+    };
+    res.status(answ.code).send(answ);
+    return db.pushEvent(req.body);
+  } else {
+    return res.send(400, 'Your event was missing important parameters!');
+  }
 };
 
 

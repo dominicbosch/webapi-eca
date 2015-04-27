@@ -31,6 +31,9 @@ fOnLoad = function() {
   editor.setFontSize("18px");
   editor.getSession().setMode("ace/mode/json");
   editor.setShowPrintMargin(false);
+  editor.getSession().on('change', function() {
+    return main.clearInfo();
+  });
   $.get('/data/example_event.txt', function(data) {
     return editor.setValue(data, -1);
   });
@@ -41,33 +44,29 @@ fOnLoad = function() {
     return editor.setFontSize($(this).val());
   });
   $('#but_submit').click(function() {
-    var err, val;
+    var err, obj;
     try {
-      val = editor.getValue();
-      JSON.parse(val);
+      obj = JSON.parse(editor.getValue());
       window.scrollTo(0, 0);
-      return $.post('/event', val).done(function(data) {
-        $('#info').text(data.message);
-        return $('#info').attr('class', 'success');
+      return $.post('/event', obj).done(function(data) {
+        return main.setInfo(true, data.message);
       }).fail(function(err) {
         var fDelayed;
         if (err.status === 401) {
-          return window.location.href = 'forge?page=forge_event';
+          return window.location.href = '/views/events';
         } else {
           fDelayed = function() {
             if (err.responseText === '') {
               err.responseText = 'No Response from Server!';
             }
-            $('#info').text('Error in upload: ' + err.responseText);
-            return $('#info').attr('class', 'error');
+            return main.setInfo(false, 'Error in upload: ' + err.responseText);
           };
           return setTimeout(fDelayed, 500);
         }
       });
     } catch (_error) {
       err = _error;
-      $('#info').text('You have errors in your JSON object! ' + err);
-      return $('#info').attr('class', 'error');
+      return main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
   });
   return $('#but_prepare').on('click', function() {
@@ -82,16 +81,14 @@ fOnLoad = function() {
             sel = "&selkey=" + oSelector.key + "&selval=" + oSelector.val;
           }
         }
-        url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.eventname + sel;
+        url = 'rules_create?eventtype=custom&eventname=' + obj.eventname + sel;
         return window.open(url, '_blank');
       } else {
-        $('#info').text('Please provide a valid eventname');
-        return $('#info').attr('class', 'error');
+        return main.setInfo(false, 'Please provide a valid eventname');
       }
     } catch (_error) {
       err = _error;
-      $('#info').text('You have errors in your JSON object! ' + err);
-      return $('#info').attr('class', 'error');
+      return main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
   });
 };

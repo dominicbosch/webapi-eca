@@ -21,12 +21,13 @@ fOnLoad = () ->
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
+	editor.getSession().on 'change', () ->
+		main.clearInfo()
+
+
 	$.get '/data/example_event.txt', ( data ) ->
 		editor.setValue data, -1
 
-	# $( '#editor' ).css 'height', '400px'
-	# $( '#editor' ).css 'width', '600px'
-	
 	$( '#editor_theme' ).change ( el ) ->
 		editor.setTheme "ace/theme/" + $( this ).val()
 		
@@ -35,27 +36,23 @@ fOnLoad = () ->
 
 	$( '#but_submit' ).click () ->
 		try
-			val = editor.getValue()
-			JSON.parse val # try to parse, throw an error if JSON not valid
+			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
 			window.scrollTo 0, 0
-			$.post( '/event', val )
+			$.post( '/event', obj )
 				.done ( data ) ->
-					$( '#info' ).text data.message
-					$( '#info' ).attr 'class', 'success'
+					main.setInfo true, data.message
 				.fail ( err ) ->
 					if err.status is 401
-						window.location.href = 'forge?page=forge_event'
+						window.location.href = '/views/events'
 					else
 						fDelayed = () ->
 							if err.responseText is ''
 								err.responseText = 'No Response from Server!'
-							$( '#info' ).text 'Error in upload: ' + err.responseText
-							$( '#info' ).attr 'class', 'error'
+							main.setInfo false, 'Error in upload: ' + err.responseText
 						setTimeout fDelayed, 500
 					
 		catch err
-			$( '#info' ).text 'You have errors in your JSON object! ' + err
-			$( '#info' ).attr 'class', 'error'
+			main.setInfo false, 'You have errors in your JSON object! ' + err
 		 
 	$( '#but_prepare' ). on 'click', () ->
 
@@ -67,15 +64,11 @@ fOnLoad = () ->
 					oSelector = fFindKeyStringPair obj.body
 					if oSelector
 						sel = "&selkey=#{ oSelector.key }&selval=#{ oSelector.val }"
-				url = 'forge?page=forge_rule&eventtype=custom&eventname=' + obj.eventname + sel
+				url = 'rules_create?eventtype=custom&eventname=' + obj.eventname + sel
 				window.open url, '_blank'
 			else
-				$( '#info' ).text 'Please provide a valid eventname'
-				$( '#info' ).attr 'class', 'error'
+				main.setInfo false, 'Please provide a valid eventname'
 		catch err
-			$( '#info' ).text 'You have errors in your JSON object! ' + err
-			$( '#info' ).attr 'class', 'error'
-			
-
+			main.setInfo false, 'You have errors in your JSON object! ' + err
 
 window.addEventListener 'load', fOnLoad, true

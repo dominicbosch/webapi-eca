@@ -94,27 +94,18 @@ exports.init = () ->
 ###
 Handles possible events that were posted to this server and pushes them into the
 event queue.
-@public handleEvent( *req, resp* )
 ###
-exports.handleEvent = ( req, resp ) ->
-	body = ''
-	req.on 'data', ( data ) ->
-		body += data
-
-	req.on 'end', ->
-		try
-			obj = JSON.parse body
-		catch err
-			resp.send 400, 'Badly formed event!'
-		# If required event properties are present we process the event #
-		if obj and obj.eventname and not err
-			answ =
-				code: 200
-				message: "Thank you for the event: #{ obj.eventname }"
-			resp.send answ.code, answ
-			db.pushEvent obj
-		else
-			resp.send 400, 'Your event was missing important parameters!'
+exports.handleEvent = ( req, res ) ->
+	console.log req.body	
+	# If required event properties are present we process the event #
+	if req.body and req.body.eventname
+		answ =
+			code: 200
+			message: "Thank you for the event: #{ req.body.eventname }"
+		res.status( answ.code ).send answ
+		db.pushEvent req.body
+	else
+		res.send 400, 'Your event was missing important parameters!'
 
 
 ###

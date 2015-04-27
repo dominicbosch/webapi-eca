@@ -6,6 +6,9 @@
 {% endblock %}
 
 
+{% block pagetitle %}Create your own events{% endblock %}
+
+
 {% block content %}
 	
 	<div class="container-fluid">
@@ -33,10 +36,14 @@
 			<div id="editor"></div>
 		</div>
 		<div class="row">
-			<br>
-			<button id="but_prepare" style="width:250px">Prepare a Rule for this Event</button>
-			<br>
-			<button id="but_submit" style="width:250px">Push Event into System</button>
+			<div class=".col-md-6">
+				<button style="width:250px">Prepare a Rule for this Event</button>
+			</div>
+			<!-- id="but_prepare"  -->
+			<div class=".col-md-6">
+				<button style="width:250px">Push Event into System</button>
+			</div>
+			<!-- id="but_submit"  -->
 		</div>
 	</div>
 {% endblock %}
