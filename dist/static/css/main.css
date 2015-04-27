@@ -1,246 +1,251 @@
 
-h4 {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-#header {
-  width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #666;
-}
-
-#test {
-  font-family: 'PT Sans Narrow', 'Play Fair', sans-serif;
-}
-
-#svg2739 {
-  font-family:'Play Fair', sans-serif;
+#bannerimg {
+	padding-left: 2%;
+	max-height: 80px;
 }
 
 .error {
-  color: #911;
+	color: #911;
 }
+
+.row {
+	padding-bottom: 10px;
+}
+
+nav.navbar {
+	min-height: 0;
+}
+
+.navbar-nav > li > a {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+#mainbody {
+	padding-left: 2%;
+	padding-right: 2%;
+}
+
+.navbar-toggle {
+	margin-left: 1%;
+	float: left;
+}
+
+#editor {
+	border: 1px solid lightgray;
+	width: 100%;
+}
+/*
+#editor_conditions {
+	float: left;
+	border: 1px solid lightgray;
+	margin: auto;
+	height: 150px;
+	width: 500px;
+}*/
+
+
+/*
+h4 {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+*/
+
+/*#header {
+	width: 100%;
+	background: #fff;
+	border-bottom: 1px solid #666;
+}
+*/
 /*
 input[type=text],
 input[type=password] {
-  -webkit-transition: all 0.30s ease-in-out;
-  -moz-transition: all 0.30s ease-in-out;
-  -ms-transition: all 0.30s ease-in-out;
-  -o-transition: all 0.30s ease-in-out;
-  outline: none;
-  padding: 2px 0px 2px 3px;
-  margin: 2px 1px 2px 0px;
-  border: 1px solid #DDDDDD;
+	-webkit-transition: all 0.30s ease-in-out;
+	-moz-transition: all 0.30s ease-in-out;
+	-ms-transition: all 0.30s ease-in-out;
+	-o-transition: all 0.30s ease-in-out;
+	outline: none;
+	padding: 2px 0px 2px 3px;
+	margin: 2px 1px 2px 0px;
+	border: 1px solid #DDDDDD;
 }
  
 input[type=text]:focus,
 input[type=password]:focus {
-  box-shadow: 0 0 5px rgba(81, 203, 238, 1);
-  padding: 2px 0px 2px 3px;
-  margin: 2px 1px 2px 0px;
-  border: 1px solid rgba(81, 203, 238, 1);
+	box-shadow: 0 0 5px rgba(81, 203, 238, 1);
+	padding: 2px 0px 2px 3px;
+	margin: 2px 1px 2px 0px;
+	border: 1px solid rgba(81, 203, 238, 1);
 }
 
 button {
-  font-size: 1.1em;
+	font-size: 1.1em;
 }
 
 .indent20 {
-  padding-left: 20px;
+	padding-left: 20px;
 }
 
 .outent20 {
-  margin-left: 20px;
+	margin-left: 20px;
 }
 
 #mobile {
-  margin: 10px 20px 10px 20px;
+	margin: 10px 20px 10px 20px;
 }
 
 #menubar {
-  font-weight: bold;
+	font-weight: bold;
 	padding: 0px;
-  width: 100%;
+	width: 100%;
 	background-color: #DDD;
 }
 
 #menubar td {
-  float: left;
+	float: left;
 }
 
 #menubar a {
-  text-decoration: none;
-  color: #333;
-  margin: 0px 5px 0px 5px;
-  padding: 0px 10px 2px 10px;
-  cursor: pointer;
-  -moz-border-radius: 5px;
-  border-radius: 10px;
-  -webkit-transition: all 0.30s ease-in-out;
-  -moz-transition: all 0.30s ease-in-out;
-  -ms-transition: all 0.30s ease-in-out;
-  -o-transition: all 0.30s ease-in-out;
+	text-decoration: none;
+	color: #333;
+	margin: 0px 5px 0px 5px;
+	padding: 0px 10px 2px 10px;
+	cursor: pointer;
+	-moz-border-radius: 5px;
+	border-radius: 10px;
+	-webkit-transition: all 0.30s ease-in-out;
+	-moz-transition: all 0.30s ease-in-out;
+	-ms-transition: all 0.30s ease-in-out;
+	-o-transition: all 0.30s ease-in-out;
 }
 
 #menubar a:hover {
-  background-color: #AAA;
+	background-color: #AAA;
 }
 
 #info {
-  height: 20px;
-  padding-left: 20px;
-  line-height: 2em;
-  font-family: Tahoma, sans-serif;
-  font-size: 0.75em;
-  font-weight: bold;
+	height: 20px;
+	padding-left: 20px;
+	line-height: 2em;
+	font-family: Tahoma, sans-serif;
+	font-size: 0.75em;
+	font-weight: bold;
 }
 
 .neutral {
-  background-color: #EEF;
-  color: #050;
+	background-color: #EEF;
+	color: #050;
 }
 
 .success {
-  background-color: #CFC;
-  color: #050;
+	background-color: #CFC;
+	color: #050;
 }
 
 .error {
-  background-color: #FCC;
-  color: #800;
+	background-color: #FCC;
+	color: #800;
 }
 
 .comment {
-  font-style: italic;
-  font-size: 0.75em;
-  max-width: 500px;
+	font-style: italic;
+	font-size: 0.75em;
+	max-width: 500px;
 }
 
-#mainbody {
-  padding-left: 50px;
-  padding-right: 50px;
-}
 
 #pagetitle {
 	font-size: 1.6em;
 	font-weight: bold;
-  padding-top: 0px;
-  padding-bottom: 5px;
+	padding-top: 0px;
+	padding-bottom: 5px;
 }
 
 #select_event_type {
-  font-size: 1em;
+	font-size: 1em;
 }
 
 #event_type,
 #event_parameters,
 #conditions,
 #action_parameters {
-  margin-left: 20px;
+	margin-left: 20px;
 }
 
 #event_trigger_params {
-  padding-top: 10px;
+	padding-top: 10px;
 }
 
 #input_id {
-  font-size: 1em;
-}
-
-#editor_mode {
-  margin-right: 15px;
-}
-
-#editor_table {
-  width: 100%;
-}
-
-#editor_col {
-  width: 70%;
-}
-
-#editor {
-  float: left;
-  position: relative !important;
-  border: 1px solid lightgray;
-  margin: auto;
-  height: 500px;
-  width: 100%;
-}
-
-#editor_conditions {
-  float: left;
-  border: 1px solid lightgray;
-  margin: auto;
-  height: 150px;
-  width: 500px;
+	font-size: 1em;
 }
 
 #params_col {
-  padding-top: 15px;
-  padding-left: 15px;
+	padding-top: 15px;
+	padding-left: 15px;
 }
 
 #tableParams td:first-child { 
-  width: 10px;
+	width: 10px;
 }
 
 #tableParams input.textinput { 
-  width: 150px;
-  margin-left: 10px;
+	width: 150px;
+	margin-left: 10px;
 }
 
 #selected_actions td {
-  vertical-align: top;
+	vertical-align: top;
 }
 
 #selected_actions .title {
-  font-size: 0.9em;
-  font-weight: bold;
+	font-size: 0.9em;
+	font-weight: bold;
 }
 
 .funcMappings {
-  padding-left: 20px;
-  font-size: 0.75em;
+	padding-left: 20px;
+	font-size: 0.75em;
 }
 
 #tableRules tr {
-  margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 
 #log_col {
-  padding-left: 20px;
-  border-left: double #666;
+	padding-left: 20px;
+	border-left: double #666;
 }
 
 .underlined {
-  padding-left: 10px;
-  font-style: italic;
-  font-weight: bold;
-  text-decoration: underline;
+	padding-left: 10px;
+	font-style: italic;
+	font-weight: bold;
+	text-decoration: underline;
 }
 */
 .dialog {
-  visibility: hidden;
-  position: absolute;
-  top: 0px;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
+	visibility: hidden;
+	position: absolute;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0,0,0.5);
 }
 
 .window {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
-  background-color: #F5F5CA;
-  max-width: 600px;
-  border: 3px dashed red;
-  border-radius: 10px;
-  padding: 20px;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+	background-color: #F5F5CA;
+	max-width: 600px;
+	border: 3px dashed red;
+	border-radius: 10px;
+	padding: 20px;
 }
 
 .window h3 {
-  margin: 5px 0px 5px 0px;
+	margin: 5px 0px 5px 0px;
 }

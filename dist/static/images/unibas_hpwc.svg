@@ -5,12 +5,12 @@
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    version="1.0"
-   width="7000"
+   width="5800"
    height="500"
    id="svg2739">
-  <defs
-     id="defs2741" />
-  <text x="500" y="300" font-size="200">High Performance and Web Computing</text>
+  <defs id="defs2741">
+  </defs>
+  <text x="500" y="300" font-size="200" font-family="'Palatino Linotype', 'Book Antiqua', Palatino, serif">High Danilo Performance and Web Computing</text>
   <g
      id="layer1">
     <g

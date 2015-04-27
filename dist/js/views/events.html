@@ -7,32 +7,36 @@
 
 
 {% block content %}
-	<select id="editor_theme">
-		<option value="monokai">Monokai</option>
-		<option value="crimson_editor" selected>Crimson Editor</option>
-	</select>
-	<select id="editor_font">
-		<option>10px</option>
-		<option>11px</option>
-		<option>12px</option>
-		<option>13px</option>
-		<option>14px</option>
-		<option>15px</option>
-		<option>16px</option>
-		<option selected>18px</option>
-		<option>20px</option>
-		<option>24px</option>
-	</select>
-	<br>
-	<div style="width:100%;float:left">
-
-		<div id="editor">
-	{
-		"eventname": "button-click"
-	}
+	
+	<div class="container-fluid">
+		<div class="row">
+			Theme: 
+			<select id="editor_theme">
+				<option value="monokai">Monokai</option>
+				<option value="crimson_editor" selected>Crimson Editor</option>
+			</select>
+			Font Size: 
+			<select id="editor_font">
+				<option>10px</option>
+				<option>11px</option>
+				<option>12px</option>
+				<option>13px</option>
+				<option>14px</option>
+				<option>15px</option>
+				<option>16px</option>
+				<option selected>18px</option>
+				<option>20px</option>
+				<option>24px</option>
+			</select>
+		</div>
+		<div class="row">
+			<div id="editor"></div>
+		</div>
+		<div class="row">
+			<br>
+			<button id="but_prepare" style="width:250px">Prepare a Rule for this Event</button>
+			<br>
+			<button id="but_submit" style="width:250px">Push Event into System</button>
 		</div>
 	</div>
-	<button id="but_prepare" style="width:300px">Prepare a Rule for this Event</button>
-	<br>
-	<button id="but_submit" style="width:300px">Push Event into System</button>
 {% endblock %}

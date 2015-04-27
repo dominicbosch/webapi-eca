@@ -15,12 +15,17 @@ fOnLoad = () ->
 
 	editor = ace.edit "editor"
 	# editor.setTheme "ace/theme/monokai"
-	editor.setTheme "ace/theme/cimson_editor"
+	editor.setTheme "ace/theme/crimson_editor"
+	editor.setOptions maxLines: 15
 	editor.setFontSize "18px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
-	$( '#editor' ).css 'height', '400px'
-	$( '#editor' ).css 'width', '600px'
+
+	$.get '/data/example_event.txt', ( data ) ->
+		editor.setValue data, -1
+
+	# $( '#editor' ).css 'height', '400px'
+	# $( '#editor' ).css 'width', '600px'
 	
 	$( '#editor_theme' ).change ( el ) ->
 		editor.setTheme "ace/theme/" + $( this ).val()

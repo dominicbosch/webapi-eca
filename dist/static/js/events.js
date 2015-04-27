@@ -24,12 +24,16 @@ fOnLoad = function() {
   document.title = 'Push Events!';
   $('#pagetitle').text('Trigger your custom event in the engine!');
   editor = ace.edit("editor");
-  editor.setTheme("ace/theme/cimson_editor");
+  editor.setTheme("ace/theme/crimson_editor");
+  editor.setOptions({
+    maxLines: 15
+  });
   editor.setFontSize("18px");
   editor.getSession().setMode("ace/mode/json");
   editor.setShowPrintMargin(false);
-  $('#editor').css('height', '400px');
-  $('#editor').css('width', '600px');
+  $.get('/data/example_event.txt', function(data) {
+    return editor.setValue(data, -1);
+  });
   $('#editor_theme').change(function(el) {
     return editor.setTheme("ace/theme/" + $(this).val());
   });

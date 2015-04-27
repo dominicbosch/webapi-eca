@@ -72,7 +72,7 @@ exports.init = (function(_this) {
       return res.render('index', req.session.pub);
     });
     app.get('/views/*', function(req, res) {
-      return log.info(res.render(req.params[0], req.session.pub));
+      return res.render(req.params[0], req.session.pub);
     });
     app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
     log.info('LOADING WEB SERVICES: ');

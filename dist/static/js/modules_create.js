@@ -51,7 +51,7 @@ fOnLoad = function() {
   document.title = "Create " + moduleName;
   $('#pagetitle').text("{{{user.username}}}, create your custom " + moduleName + "!");
   editor = ace.edit("editor");
-  editor.setTheme("ace/theme/cimson_editor");
+  editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
   editor.setFontSize("18px");
   editor.setShowPrintMargin(false);

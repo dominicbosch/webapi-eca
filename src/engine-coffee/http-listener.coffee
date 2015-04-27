@@ -76,7 +76,7 @@ exports.init = ( conf ) =>
 		res.render 'index', req.session.pub
 
 	app.get '/views/*', ( req, res ) ->
-		log.info res.render req.params[ 0 ], req.session.pub
+		res.render req.params[ 0 ], req.session.pub
 
 	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
 	app.use '/', express.static path.resolve __dirname, '..', 'static'
