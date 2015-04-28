@@ -1,8 +1,5 @@
 
 fOnLoad = () ->
-	document.title = 'Login'
-	$( '#pagetitle' ).text 'Login!'
-
 	if not window.CryptoJS
 		$( '#info' ).text 'CryptoJS library missing! Are you connected to the internet?'
 

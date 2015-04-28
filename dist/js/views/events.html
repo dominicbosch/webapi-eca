@@ -5,12 +5,9 @@
 	<script src="/js/events.js"></script>
 {% endblock %}
 
-
-{% block pagetitle %}Create your own events{% endblock %}
-
+{% block pagetitle %}Emit Events{% endblock %}
 
 {% block content %}
-	
 	<div class="container-fluid">
 		<div class="row">
 			Theme: 
@@ -26,8 +23,8 @@
 				<option>13px</option>
 				<option>14px</option>
 				<option>15px</option>
-				<option>16px</option>
-				<option selected>18px</option>
+				<option selected>16px</option>
+				<option>18px</option>
 				<option>20px</option>
 				<option>24px</option>
 			</select>
@@ -36,14 +33,9 @@
 			<div id="editor"></div>
 		</div>
 		<div class="row">
-			<div class=".col-md-6">
-				<button style="width:250px">Prepare a Rule for this Event</button>
-			</div>
-			<!-- id="but_prepare"  -->
-			<div class=".col-md-6">
-				<button style="width:250px">Push Event into System</button>
-			</div>
-			<!-- id="but_submit"  -->
+			<button id="but_emit">Emit Event</button>
+			<button id="but_prep">Create a Webhook for this Event</button>
+			<button id="but_prep">Prepare a Rule for this Event</button>
 		</div>
 	</div>
 {% endblock %}

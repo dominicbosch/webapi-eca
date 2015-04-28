@@ -2,8 +2,6 @@ var fOnLoad;
 
 fOnLoad = function() {
   var fErrHandler, fFetchRules, fUpdateRuleList;
-  document.title = 'Edit Rules';
-  $('#pagetitle').text("{{{user.username}}}, edit your Rules!");
   fErrHandler = function(errMsg) {
     return function(err) {
       var fDelayed;

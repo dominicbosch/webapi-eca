@@ -1,8 +1,5 @@
 
 fOnLoad = () ->
-	document.title = 'Edit Modules'
-	$( '#pagetitle' ).text "{{{user.username}}}, edit your Modules!"
-
 	$( '#module_type' ).change () ->
 		fFetchModules()
 

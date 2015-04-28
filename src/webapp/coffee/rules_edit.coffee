@@ -1,8 +1,5 @@
 
 fOnLoad = () ->
-	document.title = 'Edit Rules'
-	$( '#pagetitle' ).text "{{{user.username}}}, edit your Rules!"
-
 	fErrHandler = ( errMsg ) ->
 		( err ) ->
 			if err.status is 401

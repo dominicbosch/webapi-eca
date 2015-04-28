@@ -2,8 +2,6 @@ var fOnLoad;
 
 fOnLoad = function() {
   var fErrHandler, fFetchModules, fUpdateModuleList;
-  document.title = 'Edit Modules';
-  $('#pagetitle').text("{{{user.username}}}, edit your Modules!");
   $('#module_type').change(function() {
     return fFetchModules();
   });

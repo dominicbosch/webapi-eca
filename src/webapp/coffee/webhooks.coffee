@@ -10,18 +10,8 @@ if oParams.id
 
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
-fClearInfo = () ->
-	$( '#info' ).text ''
-	$( '#info' ).attr 'class', 'neutral'
-
-fDisplayError = ( msg ) ->
-	window.scrollTo 0, 0
-	$( '#info' ).text "Error: #{ msg }"
-	$( '#info' ).attr 'class', 'error'
-
-
 fIssueRequest = ( args ) ->
-	fClearInfo()
+	main.clearInfo()
 	$.post( '/usercommand/' + args.command, args.data )
 		.done args.done
 		.fail args.fail
@@ -32,7 +22,7 @@ fFailedRequest = ( msg ) ->
 		if err.status is 401
 			window.location.href = 'forge?page=forge_rule'
 		else
-			fDisplayError msg
+			main.setInfo false, msg
 
 
 fUpdateWebhookList = ( cb ) ->
@@ -83,18 +73,15 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 
 fOnLoad = () ->
 
-	document.title = 'Create Webhooks!'
-	$( '#pagetitle' ).text 'Create your own Webhooks!'
-	# Load existing Webhooks
 	fUpdateWebhookList fShowWebhookUsage
 
 	# Register button action
 	$( '#but_submit' ).click ->
-		fClearInfo()
+		main.clearInfo()
 
 		hookname = $( '#inp_hookname' ).val()
 		if hookname is ''
-			fDisplayError 'Please provide an Event Name for your new Webhook!'
+			main.setInfo false, 'Please provide an Event Name for your new Webhook!'
 
 		else
 			# $( '#display_hookurl *' ).remove()

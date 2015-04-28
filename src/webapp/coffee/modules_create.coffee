@@ -31,9 +31,6 @@ fErrHandler = ( errMsg ) ->
 			setTimeout fDelayed, 500
 
 fOnLoad = () ->
-	document.title = "Create #{ moduleName }"
-	$( '#pagetitle' ).text "{{{user.username}}}, create your custom #{ moduleName }!"
-
 	# Setup the ACE editor
 	editor = ace.edit "editor"
 	editor.setTheme "ace/theme/crimson_editor"

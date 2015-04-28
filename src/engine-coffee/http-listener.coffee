@@ -89,7 +89,7 @@ exports.init = ( conf ) =>
 	for fileName in arrServices
 		log.info '  -> ' + fileName
 		servicePath = fileName.substring 0, fileName.length - 3
-		app.use servicePath, require path.resolve __dirname, 'services', fileName
+		app.use '/service/' + servicePath, require path.resolve __dirname, 'services', fileName
 
 	# - **`GET` to _"/forge"_:** Displays different forge pages
 	app.get '/forge', requestHandler.handleForge

@@ -9,27 +9,29 @@ fFindKeyStringPair = ( obj ) ->
 				return oRet
 	null
 
-fOnLoad = () ->
-	document.title = 'Push Events!'
-	$( '#pagetitle' ).text 'Trigger your custom event in the engine!'
+checkWebhookExists = () ->
+	$.post '/service/webhooks/getAll', ( err, data ) ->
+		console.log err, data 
 
-	editor = ace.edit "editor"
-	# editor.setTheme "ace/theme/monokai"
-	editor.setTheme "ace/theme/crimson_editor"
+fOnLoad = () ->
+	main.registerHoverInfo $( '#pagetitle' ), 'eventinfo.html'
+
+	editor = ace.edit 'editor'
+	editor.setTheme 'ace/theme/crimson_editor'
 	editor.setOptions maxLines: 15
-	editor.setFontSize "18px"
-	editor.getSession().setMode "ace/mode/json"
+	editor.setFontSize '16px'
+	editor.getSession().setMode 'ace/mode/json'
 	editor.setShowPrintMargin false
 
 	editor.getSession().on 'change', () ->
 		main.clearInfo()
-
+		checkWebhookExists()
 
 	$.get '/data/example_event.txt', ( data ) ->
 		editor.setValue data, -1
 
 	$( '#editor_theme' ).change ( el ) ->
-		editor.setTheme "ace/theme/" + $( this ).val()
+		editor.setTheme 'ace/theme/' + $( this ).val()
 		
 	$( '#editor_font' ).change ( el ) ->
 		editor.setFontSize $( this ).val()

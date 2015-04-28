@@ -1,4 +1,4 @@
-var fFindKeyStringPair, fOnLoad;
+var checkWebhookExists, fFindKeyStringPair, fOnLoad;
 
 fFindKeyStringPair = function(obj) {
   var key, oRet, val;
@@ -19,26 +19,32 @@ fFindKeyStringPair = function(obj) {
   return null;
 };
 
+checkWebhookExists = function() {
+  return $.post('/service/webhooks/getAll', function(err, data) {
+    return console.log(err, data);
+  });
+};
+
 fOnLoad = function() {
   var editor;
-  document.title = 'Push Events!';
-  $('#pagetitle').text('Trigger your custom event in the engine!');
-  editor = ace.edit("editor");
-  editor.setTheme("ace/theme/crimson_editor");
+  main.registerHoverInfo($('#pagetitle'), 'eventinfo.html');
+  editor = ace.edit('editor');
+  editor.setTheme('ace/theme/crimson_editor');
   editor.setOptions({
     maxLines: 15
   });
-  editor.setFontSize("18px");
-  editor.getSession().setMode("ace/mode/json");
+  editor.setFontSize('16px');
+  editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
   editor.getSession().on('change', function() {
-    return main.clearInfo();
+    main.clearInfo();
+    return checkWebhookExists();
   });
   $.get('/data/example_event.txt', function(data) {
     return editor.setValue(data, -1);
   });
   $('#editor_theme').change(function(el) {
-    return editor.setTheme("ace/theme/" + $(this).val());
+    return editor.setTheme('ace/theme/' + $(this).val());
   });
   $('#editor_font').change(function(el) {
     return editor.setFontSize($(this).val());

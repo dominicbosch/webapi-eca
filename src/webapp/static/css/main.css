@@ -10,8 +10,8 @@ nav.navbar {
 }
 
 .navbar-nav > li > a {
-	padding-top: 10px;
-	padding-bottom: 10px;
+	padding-top: 7px;
+	padding-bottom: 7px;
 }
 
 .navbar-toggle {
@@ -19,13 +19,19 @@ nav.navbar {
 	float: left;
 }
 
-#info {
+#message {
 	height: 1.5em;
 	padding-left: 20px;
 	font-family: Tahoma, sans-serif;
 	font-size: 0.75em;
 	font-weight: bold;
 	color: #fff;
+}
+
+.infoimg {
+	margin-left: 10px;
+	width: 17px;
+	height: auto;
 }
 
 .error {
@@ -50,10 +56,29 @@ h1 {
 	padding-right: 2%;
 }
 
-
 #editor {
 	border: 1px solid lightgray;
 	width: 100%;
+}
+
+#tooltip {
+	max-width: 300px;
+	overflow: hidden;
+	font-size: 0.9em;
+	z-index: 20;
+	position: absolute;
+	padding: 7px 14px;
+	background: #FFF;
+	border: 1px solid #666;
+	display: none;
+}
+#tooltip .title {
+	font-weight: bold;
+	font-size: 1.3em;
+}
+
+#tooltip kbd {
+	font-size: 0.8em;
 }
 /*
 #editor_conditions {

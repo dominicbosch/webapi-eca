@@ -1,8 +1,6 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  document.title = 'Login';
-  $('#pagetitle').text('Login!');
   if (!window.CryptoJS) {
     $('#info').text('CryptoJS library missing! Are you connected to the internet?');
   }

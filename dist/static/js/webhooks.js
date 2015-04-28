@@ -1,4 +1,4 @@
-var arrKV, arrParams, fClearInfo, fDisplayError, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, i, len, oParams, param;
+var arrKV, arrParams, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, i, len, oParams, param;
 
 arrParams = window.location.search.substring(1).split('&');
 
@@ -16,19 +16,8 @@ if (oParams.id) {
 
 hostUrl = [location.protocol, '//', location.host].join('');
 
-fClearInfo = function() {
-  $('#info').text('');
-  return $('#info').attr('class', 'neutral');
-};
-
-fDisplayError = function(msg) {
-  window.scrollTo(0, 0);
-  $('#info').text("Error: " + msg);
-  return $('#info').attr('class', 'error');
-};
-
 fIssueRequest = function(args) {
-  fClearInfo();
+  main.clearInfo();
   return $.post('/usercommand/' + args.command, args.data).done(args.done).fail(args.fail);
 };
 
@@ -37,7 +26,7 @@ fFailedRequest = function(msg) {
     if (err.status === 401) {
       return window.location.href = 'forge?page=forge_rule';
     } else {
-      return fDisplayError(msg);
+      return main.setInfo(false, msg);
     }
   };
 };
@@ -95,15 +84,13 @@ fShowWebhookUsage = function(hookid, hookname) {
 };
 
 fOnLoad = function() {
-  document.title = 'Create Webhooks!';
-  $('#pagetitle').text('Create your own Webhooks!');
   fUpdateWebhookList(fShowWebhookUsage);
   $('#but_submit').click(function() {
     var hookname;
-    fClearInfo();
+    main.clearInfo();
     hookname = $('#inp_hookname').val();
     if (hookname === '') {
-      return fDisplayError('Please provide an Event Name for your new Webhook!');
+      return main.setInfo(false, 'Please provide an Event Name for your new Webhook!');
     } else {
       return fIssueRequest({
         command: 'create_webhook',

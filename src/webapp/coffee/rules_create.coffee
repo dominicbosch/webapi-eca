@@ -62,15 +62,6 @@ domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_dispatcher_pa
 domSectionActionParameters.append $( '<div>' ).html "<br><br>"
 domSectionActionParameters.hide()
 
-fClearInfo = () ->
-	$( '#info' ).text ''
-	$( '#info' ).attr 'class', 'neutral'
-
-fDisplayError = ( msg ) ->
-	window.scrollTo 0, 0
-	$( '#info' ).text "Error: #{ msg }"
-	$( '#info' ).attr 'class', 'error'
-
 fFailedRequest = ( msg ) ->
 	( err ) ->
 		if err.status is 401
@@ -474,9 +465,6 @@ fOnLoad = () ->
 				window.location.href = 'forge?page=forge_rule'
 			else
 				fDisplayError 'When fetching public key. Unable to send user specific parameters securely!'
-
-	document.title = 'Create Rules!'
-	$( '#pagetitle' ).text '{{{user.username}}}, create your ECA Rule!'
 
 	editor = ace.edit "editor_conditions"
 	# editor.setTheme "ace/theme/monokai"

@@ -38,13 +38,14 @@
 						<li><a href="/views/webhooks">Webhook</a></li>
 						<li><a href="/views/modules?m=et">Event Trigger</a></li>
 						<li><a href="/views/modules?m=ad">Action Dispatcher</a></li>
+						<li><a href="/views/login">Login</a></li>
 					</ul>
 				</div>
 			</div>
 		</nav>
-		<div id="info"></div>
+		<div id="message"></div>
 		<div id="mainbody">
-			<h1>{% block pagetitle %}{% endblock %}</h1>
+			<h1 id="pagetitle">{% block pagetitle %}{% endblock %}</h1>
 			{% block content %}{% endblock %}
 		</div>
 		<div class="dialog">
@@ -56,5 +57,6 @@
 				</div>
 			</div>
 		</div>
+		<div id="tooltip"></div>
 	</body>
 </html>

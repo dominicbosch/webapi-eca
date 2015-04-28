@@ -83,7 +83,7 @@ exports.init = (function(_this) {
       fileName = arrServices[i];
       log.info('  -> ' + fileName);
       servicePath = fileName.substring(0, fileName.length - 3);
-      app.use(servicePath, require(path.resolve(__dirname, 'services', fileName)));
+      app.use('/service/' + servicePath, require(path.resolve(__dirname, 'services', fileName)));
     }
     app.get('/forge', requestHandler.handleForge);
     app.post('/admincommand', requestHandler.handleAdminCommand);

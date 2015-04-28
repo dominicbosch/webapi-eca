@@ -1,4 +1,4 @@
-var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fClearInfo, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayError, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, j, len, oParams, param, strPublicKey, table, tr,
+var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, j, len, oParams, param, strPublicKey, table, tr,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 strPublicKey = '';
@@ -80,17 +80,6 @@ domSectionActionParameters.append($('<div>').attr('id', 'action_dispatcher_param
 domSectionActionParameters.append($('<div>').html("<br><br>"));
 
 domSectionActionParameters.hide();
-
-fClearInfo = function() {
-  $('#info').text('');
-  return $('#info').attr('class', 'neutral');
-};
-
-fDisplayError = function(msg) {
-  window.scrollTo(0, 0);
-  $('#info').text("Error: " + msg);
-  return $('#info').attr('class', 'error');
-};
 
 fFailedRequest = function(msg) {
   return function(err) {
@@ -617,8 +606,6 @@ fOnLoad = function() {
       }
     }
   });
-  document.title = 'Create Rules!';
-  $('#pagetitle').text('{{{user.username}}}, create your ECA Rule!');
   editor = ace.edit("editor_conditions");
   editor.setTheme("ace/theme/crimson_editor");
   editor.setFontSize("18px");

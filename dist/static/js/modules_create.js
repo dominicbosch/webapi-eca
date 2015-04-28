@@ -48,8 +48,6 @@ fErrHandler = function(errMsg) {
 
 fOnLoad = function() {
   var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj;
-  document.title = "Create " + moduleName;
-  $('#pagetitle').text("{{{user.username}}}, create your custom " + moduleName + "!");
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
