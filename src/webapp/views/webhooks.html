@@ -5,11 +5,10 @@
 {% endblock %}
 
 {% block content %}
-	<h3>Label the Events received over the new Webhook with : 
-	<input type="text" id="inp_hookname" style="font-size:1em;width:300px" /></h3>
-	<button type="button" id="but_submit">Create Webhook!</button>
-	<br><br>
-	<div id="display_hookurl"></div>
-	<br>
-	<div id="table_webhooks"></div>
+	<h3>I want to listen for events named:</h3>
+	<p><input type="text" id="inp_hookname" /></p>
+	<p>This is a public Webhook : <input type="checkbox" id="inp_public" /></p>
+	<p><button type="button" id="but_submit">Create Webhook!</button></p>
+	<p><div id="display_hookurl"></div></p>
+	<p><div id="table_webhooks"></div></p>
 {% endblock %}

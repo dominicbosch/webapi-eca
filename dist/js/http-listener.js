@@ -72,7 +72,7 @@ exports.init = (function(_this) {
     app.get('/views/*', function(req, res) {
       if (req.session.pub || req.params[0] === 'login') {
         if (req.params[0] === 'admin' && req.session.pub.roles.indexOf('admin') === -1) {
-          return res.render('401');
+          return res.render('401_admin');
         } else {
           return res.render(req.params[0], req.session.pub);
         }

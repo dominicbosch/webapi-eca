@@ -76,7 +76,7 @@ exports.init = ( conf ) =>
 	app.get '/views/*', ( req, res ) ->
 		if req.session.pub || req.params[ 0 ] is 'login'
 			if req.params[ 0 ] is 'admin' && req.session.pub.roles.indexOf( 'admin' ) is -1
-				res.render '401'
+				res.render '401_admin'
 			else
 				res.render req.params[ 0 ], req.session.pub
 		else
