@@ -21,7 +21,10 @@ A post request retrieved on this handler causes the user object to be
 purged from the session, thus the user will be logged out.
  */
 
-router.post('/getAll', function(req, res) {
-  log.debug('SRVC | WEBHOOKS | implemnt getAll');
+router.post('/get/:name', function(req, res) {
+  log.info('SRVC | WEBHOOKS | implemnt getAll');
+  db.getAllUserWebhookNames(req.session.username, function(arr) {
+    return log.info('Webhooks' + JSON.stringify(arr));
+  });
   return res.send('TODO!');
 });

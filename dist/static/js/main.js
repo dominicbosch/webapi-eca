@@ -7,7 +7,17 @@ $(document).ready(function() {
     return this.href === url;
   });
   elSelected = $('<span>').attr('class', 'sr-only').text('(current)');
-  return els.append(elSelected).parent().addClass('active');
+  els.append(elSelected).parent().addClass('active');
+  return $('#skeletonLogout').click(function() {
+    return $.post('/service/session/logout', function() {
+      var redirect;
+      main.setInfo(true, 'Goodbye!');
+      redirect = function() {
+        return window.location.href = '/';
+      };
+      return setTimeout(redirect, 500);
+    });
+  });
 });
 
 hoverIn = function(html) {
@@ -22,13 +32,13 @@ hoverOut = function(e) {
 
 window.main = {
   setInfo: function(isSuccess, msg) {
-    $('#info').text(msg);
-    $('#info').attr('class', isSuccess ? 'success' : 'error');
+    $('#skeletonTicker').text(msg);
+    $('#skeletonTicker').attr('class', isSuccess ? 'success' : 'error');
     return window.scrollTo(0, 0);
   },
   clearInfo: function() {
-    $('#info').text('');
-    return $('#info').attr('class', '');
+    $('#skeletonTicker').text('');
+    return $('#skeletonTicker').attr('class', '');
   },
   registerHoverInfo: function(el, file) {
     return $.get('/help/' + file, function(html) {

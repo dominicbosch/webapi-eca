@@ -1,3 +1,4 @@
+editor = null
 
 fFindKeyStringPair = ( obj ) ->
 	for key, val of obj
@@ -10,8 +11,13 @@ fFindKeyStringPair = ( obj ) ->
 	null
 
 checkWebhookExists = () ->
-	$.post '/service/webhooks/getAll', ( err, data ) ->
-		console.log err, data 
+	try
+		obj = JSON.parse editor.getValue()
+		console.log '/service/webhooks/get/' + obj.eventname
+		$.post '/service/webhooks/get/' + obj.eventname, ( err, data ) ->
+			console.log err, data 
+	catch err
+		console.log err
 
 fOnLoad = () ->
 	main.registerHoverInfo $( '#pagetitle' ), 'eventinfo.html'
@@ -23,12 +29,12 @@ fOnLoad = () ->
 	editor.getSession().setMode 'ace/mode/json'
 	editor.setShowPrintMargin false
 
-	editor.getSession().on 'change', () ->
-		main.clearInfo()
-		checkWebhookExists()
-
 	$.get '/data/example_event.txt', ( data ) ->
 		editor.setValue data, -1
+		# Only register change handler after we initially filled the editor
+		editor.getSession().on 'change', () ->
+			main.clearInfo()
+			checkWebhookExists()
 
 	$( '#editor_theme' ).change ( el ) ->
 		editor.setTheme 'ace/theme/' + $( this ).val()

@@ -19,7 +19,7 @@ nav.navbar {
 	float: left;
 }
 
-#message {
+#skeletonTicker {
 	height: 1.5em;
 	padding-left: 20px;
 	font-family: Tahoma, sans-serif;
@@ -61,6 +61,21 @@ h1 {
 	width: 100%;
 }
 
+#loginTable {
+	float: left;
+	text-align: center;
+	margin-top: 15px;
+	margin-left: 50px;
+}
+
+#loginTable td {
+	padding: 3px 4px;
+}
+
+#loginButton {
+	margin-top: 6px;
+}
+
 #tooltip {
 	max-width: 300px;
 	overflow: hidden;
@@ -72,6 +87,7 @@ h1 {
 	border: 1px solid #666;
 	display: none;
 }
+
 #tooltip .title {
 	font-weight: bold;
 	font-size: 1.3em;
@@ -80,6 +96,8 @@ h1 {
 #tooltip kbd {
 	font-size: 0.8em;
 }
+
+
 /*
 #editor_conditions {
 	float: left;

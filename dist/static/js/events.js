@@ -1,4 +1,6 @@
-var checkWebhookExists, fFindKeyStringPair, fOnLoad;
+var checkWebhookExists, editor, fFindKeyStringPair, fOnLoad;
+
+editor = null;
 
 fFindKeyStringPair = function(obj) {
   var key, oRet, val;
@@ -20,13 +22,20 @@ fFindKeyStringPair = function(obj) {
 };
 
 checkWebhookExists = function() {
-  return $.post('/service/webhooks/getAll', function(err, data) {
-    return console.log(err, data);
-  });
+  var err, obj;
+  try {
+    obj = JSON.parse(editor.getValue());
+    console.log('/service/webhooks/get/' + obj.eventname);
+    return $.post('/service/webhooks/get/' + obj.eventname, function(err, data) {
+      return console.log(err, data);
+    });
+  } catch (_error) {
+    err = _error;
+    return console.log(err);
+  }
 };
 
 fOnLoad = function() {
-  var editor;
   main.registerHoverInfo($('#pagetitle'), 'eventinfo.html');
   editor = ace.edit('editor');
   editor.setTheme('ace/theme/crimson_editor');
@@ -36,12 +45,12 @@ fOnLoad = function() {
   editor.setFontSize('16px');
   editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
-  editor.getSession().on('change', function() {
-    main.clearInfo();
-    return checkWebhookExists();
-  });
   $.get('/data/example_event.txt', function(data) {
-    return editor.setValue(data, -1);
+    editor.setValue(data, -1);
+    return editor.getSession().on('change', function() {
+      main.clearInfo();
+      return checkWebhookExists();
+    });
   });
   $('#editor_theme').change(function(el) {
     return editor.setTheme('ace/theme/' + $(this).val());

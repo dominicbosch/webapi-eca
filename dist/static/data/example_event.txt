@@ -1,4 +1,4 @@
 
-{
-	"eventname": "button-click"
-}
+	{
+		"eventname": "button-click"
+	}

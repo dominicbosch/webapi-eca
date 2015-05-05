@@ -825,15 +825,13 @@ private events need only to be checked against the user's rules
 
 /*
 Stores a webhook.
-
-@public createWebhook( *username, hookid, hookname* )
  */
 
 exports.createWebhook = (function(_this) {
-  return function(username, hookid, hookname) {
+  return function(username, hookid, hookname, isPublic) {
     _this.db.sadd("webhooks", hookid, replyHandler("sadd 'webhooks' -> '" + hookid + "'"));
     _this.db.sadd("user:" + username + ":webhooks", hookid, replyHandler("sadd 'user:" + username + ":webhooks' -> '" + hookid + "'"));
-    return _this.db.hmset("webhook:" + hookid, 'hookname', hookname, 'username', username, replyHandler("set webhook:" + hookid + " -> [" + hookname + ", " + username + "]"));
+    return _this.db.hmset("webhook:" + hookid, 'hookname', hookname, 'username', username, 'isPublic', isPublic === true, replyHandler("set webhook:" + hookid + " -> [" + hookname + ", " + username + "]"));
   };
 })(this);
 
@@ -877,13 +875,17 @@ Gets all the user's webhooks with names.
 
 exports.getAllUserWebhookNames = (function(_this) {
   return function(username, cb) {
+    console.log('username: ' + username);
+    _this.db.smembers("user:" + username + ":webhooks", function(dat) {
+      return log.info(dat);
+    });
     return getSetRecords("user:" + username + ":webhooks", exports.getWebhookName, cb);
   };
 })(this);
 
 
 /*
-Returns all webhook IDs.
+Returns all webhook IDs. Can be used to check for existing webhooks.
  */
 
 exports.getAllWebhookIDs = (function(_this) {

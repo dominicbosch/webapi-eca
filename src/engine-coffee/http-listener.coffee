@@ -35,9 +35,6 @@ app = express()
 
 ###
 Initializes the request routing and starts listening on the given port.
-
-@param {int} port
-@private initRouting( *fShutDown* )
 ###
 exports.init = ( conf ) =>
 	requestHandler.init()
@@ -70,16 +67,21 @@ exports.init = ( conf ) =>
 
 	# **Requests Routing table:**
 
-	
 	# Redirect the views that will be loaded by the swig templating engine
 	app.get '/', ( req, res ) ->
 		res.render 'index', req.session.pub
-
-	app.get '/views/*', ( req, res ) ->
-		res.render req.params[ 0 ], req.session.pub
-
 	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
 	app.use '/', express.static path.resolve __dirname, '..', 'static'
+
+	app.get '/views/*', ( req, res ) ->
+		if req.session.pub || req.params[ 0 ] is 'login'
+			if req.params[ 0 ] is 'admin' && req.session.pub.roles.indexOf( 'admin' ) is -1
+				res.render '401'
+			else
+				res.render req.params[ 0 ], req.session.pub
+		else
+			res.render '401'
+
 
 	# Dynamically load all services from the services folder
 	log.info 'LOADING WEB SERVICES: '
@@ -91,17 +93,17 @@ exports.init = ( conf ) =>
 		servicePath = fileName.substring 0, fileName.length - 3
 		app.use '/service/' + servicePath, require path.resolve __dirname, 'services', fileName
 
-	# - **`GET` to _"/forge"_:** Displays different forge pages
-	app.get '/forge', requestHandler.handleForge
-
 
 	## FIXME remove all redundant routes
 
-	app.post '/admincommand', requestHandler.handleAdminCommand
-	# - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
-	app.post '/event', requestHandler.handleEvent
-	# - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
-	app.post '/webhooks/*', requestHandler.handleWebhooks
+	# # - **`GET` to _"/forge"_:** Displays different forge pages
+	# app.get '/forge', requestHandler.handleForge
+
+	# app.post '/admincommand', requestHandler.handleAdminCommand
+	# # - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
+	# app.post '/event', requestHandler.handleEvent
+	# # - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
+	# app.post '/webhooks/*', requestHandler.handleWebhooks
 
 	# If the routing is getting down here, then we didn't find anything to do and
 	# tell the user that he ran into a 404, Not found
@@ -113,7 +115,7 @@ exports.init = ( conf ) =>
 	# Handle 404 errors
 	app.use ( err, req, res, next ) ->
 		res.status 404 
-		res.render 'error'
+		res.render '404'
 
 	prt = parseInt( conf[ 'http-port' ] ) || 8111 # inbound event channel
 	server = app.listen prt

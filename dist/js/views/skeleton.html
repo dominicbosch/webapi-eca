@@ -9,12 +9,15 @@
 		<script src='/js/lib/bootstrap.min.js' type='text/javascript'></script>
 		<script src="/js/main.js" type="text/javascript" charset="utf-8"></script>
 		<script src="/js/dialog.js" type="text/javascript" charset="utf-8"></script>
+		<link rel="shortcut icon" type="image/x-icon" href="/images/unibas.ico">
 		{% block head %}{% endblock %}
 	</head>
 	<body>
 		<div class="container-fluid">
 			<div class="row">
-				<img id="bannerimg" src="/images/unibas_hpwc.svg" class="img-responsive">
+				<a href="/">
+					<img id="bannerimg" src="/images/unibas_hpwc.svg" class="img-responsive">
+				</a>
 			</div>
 		</div>
 		<nav class="navbar navbar-default">
@@ -33,17 +36,24 @@
 				<!-- Collect the nav links, forms, and other content for toggling -->
 				<div class="collapse navbar-collapse" id="collapsible-navbar">
 					<ul class="nav navbar-nav">
-						<li><a href="/views/events">Event</a></li>
-						<li><a href="/views/rules">Rule</a></li>
-						<li><a href="/views/webhooks">Webhook</a></li>
-						<li><a href="/views/modules?m=et">Event Trigger</a></li>
-						<li><a href="/views/modules?m=ad">Action Dispatcher</a></li>
-						<li><a href="/views/login">Login</a></li>
+						{% if username %}
+							<li><a href="/views/events">Event</a></li>
+							<li><a href="/views/rules">Rule</a></li>
+							<li><a href="/views/webhooks">Webhook</a></li>
+							<li><a href="/views/modules?m=et">Event Trigger</a></li>
+							<li><a href="/views/modules?m=ad">Action Dispatcher</a></li>
+							{% for role in roles %}
+								{% if role == 'admin' %}<li><a href="/views/admin">Administration</a></li>{% endif %}
+							{% endfor %}
+							<li><a id="skeletonLogout" href="#">Logout</a></li>
+						{% else %}
+							<li><a href="/views/login">Login</a></li>
+						{% endif %}
 					</ul>
 				</div>
 			</div>
 		</nav>
-		<div id="message"></div>
+		<div id="skeletonTicker"></div>
 		<div id="mainbody">
 			<h1 id="pagetitle">{% block pagetitle %}{% endblock %}</h1>
 			{% block content %}{% endblock %}

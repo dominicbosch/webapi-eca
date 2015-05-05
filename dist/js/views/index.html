@@ -4,17 +4,22 @@
 
 
 {% block content %}
-<p>
-Activate your Web by creating your own ECA rules, together with powerful Web Accessors!
-</p>
-<p>
-Please visit one of the following pages:
-</p>
-<ul>
-	<li><a href="views/events">Event</a></li>
-	<li><a href="views/rules">Rule</a></li>
-	<li><a href="views/webhooks">Webhook</a></li>
-	<li><a href="views/modules?m=et">Event Trigger</a></li>
-	<li><a href="views/modules?m=ad">Action Dispatcher</a></li>
-</ul>
+
+	{% if username %}
+		<p>
+		Activate your Web by creating your own ECA rules, together with powerful Web Accessors!
+		</p>
+		<p>
+		Start in one of these sections:
+		<ul>
+			<li><a href="/views/events">Event</a></li>
+			<li><a href="/views/rules">Rule</a></li>
+			<li><a href="/views/webhooks">Webhook</a></li>
+			<li><a href="/views/modules?m=et">Event Trigger</a></li>
+			<li><a href="/views/modules?m=ad">Action Dispatcher</a></li>
+		</ul>
+		</p>
+	{% else %}
+		Please login!
+	{% endif %}
 {% endblock %}

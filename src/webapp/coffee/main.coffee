@@ -5,7 +5,12 @@ $( document ).ready () ->
 	elSelected = $( '<span>' ).attr( 'class', 'sr-only' ).text '(current)'
 	els.append( elSelected ).parent().addClass 'active'
 
-	# $( '#tooltip' ).hover ()
+	$( '#skeletonLogout' ).click () ->
+		$.post '/service/session/logout', () ->
+			main.setInfo true, 'Goodbye!'
+			redirect = () ->
+				window.location.href = '/'
+			setTimeout redirect, 500
 
 hoverIn = ( html ) ->
 	( e ) ->
@@ -18,13 +23,13 @@ hoverOut = ( e ) ->
 
 window.main =
 	setInfo: ( isSuccess, msg ) ->
-		$( '#info' ).text msg
-		$( '#info' ).attr 'class', if isSuccess then 'success' else 'error'
+		$( '#skeletonTicker' ).text msg
+		$( '#skeletonTicker' ).attr 'class', if isSuccess then 'success' else 'error'
 		window.scrollTo 0, 0
 
 	clearInfo: () ->
-		$( '#info' ).text ''
-		$( '#info' ).attr 'class', ''
+		$( '#skeletonTicker' ).text ''
+		$( '#skeletonTicker' ).attr 'class', ''
 
 	registerHoverInfo: ( el, file ) ->
 		$.get '/help/' + file, ( html ) ->

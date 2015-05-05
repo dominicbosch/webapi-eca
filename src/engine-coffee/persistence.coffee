@@ -662,14 +662,12 @@ private events need only to be checked against the user's rules
 
 ###
 Stores a webhook.
-
-@public createWebhook( *username, hookid, hookname* )
 ###
-exports.createWebhook = ( username, hookid, hookname ) =>
+exports.createWebhook = ( username, hookid, hookname, isPublic ) =>
 	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
 	@db.sadd "user:#{ username }:webhooks", hookid,
 		replyHandler "sadd 'user:#{ username }:webhooks' -> '#{ hookid }'"
-	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username,
+	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username, 'isPublic', (isPublic is true),
 		replyHandler "set webhook:#{ hookid } -> [#{ hookname }, #{ username }]"
 
 ###
@@ -694,10 +692,13 @@ exports.getUserWebhookIDs = ( username, cb ) =>
 Gets all the user's webhooks with names.
 ###
 exports.getAllUserWebhookNames = ( username, cb ) =>
+	console.log 'username: ' + username
+	@db.smembers "user:#{ username }:webhooks", ( dat ) ->
+		log.info dat
 	getSetRecords "user:#{ username }:webhooks", exports.getWebhookName, cb
 
 ###
-Returns all webhook IDs.
+Returns all webhook IDs. Can be used to check for existing webhooks.
 ###
 exports.getAllWebhookIDs = ( cb ) =>
 	@db.smembers "webhooks", cb

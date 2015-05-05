@@ -32,9 +32,6 @@ app = express();
 
 /*
 Initializes the request routing and starts listening on the given port.
-
-@param {int} port
-@private initRouting( *fShutDown* )
  */
 
 exports.init = (function(_this) {
@@ -71,10 +68,18 @@ exports.init = (function(_this) {
     app.get('/', function(req, res) {
       return res.render('index', req.session.pub);
     });
-    app.get('/views/*', function(req, res) {
-      return res.render(req.params[0], req.session.pub);
-    });
     app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
+    app.get('/views/*', function(req, res) {
+      if (req.session.pub || req.params[0] === 'login') {
+        if (req.params[0] === 'admin' && req.session.pub.roles.indexOf('admin') === -1) {
+          return res.render('401');
+        } else {
+          return res.render(req.params[0], req.session.pub);
+        }
+      } else {
+        return res.render('401');
+      }
+    });
     log.info('LOADING WEB SERVICES: ');
     arrServices = fs.readdirSync(path.resolve(__dirname, 'services')).filter(function(d) {
       return d.substring(d.length - 3) === '.js';
@@ -85,10 +90,6 @@ exports.init = (function(_this) {
       servicePath = fileName.substring(0, fileName.length - 3);
       app.use('/service/' + servicePath, require(path.resolve(__dirname, 'services', fileName)));
     }
-    app.get('/forge', requestHandler.handleForge);
-    app.post('/admincommand', requestHandler.handleAdminCommand);
-    app.post('/event', requestHandler.handleEvent);
-    app.post('/webhooks/*', requestHandler.handleWebhooks);
     app.get('*', function(req, res, next) {
       var err;
       err = new Error();
@@ -97,7 +98,7 @@ exports.init = (function(_this) {
     });
     app.use(function(err, req, res, next) {
       res.status(404);
-      return res.render('error');
+      return res.render('404');
     });
     prt = parseInt(conf['http-port']) || 8111;
     server = app.listen(prt);

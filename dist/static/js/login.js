@@ -1,23 +1,33 @@
-var fOnLoad;
+var fOnLoad, fSubmit;
 
 fOnLoad = function() {
-  if (!window.CryptoJS) {
-    $('#info').text('CryptoJS library missing! Are you connected to the internet?');
-  }
-  return $('#but_submit').click(function() {
-    var data, hp;
-    hp = CryptoJS.SHA3($('#password').val(), {
-      outputLength: 512
-    });
-    data = {
-      username: $('#username').val(),
-      password: hp.toString()
+  $('#password').keypress(function(e) {
+    if (e.which === 13) {
+      return fSubmit();
+    }
+  });
+  return $('#loginButton').click(fSubmit);
+};
+
+fSubmit = function() {
+  var data, hp;
+  main.clearInfo();
+  hp = CryptoJS.SHA3($('#password').val(), {
+    outputLength: 512
+  });
+  data = {
+    username: $('#username').val(),
+    password: hp.toString()
+  };
+  return $.post('/service/session/login', data).done(function(data) {
+    var redirect;
+    main.setInfo(true, 'Authentication successful!');
+    redirect = function() {
+      return window.location.href = '/';
     };
-    return $.post('/session/login', data).done(function(data) {
-      return window.location.href = document.URL;
-    }).fail(function(err) {
-      return alert('Authentication not successful!');
-    });
+    return setTimeout(redirect, 500);
+  }).fail(function(err) {
+    return main.setInfo(false, 'Authentication not successful!');
   });
 };
 

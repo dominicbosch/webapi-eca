@@ -28,8 +28,8 @@ router.post '/login', ( req, res ) =>
 			log.warn "RH | AUTH-UH-OH ( #{ req.body.username } ): #{ err.message }"
 		else
 			# no error, so we can associate the user object from the DB to the session
-			req.session.user = usr
-		if req.session.user
+			req.session.pub = usr
+		if req.session.pub
 			res.send 'OK!'
 		else
 			res.status( 401 ).send 'NO!'
@@ -40,6 +40,6 @@ purged from the session, thus the user will be logged out.
 ###
 router.post '/logout', ( req, res ) ->
 	if req.session 
-		delete req.session.user
+		delete req.session.pub
 		res.send 'Bye!'
 

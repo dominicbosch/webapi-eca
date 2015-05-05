@@ -26,9 +26,9 @@ router.post('/login', (function(_this) {
       if (err) {
         log.warn("RH | AUTH-UH-OH ( " + req.body.username + " ): " + err.message);
       } else {
-        req.session.user = usr;
+        req.session.pub = usr;
       }
-      if (req.session.user) {
+      if (req.session.pub) {
         return res.send('OK!');
       } else {
         return res.status(401).send('NO!');
@@ -45,7 +45,7 @@ purged from the session, thus the user will be logged out.
 
 router.post('/logout', function(req, res) {
   if (req.session) {
-    delete req.session.user;
+    delete req.session.pub;
     return res.send('Bye!');
   }
 });
