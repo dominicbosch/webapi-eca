@@ -17,3 +17,9 @@ db = require '../persistence'
 express = require 'express'
 
 exports = module.exports = express.Router()
+
+
+# FIXME USE WHEN GC FORCED, NEW RULE CREATED A D RULE
+    # global.gc();
+    # console.log('Memory Usage:');
+    # console.log(util.inspect(process.memoryUsage()));

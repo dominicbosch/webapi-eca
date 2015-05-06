@@ -71,8 +71,8 @@ exports.init = (function(_this) {
     app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
     app.get('/views/*', function(req, res) {
       if (req.session.pub || req.params[0] === 'login') {
-        if (req.params[0] === 'admin' && req.session.pub.roles.indexOf('admin') === -1) {
-          return res.render('401_admin');
+        if (req.params[0] === 'admin' && req.session.pub.admin) {
+          return res.render('401_admin', req.session.pub);
         } else {
           return res.render(req.params[0], req.session.pub);
         }
@@ -98,7 +98,7 @@ exports.init = (function(_this) {
     });
     app.use(function(err, req, res, next) {
       res.status(404);
-      return res.render('404');
+      return res.render('404', req.session.pub);
     });
     prt = parseInt(conf['http-port']) || 8111;
     server = app.listen(prt);

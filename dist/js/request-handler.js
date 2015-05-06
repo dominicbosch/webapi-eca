@@ -59,36 +59,25 @@ this.objAdminCmds = {
     return cb(null, data);
   },
   newuser: function(obj, cb) {
-    var data, err, fPersistNewUser, oUser, roles;
+    var data, fPersistNewUser, oUser;
     data = {
       code: 200,
       message: 'User stored thank you!'
     };
     if (obj.username && obj.password) {
-      if (obj.roles) {
-        try {
-          roles = JSON.parse(obj.roles);
-        } catch (_error) {
-          err = _error;
-          log('RH | error parsing newuser roles: ' + err.message);
-          roles = [];
-        }
-      } else {
-        roles = [];
-      }
       oUser = {
         username: obj.username,
         password: obj.password,
-        roles: roles
+        admin: obj.admin === true
       };
       db.storeUser(oUser);
-      fPersistNewUser = function(username, password, roles) {
+      fPersistNewUser = function(oUser) {
         return function(err, data) {
           var users;
           users = JSON.parse(data);
-          users[username] = {
-            password: password,
-            roles: roles
+          users[oUser.username] = {
+            password: oUser.password,
+            admin: oUser.admin
           };
           return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
             if (err) {
@@ -98,7 +87,7 @@ this.objAdminCmds = {
           });
         };
       };
-      fs.readFile(pathUsers, 'utf8', fPersistNewUser(obj.username, obj.password, roles));
+      fs.readFile(pathUsers, 'utf8', fPersistNewUser(oUser));
     } else {
       data.code = 401;
       data.message = 'Missing parameter for this command';
@@ -164,7 +153,7 @@ objects.*
 exports.handleAdminCommand = (function(_this) {
   return function(req, resp) {
     var body;
-    if (req.session && req.session.user && req.session.user.roles.indexOf("admin") > -1) {
+    if (req.session && req.session.user && req.session.user.admin) {
       body = '';
       req.on('data', function(data) {
         return body += data;

@@ -31,7 +31,7 @@ router.post('get', function(req, resp) {
   var msg, page;
   if (!req.session.user) {
     page = 'login';
-  } else if (req.session.user.roles.indexOf("admin") === -1) {
+  } else if (req.session.user.admin) {
     page = 'login';
     msg = 'You need to be admin for this page!';
   } else {

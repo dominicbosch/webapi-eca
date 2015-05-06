@@ -33,7 +33,7 @@ router.post 'get', ( req, resp ) ->
 	if not req.session.user
 		page = 'login'
 	#TODO isAdmin should come from the db role
-	else if req.session.user.roles.indexOf( "admin" ) is -1
+	else if req.session.user.admin
 		page = 'login'
 		msg = 'You need to be admin for this page!'
 	else

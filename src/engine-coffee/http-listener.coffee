@@ -70,13 +70,14 @@ exports.init = ( conf ) =>
 	# Redirect the views that will be loaded by the swig templating engine
 	app.get '/', ( req, res ) ->
 		res.render 'index', req.session.pub
+		
 	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
 	app.use '/', express.static path.resolve __dirname, '..', 'static'
 
 	app.get '/views/*', ( req, res ) ->
 		if req.session.pub || req.params[ 0 ] is 'login'
-			if req.params[ 0 ] is 'admin' && req.session.pub.roles.indexOf( 'admin' ) is -1
-				res.render '401_admin'
+			if req.params[ 0 ] is 'admin' && req.session.pub.admin
+				res.render '401_admin', req.session.pub
 			else
 				res.render req.params[ 0 ], req.session.pub
 		else
@@ -115,7 +116,7 @@ exports.init = ( conf ) =>
 	# Handle 404 errors
 	app.use ( err, req, res, next ) ->
 		res.status 404 
-		res.render '404'
+		res.render '404', req.session.pub
 
 	prt = parseInt( conf[ 'http-port' ] ) || 8111 # inbound event channel
 	server = app.listen prt

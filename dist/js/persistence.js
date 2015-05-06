@@ -596,8 +596,7 @@ exports.storeUser = (function(_this) {
     log.info("DB | storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
-      _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
-      return _this.db.hset("user:" + objUser.username, "roles", JSON.stringify(objUser.roles), replyHandler("hset 'user:" + objUser.username + "' field 'roles' -> [objUser]"));
+      return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
     } else {
       return log.warn(new Error('DB | username or password was missing'));
     }
@@ -628,12 +627,7 @@ Fetch a user by id and pass it to cb(err, obj).
 exports.getUser = (function(_this) {
   return function(userId, cb) {
     log.info("DB | getUser: '" + userId + "'");
-    return _this.db.hgetall("user:" + userId, function(err, obj) {
-      try {
-        obj.roles = JSON.parse(obj.roles);
-      } catch (_error) {}
-      return cb(err, obj);
-    });
+    return _this.db.hgetall("user:" + userId, cb);
   };
 })(this);
 
@@ -674,20 +668,7 @@ exports.deleteUser = (function(_this) {
       }
       return results;
     });
-    _this.db.del("user:" + userId + ":active-rules", replyHandler("del user:" + userId + ":active-rules"));
-    _this.db.smembers("user:" + userId + ":roles", function(err, obj) {
-      var delRoleUser, i, id, len, results;
-      delRoleUser = function(roleId) {
-        return _this.db.srem("role:" + roleId + ":users", userId, replyHandler("srem 'role:" + roleId + ":users' -> '" + userId + "'"));
-      };
-      results = [];
-      for (i = 0, len = obj.length; i < len; i++) {
-        id = obj[i];
-        results.push(delRoleUser(id));
-      }
-      return results;
-    });
-    return _this.db.del("user:" + userId + ":roles", replyHandler("del 'user:" + userId + ":roles'"));
+    return _this.db.del("user:" + userId + ":active-rules", replyHandler("del user:" + userId + ":active-rules"));
   };
 })(this);
 
@@ -712,7 +693,6 @@ exports.loginUser = (function(_this) {
         } else if (obj && obj.password) {
           if (pw === obj.password) {
             log.info("DB | User '" + obj.username + "' logged in!");
-            obj.roles = JSON.parse(obj.roles);
             return cb(null, obj);
           } else {
             return cb(new Error('Wrong credentials!'), null);
@@ -723,96 +703,6 @@ exports.loginUser = (function(_this) {
       };
     };
     return _this.db.hgetall("user:" + userId, fCheck(password));
-  };
-})(this);
-
-
-/*
-## User Roles
- */
-
-
-/*
-Associate a role with a user.
-
-@public storeUserRole( *userId, role* )
- */
-
-exports.storeUserRole = (function(_this) {
-  return function(userId, role) {
-    log.info("DB | storeUserRole: '" + userId + ":" + role + "'");
-    _this.db.sadd('roles', role, replyHandler("sadd '" + role + "' to 'roles'"));
-    _this.db.sadd("user:" + userId + ":roles", role, replyHandler("sadd 'user:" + userId + ":roles' -> '" + role + "'"));
-    return _this.db.sadd("role:" + role + ":users", userId, replyHandler("sadd 'role:" + role + ":users' -> '" + userId + "'"));
-  };
-})(this);
-
-
-/*
-Deassociate a role from a user.
-
-@public deleteRole( *userId, role* )
- */
-
-exports.deleteRole = (function(_this) {
-  return function(role) {
-    log.info("DB | deleteRole: '" + role + "'");
-    _this.db.smembers("role:" + role + ":users", function(err, obj) {
-      var delUserRole, i, id, len, results;
-      delUserRole = function(userId) {
-        return _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
-      };
-      results = [];
-      for (i = 0, len = obj.length; i < len; i++) {
-        id = obj[i];
-        results.push(delUserRole(id));
-      }
-      return results;
-    });
-    return _this.db.srem("roles", role, replyHandler("srem 'roles' -> '" + role + "'"));
-  };
-})(this);
-
-
-/*
-Fetch all roles of a user and pass them to cb(err, obj).
-
-@public getUserRoles( *userId, cb* )
- */
-
-exports.getUserRoles = (function(_this) {
-  return function(userId, cb) {
-    log.info("DB | getUserRoles: '" + userId + "'");
-    return _this.db.smembers("user:" + userId + ":roles", cb);
-  };
-})(this);
-
-
-/*
-Fetch all users of a role and pass them to cb(err, obj).
-
-@public getRoleUsers( *role, cb* )
- */
-
-exports.getRoleUsers = (function(_this) {
-  return function(role, cb) {
-    log.info("DB | getRoleUsers: '" + role + "'");
-    return _this.db.smembers("role:" + role + ":users", cb);
-  };
-})(this);
-
-
-/*
-Remove a role from a user.
-
-@public removeUserRole( *userId, role* )
- */
-
-exports.removeUserRole = (function(_this) {
-  return function(userId, role) {
-    log.info("DB | removeRoleFromUser: role '" + role + "', user '" + userId + "'");
-    _this.db.srem("user:" + userId + ":roles", role, replyHandler("srem 'user:" + userId + ":roles' -> '" + role + "'"));
-    return _this.db.srem("role:" + role + ":users", userId, replyHandler("srem 'role:" + role + ":users' -> '" + userId + "'"));
   };
 })(this);
 

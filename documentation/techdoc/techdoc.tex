@@ -70,6 +70,7 @@ Crossplatform
 	"db-port": 6379,
 	"db-select": 0,
 	"keygenpp": "[Should come from command prompt!]",
+	"gc": "forced",
 	"log": {
 		"mode": "productive",
 		"std-level": "info",
@@ -78,6 +79,8 @@ Crossplatform
 	}
 }
 \end{lstlisting}
+	gc: forced means the globals.gc() commands are issued at important sections to clear vm memory. Use with nodejs flags --nouse_idle_notification and --expose_gc.
+	Eventually use --max-old-space-size if you run into memory troubles. Also try with --trace-gc --trace-gc-verbose.
 
 	\subsection{User Configuration}
 		These configurations are made in the file \texttt{config/users.json}.

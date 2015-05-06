@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block content %}
-	<h3>I want to listen for events named:</h3>
-	<p><input type="text" id="inp_hookname" /></p>
-	<p>This is a public Webhook : <input type="checkbox" id="inp_public" /></p>
-	<p><button type="button" id="but_submit">Create Webhook!</button></p>
+	<h3>Create Webhook</h3>
+	<p>Event Name: <input type="text" id="inp_hookname" /></p>
+	<p>Events over this Webhook are available to all users : <input type="checkbox" id="inp_public" /></p>
+	<p><button type="button" id="but_submit">Create!</button></p>
 	<p><div id="display_hookurl"></div></p>
 	<p><div id="table_webhooks"></div></p>
 {% endblock %}

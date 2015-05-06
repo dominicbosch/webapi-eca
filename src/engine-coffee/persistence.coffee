@@ -505,8 +505,6 @@ exports.storeUser = ( objUser ) =>
 			replyHandler "sadd 'users' -> '#{ objUser.username }'"
 		@db.hmset "user:#{ objUser.username }", objUser,
 			replyHandler "hmset 'user:#{ objUser.username }' -> [objUser]"
-		@db.hset "user:#{ objUser.username }", "roles", JSON.stringify( objUser.roles ),
-			replyHandler "hset 'user:#{ objUser.username }' field 'roles' -> [objUser]"
 	else
 		log.warn new Error 'DB | username or password was missing'
 
@@ -526,10 +524,7 @@ Fetch a user by id and pass it to cb(err, obj).
 ###
 exports.getUser = ( userId, cb ) =>
 	log.info "DB | getUser: '#{ userId }'"
-	@db.hgetall "user:#{ userId }", ( err, obj ) =>
-		try
-			obj.roles = JSON.parse obj.roles
-		cb err, obj
+	@db.hgetall "user:#{ userId }", cb
 	
 ###
 Deletes a user and all his associated linked and active rules.
@@ -559,13 +554,6 @@ exports.deleteUser = ( userId ) =>
 	@db.del "user:#{ userId }:active-rules",
 		replyHandler "del user:#{ userId }:active-rules"
 
-	# We also need to delete all associated roles
-	@db.smembers "user:#{ userId }:roles", ( err, obj ) =>
-		delRoleUser = ( roleId ) =>
-			@db.srem "role:#{ roleId }:users", userId,
-				replyHandler "srem 'role:#{ roleId }:users' -> '#{ userId }'"
-		delRoleUser id for id in obj
-	@db.del "user:#{ userId }:roles", replyHandler "del 'user:#{ userId }:roles'"
 	# TODO we also need to delete this user's modules
 
 ###
@@ -585,75 +573,12 @@ exports.loginUser = ( userId, password, cb ) =>
 			else if obj and obj.password
 				if pw is obj.password
 					log.info "DB | User '#{ obj.username }' logged in!" 
-					obj.roles = JSON.parse obj.roles
 					cb null, obj
 				else
 					cb (new Error 'Wrong credentials!'), null
 			else
 				cb (new Error 'User not found!'), null
 	@db.hgetall "user:#{ userId }", fCheck password
-
-###
-## User Roles
-###
-
-###
-Associate a role with a user.
-
-@public storeUserRole( *userId, role* )
-###
-exports.storeUserRole = ( userId, role ) =>
-	log.info "DB | storeUserRole: '#{ userId }:#{ role }'"
-	@db.sadd 'roles', role, replyHandler "sadd '#{ role }' to 'roles'"
-	@db.sadd "user:#{ userId }:roles", role,
-		replyHandler "sadd 'user:#{ userId }:roles' -> '#{ role }'"
-	@db.sadd "role:#{ role }:users", userId,
-		replyHandler "sadd 'role:#{ role }:users' -> '#{ userId }'"
-
-###
-Deassociate a role from a user.
-
-@public deleteRole( *userId, role* )
-###
-exports.deleteRole = ( role ) =>
-	log.info "DB | deleteRole: '#{ role }'"
-	@db.smembers "role:#{ role }:users", ( err, obj ) =>
-		delUserRole = ( userId ) =>
-			@db.srem "user:#{ userId }:roles", role,
-				replyHandler "srem 'user:#{ userId }:roles' -> '#{ role }'"
-		delUserRole id for id in obj
-	@db.srem "roles", role,
-		replyHandler "srem 'roles' -> '#{ role }'"
-
-###
-Fetch all roles of a user and pass them to cb(err, obj).
-
-@public getUserRoles( *userId, cb* )
-###
-exports.getUserRoles = ( userId, cb ) =>
-	log.info "DB | getUserRoles: '#{ userId }'"
-	@db.smembers "user:#{ userId }:roles", cb
-	
-###
-Fetch all users of a role and pass them to cb(err, obj).
-
-@public getRoleUsers( *role, cb* )
-###
-exports.getRoleUsers = ( role, cb ) =>
-	log.info "DB | getRoleUsers: '#{ role }'"
-	@db.smembers "role:#{ role }:users", cb
-
-###
-Remove a role from a user.
-
-@public removeUserRole( *userId, role* )
-###
-exports.removeUserRole = ( userId, role ) =>
-	log.info "DB | removeRoleFromUser: role '#{ role }', user '#{ userId }'"
-	@db.srem "user:#{ userId }:roles", role,
-		replyHandler "srem 'user:#{ userId }:roles' -> '#{ role }'"
-	@db.srem "role:#{ role }:users", userId,
-		replyHandler "srem 'role:#{ role }:users' -> '#{ userId }'"
 
 ###
 TODO: user should be able to select whether the events being sent to the webhook are available to all.

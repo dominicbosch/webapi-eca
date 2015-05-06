@@ -58,32 +58,24 @@ exports.init = () ->
 			code: 200
 			message: 'User stored thank you!'
 		if obj.username and obj.password
-			if obj.roles
-				try
-					roles = JSON.parse obj.roles
-				catch err
-					log 'RH | error parsing newuser roles: ' + err.message
-					roles = []
-			else
-				roles = []
 			oUser = 
 				username: obj.username
 				password: obj.password
-				roles: roles
+				admin: (obj.admin is true)
 			db.storeUser oUser
 
-			fPersistNewUser = ( username, password, roles ) ->
+			fPersistNewUser = ( oUser ) ->
 				( err, data ) -> 
 					users = JSON.parse data
-					users[ username ] =
-						password: password
-						roles: roles
+					users[ oUser.username ] =
+						password: oUser.password
+						admin: oUser.admin
 					fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
 						if err
 							log.error "RH | Unable to write new user file! "
 							log.error err
 
-			fs.readFile pathUsers, 'utf8', fPersistNewUser obj.username, obj.password, roles
+			fs.readFile pathUsers, 'utf8', fPersistNewUser oUser
 		else
 			data.code = 401
 			data.message = 'Missing parameter for this command' 
@@ -138,7 +130,7 @@ objects.*
 exports.handleAdminCommand = ( req, resp ) =>
 	if req.session and
 			req.session.user and
-			req.session.user.roles.indexOf( "admin" ) > -1
+			req.session.user.admin
 		body = ''
 		req.on 'data', ( data ) ->
 			body += data

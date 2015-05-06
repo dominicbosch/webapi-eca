@@ -3,6 +3,7 @@
 	"db-port": 6379,
 	"db-select": 0,
 	"mode": "development",
+	"gc": "forced",
 	"log": {
 		"std-level": "info",
 		"file-level": "info",
