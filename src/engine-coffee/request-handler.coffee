@@ -88,7 +88,6 @@ Handles possible events that were posted to this server and pushes them into the
 event queue.
 ###
 exports.handleEvent = ( req, res ) ->
-	console.log req.body	
 	# If required event properties are present we process the event #
 	if req.body and req.body.eventname
 		answ =
@@ -166,6 +165,7 @@ exports.handleWebhooks = ( req, resp ) =>
 		req.on 'data', ( data ) ->
 			body += data
 		req.on 'end', () ->
+			body.engineReceivedTime = (new Date()).getTime()
 			obj =
 				eventname: oHook.hookname
 				body: body
