@@ -83,6 +83,11 @@ exports.init = ( conf ) =>
 		else
 			res.render '401'
 
+	app.use '/service/*', ( req, res, next ) ->
+		if req.session.pub || req.params[ 0 ] is 'session/login'
+			next()
+		else
+			res.status( 401 ).send 'Not logged in!'
 
 	# Dynamically load all services from the services folder
 	log.info 'LOADING WEB SERVICES: '

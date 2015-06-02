@@ -76,9 +76,8 @@ exports.addRuleListener = ( eh ) =>
 ###
 Processes a user request coming through the request-handler.
 
-- `user` is the user object as it comes from the DB.
-- `oReq` is the request object that contains:
-
+	- `user` is the user object as it comes from the DB.
+	- `oReq` is the request object that contains:
 	- `command` as a string 
 	- `body` an optional stringified JSON object 
 The callback function `callback( obj )` will receive an object
@@ -113,19 +112,18 @@ exports.processRequest = ( user, oReq, callback ) ->
 # ###
 
 
-exports.router = router = express.Router()
+# exports.router = router = express.Router()
+# router.use ( req, res, next ) ->
+# 	if req.session and req.session.user
+# 		next()
+# 	else
+# 		res.status( 401 ).send 'Login first!'
 
-router.use ( req, res, next ) ->
-	if req.session and req.session.user
-		next()
-	else
-		res.status( 401 ).send 'Login first!'
-
-router.post 'get_public_key', ( req, res ) ->
-	obj =
-		code: 200
-		message: encryption.getPublicKey()
-	res.status( obj.code ).send obj
+# router.post 'get_public_key', ( req, res ) ->
+# 	obj =
+# 		code: 200
+# 		message: encryption.getPublicKey()
+# 	res.status( obj.code ).send obj
 
 # router.post 'get_public_key', ( req, res ) ->
 # router.post 'get_public_key', ( req, res ) ->

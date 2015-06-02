@@ -204,7 +204,7 @@ shutDown = (function(_this) {
 
 
 /*
-## Process Commands
+ *# Process Commands
 
 When the server is run as a child process, this function handles messages
 from the parent process (e.g. the testing suite)

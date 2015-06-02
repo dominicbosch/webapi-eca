@@ -80,6 +80,13 @@ exports.init = (function(_this) {
         return res.render('401');
       }
     });
+    app.use('/service/*', function(req, res, next) {
+      if (req.session.pub || req.params[0] === 'session/login') {
+        return next();
+      } else {
+        return res.status(401).send('Not logged in!');
+      }
+    });
     log.info('LOADING WEB SERVICES: ');
     arrServices = fs.readdirSync(path.resolve(__dirname, 'services')).filter(function(d) {
       return d.substring(d.length - 3) === '.js';

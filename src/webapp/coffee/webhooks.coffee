@@ -12,7 +12,7 @@ hostUrl = [ location.protocol, '//', location.host ].join ''
 
 fIssueRequest = ( args ) ->
 	main.clearInfo()
-	$.post( '/usercommand/' + args.command, args.data )
+	$.post( '/service/webhooks/' + args.command, args.data )
 		.done args.done
 		.fail args.fail
 
@@ -20,14 +20,13 @@ fIssueRequest = ( args ) ->
 fFailedRequest = ( msg ) ->
 	( err ) ->
 		if err.status is 401
-			window.location.href = 'forge?page=forge_rule'
+			window.location.href = '/'
 		else
 			main.setInfo false, msg
 
-
 fUpdateWebhookList = ( cb ) ->
 	fIssueRequest
-		command: 'get_all_webhooks'
+		command: 'getall'
 		done: fProcessWebhookList cb
 		fail: fFailedRequest 'Unable to get Webhook list'
 
@@ -86,7 +85,7 @@ fOnLoad = () ->
 		else
 			# $( '#display_hookurl *' ).remove()
 			fIssueRequest
-				command: 'create_webhook'
+				command: 'create'
 				data: 
 					body: JSON.stringify
 						hookname: hookname
@@ -107,7 +106,7 @@ fOnLoad = () ->
 			url = $( 'input', $( this ).closest( 'tr' ) ).val()
 			arrUrl = url.split '/'
 			fIssueRequest
-				command: 'delete_webhook'
+				command: 'delete'
 				data: 
 					body: JSON.stringify
 						hookid: arrUrl[ arrUrl.length - 1 ]

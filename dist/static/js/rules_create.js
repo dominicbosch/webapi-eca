@@ -1,5 +1,5 @@
-var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, j, len, oParams, param, strPublicKey, table, tr,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, oParams, param, strPublicKey, table, tr, _i, _len,
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 strPublicKey = '';
 
@@ -7,8 +7,8 @@ arrParams = window.location.search.substring(1).split('&');
 
 oParams = {};
 
-for (j = 0, len = arrParams.length; j < len; j++) {
-  param = arrParams[j];
+for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+  param = arrParams[_i];
   arrKV = param.split('=');
   oParams[arrKV[0]] = arrKV[1];
 }
@@ -207,7 +207,7 @@ fPrepareEventType = function(eventtype, cb) {
       return fIssueRequest({
         command: 'get_event_triggers',
         done: function(data) {
-          var err, events, evt, id, k, len1, oEps;
+          var err, events, evt, id, oEps, _j, _len1;
           try {
             oEps = JSON.parse(data.message);
             if (JSON.stringify(oEps) === '{}') {
@@ -219,8 +219,8 @@ fPrepareEventType = function(eventtype, cb) {
               $('#select_eventtrigger option').remove();
               for (id in oEps) {
                 events = oEps[id];
-                for (k = 0, len1 = events.length; k < len1; k++) {
-                  evt = events[k];
+                for (_j = 0, _len1 = events.length; _j < _len1; _j++) {
+                  evt = events[_j];
                   $('#select_eventtrigger').append($('<option>').text(id + ' -> ' + evt));
                 }
               }
@@ -310,9 +310,9 @@ fFillEventParams = function(moduleId) {
       })
     },
     done: function(data) {
-      var oParam, par, results;
+      var oParam, par, _results;
       oParams = JSON.parse(data.message);
-      results = [];
+      _results = [];
       for (param in oParams) {
         oParam = oParams[param];
         par = $("#event_trigger_params tr").filter(function() {
@@ -320,11 +320,11 @@ fFillEventParams = function(moduleId) {
         });
         $('input', par).val(oParam.value);
         $('input', par).attr('unchanged', 'true');
-        results.push($('input', par).change(function() {
+        _results.push($('input', par).change(function() {
           return $(this).attr('unchanged', 'false');
         }));
       }
-      return results;
+      return _results;
     }
   });
 };
@@ -338,7 +338,7 @@ fFetchEventFunctionArgs = function(arrName) {
       })
     },
     done: function(data) {
-      var functionArgument, k, len1, ref, td;
+      var functionArgument, td, _j, _len1, _ref;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
@@ -346,9 +346,9 @@ fFetchEventFunctionArgs = function(arrName) {
             $('#event_trigger_params').append($("<b>").text('Required Rule-specific Data:'));
           }
           table = $('<table>').appendTo($('#event_trigger_params'));
-          ref = oParams[arrName[1]];
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            functionArgument = ref[k];
+          _ref = oParams[arrName[1]];
+          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+            functionArgument = _ref[_j];
             tr = $('<tr>').attr('class', 'funcMappings').appendTo(table);
             tr.append($('<td>').css('width', '20px'));
             td = $('<td>').appendTo(tr);
@@ -378,32 +378,32 @@ fFetchEventFunctionArgs = function(arrName) {
 
 fAddEventUserArgs = function(name) {
   return function(data) {
-    var arrFuncs, key, oFunc, par, ref, results;
-    ref = data.message;
-    results = [];
-    for (key in ref) {
-      arrFuncs = ref[key];
+    var arrFuncs, key, oFunc, par, _ref, _results;
+    _ref = data.message;
+    _results = [];
+    for (key in _ref) {
+      arrFuncs = _ref[key];
       par = $("#event_trigger_params");
-      results.push((function() {
-        var k, len1, ref1, results1;
-        ref1 = JSON.parse(arrFuncs);
-        results1 = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          oFunc = ref1[k];
+      _results.push((function() {
+        var _j, _len1, _ref1, _results1;
+        _ref1 = JSON.parse(arrFuncs);
+        _results1 = [];
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          oFunc = _ref1[_j];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
-          results1.push($("input[type=text]", tr).val(oFunc.value));
+          _results1.push($("input[type=text]", tr).val(oFunc.value));
         }
-        return results1;
+        return _results1;
       })());
     }
-    return results;
+    return _results;
   };
 };
 
 fAddSelectedAction = function(name) {
-  var arrEls, arrName, fDelayed, img, ref, td;
+  var arrEls, arrName, fDelayed, img, td, _ref;
   arrName = name.split(' -> ');
   arrEls = $("#action_dispatcher_params div.modName").map(function() {
     return $(this).text();
@@ -415,7 +415,7 @@ fAddSelectedAction = function(name) {
   tr.append($('<td>').attr('class', 'title').text(name));
   td = $('<td>').attr('class', 'funcMappings').appendTo(tr);
   fFetchActionFunctionArgs(td, arrName);
-  if (ref = arrName[0], indexOf.call(arrEls, ref) < 0) {
+  if (_ref = arrName[0], __indexOf.call(arrEls, _ref) < 0) {
     fFetchActionParams(arrName[0]);
   }
   $("#select_actions option").each(function() {
@@ -438,7 +438,7 @@ fFetchActionParams = function(modName) {
       })
     },
     done: function(data) {
-      var comment, div, inp, name, results, shielded, subdiv;
+      var comment, div, inp, name, shielded, subdiv, _results;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (JSON.stringify(oParams) !== '{}') {
@@ -461,7 +461,7 @@ fFetchActionParams = function(modName) {
           });
           table = $('<table>');
           div.append(table);
-          results = [];
+          _results = [];
           for (name in oParams) {
             shielded = oParams[name];
             tr = $('<tr>');
@@ -474,9 +474,9 @@ fFetchActionParams = function(modName) {
               inp.attr('type', 'text');
             }
             tr.append($('<td>').text(' : ').append(inp));
-            results.push(table.append(tr));
+            _results.push(table.append(tr));
           }
-          return results;
+          return _results;
         }
       }
     },
@@ -493,24 +493,24 @@ fFetchActionFunctionArgs = function(tag, arrName) {
       })
     },
     done: function(data) {
-      var functionArgument, k, len1, ref, results, td;
+      var functionArgument, td, _j, _len1, _ref, _results;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
           table = $('<table>').appendTo(tag);
-          ref = oParams[arrName[1]];
-          results = [];
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            functionArgument = ref[k];
+          _ref = oParams[arrName[1]];
+          _results = [];
+          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+            functionArgument = _ref[_j];
             tr = $('<tr>').appendTo(table);
             td = $('<td>').appendTo(tr);
             td.append($('<div>').attr('class', 'funcarg').text(functionArgument));
             tr.append(td);
             td = $('<td>').appendTo(tr);
             td.append($('<input>').attr('type', 'text'));
-            results.push(tr.append(td));
+            _results.push(tr.append(td));
           }
-          return results;
+          return _results;
         }
       }
     },
@@ -542,12 +542,12 @@ fFillActionFunction = function(name) {
 
 fAddActionUserParams = function(name) {
   return function(data) {
-    var domMod, oParam, par, results;
+    var domMod, oParam, par, _results;
     oParams = JSON.parse(data.message);
     domMod = $("#action_dispatcher_params div").filter(function() {
       return $('div.modName', this).text() === name;
     });
-    results = [];
+    _results = [];
     for (param in oParams) {
       oParam = oParams[param];
       par = $("tr", domMod).filter(function() {
@@ -555,39 +555,39 @@ fAddActionUserParams = function(name) {
       });
       $('input', par).val(oParam.value);
       $('input', par).attr('unchanged', 'true');
-      results.push($('input', par).change(function() {
+      _results.push($('input', par).change(function() {
         return $(this).attr('unchanged', 'false');
       }));
     }
-    return results;
+    return _results;
   };
 };
 
 fAddActionUserArgs = function(name) {
   return function(data) {
-    var arrFuncs, key, oFunc, par, ref, results;
-    ref = data.message;
-    results = [];
-    for (key in ref) {
-      arrFuncs = ref[key];
+    var arrFuncs, key, oFunc, par, _ref, _results;
+    _ref = data.message;
+    _results = [];
+    for (key in _ref) {
+      arrFuncs = _ref[key];
       par = $("#selected_actions tr").filter(function() {
-        return $('td.title', this).text() === (name + " -> " + key);
+        return $('td.title', this).text() === ("" + name + " -> " + key);
       });
-      results.push((function() {
-        var k, len1, ref1, results1;
-        ref1 = JSON.parse(arrFuncs);
-        results1 = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          oFunc = ref1[k];
+      _results.push((function() {
+        var _j, _len1, _ref1, _results1;
+        _ref1 = JSON.parse(arrFuncs);
+        _results1 = [];
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          oFunc = _ref1[_j];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
-          results1.push($("input[type=text]", tr).val(oFunc.value));
+          _results1.push($("input[type=text]", tr).val(oFunc.value));
         }
-        return results1;
+        return _results1;
       })());
     }
-    return results;
+    return _results;
   };
 };
 
@@ -646,7 +646,7 @@ fOnLoad = function() {
   fIssueRequest({
     command: 'get_action_dispatchers',
     done: function(data) {
-      var act, actions, arrEls, err, i, module, oAis, results;
+      var act, actions, arrEls, err, i, module, oAis, _results;
       try {
         oAis = JSON.parse(data.message);
       } catch (_error) {
@@ -655,28 +655,28 @@ fOnLoad = function() {
         return;
       }
       i = 0;
-      results = [];
+      _results = [];
       for (module in oAis) {
         actions = oAis[module];
-        results.push((function() {
-          var k, len1, results1;
-          results1 = [];
-          for (k = 0, len1 = actions.length; k < len1; k++) {
-            act = actions[k];
+        _results.push((function() {
+          var _j, _len1, _results1;
+          _results1 = [];
+          for (_j = 0, _len1 = actions.length; _j < _len1; _j++) {
+            act = actions[_j];
             i++;
             arrEls = $("#action_dispatcher_params div").filter(function() {
-              return $(this).text() === (module + " -> " + act);
+              return $(this).text() === ("" + module + " -> " + act);
             });
             if (arrEls.length === 0) {
-              results1.push($('#select_actions').append($('<option>').text(module + ' -> ' + act)));
+              _results1.push($('#select_actions').append($('<option>').text(module + ' -> ' + act)));
             } else {
-              results1.push(void 0);
+              _results1.push(void 0);
             }
           }
-          return results1;
+          return _results1;
         })());
       }
-      return results;
+      return _results;
     },
     fail: fFailedRequest('Error fetching Action Dispatchers')
   });
@@ -840,11 +840,11 @@ fOnLoad = function() {
                   $('#info').text(data.message);
                   return $('#info').attr('class', 'success');
                 },
-                fail: fFailedRequest(obj.id + " not stored!")
+                fail: fFailedRequest("" + obj.id + " not stored!")
               });
             }
           } else {
-            return fFailedRequest(obj.id + " not stored!")(err);
+            return fFailedRequest("" + obj.id + " not stored!")(err);
           }
         };
       };
@@ -897,7 +897,7 @@ fOnLoad = function() {
         if (oRule) {
           $('#input_id').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, k, len1, mins, ref, results;
+            var action, arrName, d, mins, _j, _len1, _ref, _results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -929,14 +929,14 @@ fOnLoad = function() {
             }
             editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
             domSectionSelectedActions.show();
-            ref = oRule.actions;
-            results = [];
-            for (k = 0, len1 = ref.length; k < len1; k++) {
-              action = ref[k];
+            _ref = oRule.actions;
+            _results = [];
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              action = _ref[_j];
               arrName = action.split(' -> ');
-              results.push(fAddSelectedAction(action));
+              _results.push(fAddSelectedAction(action));
             }
-            return results;
+            return _results;
           });
         }
       },

@@ -277,7 +277,6 @@ processEvent = ( evt ) =>
 		else
 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
-	log.info 'EN | Processing event: ' + evt.eventname
 	fCheckEventForUser = ( userName, oUser ) =>
 		for ruleName, oMyRule of oUser
 
@@ -292,6 +291,7 @@ processEvent = ( evt ) =>
 					arr = action.split ' -> '
 					fSearchAndInvokeAction listUserRules, [ userName, ruleName, 'actions', arr[0]], arr[1], evt, 0
 
+	log.info 'EN | Processing event: ' + evt.eventname
 	# If the event is bound to a user, we only process it for him
 	if evt.username
 		fCheckEventForUser evt.username, listUserRules[ evt.username ]

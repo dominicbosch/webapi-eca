@@ -104,7 +104,6 @@ event queue.
 
 exports.handleEvent = function(req, res) {
   var answ;
-  console.log(req.body);
   if (req.body && req.body.eventname) {
     answ = {
       code: 200,
@@ -159,7 +158,7 @@ exports.handleAdminCommand = (function(_this) {
         return body += data;
       });
       return req.on('end', function() {
-        var arrCmd, arrKV, arrParams, i, keyVal, len, oParams, obj;
+        var arrCmd, arrKV, arrParams, keyVal, oParams, obj, _i, _len;
         console.log('RH | body is ' + typeof body);
         obj = body;
         _this.log.info('RH | Received admin request: ' + obj.command);
@@ -169,8 +168,8 @@ exports.handleAdminCommand = (function(_this) {
         } else {
           arrParams = arrCmd.slice(1);
           oParams = {};
-          for (i = 0, len = arrParams.length; i < len; i++) {
-            keyVal = arrParams[i];
+          for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+            keyVal = arrParams[_i];
             arrKV = keyVal.split(":");
             if (arrKV.length === 2) {
               oParams[arrKV[0]] = arrKV[1];
@@ -204,6 +203,7 @@ exports.handleWebhooks = (function(_this) {
       });
       return req.on('end', function() {
         var obj;
+        body.engineReceivedTime = (new Date()).getTime();
         obj = {
           eventname: oHook.hookname,
           body: body

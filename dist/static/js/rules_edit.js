@@ -30,12 +30,12 @@ fOnLoad = function() {
     return $.post('/usercommand/get_rules').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateRuleList = function(data) {
-    var i, img, inp, len, ref, results, ruleName, tr;
+    var img, inp, ruleName, tr, _i, _len, _ref, _results;
     $('#tableRules tr').remove();
-    ref = data.message;
-    results = [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      ruleName = ref[i];
+    _ref = data.message;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      ruleName = _ref[_i];
       tr = $('<tr>');
       img = $('<img>').attr('class', 'del').attr('title', 'Delete Rule').attr('src', 'images/red_cross_small.png');
       tr.append($('<td>').append(img));
@@ -45,9 +45,9 @@ fOnLoad = function() {
       tr.append($('<td>').append(img));
       inp = $('<div>').text(ruleName);
       tr.append($('<td>').append(inp));
-      results.push($('#tableRules').append(tr));
+      _results.push($('#tableRules').append(tr));
     }
-    return results;
+    return _results;
   };
   fFetchRules();
   $('#tableRules').on('click', 'img.del', function() {

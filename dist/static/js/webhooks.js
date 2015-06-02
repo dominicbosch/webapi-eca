@@ -18,13 +18,13 @@ hostUrl = [location.protocol, '//', location.host].join('');
 
 fIssueRequest = function(args) {
   main.clearInfo();
-  return $.post('/usercommand/' + args.command, args.data).done(args.done).fail(args.fail);
+  return $.post('/service/webhooks/' + args.command, args.data).done(args.done).fail(args.fail);
 };
 
 fFailedRequest = function(msg) {
   return function(err) {
     if (err.status === 401) {
-      return window.location.href = 'forge?page=forge_rule';
+      return window.location.href = '/';
     } else {
       return main.setInfo(false, msg);
     }
@@ -33,7 +33,7 @@ fFailedRequest = function(msg) {
 
 fUpdateWebhookList = function(cb) {
   return fIssueRequest({
-    command: 'get_all_webhooks',
+    command: 'getall',
     done: fProcessWebhookList(cb),
     fail: fFailedRequest('Unable to get Webhook list')
   });
@@ -93,7 +93,7 @@ fOnLoad = function() {
       return main.setInfo(false, 'Please provide an Event Name for your new Webhook!');
     } else {
       return fIssueRequest({
-        command: 'create_webhook',
+        command: 'create',
         data: {
           body: JSON.stringify({
             hookname: hookname
@@ -124,7 +124,7 @@ fOnLoad = function() {
       url = $('input', $(this).closest('tr')).val();
       arrUrl = url.split('/');
       return fIssueRequest({
-        command: 'delete_webhook',
+        command: 'delete',
         data: {
           body: JSON.stringify({
             hookid: arrUrl[arrUrl.length - 1]

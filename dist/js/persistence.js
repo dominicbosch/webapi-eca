@@ -20,7 +20,7 @@ Persistence
 >
  */
 var IndexedModules, exports, getSetRecords, log, redis, replyHandler,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 log = require('./logging');
 
@@ -50,10 +50,10 @@ exports.init = (function(_this) {
 
 exports.initPort = (function(_this) {
   return function(port) {
-    var ref;
+    var _ref;
     _this.connRefused = false;
-    if ((ref = _this.db) != null) {
-      ref.quit();
+    if ((_ref = _this.db) != null) {
+      _ref.quit();
     }
     _this.db = redis.createClient(port, 'localhost', {
       connect_timeout: 2000
@@ -97,10 +97,10 @@ exports.isConnected = (function(_this) {
       } else {
         numAttempts = 0;
         fCheckConnection = function() {
-          var ref;
+          var _ref;
           if (_this.connRefused) {
-            if ((ref = _this.db) != null) {
-              ref.quit();
+            if ((_ref = _this.db) != null) {
+              _ref.quit();
             }
             return cb(new Error('DB | Connection refused! Wrong port?'));
           } else {
@@ -216,7 +216,7 @@ getSetRecords = (function(_this) {
   return function(set, fSingle, cb) {
     log.info("DB | Fetching set records: '" + set + "'");
     return _this.db.smembers(set, function(err, arrReply) {
-      var fCallback, i, len, objReplies, reply, results, semaphore;
+      var fCallback, objReplies, reply, semaphore, _i, _len, _results;
       if (err) {
         log.warn(err, "DB | fetching '" + set + "'");
         return cb(err);
@@ -245,12 +245,12 @@ getSetRecords = (function(_this) {
             }
           };
         };
-        results = [];
-        for (i = 0, len = arrReply.length; i < len; i++) {
-          reply = arrReply[i];
-          results.push(fSingle(reply, fCallback(reply)));
+        _results = [];
+        for (_i = 0, _len = arrReply.length; _i < _len; _i++) {
+          reply = arrReply[_i];
+          _results.push(fSingle(reply, fCallback(reply)));
         }
-        return results;
+        return _results;
       }
     });
   };
@@ -259,21 +259,21 @@ getSetRecords = (function(_this) {
 IndexedModules = (function() {
   function IndexedModules(setname, log) {
     this.setname = setname;
-    this.deleteUserArguments = bind(this.deleteUserArguments, this);
-    this.getUserArguments = bind(this.getUserArguments, this);
-    this.getAllModuleUserArguments = bind(this.getAllModuleUserArguments, this);
-    this.getUserArgumentsFunctions = bind(this.getUserArgumentsFunctions, this);
-    this.storeUserArguments = bind(this.storeUserArguments, this);
-    this.deleteUserParams = bind(this.deleteUserParams, this);
-    this.getUserParamsIds = bind(this.getUserParamsIds, this);
-    this.getUserParams = bind(this.getUserParams, this);
-    this.storeUserParams = bind(this.storeUserParams, this);
-    this.deleteModule = bind(this.deleteModule, this);
-    this.getModuleIds = bind(this.getModuleIds, this);
-    this.getAvailableModuleIds = bind(this.getAvailableModuleIds, this);
-    this.getModuleField = bind(this.getModuleField, this);
-    this.getModule = bind(this.getModule, this);
-    this.storeModule = bind(this.storeModule, this);
+    this.deleteUserArguments = __bind(this.deleteUserArguments, this);
+    this.getUserArguments = __bind(this.getUserArguments, this);
+    this.getAllModuleUserArguments = __bind(this.getAllModuleUserArguments, this);
+    this.getUserArgumentsFunctions = __bind(this.getUserArgumentsFunctions, this);
+    this.storeUserArguments = __bind(this.storeUserArguments, this);
+    this.deleteUserParams = __bind(this.deleteUserParams, this);
+    this.getUserParamsIds = __bind(this.getUserParamsIds, this);
+    this.getUserParams = __bind(this.getUserParams, this);
+    this.storeUserParams = __bind(this.storeUserParams, this);
+    this.deleteModule = __bind(this.deleteModule, this);
+    this.getModuleIds = __bind(this.getModuleIds, this);
+    this.getAvailableModuleIds = __bind(this.getAvailableModuleIds, this);
+    this.getModuleField = __bind(this.getModuleField, this);
+    this.getModule = __bind(this.getModule, this);
+    this.storeModule = __bind(this.storeModule, this);
     log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
   }
 
@@ -293,47 +293,47 @@ IndexedModules = (function() {
 
   IndexedModules.prototype.storeModule = function(userId, oModule) {
     log.info("DB | (IdxedMods) " + this.setname + ".storeModule( " + userId + ", oModule )");
-    this.db.sadd(this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> " + oModule.id));
-    return this.db.hmset(this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
+    this.db.sadd("" + this.setname + "s", oModule.id, replyHandler("sadd '" + this.setname + "s' -> " + oModule.id));
+    return this.db.hmset("" + this.setname + ":" + oModule.id, oModule, replyHandler("hmset '" + this.setname + ":" + oModule.id + "' -> [oModule]"));
   };
 
   IndexedModules.prototype.getModule = function(userId, mId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
     log.info("hgetall " + this.setname + ":" + mId);
-    return this.db.hgetall(this.setname + ":" + mId, cb);
+    return this.db.hgetall("" + this.setname + ":" + mId, cb);
   };
 
   IndexedModules.prototype.getModuleField = function(userId, mId, field, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getModuleField( " + userId + ", " + mId + ", " + field + " )");
-    return this.db.hget(this.setname + ":" + mId, field, cb);
+    return this.db.hget("" + this.setname + ":" + mId, field, cb);
   };
 
   IndexedModules.prototype.getAvailableModuleIds = function(userId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getAvailableModuleIds( " + userId + " )");
-    return this.db.sunion("public-" + this.setname + "s", this.setname + "s", cb);
+    return this.db.sunion("public-" + this.setname + "s", "" + this.setname + "s", cb);
   };
 
   IndexedModules.prototype.getModuleIds = function(userId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getModuleIds()");
-    return this.db.smembers(this.setname + "s", cb);
+    return this.db.smembers("" + this.setname + "s", cb);
   };
 
   IndexedModules.prototype.deleteModule = function(userId, mId) {
     log.info("DB | (IdxedMods) " + this.setname + ".deleteModule( " + userId + ", " + mId + " )");
-    this.db.srem(this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
-    this.db.del(this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
+    this.db.srem("" + this.setname + "s", mId, replyHandler("srem '" + this.setname + "s' -> '" + mId + "'"));
+    this.db.del("" + this.setname + ":" + mId, replyHandler("del '" + this.setname + ":" + mId + "'"));
     this.deleteUserParams(mId, userId);
     return exports.getRuleIds(userId, (function(_this) {
       return function(err, obj) {
-        var i, len, results, rule;
-        results = [];
-        for (i = 0, len = obj.length; i < len; i++) {
-          rule = obj[i];
-          results.push(_this.getUserArgumentsFunctions(userId, rule, mId, function(err, obj) {
+        var rule, _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          rule = obj[_i];
+          _results.push(_this.getUserArgumentsFunctions(userId, rule, mId, function(err, obj) {
             return _this.deleteUserArguments(userId, rule, mId);
           }));
         }
-        return results;
+        return _results;
       };
     })(this));
   };
@@ -351,24 +351,24 @@ IndexedModules = (function() {
 
   IndexedModules.prototype.storeUserParams = function(mId, userId, encData) {
     log.info("DB | (IdxedMods) " + this.setname + ".storeUserParams( " + mId + ", " + userId + ", encData )");
-    this.db.sadd(this.setname + "-params", mId + ":" + userId, replyHandler("sadd '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
-    return this.db.set(this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set '" + this.setname + "-params:" + mId + ":" + userId + "' -> [encData]"));
+    this.db.sadd("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("sadd '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
+    return this.db.set("" + this.setname + "-params:" + mId + ":" + userId, encData, replyHandler("set '" + this.setname + "-params:" + mId + ":" + userId + "' -> [encData]"));
   };
 
   IndexedModules.prototype.getUserParams = function(mId, userId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getUserParams( " + mId + ", " + userId + " )");
-    return this.db.get(this.setname + "-params:" + mId + ":" + userId, cb);
+    return this.db.get("" + this.setname + "-params:" + mId + ":" + userId, cb);
   };
 
   IndexedModules.prototype.getUserParamsIds = function(cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getUserParamsIds()");
-    return this.db.smembers(this.setname + "-params", cb);
+    return this.db.smembers("" + this.setname + "-params", cb);
   };
 
   IndexedModules.prototype.deleteUserParams = function(mId, userId) {
     log.info("DB | (IdxedMods) " + this.setname + ".deleteUserParams( " + mId + ", " + userId + " )");
-    this.db.srem(this.setname + "-params", mId + ":" + userId, replyHandler("srem '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
-    return this.db.del(this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
+    this.db.srem("" + this.setname + "-params", "" + mId + ":" + userId, replyHandler("srem '" + this.setname + "-params' -> '" + mId + ":" + userId + "'"));
+    return this.db.del("" + this.setname + "-params:" + mId + ":" + userId, replyHandler("del '" + this.setname + "-params:" + mId + ":" + userId + "'"));
   };
 
 
@@ -381,28 +381,28 @@ IndexedModules = (function() {
 
   IndexedModules.prototype.storeUserArguments = function(userId, ruleId, mId, funcId, encData) {
     log.info("DB | (IdxedMods) " + this.setname + ".storeUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + ", encData )");
-    this.db.sadd(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", funcId, replyHandler("sadd '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions' -> '" + funcId + "'"));
-    return this.db.set(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, encData, replyHandler("set '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId + "' -> [encData]"));
+    this.db.sadd("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", funcId, replyHandler("sadd '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions' -> '" + funcId + "'"));
+    return this.db.set("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, encData, replyHandler("set '" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId + "' -> [encData]"));
   };
 
   IndexedModules.prototype.getUserArgumentsFunctions = function(userId, ruleId, mId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getUserArgumentsFunctions( " + userId + ", " + ruleId + ", " + mId + " )");
-    return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
+    return this.db.get("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", cb);
   };
 
   IndexedModules.prototype.getAllModuleUserArguments = function(userId, ruleId, mId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getAllModuleUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
-    return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
+    return this.db.smembers("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
       return function(err, obj) {
-        var fRegisterFunction, func, i, len, oAnswer, results, sem;
+        var fRegisterFunction, func, oAnswer, sem, _i, _len, _results;
         sem = obj.length;
         oAnswer = {};
         if (sem === 0) {
           return cb(null, oAnswer);
         } else {
-          results = [];
-          for (i = 0, len = obj.length; i < len; i++) {
-            func = obj[i];
+          _results = [];
+          for (_i = 0, _len = obj.length; _i < _len; _i++) {
+            func = obj[_i];
             fRegisterFunction = function(func) {
               return function(err, obj) {
                 if (obj) {
@@ -413,9 +413,9 @@ IndexedModules = (function() {
                 }
               };
             };
-            results.push(_this.db.get(_this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
+            _results.push(_this.db.get("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, fRegisterFunction(func)));
           }
-          return results;
+          return _results;
         }
       };
     })(this));
@@ -423,20 +423,20 @@ IndexedModules = (function() {
 
   IndexedModules.prototype.getUserArguments = function(userId, ruleId, mId, funcId, cb) {
     log.info("DB | (IdxedMods) " + this.setname + ".getUserArguments( " + userId + ", " + ruleId + ", " + mId + ", " + funcId + " )");
-    return this.db.get(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, cb);
+    return this.db.get("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + funcId, cb);
   };
 
   IndexedModules.prototype.deleteUserArguments = function(userId, ruleId, mId) {
     log.info("DB | (IdxedMods) " + this.setname + ".deleteUserArguments( " + userId + ", " + ruleId + ", " + mId + " )");
-    return this.db.smembers(this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
+    return this.db.smembers("" + this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":functions", (function(_this) {
       return function(err, obj) {
-        var func, i, len, results;
-        results = [];
-        for (i = 0, len = obj.length; i < len; i++) {
-          func = obj[i];
-          results.push(_this.db.del(_this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func + "'")));
+        var func, _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          func = obj[_i];
+          _results.push(_this.db.del("" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func, replyHandler("del '" + _this.setname + ":" + userId + ":" + ruleId + ":" + mId + ":function:" + func + "'")));
         }
-        return results;
+        return _results;
       };
     })(this));
   };
@@ -447,7 +447,7 @@ IndexedModules = (function() {
 
 
 /*
-## Rules
+ *# Rules
  */
 
 
@@ -459,7 +459,7 @@ Appends a log entry.
 
 exports.appendLog = (function(_this) {
   return function(userId, ruleId, moduleId, message) {
-    return _this.db.append(userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 1000)) + "\n");
+    return _this.db.append("" + userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 1000)) + "\n");
   };
 })(this);
 
@@ -472,7 +472,7 @@ Retrieves a log entry.
 
 exports.getLog = (function(_this) {
   return function(userId, ruleId, cb) {
-    return _this.db.get(userId + ":" + ruleId + ":log", cb);
+    return _this.db.get("" + userId + ":" + ruleId + ":log", cb);
   };
 })(this);
 
@@ -483,7 +483,7 @@ Resets a log entry.
 
 exports.resetLog = (function(_this) {
   return function(userId, ruleId) {
-    return _this.db.del(userId + ":" + ruleId + ":log", replyHandler("del '" + userId + ":" + ruleId + ":log'"));
+    return _this.db.del("" + userId + ":" + ruleId + ":log", replyHandler("del '" + userId + ":" + ruleId + ":log'"));
   };
 })(this);
 
@@ -549,15 +549,15 @@ exports.getAllActivatedRuleIdsPerUser = (function(_this) {
   return function(cb) {
     log.info("DB | Fetching all active rules");
     return _this.db.smembers('users', function(err, obj) {
-      var fProcessAnswer, i, len, result, results, semaphore, user;
+      var fProcessAnswer, result, semaphore, user, _i, _len, _results;
       result = {};
       if (obj.length === 0) {
         return cb(null, result);
       } else {
         semaphore = obj.length;
-        results = [];
-        for (i = 0, len = obj.length; i < len; i++) {
-          user = obj[i];
+        _results = [];
+        for (_i = 0, _len = obj.length; _i < _len; _i++) {
+          user = obj[_i];
           fProcessAnswer = function(user) {
             return (function(_this) {
               return function(err, obj) {
@@ -570,9 +570,9 @@ exports.getAllActivatedRuleIdsPerUser = (function(_this) {
               };
             })(this);
           };
-          results.push(_this.db.smembers("user:" + user + ":rules", fProcessAnswer(user)));
+          _results.push(_this.db.smembers("user:" + user + ":rules", fProcessAnswer(user)));
         }
-        return results;
+        return _results;
       }
     });
   };
@@ -580,7 +580,7 @@ exports.getAllActivatedRuleIdsPerUser = (function(_this) {
 
 
 /*
-## Users
+ *# Users
  */
 
 
@@ -644,29 +644,29 @@ exports.deleteUser = (function(_this) {
     _this.db.srem("users", userId, replyHandler("srem 'users' -> '" + userId + "'"));
     _this.db.del("user:" + userId, replyHandler("del 'user:" + userId + "'"));
     _this.db.smembers("user:" + userId + ":rules", function(err, obj) {
-      var delLinkedRuleUser, i, id, len, results;
+      var delLinkedRuleUser, id, _i, _len, _results;
       delLinkedRuleUser = function(ruleId) {
         return _this.db.srem("rule:" + ruleId + ":users", userId, replyHandler("srem 'rule:" + ruleId + ":users' -> '" + userId + "'"));
       };
-      results = [];
-      for (i = 0, len = obj.length; i < len; i++) {
-        id = obj[i];
-        results.push(delLinkedRuleUser(id));
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delLinkedRuleUser(id));
       }
-      return results;
+      return _results;
     });
     _this.db.del("user:" + userId + ":rules", replyHandler("del 'user:" + userId + ":rules'"));
     _this.db.smembers("user:" + userId + ":active-rules", function(err, obj) {
-      var delActivatedRuleUser, i, id, len, results;
+      var delActivatedRuleUser, id, _i, _len, _results;
       delActivatedRuleUser = function(ruleId) {
         return _this.db.srem("rule:" + ruleId + ":active-users", userId, replyHandler("srem 'rule:" + ruleId + ":active-users' -> '" + userId + "'"));
       };
-      results = [];
-      for (i = 0, len = obj.length; i < len; i++) {
-        id = obj[i];
-        results.push(delActivatedRuleUser(id));
+      _results = [];
+      for (_i = 0, _len = obj.length; _i < _len; _i++) {
+        id = obj[_i];
+        _results.push(delActivatedRuleUser(id));
       }
-      return results;
+      return _results;
     });
     return _this.db.del("user:" + userId + ":active-rules", replyHandler("del user:" + userId + ":active-rules"));
   };
@@ -817,7 +817,7 @@ Shuts down the db link.
 
 exports.shutDown = (function(_this) {
   return function() {
-    var ref;
-    return (ref = _this.db) != null ? ref.quit() : void 0;
+    var _ref;
+    return (_ref = _this.db) != null ? _ref.quit() : void 0;
   };
 })(this);

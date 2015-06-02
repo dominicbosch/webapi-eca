@@ -7,7 +7,7 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, router, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, storeModule, storeRule;
 
 log = require('./logging');
 
@@ -43,9 +43,9 @@ exports.addRuleListener = (function(_this) {
   return function(eh) {
     eventEmitter.addListener('rule', eh);
     return db.getAllActivatedRuleIdsPerUser(function(err, objUsers) {
-      var fGoThroughUsers, results, rules, user;
+      var fGoThroughUsers, rules, user, _results;
       fGoThroughUsers = function(user, rules) {
-        var fFetchRule, j, len, results, rule;
+        var fFetchRule, rule, _i, _len, _results;
         fFetchRule = function(rule) {
           return db.getRule(user, rule, function(err, strRule) {
             var eventInfo, oRule;
@@ -68,19 +68,19 @@ exports.addRuleListener = (function(_this) {
             }
           });
         };
-        results = [];
-        for (j = 0, len = rules.length; j < len; j++) {
-          rule = rules[j];
-          results.push(fFetchRule(rule));
+        _results = [];
+        for (_i = 0, _len = rules.length; _i < _len; _i++) {
+          rule = rules[_i];
+          _results.push(fFetchRule(rule));
         }
-        return results;
+        return _results;
       };
-      results = [];
+      _results = [];
       for (user in objUsers) {
         rules = objUsers[user];
-        results.push(fGoThroughUsers(user, rules));
+        _results.push(fGoThroughUsers(user, rules));
       }
-      return results;
+      return _results;
     });
   };
 })(this);
@@ -89,9 +89,8 @@ exports.addRuleListener = (function(_this) {
 /*
 Processes a user request coming through the request-handler.
 
-- `user` is the user object as it comes from the DB.
-- `oReq` is the request object that contains:
-
+	- `user` is the user object as it comes from the DB.
+	- `oReq` is the request object that contains:
 	- `command` as a string 
 	- `body` an optional stringified JSON object 
 The callback function `callback( obj )` will receive an object
@@ -116,25 +115,6 @@ exports.processRequest = function(user, oReq, callback) {
   }
   return commandFunctions[oReq.command](user, dat, callback);
 };
-
-exports.router = router = express.Router();
-
-router.use(function(req, res, next) {
-  if (req.session && req.session.user) {
-    return next();
-  } else {
-    return res.status(401).send('Login first!');
-  }
-});
-
-router.post('get_public_key', function(req, res) {
-  var obj;
-  obj = {
-    code: 200,
-    message: encryption.getPublicKey()
-  };
-  return res.status(obj.code).send(obj);
-});
 
 exports.handleUserCommand = (function(_this) {
   return function(req, resp) {
@@ -167,13 +147,13 @@ Checks whether all required parameters are present in the body.
  */
 
 hasRequiredParams = function(arrParams, oBody) {
-  var answ, j, len, param;
+  var answ, param, _i, _len;
   answ = {
     code: 400,
     message: "Your request didn't contain all necessary fields! Requires: " + (arrParams.join())
   };
-  for (j = 0, len = arrParams.length; j < len; j++) {
-    param = arrParams[j];
+  for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
+    param = arrParams[_i];
     if (!oBody[param]) {
       return answ;
     }
@@ -198,7 +178,7 @@ getModules = function(user, oBody, dbMod, callback) {
   var fProcessIds;
   fProcessIds = function(userName) {
     return function(err, arrNames) {
-      var answReq, fGetFunctions, id, j, len, oRes, results, sem;
+      var answReq, fGetFunctions, id, oRes, sem, _i, _len, _results;
       oRes = {};
       answReq = function() {
         return callback({
@@ -222,12 +202,12 @@ getModules = function(user, oBody, dbMod, callback) {
             });
           };
         })(this);
-        results = [];
-        for (j = 0, len = arrNames.length; j < len; j++) {
-          id = arrNames[j];
-          results.push(fGetFunctions(id));
+        _results = [];
+        for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
+          id = arrNames[_i];
+          _results.push(fGetFunctions(id));
         }
-        return results;
+        return _results;
       }
     };
   };
@@ -325,13 +305,13 @@ storeModule = (function(_this) {
     return dynmod.compileString(src, user.username, {
       id: 'dummyRule'
     }, oBody.id, oBody.lang, modType, null, function(cm) {
-      var answ, funcs, id, name, ref;
+      var answ, funcs, id, name, _ref;
       answ = cm.answ;
       if (answ.code === 200) {
         funcs = [];
-        ref = cm.module;
-        for (name in ref) {
-          id = ref[name];
+        _ref = cm.module;
+        for (name in _ref) {
+          id = _ref[name];
           funcs.push(name);
         }
         log.info("CM | Storing new module with functions " + (funcs.join(', ')));
@@ -625,9 +605,9 @@ commandFunctions = {
             return db.getAllWebhookIDs(function(err, arrHooks) {
               var genHookID;
               genHookID = function(arrHooks) {
-                var i, j;
+                var i, _i;
                 hookid = '';
-                for (i = j = 0; j <= 1; i = ++j) {
+                for (i = _i = 0; _i <= 1; i = ++_i) {
                   hookid += Math.random().toString(36).substring(2);
                 }
                 if (arrHooks && arrHooks.indexOf(hookid) > -1) {

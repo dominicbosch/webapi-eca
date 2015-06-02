@@ -38,10 +38,10 @@ fOnLoad = function() {
     return $.post('/usercommand/' + cmd).done(fUpdateModuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateModuleList = function(data) {
-    var img, inp, modName, oMods, results, tr;
+    var img, inp, modName, oMods, tr, _results;
     $('#tableModules tr').remove();
     oMods = JSON.parse(data.message);
-    results = [];
+    _results = [];
     for (modName in oMods) {
       tr = $('<tr>');
       inp = $('<div>').text(modName);
@@ -50,9 +50,9 @@ fOnLoad = function() {
       img = $('<img>').attr('class', 'log').attr('title', 'Edit Module').attr('src', 'images/edit.png');
       tr.append($('<td>').append(img));
       tr.append($('<td>').append(inp));
-      results.push($('#tableModules').append(tr));
+      _results.push($('#tableModules').append(tr));
     }
-    return results;
+    return _results;
   };
   fFetchModules();
   $('#tableModules').on('click', 'img.del', function() {

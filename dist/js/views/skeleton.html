@@ -42,9 +42,11 @@
 							<li><a href="/views/webhooks">Webhook</a></li>
 							<li><a href="/views/modules?m=et">Event Trigger</a></li>
 							<li><a href="/views/modules?m=ad">Action Dispatcher</a></li>
-							{% if admin %}
-								<li><a href="/views/admin">Administration</a></li>
-							{% endif %}
+							{% for role in roles %}
+								{% if role == 'admin' %}
+									<li><a href="/views/admin">Administration</a></li>
+								{% endif %}
+							{% endfor %}
 							<li><a id="skeletonLogout" href="#">Logout</a></li>
 						{% else %}
 							<li><a href="/views/login">Login</a></li>

@@ -22,8 +22,27 @@ router = module.exports = express.Router()
 A post request retrieved on this handler causes the user object to be
 purged from the session, thus the user will be logged out.
 ###
-router.post '/get/:name', ( req, res ) ->
-	log.info 'SRVC | WEBHOOKS | implemnt getAll'
+router.post '/get/:id', ( req, res ) ->
+	log.warn 'SRVC | WEBHOOKS | implemnt get id'
+	db.getAllUserWebhookNames req.session.username, ( arr ) ->
+		log.info 'Webhooks' + JSON.stringify arr
+	res.send 'TODO!'
+
+router.post '/getall', ( req, res ) ->
+	log.warn 'SRVC | WEBHOOKS | implemnt getAll'
+	db.getAllUserWebhookNames req.session.username, ( arr ) ->
+		log.info 'Webhooks' + JSON.stringify arr
+	res.send 'TODO!'
+
+router.post '/create/:id', ( req, res ) ->
+	log.warn 'SRVC | WEBHOOKS | implemnt create Id'
+	db.getAllUserWebhookNames req.session.username, ( arr ) ->
+		log.info 'Webhooks' + JSON.stringify arr
+	res.send 'TODO!'
+
+
+router.post '/delete/:id', ( req, res ) ->
+	log.warn 'SRVC | WEBHOOKS | implemnt delete id'
 	db.getAllUserWebhookNames req.session.username, ( arr ) ->
 		log.info 'Webhooks' + JSON.stringify arr
 	res.send 'TODO!'

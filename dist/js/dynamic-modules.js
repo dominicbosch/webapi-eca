@@ -77,12 +77,12 @@ exports.compileString = (function(_this) {
     log.info("DM | Trying to fetch user specific module '" + modId + "' paramters for user '" + userId + "'");
     if (dbMod) {
       return dbMod.getUserParams(modId, userId, function(err, obj) {
-        var name, oParam, oParams, ref;
+        var name, oParam, oParams, _ref;
         try {
           oParams = {};
-          ref = JSON.parse(obj);
-          for (name in ref) {
-            oParam = ref[name];
+          _ref = JSON.parse(obj);
+          for (name in _ref) {
+            oParam = _ref[name];
             oParams[name] = encryption.decrypt(oParam.value);
           }
           log.info("DM | Loaded user defined params for " + userId + ", " + oRule.id + ", " + modId);
@@ -116,7 +116,7 @@ fPushEvent = function(userId, oRule, modType) {
 
 createNodeModule = (function(_this) {
   return function(src, userId, oRule, modId, modType, dbMod, params, comment, cb) {
-    var answ, err, fName, fRegisterArguments, func, i, len, logFunc, mod, msg, oFuncArgs, oFuncParams, ref, sandbox;
+    var answ, err, fName, fRegisterArguments, func, logFunc, mod, msg, oFuncArgs, oFuncParams, sandbox, _i, _len, _ref;
     if (!params) {
       params = {};
     }
@@ -127,7 +127,7 @@ createNodeModule = (function(_this) {
     log.info("DM | Running module '" + modId + "' for user '" + userId + "'");
     logFunc = logFunction(userId, oRule.id, modId);
     sandbox = {
-      id: userId + "." + oRule.id + "." + modId + ".vm",
+      id: "" + userId + "." + oRule.id + "." + modId + ".vm",
       params: params,
       log: logFunc,
       debug: console.log,
@@ -135,8 +135,8 @@ createNodeModule = (function(_this) {
       setTimeout: setTimeout,
       pushEvent: fPushEvent(userId, oRule, modType)
     };
-    for (i = 0, len = oModules.length; i < len; i++) {
-      mod = oModules[i];
+    for (_i = 0, _len = oModules.length; _i < _len; _i++) {
+      mod = oModules[_i];
       sandbox[mod] = require(mod);
     }
     try {
@@ -153,9 +153,9 @@ createNodeModule = (function(_this) {
     log.info("DM | Module '" + modId + "' ran successfully for user '" + userId + "' in rule '" + oRule.id + "'");
     oFuncParams = {};
     oFuncArgs = {};
-    ref = sandbox.exports;
-    for (fName in ref) {
-      func = ref[fName];
+    _ref = sandbox.exports;
+    for (fName in _ref) {
+      func = _ref[fName];
       getFunctionParamNames(fName, func, oFuncParams);
     }
     if (dbMod) {
@@ -210,11 +210,11 @@ loadEventTrigger = function(oRule) {
 };
 
 searchComment = function(lang, src) {
-  var arrSrc, comm, i, len, line;
+  var arrSrc, comm, line, _i, _len;
   arrSrc = src.split('\n');
   comm = '';
-  for (i = 0, len = arrSrc.length; i < len; i++) {
-    line = arrSrc[i];
+  for (_i = 0, _len = arrSrc.length; _i < _len; _i++) {
+    line = arrSrc[_i];
     line = line.trim();
     if (line !== '') {
       if (lang === 'CoffeeScript') {

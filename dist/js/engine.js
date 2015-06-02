@@ -128,14 +128,14 @@ dispatcher modules are loaded, updated or deleted.
 
 updateActionModules = (function(_this) {
   return function(updatedRuleId) {
-    var fAddRequired, fRemoveNotRequired, name, oUser, results, userName;
+    var fAddRequired, fRemoveNotRequired, name, oUser, userName, _results;
     fRemoveNotRequired = function(oUser) {
-      var action, fRequired, results;
+      var action, fRequired, _results;
       fRequired = function(actionName) {
-        var action, i, len, ref;
-        ref = oUser[updatedRuleId].rule.actions;
-        for (i = 0, len = ref.length; i < len; i++) {
-          action = ref[i];
+        var action, _i, _len, _ref;
+        _ref = oUser[updatedRuleId].rule.actions;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          action = _ref[_i];
           if ((action.split(' -> '))[0] === actionName) {
             return true;
           }
@@ -143,15 +143,15 @@ updateActionModules = (function(_this) {
         return false;
       };
       if (oUser[updatedRuleId]) {
-        results = [];
+        _results = [];
         for (action in oUser[updatedRuleId].rule.actions) {
           if (!fRequired(action)) {
-            results.push(delete oUser[updatedRuleId].actions[action]);
+            _results.push(delete oUser[updatedRuleId].actions[action]);
           } else {
-            results.push(void 0);
+            _results.push(void 0);
           }
         }
-        return results;
+        return _results;
       }
     };
     for (name in listUserRules) {
@@ -159,9 +159,9 @@ updateActionModules = (function(_this) {
       fRemoveNotRequired(oUser);
     }
     fAddRequired = function(userName, oUser) {
-      var fCheckRules, nmRl, oRl, results;
+      var fCheckRules, nmRl, oRl, _results;
       fCheckRules = function(oMyRule) {
-        var action, fAddIfNewOrNotExisting, i, len, ref, results;
+        var action, fAddIfNewOrNotExisting, _i, _len, _ref, _results;
         fAddIfNewOrNotExisting = function(actionName) {
           var moduleName;
           moduleName = (actionName.split(' -> '))[0];
@@ -182,27 +182,27 @@ updateActionModules = (function(_this) {
             });
           }
         };
-        ref = oMyRule.rule.actions;
-        results = [];
-        for (i = 0, len = ref.length; i < len; i++) {
-          action = ref[i];
-          results.push(fAddIfNewOrNotExisting(action));
+        _ref = oMyRule.rule.actions;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          action = _ref[_i];
+          _results.push(fAddIfNewOrNotExisting(action));
         }
-        return results;
+        return _results;
       };
-      results = [];
+      _results = [];
       for (nmRl in oUser) {
         oRl = oUser[nmRl];
-        results.push(fCheckRules(oRl));
+        _results.push(fCheckRules(oRl));
       }
-      return results;
+      return _results;
     };
-    results = [];
+    _results = [];
     for (userName in listUserRules) {
       oUser = listUserRules[userName];
-      results.push(fAddRequired(userName, oUser));
+      _results.push(fAddRequired(userName, oUser));
     }
-    return results;
+    return _results;
   };
 })(this);
 
@@ -253,13 +253,13 @@ Checks whether all conditions of the rule are met by the event.
  */
 
 validConditions = function(evt, rule, userId, ruleId) {
-  var cond, err, i, len, op, ref, selectedProperty, val;
+  var cond, err, op, selectedProperty, val, _i, _len, _ref;
   if (rule.conditions.length === 0) {
     return true;
   }
-  ref = rule.conditions;
-  for (i = 0, len = ref.length; i < len; i++) {
-    cond = ref[i];
+  _ref = rule.conditions;
+  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    cond = _ref[_i];
     selectedProperty = jsonQuery(evt, cond.selector).nodes();
     if (selectedProperty.length === 0) {
       db.appendLog(userId, ruleId, 'Condition', "Node not found in event: " + cond.selector);
@@ -299,9 +299,9 @@ Handles retrieved events.
 
 processEvent = (function(_this) {
   return function(evt) {
-    var fCheckEventForUser, fSearchAndInvokeAction, oUser, results, userName;
+    var fCheckEventForUser, fSearchAndInvokeAction, oUser, userName, _results;
     fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
-      var argument, arrArgs, arrSelectors, data, err, i, j, len, len1, oArg, ref, sel, selector;
+      var argument, arrArgs, arrSelectors, data, err, oArg, sel, selector, _i, _j, _len, _len1, _ref;
       if (!node) {
         log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
         return;
@@ -312,14 +312,14 @@ processEvent = (function(_this) {
           log.info("EN | " + funcName + " executes...");
           arrArgs = [];
           if (node.funcArgs[funcName]) {
-            ref = node.funcArgs[funcName];
-            for (i = 0, len = ref.length; i < len; i++) {
-              oArg = ref[i];
+            _ref = node.funcArgs[funcName];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              oArg = _ref[_i];
               arrSelectors = oArg.value.match(/#\{(.*?)\}/g);
               argument = oArg.value;
               if (arrSelectors) {
-                for (j = 0, len1 = arrSelectors.length; j < len1; j++) {
-                  sel = arrSelectors[j];
+                for (_j = 0, _len1 = arrSelectors.length; _j < _len1; _j++) {
+                  sel = arrSelectors[_j];
                   selector = sel.substring(2, sel.length - 1);
                   data = jsonQuery(evt.body, selector).nodes()[0];
                   argument = argument.replace(sel, data);
@@ -349,10 +349,9 @@ processEvent = (function(_this) {
         return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
       }
     };
-    log.info('EN | Processing event: ' + evt.eventname);
     fCheckEventForUser = function(userName, oUser) {
-      var action, arr, oMyRule, results, ruleEvent, ruleName;
-      results = [];
+      var action, arr, oMyRule, ruleEvent, ruleName, _results;
+      _results = [];
       for (ruleName in oUser) {
         oMyRule = oUser[ruleName];
         ruleEvent = oMyRule.rule.eventname;
@@ -361,32 +360,33 @@ processEvent = (function(_this) {
         }
         if (evt.eventname === ruleEvent && validConditions(evt, oMyRule.rule, userName, ruleName)) {
           log.info('EN | EVENT FIRED: ' + evt.eventname + ' for rule ' + ruleName);
-          results.push((function() {
-            var i, len, ref, results1;
-            ref = oMyRule.rule.actions;
-            results1 = [];
-            for (i = 0, len = ref.length; i < len; i++) {
-              action = ref[i];
+          _results.push((function() {
+            var _i, _len, _ref, _results1;
+            _ref = oMyRule.rule.actions;
+            _results1 = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              action = _ref[_i];
               arr = action.split(' -> ');
-              results1.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0]], arr[1], evt, 0));
+              _results1.push(fSearchAndInvokeAction(listUserRules, [userName, ruleName, 'actions', arr[0]], arr[1], evt, 0));
             }
-            return results1;
+            return _results1;
           })());
         } else {
-          results.push(void 0);
+          _results.push(void 0);
         }
       }
-      return results;
+      return _results;
     };
+    log.info('EN | Processing event: ' + evt.eventname);
     if (evt.username) {
       return fCheckEventForUser(evt.username, listUserRules[evt.username]);
     } else {
-      results = [];
+      _results = [];
       for (userName in listUserRules) {
         oUser = listUserRules[userName];
-        results.push(fCheckEventForUser(userName, oUser));
+        _results.push(fCheckEventForUser(userName, oUser));
       }
-      return results;
+      return _results;
     }
   };
 })(this);
