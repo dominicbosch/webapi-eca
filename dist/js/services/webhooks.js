@@ -30,7 +30,7 @@ router.post('/get/:id', function(req, res) {
 });
 
 router.post('/getall', function(req, res) {
-  log.warn('SRVC | WEBHOOKS | implemnt getAll');
+  log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
   return db.getAllUserWebhooks(req.session.pub.username, function(err, arr) {
     if (err) {
       return res.status(500).send('Fetching all webhooks failed');

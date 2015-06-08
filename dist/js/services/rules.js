@@ -5,7 +5,7 @@ Serve Rules
 ===========
 > Answers rule requests from the user
  */
-var db, exports, express, log;
+var db, express, log, router;
 
 log = require('../logging');
 
@@ -13,4 +13,15 @@ db = require('../persistence');
 
 express = require('express');
 
-exports = module.exports = express.Router();
+router = module.exports = express.Router();
+
+router.post('/getall', function(req, res) {
+  log.info('SRVC | RULES | Fetching all Rules');
+  return db.getAllRules(req.session.pub.username, function(err, arr) {
+    if (err) {
+      return res.status(500).send('Fetching all rules failed');
+    } else {
+      return res.send(arr);
+    }
+  });
+});

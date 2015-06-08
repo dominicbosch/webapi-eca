@@ -101,6 +101,15 @@ table .centered {
 	font-size: 0.8em;
 }
 
+#listhooks {
+	font-size: 0.8em;
+}
+
+#listhooks .exists {
+	color: #150;
+	font-weight: bold;
+	text-decoration: underline;
+}
 
 /*
 #editor_conditions {

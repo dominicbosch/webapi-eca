@@ -15,11 +15,46 @@ fFindKeyStringPair = ( obj ) ->
 checkWebhookExists = () ->
 	try
 		obj = JSON.parse editor.getValue()
-		console.log '/service/webhooks/get/' + obj.eventname
-		$.post '/service/webhooks/get/' + obj.eventname, ( err, data ) ->
-			console.log err, data 
+		$.post '/service/webhooks/getall', ( oHooks ) ->
+			$( '#listhooks *' ).remove()
+			numHooks = 0
+			exist = false
+			ul = $ '<ul>'
+			for id, hook of oHooks
+				numHooks++
+				elm = $( '<li>' ).text '"' + hook.hookname + '"'
+				ul.append elm
+				if hook.hookname is obj.eventname
+					elm.attr 'class', 'exists'
+					exists = true
+			if exists
+				main.setInfo true, 'A Webhook exists for this Event!'
+				setTimeout checkRuleExists, 2000
+			else
+				main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
+
+			if numHooks is 0
+				$( '#listhooks' ).text 'You do not have any Webhooks! Create one first!'
+			else
+				$( '#listhooks' ).text 'The Event Names of your available Webhooks are:'
+				$( '#listhooks' ).append ul
+
 	catch err
 		console.log err
+
+checkRuleExists = ( name ) ->
+	$.post '/service/rules/getall', ( oRules ) ->
+		exists = false
+		for prop, rule in oRules
+			if rule.eventtype is 'Webhook' and rule.eventname is name
+				exists = true
+		if exists
+			main.setInfo true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!'
+		else
+			main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
+				
+		console.log oRules 
+
 
 fOnLoad = () ->
 	main.registerHoverInfo $( '#pagetitle' ), 'eventinfo.html'
@@ -33,9 +68,10 @@ fOnLoad = () ->
 
 	$.get '/data/example_event.txt', ( data ) ->
 		editor.setValue data, -1
+		checkWebhookExists()
+
 		# Only register change handler after we initially filled the editor
 		editor.getSession().on 'change', () ->
-			main.clearInfo()
 			checkWebhookExists()
 
 	$( '#editor_theme' ).change ( el ) ->
@@ -67,7 +103,7 @@ fOnLoad = () ->
 		 console.log 'webhook'
 
 		 
-	$( '#but_prep' ). on 'click', () ->
+	$( '#but_prep' ).on 'click', () ->
 
 # <button id="but_emit">Emit Event</button>
 # <button id="but_webh">Create a Webhook for this Event</button>

@@ -501,6 +501,22 @@ exports.getRule = (function(_this) {
 
 
 /*
+Query the DB for a rule and pass it to cb(err, obj).
+ */
+
+exports.getAllRules = (function(_this) {
+  return function(userId, cb) {
+    var getUserRule;
+    log.info("DB | getAllRules( '" + userId + "' )");
+    getUserRule = function(ruleId, inCb) {
+      return exports.getRule(userId, ruleId, inCb);
+    };
+    return getSetRecords("user:" + userId + ":rules", getUserRule, cb);
+  };
+})(this);
+
+
+/*
 Store a string representation of a rule in the DB.
  */
 

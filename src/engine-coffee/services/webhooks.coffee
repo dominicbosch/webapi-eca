@@ -29,7 +29,7 @@ router.post '/get/:id', ( req, res ) ->
 	res.send 'TODO!'
 
 router.post '/getall', ( req, res ) ->
-	log.warn 'SRVC | WEBHOOKS | implemnt getAll'
+	log.info 'SRVC | WEBHOOKS | Fetching all Webhooks'
 	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
 		if err
 			res.status( 500 ).send 'Fetching all webhooks failed'

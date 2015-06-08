@@ -144,13 +144,13 @@ fCheckAndRun = function(userId, ruleId, timestamp) {
 };
 
 fCallFunction = function(userId, ruleId, oRule) {
-  var arrArgs, err, oArg, _i, _len, _ref;
+  var arrArgs, err, i, len, oArg, ref;
   try {
     arrArgs = [];
     if (oRule.funcArgs && oRule.funcArgs[oRule.pollfunc]) {
-      _ref = oRule.funcArgs[oRule.pollfunc];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        oArg = _ref[_i];
+      ref = oRule.funcArgs[oRule.pollfunc];
+      for (i = 0, len = ref.length; i < len; i++) {
+        oArg = ref[i];
         arrArgs.push(oArg.value);
       }
     }

@@ -14,7 +14,7 @@ exports = module.exports = {
   error: function() {},
   fatal: function() {},
   init: function(args) {
-    var e, func, logPath, opt, prop, _ref;
+    var e, func, logPath, opt, prop, ref;
     if (args.log.nolog) {
       return delete exports.init;
     } else {
@@ -47,9 +47,9 @@ exports = module.exports = {
             path: logPath
           }
         ];
-        _ref = bunyan.createLogger(opt);
-        for (prop in _ref) {
-          func = _ref[prop];
+        ref = bunyan.createLogger(opt);
+        for (prop in ref) {
+          func = ref[prop];
           exports[prop] = func;
         }
         return delete exports.init;

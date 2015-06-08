@@ -415,6 +415,15 @@ exports.getRule = ( userId, ruleId, cb ) =>
 	@db.get "user:#{ userId }:rule:#{ ruleId }", cb
 
 ###
+Query the DB for a rule and pass it to cb(err, obj).
+###
+exports.getAllRules = ( userId, cb ) =>
+	log.info "DB | getAllRules( '#{ userId }' )"
+	getUserRule = ( ruleId, inCb ) ->
+		exports.getRule userId, ruleId, inCb
+	getSetRecords "user:#{ userId }:rules", getUserRule, cb
+
+###
 Store a string representation of a rule in the DB.
 ###
 exports.storeRule = ( userId, ruleId, data ) =>

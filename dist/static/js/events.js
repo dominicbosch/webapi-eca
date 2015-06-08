@@ -1,5 +1,5 @@
 'use strict';
-var checkWebhookExists, editor, fFindKeyStringPair, fOnLoad;
+var checkRuleExists, checkWebhookExists, editor, fFindKeyStringPair, fOnLoad;
 
 editor = null;
 
@@ -26,14 +26,58 @@ checkWebhookExists = function() {
   var err, obj;
   try {
     obj = JSON.parse(editor.getValue());
-    console.log('/service/webhooks/get/' + obj.eventname);
-    return $.post('/service/webhooks/get/' + obj.eventname, function(err, data) {
-      return console.log(err, data);
+    return $.post('/service/webhooks/getall', function(oHooks) {
+      var elm, exist, exists, hook, id, numHooks, ul;
+      $('#listhooks *').remove();
+      numHooks = 0;
+      exist = false;
+      ul = $('<ul>');
+      for (id in oHooks) {
+        hook = oHooks[id];
+        numHooks++;
+        elm = $('<li>').text('"' + hook.hookname + '"');
+        ul.append(elm);
+        if (hook.hookname === obj.eventname) {
+          elm.attr('class', 'exists');
+          exists = true;
+        }
+      }
+      if (exists) {
+        main.setInfo(true, 'A Webhook exists for this Event!');
+        setTimeout(checkRuleExists, 2000);
+      } else {
+        main.setInfo(false, 'No Webhook exists for this Event Name, please create one!');
+      }
+      if (numHooks === 0) {
+        return $('#listhooks').text('You do not have any Webhooks! Create one first!');
+      } else {
+        $('#listhooks').text('The Event Names of your available Webhooks are:');
+        return $('#listhooks').append(ul);
+      }
     });
   } catch (_error) {
     err = _error;
     return console.log(err);
   }
+};
+
+checkRuleExists = function(name) {
+  return $.post('/service/rules/getall', function(oRules) {
+    var exists, i, len, prop, rule;
+    exists = false;
+    for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
+      prop = oRules[rule];
+      if (rule.eventtype === 'Webhook' && rule.eventname === name) {
+        exists = true;
+      }
+    }
+    if (exists) {
+      main.setInfo(true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!');
+    } else {
+      main.setInfo(false, 'No Rule is listening for this Event Name, please create one!');
+    }
+    return console.log(oRules);
+  });
 };
 
 fOnLoad = function() {
@@ -48,8 +92,8 @@ fOnLoad = function() {
   editor.setShowPrintMargin(false);
   $.get('/data/example_event.txt', function(data) {
     editor.setValue(data, -1);
+    checkWebhookExists();
     return editor.getSession().on('change', function() {
-      main.clearInfo();
       return checkWebhookExists();
     });
   });
