@@ -1,3 +1,4 @@
+'use strict';
 var hoverIn, hoverOut;
 
 $(document).ready(function() {

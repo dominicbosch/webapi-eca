@@ -51,6 +51,10 @@ h1 {
 	font-size: 2em;
 }
 
+table .centered {
+	text-align: center;
+}
+
 #mainbody {
 	padding-left: 2%;
 	padding-right: 2%;

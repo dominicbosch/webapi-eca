@@ -43,9 +43,9 @@ exports.addRuleListener = (function(_this) {
   return function(eh) {
     eventEmitter.addListener('rule', eh);
     return db.getAllActivatedRuleIdsPerUser(function(err, objUsers) {
-      var fGoThroughUsers, rules, user, _results;
+      var fGoThroughUsers, results, rules, user;
       fGoThroughUsers = function(user, rules) {
-        var fFetchRule, rule, _i, _len, _results;
+        var fFetchRule, i, len, results, rule;
         fFetchRule = function(rule) {
           return db.getRule(user, rule, function(err, strRule) {
             var eventInfo, oRule;
@@ -68,19 +68,19 @@ exports.addRuleListener = (function(_this) {
             }
           });
         };
-        _results = [];
-        for (_i = 0, _len = rules.length; _i < _len; _i++) {
-          rule = rules[_i];
-          _results.push(fFetchRule(rule));
+        results = [];
+        for (i = 0, len = rules.length; i < len; i++) {
+          rule = rules[i];
+          results.push(fFetchRule(rule));
         }
-        return _results;
+        return results;
       };
-      _results = [];
+      results = [];
       for (user in objUsers) {
         rules = objUsers[user];
-        _results.push(fGoThroughUsers(user, rules));
+        results.push(fGoThroughUsers(user, rules));
       }
-      return _results;
+      return results;
     });
   };
 })(this);
@@ -147,13 +147,13 @@ Checks whether all required parameters are present in the body.
  */
 
 hasRequiredParams = function(arrParams, oBody) {
-  var answ, param, _i, _len;
+  var answ, i, len, param;
   answ = {
     code: 400,
     message: "Your request didn't contain all necessary fields! Requires: " + (arrParams.join())
   };
-  for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-    param = arrParams[_i];
+  for (i = 0, len = arrParams.length; i < len; i++) {
+    param = arrParams[i];
     if (!oBody[param]) {
       return answ;
     }
@@ -178,7 +178,7 @@ getModules = function(user, oBody, dbMod, callback) {
   var fProcessIds;
   fProcessIds = function(userName) {
     return function(err, arrNames) {
-      var answReq, fGetFunctions, id, oRes, sem, _i, _len, _results;
+      var answReq, fGetFunctions, i, id, len, oRes, results, sem;
       oRes = {};
       answReq = function() {
         return callback({
@@ -202,12 +202,12 @@ getModules = function(user, oBody, dbMod, callback) {
             });
           };
         })(this);
-        _results = [];
-        for (_i = 0, _len = arrNames.length; _i < _len; _i++) {
-          id = arrNames[_i];
-          _results.push(fGetFunctions(id));
+        results = [];
+        for (i = 0, len = arrNames.length; i < len; i++) {
+          id = arrNames[i];
+          results.push(fGetFunctions(id));
         }
-        return _results;
+        return results;
       }
     };
   };
@@ -305,13 +305,13 @@ storeModule = (function(_this) {
     return dynmod.compileString(src, user.username, {
       id: 'dummyRule'
     }, oBody.id, oBody.lang, modType, null, function(cm) {
-      var answ, funcs, id, name, _ref;
+      var answ, funcs, id, name, ref;
       answ = cm.answ;
       if (answ.code === 200) {
         funcs = [];
-        _ref = cm.module;
-        for (name in _ref) {
-          id = _ref[name];
+        ref = cm.module;
+        for (name in ref) {
+          id = ref[name];
           funcs.push(name);
         }
         log.info("CM | Storing new module with functions " + (funcs.join(', ')));
@@ -578,57 +578,6 @@ commandFunctions = {
         code: 200,
         message: 'OK!'
       });
-    }
-  },
-  create_webhook: function(user, oBody, callback) {
-    var answ;
-    answ = hasRequiredParams(['hookname'], oBody);
-    if (answ.code !== 200) {
-      return callback(answ);
-    } else {
-      return db.getAllUserWebhookNames(user.username, (function(_this) {
-        return function(err, arrHooks) {
-          var hookExists, hookid, hookname;
-          hookExists = false;
-          for (hookid in arrHooks) {
-            hookname = arrHooks[hookid];
-            if (hookname === oBody.hookname) {
-              hookExists = true;
-            }
-          }
-          if (hookExists) {
-            return callback({
-              code: 409,
-              message: 'Webhook already existing: ' + oBody.hookname
-            });
-          } else {
-            return db.getAllWebhookIDs(function(err, arrHooks) {
-              var genHookID;
-              genHookID = function(arrHooks) {
-                var i, _i;
-                hookid = '';
-                for (i = _i = 0; _i <= 1; i = ++_i) {
-                  hookid += Math.random().toString(36).substring(2);
-                }
-                if (arrHooks && arrHooks.indexOf(hookid) > -1) {
-                  hookid = genHookID(arrHooks);
-                }
-                return hookid;
-              };
-              hookid = genHookID(arrHooks);
-              db.createWebhook(user.username, hookid, oBody.hookname);
-              rh.activateWebhook(user.username, hookid, oBody.hookname);
-              return callback({
-                code: 200,
-                message: JSON.stringify({
-                  hookid: hookid,
-                  hookname: oBody.hookname
-                })
-              });
-            });
-          }
-        };
-      })(this));
     }
   },
   get_all_webhooks: function(user, oBody, callback) {

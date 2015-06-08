@@ -4,8 +4,9 @@
 	<script src="/js/webhooks.js"></script>
 {% endblock %}
 
+{% block pagetitle %}Webhooks{% endblock %}
+
 {% block content %}
-	<h3>Create Webhook</h3>
 	<p>Event Name: <input type="text" id="inp_hookname" /></p>
 	<p>Events over this Webhook are available to all users : <input type="checkbox" id="inp_public" /></p>
 	<p><button type="button" id="but_submit">Create!</button></p>

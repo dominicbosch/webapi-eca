@@ -1,3 +1,5 @@
+'use strict';
+
 $( document ).ready () ->
 	url = window.location.href
 	els =  $( 'ul.nav a' ).filter () ->

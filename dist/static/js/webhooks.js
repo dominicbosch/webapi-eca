@@ -1,3 +1,4 @@
+'use strict';
 var arrKV, arrParams, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, i, len, oParams, param;
 
 arrParams = window.location.search.substring(1).split('&');
@@ -40,27 +41,25 @@ fUpdateWebhookList = function(cb) {
 };
 
 fProcessWebhookList = function(cb) {
-  return function(data) {
-    var hookid, hookname, img, oHooks, tdName, tdUrl, tr;
+  return function(oHooks) {
+    var hookid, img, isPub, oHook, tdName, tdUrl, tr;
     $('#table_webhooks *').remove();
-    if (data.message) {
-      oHooks = JSON.parse(data.message);
-      $('#table_webhooks').append($('<h3>').text('Your existing Webhooks:'));
-      for (hookid in oHooks) {
-        hookname = oHooks[hookid];
-        tr = $('<tr>');
-        tdName = $('<div>').text(hookname);
-        tdUrl = $('<input>').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
-        img = $('<img>').attr('class', 'del').attr('title', 'Delete Module').attr('src', 'images/red_cross_small.png');
-        tr.append($('<td>').append(img));
-        tr.append($('<td>').attr('style', 'padding-left:10px').append(tdName));
-        tr.append($('<td>').attr('style', 'padding-left:10px').append(tdUrl));
-        $('#table_webhooks').append(tr);
-      }
-    } else {
-      fShowWebhookUsage(null);
+    $('#table_webhooks').append($('<h3>').text('Your existing Webhooks:'));
+    for (hookid in oHooks) {
+      oHook = oHooks[hookid];
+      tr = $('<tr>');
+      tdName = $('<div>').text(oHook.hookname);
+      tdUrl = $('<input>').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
+      img = $('<img>').attr('class', 'del').attr('title', 'Delete Webhook').attr('src', '/images/red_cross_small.png');
+      tr.append($('<td>').append(img));
+      isPub = oHook.isPublic === 'true';
+      tr.append($('<td>').attr('style', 'padding-left:10px').append(tdName));
+      img = $('<img>').attr('src', '/images/' + (isPub ? 'public' : 'private') + '.png');
+      tr.append($('<td>').attr('class', 'centered').attr('title', (isPub ? 'Public' : 'Private')).append(img));
+      tr.append($('<td>').attr('style', 'padding-left:10px').append(tdUrl));
+      $('#table_webhooks').append(tr);
     }
-    return typeof cb === "function" ? cb(hookid, hookname) : void 0;
+    return typeof cb === "function" ? cb(oHook.hookid, oHook.hookname) : void 0;
   };
 };
 
@@ -84,6 +83,7 @@ fShowWebhookUsage = function(hookid, hookname) {
 };
 
 fOnLoad = function() {
+  main.registerHoverInfo($('#pagetitle'), 'webhookinfo.html');
   fUpdateWebhookList(fShowWebhookUsage);
   $('#but_submit').click(function() {
     var hookname;
@@ -95,18 +95,11 @@ fOnLoad = function() {
       return fIssueRequest({
         command: 'create',
         data: {
-          body: JSON.stringify({
-            hookname: hookname
-          })
+          hookname: hookname,
+          isPublic: $('#inp_public').is(':checked')
         },
         done: function(data) {
-          var oAnsw;
-          oAnsw = JSON.parse(data.message);
-          fShowWebhookUsage(oAnsw.hookid, oAnsw.hookname);
-          return fUpdateWebhookList(function(data) {
-            $('#info').text("New Webhook successfully created!");
-            return $('#info').attr('class', 'success');
-          });
+          return fShowWebhookUsage(data.hookid, data.hookname);
         },
         fail: function(err) {
           if (err.status === 409) {

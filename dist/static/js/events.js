@@ -1,3 +1,4 @@
+'use strict';
 var checkWebhookExists, editor, fFindKeyStringPair, fOnLoad;
 
 editor = null;
@@ -58,7 +59,7 @@ fOnLoad = function() {
   $('#editor_font').change(function(el) {
     return editor.setFontSize($(this).val());
   });
-  $('#but_submit').click(function() {
+  $('#but_emit').click(function() {
     var err, obj;
     try {
       obj = JSON.parse(editor.getValue());
@@ -84,7 +85,10 @@ fOnLoad = function() {
       return main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
   });
-  return $('#but_prepare').on('click', function() {
+  $('#but_webh').click(function() {
+    return console.log('webhook');
+  });
+  return $('#but_prep').on('click', function() {
     var err, oSelector, obj, sel, url;
     try {
       obj = JSON.parse(editor.getValue());

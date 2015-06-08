@@ -1,3 +1,5 @@
+'use strict';
+
 # Fetch the search string and transform it into an object for easy access
 arrParams = window.location.search.substring(1).split '&'
 oParams = {}
@@ -31,24 +33,27 @@ fUpdateWebhookList = ( cb ) ->
 		fail: fFailedRequest 'Unable to get Webhook list'
 
 fProcessWebhookList = ( cb ) ->
-	( data ) ->
+	( oHooks ) ->
 		$( '#table_webhooks *' ).remove()
-		if data.message
-			oHooks = JSON.parse data.message
-			$( '#table_webhooks' ).append $( '<h3>' ).text 'Your existing Webhooks:'
-			for hookid, hookname of oHooks
-				tr = $( '<tr>' )
-				tdName = $( '<div>' ).text hookname
-				tdUrl = $( '<input>' ).attr( 'style', 'width:600px' ).val "#{ hostUrl }/webhooks/#{ hookid }"
-				img = $( '<img>' ).attr( 'class', 'del' )
-					.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
-				tr.append( $( '<td>' ).append img )
-				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdName )
-				tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdUrl )
-				$( '#table_webhooks' ).append tr
-		else
-			fShowWebhookUsage null
-		cb? hookid, hookname
+		$( '#table_webhooks' ).append $( '<h3>' ).text 'Your existing Webhooks:'
+		for hookid, oHook of oHooks
+			tr = $( '<tr>' )
+			tdName = $( '<div>' ).text oHook.hookname
+			tdUrl = $( '<input>' ).attr( 'style', 'width:600px' ).val "#{ hostUrl }/webhooks/#{ hookid }"
+			img = $( '<img>' ).attr( 'class', 'del' )
+				.attr( 'title', 'Delete Webhook' ).attr 'src', '/images/red_cross_small.png'
+			tr.append( $( '<td>' ).append img )
+			isPub = oHook.isPublic is 'true'
+			tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdName )
+			# img = $( '<img>' ).attr( 'class', oHook.isPublic === 'true' ? 'public' : 'private' )
+			img = $( '<img>' ).attr 'src', '/images/' + (if isPub then 'public' else 'private') + '.png'
+			tr.append(
+				$( '<td>' ).attr( 'class', 'centered' )
+					.attr( 'title', (if isPub then 'Public' else 'Private') ).append img
+			);
+			tr.append( $( '<td>' ).attr( 'style', 'padding-left:10px' ).append tdUrl )
+			$( '#table_webhooks' ).append tr
+		cb? oHook.hookid, oHook.hookname
 
 fShowWebhookUsage = ( hookid, hookname ) ->
 	$( '#display_hookurl *' ).remove()
@@ -72,6 +77,8 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 
 fOnLoad = () ->
 
+	main.registerHoverInfo $( '#pagetitle' ), 'webhookinfo.html'
+
 	fUpdateWebhookList fShowWebhookUsage
 
 	# Register button action
@@ -87,14 +94,13 @@ fOnLoad = () ->
 			fIssueRequest
 				command: 'create'
 				data: 
-					body: JSON.stringify
-						hookname: hookname
+					hookname: hookname
+					isPublic: $( '#inp_public' ).is( ':checked' )
 				done: ( data ) ->
-					oAnsw = JSON.parse data.message
-					fShowWebhookUsage oAnsw.hookid, oAnsw.hookname
-					fUpdateWebhookList ( data ) ->
-						$( '#info' ).text "New Webhook successfully created!"
-						$( '#info' ).attr 'class', 'success'
+					fShowWebhookUsage data.hookid, data.hookname
+					# fUpdateWebhookList ( data ) ->
+					# 	$( '#info' ).text "New Webhook successfully created!"
+					# 	$( '#info' ).attr 'class', 'success'
 				fail: ( err ) ->
 					if err.status is 409
 						fFailedRequest( 'Webhook Event Name already existing!' ) err

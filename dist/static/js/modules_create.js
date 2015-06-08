@@ -1,11 +1,12 @@
-var arrKV, arrParams, fErrHandler, fOnLoad, moduleName, oParams, param, _i, _len;
+'use strict';
+var arrKV, arrParams, fErrHandler, fOnLoad, i, len, moduleName, oParams, param;
 
 arrParams = window.location.search.substring(1).split('&');
 
 oParams = {};
 
-for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-  param = arrParams[_i];
+for (i = 0, len = arrParams.length; i < len; i++) {
+  param = arrParams[i];
   arrKV = param.split('=');
   oParams[arrKV[0]] = arrKV[1];
 }
@@ -148,10 +149,10 @@ fOnLoad = function() {
                 $('#info').text(data.message);
                 $('#info').attr('class', 'success');
                 return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
-              }).fail(fErrHandler("" + moduleName + " not stored!"));
+              }).fail(fErrHandler(moduleName + " not stored!"));
             }
           } else {
-            return fErrHandler("" + moduleName + " not stored!")(err);
+            return fErrHandler(moduleName + " not stored!")(err);
           }
         };
       };
@@ -177,12 +178,12 @@ fOnLoad = function() {
       })
     };
     return $.post('/usercommand/get_full_' + oParams.type, obj).done(function(data) {
-      var oMod, shielded, _ref;
+      var oMod, ref, shielded;
       oMod = JSON.parse(data.message);
       if (oMod) {
-        _ref = JSON.parse(oMod.params);
-        for (param in _ref) {
-          shielded = _ref[param];
+        ref = JSON.parse(oMod.params);
+        for (param in ref) {
+          shielded = ref[param];
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.id);

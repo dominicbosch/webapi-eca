@@ -1,3 +1,5 @@
+'use strict';
+
 editor = null
 
 fFindKeyStringPair = ( obj ) ->
@@ -42,7 +44,7 @@ fOnLoad = () ->
 	$( '#editor_font' ).change ( el ) ->
 		editor.setFontSize $( this ).val()
 
-	$( '#but_submit' ).click () ->
+	$( '#but_emit' ).click () ->
 		try
 			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
 			window.scrollTo 0, 0
@@ -61,9 +63,15 @@ fOnLoad = () ->
 					
 		catch err
 			main.setInfo false, 'You have errors in your JSON object! ' + err
-		 
-	$( '#but_prepare' ). on 'click', () ->
+	$( '#but_webh' ).click () ->
+		 console.log 'webhook'
 
+		 
+	$( '#but_prep' ). on 'click', () ->
+
+# <button id="but_emit">Emit Event</button>
+# <button id="but_webh">Create a Webhook for this Event</button>
+# <button id="but_prep">Prepare a Rule for this Event</button>
 		try
 			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
 			if obj.eventname and typeof obj.eventname is 'string' and obj.eventname isnt ''

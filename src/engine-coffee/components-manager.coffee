@@ -507,35 +507,6 @@ commandFunctions =
 
 # WEBHOOKS
 # --------
-	create_webhook: ( user, oBody, callback ) ->
-		answ = hasRequiredParams [ 'hookname' ], oBody
-		if answ.code isnt 200
-			callback answ
-		else
-			db.getAllUserWebhookNames user.username, ( err, arrHooks ) =>
-				hookExists = false
-				hookExists = true for hookid, hookname of arrHooks when hookname is oBody.hookname
-				if hookExists
-					callback
-						code: 409
-						message: 'Webhook already existing: ' + oBody.hookname
-				else
-					db.getAllWebhookIDs ( err, arrHooks ) ->
-						genHookID = ( arrHooks ) ->
-							hookid = ''
-							for i in [ 0..1 ]
-								hookid += Math.random().toString( 36 ).substring 2
-							if arrHooks and arrHooks.indexOf( hookid ) > -1
-								hookid = genHookID arrHooks
-							hookid
-						hookid = genHookID arrHooks
-						db.createWebhook user.username, hookid, oBody.hookname
-						rh.activateWebhook user.username, hookid, oBody.hookname
-						callback
-							code: 200
-							message: JSON.stringify
-								hookid: hookid
-								hookname: oBody.hookname
 
 	get_all_webhooks: ( user, oBody, callback ) ->
 		db.getAllUserWebhookNames user.username, ( err, data ) ->

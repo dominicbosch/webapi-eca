@@ -1,3 +1,5 @@
+'use strict';
+
 
 fOnLoad = () ->
 	$( '#module_type' ).change () ->

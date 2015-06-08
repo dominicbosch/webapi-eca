@@ -1,3 +1,5 @@
+'use strict';
+
 
 fOnLoad = () ->
 	document.title = 'Administrate'

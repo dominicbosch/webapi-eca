@@ -592,7 +592,7 @@ exports.createWebhook = ( username, hookid, hookname, isPublic ) =>
 	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
 	@db.sadd "user:#{ username }:webhooks", hookid,
 		replyHandler "sadd 'user:#{ username }:webhooks' -> '#{ hookid }'"
-	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username, 'isPublic', (isPublic is true),
+	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username, 'isPublic', isPublic,
 		replyHandler "set webhook:#{ hookid } -> [#{ hookname }, #{ username }]"
 
 ###
@@ -616,11 +616,8 @@ exports.getUserWebhookIDs = ( username, cb ) =>
 ###
 Gets all the user's webhooks with names.
 ###
-exports.getAllUserWebhookNames = ( username, cb ) =>
-	console.log 'username: ' + username
-	@db.smembers "user:#{ username }:webhooks", ( dat ) ->
-		log.info dat
-	getSetRecords "user:#{ username }:webhooks", exports.getWebhookName, cb
+exports.getAllUserWebhooks = ( username, cb ) =>
+	getSetRecords "user:#{ username }:webhooks", exports.getFullWebhook, cb
 
 ###
 Returns all webhook IDs. Can be used to check for existing webhooks.

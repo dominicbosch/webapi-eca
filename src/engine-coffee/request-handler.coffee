@@ -151,7 +151,7 @@ exports.handleAdminCommand = ( req, resp ) =>
 				@objAdminCmds[ arrCmd[ 0 ] ] oParams, ( err, obj ) ->
 					resp.send obj.code, obj
 	else
-		resp.send 401, 'You need to be logged in as admin!'
+		resp.status( 401 ).send 'You need to be logged in as admin!'
 
 
 ###

@@ -1,3 +1,5 @@
+'use strict';
+
 #
 # The module that helps creating the rules
 #

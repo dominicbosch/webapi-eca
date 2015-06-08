@@ -1,3 +1,5 @@
+'use strict';
+
 # Fetch the search string and transform it into an object for easy access
 arrParams = window.location.search.substring(1).split '&'
 oParams = {}

@@ -1,3 +1,5 @@
+'use strict';
+
 
 fOnLoad = () ->
 	$( '#password' ).keypress ( e ) ->

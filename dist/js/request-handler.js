@@ -158,7 +158,7 @@ exports.handleAdminCommand = (function(_this) {
         return body += data;
       });
       return req.on('end', function() {
-        var arrCmd, arrKV, arrParams, keyVal, oParams, obj, _i, _len;
+        var arrCmd, arrKV, arrParams, i, keyVal, len, oParams, obj;
         console.log('RH | body is ' + typeof body);
         obj = body;
         _this.log.info('RH | Received admin request: ' + obj.command);
@@ -168,8 +168,8 @@ exports.handleAdminCommand = (function(_this) {
         } else {
           arrParams = arrCmd.slice(1);
           oParams = {};
-          for (_i = 0, _len = arrParams.length; _i < _len; _i++) {
-            keyVal = arrParams[_i];
+          for (i = 0, len = arrParams.length; i < len; i++) {
+            keyVal = arrParams[i];
             arrKV = keyVal.split(":");
             if (arrKV.length === 2) {
               oParams[arrKV[0]] = arrKV[1];
@@ -181,7 +181,7 @@ exports.handleAdminCommand = (function(_this) {
         }
       });
     } else {
-      return resp.send(401, 'You need to be logged in as admin!');
+      return resp.status(401).send('You need to be logged in as admin!');
     }
   };
 })(this);
