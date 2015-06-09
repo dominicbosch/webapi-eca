@@ -7,11 +7,9 @@ HTTP Listener
 > (bound to a method) are then redirected to the appropriate handler which
 > takes care of the request.
  */
-var app, bodyParser, db, express, fs, log, path, requestHandler, session, swig;
+var app, bodyParser, db, express, fs, log, path, session, swig;
 
 log = require('./logging');
-
-requestHandler = require('./request-handler');
 
 db = require('./persistence');
 
@@ -37,7 +35,6 @@ Initializes the request routing and starts listening on the given port.
 exports.init = (function(_this) {
   return function(conf) {
     var arrServices, fileName, i, len, prt, server, servicePath, sess_sec, sessionMiddleware;
-    requestHandler.init();
     if (conf.mode === 'productive') {
       process.on('uncaughtException', function(e) {
         log.error('This is a general exception catcher, but should really be removed in the future!');

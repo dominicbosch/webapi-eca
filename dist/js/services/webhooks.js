@@ -5,7 +5,7 @@ Serve Webhooks
 ==============
 > Answers webhook requests from the user
  */
-var db, express, log, router;
+var allowedHooks, db, express, log, router;
 
 log = require('../logging');
 
@@ -15,22 +15,16 @@ express = require('express');
 
 router = module.exports = express.Router();
 
-this.allowedHooks = {};
+allowedHooks = {};
 
 db.getAllWebhooks((function(_this) {
   return function(err, oHooks) {
     if (oHooks) {
       log.info("SRVC | WEBHOOKS | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
-      return _this.allowedHooks = oHooks;
+      return allowedHooks = oHooks;
     }
   };
 })(this));
-
-
-/*
-A post request retrieved on this handler causes the user object to be
-purged from the session, thus the user will be logged out.
- */
 
 router.post('/get/:id', function(req, res) {
   log.warn('SRVC | WEBHOOKS | implemnt get id');
@@ -98,12 +92,30 @@ router.post('/create', function(req, res) {
   }
 });
 
-router.post('/event/:id', function(req, res) {});
-
 router.post('/delete/:id', function(req, res) {
-  log.warn('SRVC | WEBHOOKS | implemnt delete id');
-  db.getAllUserWebhooks(req.session.username, function(arr) {
-    return log.info('Webhooks' + JSON.stringify(arr));
-  });
-  return res.send('TODO!');
+  var hookid;
+  hookid = req.params.id;
+  log.info('SRVC | WEBHOOKS | Deleting Webhook ' + hookid);
+  delete allowedHooks[hookid];
+  db.deleteWebhook(req.session.pub.username, hookid);
+  return res.send('OK!');
+});
+
+router.post('/event/:id', function(req, res) {
+  var oHook, obj;
+  oHook = allowedHooks[req.params.id];
+  if (oHook) {
+    req.body.engineReceivedTime = (new Date()).getTime();
+    obj = {
+      eventname: oHook.hookname,
+      body: req.body
+    };
+    db.pushEvent(obj);
+    return resp.send(200, JSON.stringify({
+      message: "Thank you for the event: '" + oHook.hookname + "'",
+      evt: obj
+    }));
+  } else {
+    return res.send(404, 'Webhook not existing!');
+  }
 });

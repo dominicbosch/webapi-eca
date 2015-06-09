@@ -55,6 +55,12 @@ table .centered {
 	text-align: center;
 }
 
+input.url {
+	width: 70%;
+	font-size: 0.8em;
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
 #mainbody {
 	padding-left: 2%;
 	padding-right: 2%;
@@ -114,12 +120,6 @@ table .centered {
 
 #table_webhooks td {
 	padding-right: 10px;
-}
-
-#table_webhooks input {
-	width: 70%;
-	font-size: 0.8em;
-	font-family: "Lucida Console", Monaco, monospace;
 }
 
 #tabletl td {

@@ -18,22 +18,20 @@ express = require 'express'
 
 router = module.exports = express.Router()
 
-@allowedHooks = {}
+allowedHooks = {}
 db.getAllWebhooks ( err, oHooks ) =>
 	if oHooks
 		log.info "SRVC | WEBHOOKS | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
-		@allowedHooks = oHooks
+		allowedHooks = oHooks
 
-###
-A post request retrieved on this handler causes the user object to be
-purged from the session, thus the user will be logged out.
-###
+# User requests a webhook
 router.post '/get/:id', ( req, res ) ->
 	log.warn 'SRVC | WEBHOOKS | implemnt get id'
 	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
 		log.info 'Webhooks' + JSON.stringify arr
 	res.send 'TODO!'
 
+# User fetches all his existing webhooks
 router.post '/getall', ( req, res ) ->
 	log.info 'SRVC | WEBHOOKS | Fetching all Webhooks'
 	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
@@ -42,6 +40,7 @@ router.post '/getall', ( req, res ) ->
 		else
 			res.send arr
 
+# User wants to create a new webhook
 router.post '/create', ( req, res ) ->
 	if not req.body.hookname
 		res.status( 400 ).send 'Please provide event name'
@@ -70,57 +69,26 @@ router.post '/create', ( req, res ) ->
 					hookid: hookid
 					hookname: req.body.hookname
 
+# User wants to delete a webhook
+router.post '/delete/:id', ( req, res ) ->
+	hookid = req.params.id
+	log.info 'SRVC | WEBHOOKS | Deleting Webhook ' + hookid
+	delete allowedHooks[ hookid ]
+	db.deleteWebhook req.session.pub.username, hookid
+	res.send 'OK!'
 
+# A remote service pushes an event over a webhook to our system
 # http://localhost:8080/service/webhooks/event/v0lruppnxsdwt5h8ybny7gb9rh9smz6cwfudwqptnxbf0f6r
 router.post '/event/:id', ( req, res ) ->
-
-	# ###
-	# Handles webhook posts
-	# ###
-	# exports.handleWebhooks = ( req, resp ) =>
-	# 	hookid = req.url.substring( 10 ).split( '/' )[ 0 ]
-	# 	oHook = @allowedHooks[ hookid ]
-	# 	if oHook
-	# 		body = ''
-	# 		req.on 'data', ( data ) ->
-	# 			body += data
-	# 		req.on 'end', () ->
-	# 			body.engineReceivedTime = (new Date()).getTime()
-	# 			obj =
-	# 				eventname: oHook.hookname
-	# 				body: body
-	# 			if oHook.username
-	# 				obj.username = oHook.username
-	# 			db.pushEvent obj
-	# 			resp.send 200, JSON.stringify
-	# 				message: "Thank you for the event: '#{ oHook.hookname }'"
-	# 				evt: obj
-	# 	else
-	# 		resp.send 404, "Webhook not existing!"
-
-router.post '/delete/:id', ( req, res ) ->
-	log.warn 'SRVC | WEBHOOKS | implemnt delete id'
-	db.getAllUserWebhooks req.session.username, ( arr ) ->
-		log.info 'Webhooks' + JSON.stringify arr
-	res.send 'TODO!'
-	# # Deactivate a webhook
-	# exports.deactivateWebhook = ( hookid ) =>
-	# 	@log.info "HL | Webhook '#{ hookid }' deactivated"
-	# 	delete @allowedHooks[ hookid ]
-
-
-
-# WEBHOOKS
-# --------
-
-	# delete_webhook: ( user, oBody, callback ) ->
-	# 	answ = hasRequiredParams [ 'hookid' ], oBody
-	# 	if answ.code isnt 200
-	# 		callback answ
-	# 	else
-	# 		rh.deactivateWebhook oBody.hookid
-	# 		db.deleteWebhook user.username, oBody.hookid
-	# 		callback
-	# 			code: 200
-	# 			message: 'OK!'
-	# 	
+	oHook = allowedHooks[ req.params.id ]
+	if oHook
+		req.body.engineReceivedTime = (new Date()).getTime()
+		obj =
+			eventname: oHook.hookname
+			body: req.body
+		db.pushEvent obj
+		resp.send 200, JSON.stringify
+			message: "Thank you for the event: '#{ oHook.hookname }'"
+			evt: obj
+	else
+		res.send 404, 'Webhook not existing!'

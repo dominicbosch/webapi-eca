@@ -8,7 +8,7 @@ Request Handler
 > pages as well as POST requests such as user login, module storing, event
 > invocation and also admin commands.
  */
-var crypto, db, dirHandlers, exports, fs, log, path, pathUsers;
+var crypto, db, exports, fs, log, path;
 
 log = require('./logging');
 
@@ -20,26 +20,7 @@ path = require('path');
 
 crypto = require('crypto-js');
 
-pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-
-dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
-
 exports = module.exports;
-
-exports.init = function() {
-  var fStoreUser, oUser, results, user, users;
-  users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-  fStoreUser = function(username, oUser) {
-    oUser.username = username;
-    return db.storeUser(oUser);
-  };
-  results = [];
-  for (user in users) {
-    oUser = users[user];
-    results.push(fStoreUser(user, oUser));
-  }
-  return results;
-};
 
 this.objAdminCmds = {
   shutdown: function(obj, cb) {

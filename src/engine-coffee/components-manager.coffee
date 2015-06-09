@@ -19,8 +19,6 @@ db = require './persistence'
 dynmod = require './dynamic-modules'
 # - [Encryption](encryption.html)
 encryption = require './encryption'
-# - [Request Handler](request-handler.html)
-rh = require './request-handler'
 
 # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 #   [path](http://nodejs.org/api/path.html) and
@@ -72,32 +70,6 @@ exports.addRuleListener = ( eh ) =>
 					
 		# Go through each user
 		fGoThroughUsers user, rules for user, rules of objUsers
-
-###
-Processes a user request coming through the request-handler.
-
-	- `user` is the user object as it comes from the DB.
-	- `oReq` is the request object that contains:
-	- `command` as a string 
-	- `body` an optional stringified JSON object 
-The callback function `callback( obj )` will receive an object
-containing the HTTP response code and a corresponding message.
-
-@public processRequest ( *user, oReq, callback* )
-###
-exports.processRequest = ( user, oReq, callback ) ->
-	if not oReq.body
-		oReq.body = '{}'
-	try
-		dat = JSON.parse oReq.body
-	catch err
-		return callback
-			code: 404
-			message: 'You had a strange body in your request!'
-
-		# If the command function was registered we invoke it
-	commandFunctions[oReq.command] user, dat, callback
-
 
 
 # ###

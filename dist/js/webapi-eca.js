@@ -152,12 +152,20 @@ init = (function(_this) {
     log.info('RS | Initialzing DB');
     db.init(conf['db-port']);
     return db.isConnected(function(err) {
-      var poller;
+      var oUser, pathUsers, poller, username, users;
       db.selectDatabase(conf['db-select']);
       if (err) {
         log.error('RS | No DB connection, shutting down system!');
         return shutDown();
       } else {
+        log.info('RS | Initialzing Users');
+        pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
+        users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+        for (username in users) {
+          oUser = users[username];
+          oUser.username = username;
+          db.storeUser(oUser);
+        }
         log.info('RS | Initialzing engine');
         engine.init();
         log.info('RS | Forking a child process for the trigger poller');

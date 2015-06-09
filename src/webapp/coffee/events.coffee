@@ -34,6 +34,7 @@ checkWebhookExists = () ->
 				if hook.hookname is obj.eventname
 					elm.attr 'class', 'exists'
 					exists = true
+					
 			if exists
 				# main.setInfo true, 'A Webhook exists for this Event!'
 				$( '#tlwebh' ).removeClass( 'red' ).addClass 'green'

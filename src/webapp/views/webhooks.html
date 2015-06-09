@@ -7,11 +7,14 @@
 {% block pagetitle %}Webhooks{% endblock %}
 
 {% block content %}
-	<p>Event Name: <input type="text" id="inp_hookname" /></p>
-	<p>Events over this Webhook are available to all users : <input type="checkbox" id="inp_public" /></p>
-		<button type="button" id="but_submit">Create!</button>
-	<div class="row" id="display_hookurl">
+	<div class="container-fluid">
+		<div class="row">Event Name: <input type="text" id="inp_hookname" /></div>
+		<div class="row">
+			Events over this Webhook are available to all users : <input type="checkbox" id="inp_public" />
+		</div>
+		<div class="row"><button type="button" id="but_submit">Create!</button></div>
+		<div class="row" id="display_hookurl"></div>
+		<div class="row" id="display_hookurl"></div>
+		<div class="row" id="table_webhooks"></div>
 	</div>
-	<div class="row" id="display_hookurl"></div>
-	<div class="row" id="table_webhooks"></div>
 {% endblock %}

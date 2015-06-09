@@ -1,12 +1,7 @@
 'use strict';
-var fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl;
+var fFailedRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl;
 
 hostUrl = [location.protocol, '//', location.host].join('');
-
-fIssueRequest = function(args) {
-  main.clearInfo();
-  return $.post('/service/webhooks/' + args.command, args.data).done(args.done).fail(args.fail);
-};
 
 fFailedRequest = function(msg) {
   return function(err) {
@@ -19,11 +14,8 @@ fFailedRequest = function(msg) {
 };
 
 fUpdateWebhookList = function(cb) {
-  return fIssueRequest({
-    command: 'getall',
-    done: fProcessWebhookList(cb),
-    fail: fFailedRequest('Unable to get Webhook list')
-  });
+  main.clearInfo();
+  return $.post('/service/webhooks/getall').done(fProcessWebhookList(cb)).fail(fFailedRequest('Unable to get Webhook list'));
 };
 
 fProcessWebhookList = function(cb) {
@@ -35,7 +27,7 @@ fProcessWebhookList = function(cb) {
       oHook = oHooks[hookid];
       tr = $('<tr>');
       tdName = $('<div>').text(oHook.hookname);
-      tdUrl = $('<input>').val(hostUrl + "/webhooks/" + hookid);
+      tdUrl = $('<input>').attr('class', 'url').val(hostUrl + "/service/webhooks/event/" + hookid);
       img = $('<img>').attr('class', 'del').attr('title', 'Delete Webhook').attr('src', '/images/red_cross_small.png');
       tr.append($('<td>').append(img));
       isPub = oHook.isPublic === 'true';
@@ -56,7 +48,7 @@ fShowWebhookUsage = function(hookid, hookname) {
     b = $('<b>').text("This is the Webhook Url you can use for your Events '" + hookname + "' : ");
     $('#display_hookurl').append(b);
     $('#display_hookurl').append($('<br>'));
-    inp = $('<input>').attr('type', 'text').val(hostUrl + "/webhooks/" + hookid);
+    inp = $('<input>').attr('class', 'url').attr('type', 'text').val(hostUrl + "/webhooks/" + hookid);
     $('#display_hookurl').append(inp);
     $('#display_hookurl').append($('<br>'));
     div = $('<div>');
@@ -73,27 +65,23 @@ fOnLoad = function() {
   fUpdateWebhookList(fShowWebhookUsage);
   $('#inp_hookname').val(oParams.id);
   $('#but_submit').click(function() {
-    var hookname;
+    var data, hookname;
     main.clearInfo();
     hookname = $('#inp_hookname').val();
     if (hookname === '') {
       return main.setInfo(false, 'Please provide an Event Name for your new Webhook!');
     } else {
-      return fIssueRequest({
-        command: 'create',
-        data: {
-          hookname: hookname,
-          isPublic: $('#inp_public').is(':checked')
-        },
-        done: function(data) {
-          return fShowWebhookUsage(data.hookid, data.hookname);
-        },
-        fail: function(err) {
-          if (err.status === 409) {
-            return fFailedRequest('Webhook Event Name already existing!')(err);
-          } else {
-            return fFailedRequest('Unable to create Webhook! ' + err.message)(err);
-          }
+      data = {
+        hookname: hookname,
+        isPublic: $('#inp_public').is(':checked')
+      };
+      return $.post('/service/webhooks/create', data).done(function(data) {
+        return fShowWebhookUsage(data.hookid, data.hookname);
+      }).fail(function(err) {
+        if (err.status === 409) {
+          return fFailedRequest('Webhook Event Name already existing!')(err);
+        } else {
+          return fFailedRequest('Unable to create Webhook! ' + err.message)(err);
         }
       });
     }
@@ -103,22 +91,13 @@ fOnLoad = function() {
     if (confirm("Do you really want to delete this webhook?")) {
       url = $('input', $(this).closest('tr')).val();
       arrUrl = url.split('/');
-      return fIssueRequest({
-        command: 'delete',
-        data: {
-          body: JSON.stringify({
-            hookid: arrUrl[arrUrl.length - 1]
-          })
-        },
-        done: function(data) {
-          return fUpdateWebhookList(function(data) {
-            $('#info').text('Webhook deleted!');
-            return $('#info').attr('class', 'success');
-          });
-        },
-        fail: function(err) {
-          return fFailedRequest('Unable to delete Webhook!')(err);
-        }
+      return $.post('/service/webhooks/delete/' + arrUrl[arrUrl.length - 1]).done(function(data) {
+        return fUpdateWebhookList(function(data) {
+          $('#info').text('Webhook deleted!');
+          return $('#info').attr('class', 'success');
+        });
+      }).fail(function(err) {
+        return fFailedRequest('Unable to delete Webhook!')(err);
       });
     }
   });

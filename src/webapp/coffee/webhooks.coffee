@@ -2,13 +2,6 @@
 
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
-fIssueRequest = ( args ) ->
-	main.clearInfo()
-	$.post( '/service/webhooks/' + args.command, args.data )
-		.done args.done
-		.fail args.fail
-
-
 fFailedRequest = ( msg ) ->
 	( err ) ->
 		if err.status is 401
@@ -17,10 +10,10 @@ fFailedRequest = ( msg ) ->
 			main.setInfo false, msg
 
 fUpdateWebhookList = ( cb ) ->
-	fIssueRequest
-		command: 'getall'
-		done: fProcessWebhookList cb
-		fail: fFailedRequest 'Unable to get Webhook list'
+	main.clearInfo()
+	$.post( '/service/webhooks/getall' )
+		.done fProcessWebhookList cb
+		.fail fFailedRequest 'Unable to get Webhook list'
 
 fProcessWebhookList = ( cb ) ->
 	( oHooks ) ->
@@ -29,7 +22,7 @@ fProcessWebhookList = ( cb ) ->
 		for hookid, oHook of oHooks
 			tr = $( '<tr>' )
 			tdName = $( '<div>' ).text oHook.hookname
-			tdUrl = $( '<input>' ).val "#{ hostUrl }/webhooks/#{ hookid }"
+			tdUrl = $( '<input>' ).attr( 'class', 'url' ).val "#{ hostUrl }/service/webhooks/event/#{ hookid }"
 			img = $( '<img>' ).attr( 'class', 'del' )
 				.attr( 'title', 'Delete Webhook' ).attr 'src', '/images/red_cross_small.png'
 			tr.append( $( '<td>' ).append img )
@@ -51,7 +44,7 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 		b = $( '<b>' ).text "This is the Webhook Url you can use for your Events '#{ hookname }' : "
 		$( '#display_hookurl' ).append b
 		$( '#display_hookurl' ).append $('<br>')
-		inp = $('<input>').attr( 'type', 'text' )
+		inp = $('<input>').attr( 'class', 'url' ).attr( 'type', 'text' )
 			.val "#{ hostUrl }/webhooks/#{ hookid }"
 		$( '#display_hookurl' ).append inp
 		$( '#display_hookurl' ).append $('<br>')
@@ -66,9 +59,7 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 		$( '#display_hookurl' ).append div
 
 fOnLoad = () ->
-
 	main.registerHoverInfo $( '#pagetitle' ), 'webhookinfo.html'
-
 	fUpdateWebhookList fShowWebhookUsage
 
 	$( '#inp_hookname' ).val oParams.id
@@ -82,17 +73,13 @@ fOnLoad = () ->
 
 		else
 			# $( '#display_hookurl *' ).remove()
-			fIssueRequest
-				command: 'create'
-				data: 
-					hookname: hookname
-					isPublic: $( '#inp_public' ).is( ':checked' )
-				done: ( data ) ->
+			data = 
+				hookname: hookname
+				isPublic: $( '#inp_public' ).is( ':checked' )
+			$.post( '/service/webhooks/create', data )
+				.done ( data ) ->
 					fShowWebhookUsage data.hookid, data.hookname
-					# fUpdateWebhookList ( data ) ->
-					# 	$( '#info' ).text "New Webhook successfully created!"
-					# 	$( '#info' ).attr 'class', 'success'
-				fail: ( err ) ->
+				.fail ( err ) ->
 					if err.status is 409
 						fFailedRequest( 'Webhook Event Name already existing!' ) err
 					else
@@ -102,18 +89,12 @@ fOnLoad = () ->
 		if confirm  "Do you really want to delete this webhook?"
 			url = $( 'input', $( this ).closest( 'tr' ) ).val()
 			arrUrl = url.split '/'
-			fIssueRequest
-				command: 'delete'
-				data: 
-					body: JSON.stringify
-						hookid: arrUrl[ arrUrl.length - 1 ]
-
-				done: ( data ) ->
+			$.post( '/service/webhooks/delete/' + arrUrl[ arrUrl.length - 1 ] )
+				.done ( data ) ->
 					fUpdateWebhookList ( data ) ->
 						$( '#info' ).text 'Webhook deleted!'
 						$( '#info' ).attr 'class', 'success'
-
-				fail: ( err ) ->
+				.fail ( err ) ->
 					fFailedRequest( 'Unable to delete Webhook!' ) err
 
 window.addEventListener 'load', fOnLoad, true

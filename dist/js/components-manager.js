@@ -7,7 +7,7 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, rh, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, storeModule, storeRule;
 
 log = require('./logging');
 
@@ -16,8 +16,6 @@ db = require('./persistence');
 dynmod = require('./dynamic-modules');
 
 encryption = require('./encryption');
-
-rh = require('./request-handler');
 
 fs = require('fs');
 
@@ -84,37 +82,6 @@ exports.addRuleListener = (function(_this) {
     });
   };
 })(this);
-
-
-/*
-Processes a user request coming through the request-handler.
-
-	- `user` is the user object as it comes from the DB.
-	- `oReq` is the request object that contains:
-	- `command` as a string 
-	- `body` an optional stringified JSON object 
-The callback function `callback( obj )` will receive an object
-containing the HTTP response code and a corresponding message.
-
-@public processRequest ( *user, oReq, callback* )
- */
-
-exports.processRequest = function(user, oReq, callback) {
-  var dat, err;
-  if (!oReq.body) {
-    oReq.body = '{}';
-  }
-  try {
-    dat = JSON.parse(oReq.body);
-  } catch (_error) {
-    err = _error;
-    return callback({
-      code: 404,
-      message: 'You had a strange body in your request!'
-    });
-  }
-  return commandFunctions[oReq.command](user, dat, callback);
-};
 
 exports.handleUserCommand = (function(_this) {
   return function(req, resp) {

@@ -12,8 +12,6 @@ HTTP Listener
 
 # - [Logging](logging.html)
 log = require './logging'
-# - [Request Handler](request-handler.html)
-requestHandler = require './request-handler'
 # - [Persistence](persistence.html)
 db = require './persistence'
 
@@ -37,8 +35,6 @@ app = express()
 Initializes the request routing and starts listening on the given port.
 ###
 exports.init = ( conf ) =>
-	requestHandler.init()
-
 	if conf.mode is 'productive'
 		process.on 'uncaughtException', ( e ) ->
 			log.error 'This is a general exception catcher, but should really be removed in the future!'

@@ -161,7 +161,14 @@ init = =>
 			shutDown()
 
 		else
-			# > Initialize all required modules with the args object.
+			log.info 'RS | Initialzing Users'
+			pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
+			# Load the standard users from the user config file
+			users = JSON.parse fs.readFileSync pathUsers, 'utf8'
+			for username, oUser of users
+				oUser.username = username
+				db.storeUser oUser
+
 			log.info 'RS | Initialzing engine'
 			#TODO We could in the future make the engine a child process as well
 			engine.init()
