@@ -2,6 +2,13 @@
 
 editor = null
 
+parseEvent = () ->
+	try
+		obj = JSON.parse editor.getValue()
+	catch err
+		main.setInfo false, 'You have errors in your JSON object! ' + err
+
+
 fFindKeyStringPair = ( obj ) ->
 	for key, val of obj
 		if typeof val is 'string' or typeof val is 'number'
@@ -13,8 +20,8 @@ fFindKeyStringPair = ( obj ) ->
 	null
 
 checkWebhookExists = () ->
-	try
-		obj = JSON.parse editor.getValue()
+	obj = parseEvent()
+	if obj
 		$.post '/service/webhooks/getall', ( oHooks ) ->
 			$( '#listhooks *' ).remove()
 			numHooks = 0
@@ -28,10 +35,15 @@ checkWebhookExists = () ->
 					elm.attr 'class', 'exists'
 					exists = true
 			if exists
-				main.setInfo true, 'A Webhook exists for this Event!'
-				setTimeout checkRuleExists, 2000
+				# main.setInfo true, 'A Webhook exists for this Event!'
+				$( '#tlwebh' ).removeClass( 'red' ).addClass 'green'
+				$( '#but_webh' ).hide()
+				checkRuleExists()
 			else
-				main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
+				# main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
+				$( '#tlwebh' ).removeClass( 'green' ).addClass 'red'
+				$( '#but_webh' ).show()
+				$( '#but_emit' ).hide()
 
 			if numHooks is 0
 				$( '#listhooks' ).text 'You do not have any Webhooks! Create one first!'
@@ -39,19 +51,23 @@ checkWebhookExists = () ->
 				$( '#listhooks' ).text 'The Event Names of your available Webhooks are:'
 				$( '#listhooks' ).append ul
 
-	catch err
-		console.log err
 
-checkRuleExists = ( name ) ->
+checkRuleExists = () ->
 	$.post '/service/rules/getall', ( oRules ) ->
 		exists = false
 		for prop, rule in oRules
 			if rule.eventtype is 'Webhook' and rule.eventname is name
 				exists = true
 		if exists
-			main.setInfo true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!'
+			$( '#tlrule' ).removeClass( 'red' ).addClass 'green'
+			$( '#but_prep' ).hide()
+			$( '#but_emit' ).show()
+			# main.setInfo true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!'
 		else
-			main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
+			$( '#tlrule' ).removeClass( 'green' ).addClass 'red'
+			$( '#but_prep' ).show()
+			$( '#but_emit' ).hide()
+			# main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
 				
 		console.log oRules 
 
@@ -81,9 +97,9 @@ fOnLoad = () ->
 		editor.setFontSize $( this ).val()
 
 	$( '#but_emit' ).click () ->
-		try
-			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
-			window.scrollTo 0, 0
+		window.scrollTo 0, 0
+		obj = parseEvent()
+		if obj
 			$.post( '/event', obj )
 				.done ( data ) ->
 					main.setInfo true, data.message
@@ -97,19 +113,15 @@ fOnLoad = () ->
 							main.setInfo false, 'Error in upload: ' + err.responseText
 						setTimeout fDelayed, 500
 					
-		catch err
-			main.setInfo false, 'You have errors in your JSON object! ' + err
 	$( '#but_webh' ).click () ->
-		 console.log 'webhook'
+		obj = parseEvent()
+		if obj
+			window.location.href = '/views/webhooks?id=' + encodeURIComponent obj.eventname
 
 		 
 	$( '#but_prep' ).on 'click', () ->
-
-# <button id="but_emit">Emit Event</button>
-# <button id="but_webh">Create a Webhook for this Event</button>
-# <button id="but_prep">Prepare a Rule for this Event</button>
-		try
-			obj = JSON.parse editor.getValue() # try to parse, throw an error if JSON not valid
+		obj = parseEvent()
+		if obj
 			if obj.eventname and typeof obj.eventname is 'string' and obj.eventname isnt ''
 				sel = ''
 				if obj.body and typeof obj.body is 'object'
@@ -120,7 +132,5 @@ fOnLoad = () ->
 				window.open url, '_blank'
 			else
 				main.setInfo false, 'Please provide a valid eventname'
-		catch err
-			main.setInfo false, 'You have errors in your JSON object! ' + err
 
 window.addEventListener 'load', fOnLoad, true

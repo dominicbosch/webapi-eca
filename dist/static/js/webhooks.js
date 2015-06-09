@@ -49,7 +49,7 @@ fProcessWebhookList = function(cb) {
       oHook = oHooks[hookid];
       tr = $('<tr>');
       tdName = $('<div>').text(oHook.hookname);
-      tdUrl = $('<input>').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
+      tdUrl = $('<input>').val(hostUrl + "/webhooks/" + hookid);
       img = $('<img>').attr('class', 'del').attr('title', 'Delete Webhook').attr('src', '/images/red_cross_small.png');
       tr.append($('<td>').append(img));
       isPub = oHook.isPublic === 'true';
@@ -70,7 +70,7 @@ fShowWebhookUsage = function(hookid, hookname) {
     b = $('<b>').text("This is the Webhook Url you can use for your Events '" + hookname + "' : ");
     $('#display_hookurl').append(b);
     $('#display_hookurl').append($('<br>'));
-    inp = $('<input>').attr('type', 'text').attr('style', 'width:600px').val(hostUrl + "/webhooks/" + hookid);
+    inp = $('<input>').attr('type', 'text').val(hostUrl + "/webhooks/" + hookid);
     $('#display_hookurl').append(inp);
     $('#display_hookurl').append($('<br>'));
     div = $('<div>');
@@ -85,6 +85,7 @@ fShowWebhookUsage = function(hookid, hookname) {
 fOnLoad = function() {
   main.registerHoverInfo($('#pagetitle'), 'webhookinfo.html');
   fUpdateWebhookList(fShowWebhookUsage);
+  $('#inp_hookname').val(oParams.id);
   $('#but_submit').click(function() {
     var hookname;
     main.clearInfo();

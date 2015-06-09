@@ -87,6 +87,7 @@ table .centered {
 	z-index: 20;
 	position: absolute;
 	padding: 7px 14px;
+	margin: 20px;
 	background: #FFF;
 	border: 1px solid #666;
 	display: none;
@@ -109,6 +110,33 @@ table .centered {
 	color: #150;
 	font-weight: bold;
 	text-decoration: underline;
+}
+
+#table_webhooks td {
+	padding-right: 10px;
+}
+
+#table_webhooks input {
+	width: 70%;
+	font-size: 0.8em;
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
+#tabletl td {
+	padding-left: 15px;
+}
+
+#tabletl button {
+	font-size: 0.8em;
+	width: 120px;
+}
+
+img.tl.red {
+	content: url( "/images/tl_red.png" );
+}
+
+img.tl.green {
+	content: url( "/images/tl_green.png" );
 }
 
 /*

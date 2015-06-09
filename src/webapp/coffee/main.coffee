@@ -14,15 +14,6 @@ $( document ).ready () ->
 				window.location.href = '/'
 			setTimeout redirect, 500
 
-hoverIn = ( html ) ->
-	( e ) ->
-		$( '#tooltip' ).html( html ).fadeIn()
-			.css( 'top', e.target.offsetTop + e.target.height )
-			.css( 'left', e.target.offsetLeft + e.target.width / 2 )
-
-hoverOut = ( e ) ->
-	$( '#tooltip' ).fadeOut()
-
 window.main =
 	setInfo: ( isSuccess, msg ) ->
 		$( '#skeletonTicker' ).text msg
@@ -34,9 +25,26 @@ window.main =
 		$( '#skeletonTicker' ).attr 'class', ''
 
 	registerHoverInfo: ( el, file ) ->
+		hoverOut = () ->
+			$( this ).removeClass 'hovered'
+			checkHover = () ->
+				if not $( '#tooltip' ).hasClass( 'hovered' ) and not el.hasClass 'hovered'
+					$( '#tooltip' ).fadeOut()
+			setTimeout checkHover, 0
+			
 		$.get '/help/' + file, ( html ) ->
 			info = $( '<img>' )
 				.attr( 'src', '/images/info.png' )
 				.attr( 'class', 'infoimg' )
-				.hover hoverIn( html ), hoverOut
+				.mouseleave hoverOut
+				.mouseenter ( e ) ->
+					$( this ).addClass 'hovered'
+					$( '#tooltip' ).html( html )
+						.css( 'top', e.target.offsetTop + e.target.height - 20 )
+						.css( 'left', e.target.offsetLeft + (e.target.width / 2) - 20 )
+						.fadeIn()
+						.mouseleave hoverOut
+						.mouseenter () ->
+							$( this ).addClass 'hovered'
+
 			el.append( info );

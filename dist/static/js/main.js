@@ -1,6 +1,4 @@
 'use strict';
-var hoverIn, hoverOut;
-
 $(document).ready(function() {
   var elSelected, els, url;
   url = window.location.href;
@@ -21,16 +19,6 @@ $(document).ready(function() {
   });
 });
 
-hoverIn = function(html) {
-  return function(e) {
-    return $('#tooltip').html(html).fadeIn().css('top', e.target.offsetTop + e.target.height).css('left', e.target.offsetLeft + e.target.width / 2);
-  };
-};
-
-hoverOut = function(e) {
-  return $('#tooltip').fadeOut();
-};
-
 window.main = {
   setInfo: function(isSuccess, msg) {
     $('#skeletonTicker').text(msg);
@@ -42,9 +30,25 @@ window.main = {
     return $('#skeletonTicker').attr('class', '');
   },
   registerHoverInfo: function(el, file) {
+    var hoverOut;
+    hoverOut = function() {
+      var checkHover;
+      $(this).removeClass('hovered');
+      checkHover = function() {
+        if (!$('#tooltip').hasClass('hovered') && !el.hasClass('hovered')) {
+          return $('#tooltip').fadeOut();
+        }
+      };
+      return setTimeout(checkHover, 0);
+    };
     return $.get('/help/' + file, function(html) {
       var info;
-      info = $('<img>').attr('src', '/images/info.png').attr('class', 'infoimg').hover(hoverIn(html), hoverOut);
+      info = $('<img>').attr('src', '/images/info.png').attr('class', 'infoimg').mouseleave(hoverOut).mouseenter(function(e) {
+        $(this).addClass('hovered');
+        return $('#tooltip').html(html).css('top', e.target.offsetTop + e.target.height - 20).css('left', e.target.offsetLeft + (e.target.width / 2) - 20).fadeIn().mouseleave(hoverOut).mouseenter(function() {
+          return $(this).addClass('hovered');
+        });
+      });
       return el.append(info);
     });
   }

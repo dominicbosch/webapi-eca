@@ -33,9 +33,20 @@
 			<div id="editor"></div>
 		</div>
 		<div class="row">
+			Before emitting an event, be sure: <br>
+			<table id="tabletl">
+				<tr>
+					<td><img id="tlwebh" class="tl red" /> Webhook exists</td>
+					<td><button id="but_webh">Create Webhook</button></td>
+				</tr>
+				<tr>
+					<td><img id="tlrule" class="tl red" /> Rule exists</td>
+					<td><button id="but_prep">Create Rule</button></td>
+				</tr>
+			</table>
+		</div>
+		<div class="row">
 			<button id="but_emit">Emit Event</button>
-			<button id="but_webh">Create a Webhook for this Event</button>
-			<button id="but_prep">Prepare a Rule for this Event</button>
 		</div>
 		<div id="listhooks" class="row"></div>
 	</div>

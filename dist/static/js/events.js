@@ -1,7 +1,17 @@
 'use strict';
-var checkRuleExists, checkWebhookExists, editor, fFindKeyStringPair, fOnLoad;
+var checkRuleExists, checkWebhookExists, editor, fFindKeyStringPair, fOnLoad, parseEvent;
 
 editor = null;
+
+parseEvent = function() {
+  var err, obj;
+  try {
+    return obj = JSON.parse(editor.getValue());
+  } catch (_error) {
+    err = _error;
+    return main.setInfo(false, 'You have errors in your JSON object! ' + err);
+  }
+};
 
 fFindKeyStringPair = function(obj) {
   var key, oRet, val;
@@ -23,9 +33,9 @@ fFindKeyStringPair = function(obj) {
 };
 
 checkWebhookExists = function() {
-  var err, obj;
-  try {
-    obj = JSON.parse(editor.getValue());
+  var obj;
+  obj = parseEvent();
+  if (obj) {
     return $.post('/service/webhooks/getall', function(oHooks) {
       var elm, exist, exists, hook, id, numHooks, ul;
       $('#listhooks *').remove();
@@ -43,10 +53,13 @@ checkWebhookExists = function() {
         }
       }
       if (exists) {
-        main.setInfo(true, 'A Webhook exists for this Event!');
-        setTimeout(checkRuleExists, 2000);
+        $('#tlwebh').removeClass('red').addClass('green');
+        $('#but_webh').hide();
+        checkRuleExists();
       } else {
-        main.setInfo(false, 'No Webhook exists for this Event Name, please create one!');
+        $('#tlwebh').removeClass('green').addClass('red');
+        $('#but_webh').show();
+        $('#but_emit').hide();
       }
       if (numHooks === 0) {
         return $('#listhooks').text('You do not have any Webhooks! Create one first!');
@@ -55,13 +68,10 @@ checkWebhookExists = function() {
         return $('#listhooks').append(ul);
       }
     });
-  } catch (_error) {
-    err = _error;
-    return console.log(err);
   }
 };
 
-checkRuleExists = function(name) {
+checkRuleExists = function() {
   return $.post('/service/rules/getall', function(oRules) {
     var exists, i, len, prop, rule;
     exists = false;
@@ -72,9 +82,13 @@ checkRuleExists = function(name) {
       }
     }
     if (exists) {
-      main.setInfo(true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!');
+      $('#tlrule').removeClass('red').addClass('green');
+      $('#but_prep').hide();
+      $('#but_emit').show();
     } else {
-      main.setInfo(false, 'No Rule is listening for this Event Name, please create one!');
+      $('#tlrule').removeClass('green').addClass('red');
+      $('#but_prep').show();
+      $('#but_emit').hide();
     }
     return console.log(oRules);
   });
@@ -104,10 +118,10 @@ fOnLoad = function() {
     return editor.setFontSize($(this).val());
   });
   $('#but_emit').click(function() {
-    var err, obj;
-    try {
-      obj = JSON.parse(editor.getValue());
-      window.scrollTo(0, 0);
+    var obj;
+    window.scrollTo(0, 0);
+    obj = parseEvent();
+    if (obj) {
       return $.post('/event', obj).done(function(data) {
         return main.setInfo(true, data.message);
       }).fail(function(err) {
@@ -124,18 +138,19 @@ fOnLoad = function() {
           return setTimeout(fDelayed, 500);
         }
       });
-    } catch (_error) {
-      err = _error;
-      return main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
   });
   $('#but_webh').click(function() {
-    return console.log('webhook');
+    var obj;
+    obj = parseEvent();
+    if (obj) {
+      return window.location.href = '/views/webhooks?id=' + encodeURIComponent(obj.eventname);
+    }
   });
   return $('#but_prep').on('click', function() {
-    var err, oSelector, obj, sel, url;
-    try {
-      obj = JSON.parse(editor.getValue());
+    var oSelector, obj, sel, url;
+    obj = parseEvent();
+    if (obj) {
       if (obj.eventname && typeof obj.eventname === 'string' && obj.eventname !== '') {
         sel = '';
         if (obj.body && typeof obj.body === 'object') {
@@ -149,9 +164,6 @@ fOnLoad = function() {
       } else {
         return main.setInfo(false, 'Please provide a valid eventname');
       }
-    } catch (_error) {
-      err = _error;
-      return main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
   });
 };
