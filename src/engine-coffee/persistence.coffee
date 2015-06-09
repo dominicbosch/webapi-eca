@@ -514,8 +514,10 @@ exports.storeUser = ( objUser ) =>
 			replyHandler "sadd 'users' -> '#{ objUser.username }'"
 		@db.hmset "user:#{ objUser.username }", objUser,
 			replyHandler "hmset 'user:#{ objUser.username }' -> [objUser]"
+		true
 	else
 		log.warn new Error 'DB | username or password was missing'
+		false
 
 ###
 Fetch all user IDs and pass them to cb(err, obj).

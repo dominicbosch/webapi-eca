@@ -29,7 +29,7 @@ checkWebhookExists = () ->
 			ul = $ '<ul>'
 			for id, hook of oHooks
 				numHooks++
-				elm = $( '<li>' ).text '"' + hook.hookname + '"'
+				elm = $ "<li><kbd>#{ hook.hookname }</kbd></li>"
 				ul.append elm
 				if hook.hookname is obj.eventname
 					elm.attr 'class', 'exists'
@@ -53,7 +53,6 @@ checkWebhookExists = () ->
 				$( '#listhooks' ).text 'The Event Names of your available Webhooks are:'
 				$( '#listhooks' ).append ul
 
-
 checkRuleExists = () ->
 	$.post '/service/rules/getall', ( oRules ) ->
 		exists = false
@@ -70,9 +69,6 @@ checkRuleExists = () ->
 			$( '#but_rule' ).show()
 			$( '#but_emit' ).hide()
 			# main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
-				
-		console.log oRules 
-
 
 fOnLoad = () ->
 	main.registerHoverInfo $( '#pagetitle' ), 'eventinfo.html'
@@ -85,7 +81,12 @@ fOnLoad = () ->
 	editor.setShowPrintMargin false
 
 	$.get '/data/example_event.txt', ( data ) ->
-		editor.setValue data, -1
+		# If hookname has been passed in the url, the user wants to emit an event for this
+		if oParams.hookname
+			txt = '\n' + JSON.stringify({ eventname: oParams.hookname }, null, '\t') + '\n'
+			editor.setValue txt, -1
+		else
+			editor.setValue data, -1
 		checkWebhookExists()
 
 		# Only register change handler after we initially filled the editor
@@ -118,8 +119,8 @@ fOnLoad = () ->
 	$( '#but_webh' ).click () ->
 		obj = parseEvent()
 		if obj
+			# window.open '/views/webhooks?id=' + encodeURIComponent obj.eventname, '_blank'
 			window.location.href = '/views/webhooks?id=' + encodeURIComponent obj.eventname
-
 		 
 	$( '#but_rule' ).on 'click', () ->
 		obj = parseEvent()

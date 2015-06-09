@@ -1,3 +1,6 @@
+h4 {
+	padding-top: 20px;
+}
 
 #bannerimg {
 	padding-left: 2%;
@@ -53,6 +56,10 @@ h1 {
 
 table .centered {
 	text-align: center;
+}
+
+table.padded td {
+	padding: 2px;
 }
 
 input.url {
@@ -112,14 +119,24 @@ input.url {
 	font-size: 0.8em;
 }
 
-#listhooks .exists {
-	color: #150;
+#listhooks .exists kbd {
+	background-color: #150;
+	color: #fff;
 	font-weight: bold;
-	text-decoration: underline;
+	/*text-decoration: underline;*/
+}
+
+#table_webhooks input {
+	font-size: 0.7em;
+	font-family: "Lucida Console", Monaco, monospace;
 }
 
 #table_webhooks td {
 	padding-right: 10px;
+}
+
+#table_webhooks td:last-child, #table_webhooks td:last-child input {
+	width: 100%;
 }
 
 #tabletl td {

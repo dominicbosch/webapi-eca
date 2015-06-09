@@ -1,13 +1,18 @@
 
 ###
 
-Serve Code Plugin
-=================
-> Answers code plugin requests from the user
+Administration Service
+======================
+> Handles admin requests, such as create new user
 
 ###
 
 # **Loads Modules:**
+
+# - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
+# [path](http://nodejs.org/api/path.html)
+fs = require 'fs'
+path = require 'path'
 
 # - [Logging](logging.html)
 log = require '../logging'
@@ -16,52 +21,43 @@ db = require '../persistence'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 
+pathUsers = path.resolve __dirname, '..', '..', 'config', 'users.json'
+
 router = module.exports = express.Router()
 
+router.post '/createuser', ( req, res ) ->
+	if req.body.username and req.body.password
+		db.getUserIds ( err, arrUsers ) ->
+			if arrUsers.indexOf( req.body.username ) > -1
+				res.status( 409 ).send 'User already existing!' 
+			else
+				oUser = 
+					username: req.body.username
+					password: req.body.password
+					admin: req.body.isAdmin
+				db.storeUser oUser
 
-###
-Present the admin console to the user if he's allowed to see it.
+				fPersistNewUser = ( oUser ) ->
+					( err, data ) -> 
+						users = JSON.parse data
+						users[ oUser.username ] =
+							password: oUser.password
+							admin: oUser.admin
+						fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
+							if err
+								log.error "RH | Unable to write new user file! "
+								log.error err
+								res.status( 500 ).send 'User not persisted!'
+							else
+								res.send 'New user "' + oUser.username + '" created!'
 
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
+				fs.readFile pathUsers, 'utf8', fPersistNewUser oUser
 
-@public handleForge( *req, resp* )
-###
-router.post 'get', ( req, resp ) ->
-	if not req.session.user
-		page = 'login'
-	#TODO isAdmin should come from the db role
-	else if req.session.user.admin
-		page = 'login'
-		msg = 'You need to be admin for this page!'
 	else
-		page = 'admin'
-	renderPage page, req, resp, msg
-	
-# ###
+		res.status( 401 ).send 'Missing parameter for this command!' 
 
-# Request Handler
-# ============
-# > The request handler (surprisingly) handles requests made through HTTP to
-# > the [HTTP Listener](http-listener.html). It will handle user requests for
-# > pages as well as POST requests such as user login, module storing, event
-# > invocation and also admin commands.
 
-# ###
 
-# # **Loads Modules:**
-
-# # - [Logging](logging.html)
-# log = require './logging'
-# # - [Persistence](persistence.html)
-# db = require './persistence'
-
-# # - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
-# #   [path](http://nodejs.org/api/path.html) and
-# fs = require 'fs'
-# path = require 'path'
 
 # # - External Modules: [crypto-js](https://github.com/evanvosberg/crypto-js)
 # crypto = require 'crypto-js'
@@ -79,70 +75,3 @@ router.post 'get', ( req, resp ) ->
 # 		setTimeout process.exit, 500
 # 		cb null, data
 
-# 	newuser: ( obj, cb ) ->
-# 		data =
-# 			code: 200
-# 			message: 'User stored thank you!'
-# 		if obj.username and obj.password
-# 			oUser = 
-# 				username: obj.username
-# 				password: obj.password
-# 				admin: (obj.admin is true)
-# 			db.storeUser oUser
-
-# 			fPersistNewUser = ( oUser ) ->
-# 				( err, data ) -> 
-# 					users = JSON.parse data
-# 					users[ oUser.username ] =
-# 						password: oUser.password
-# 						admin: oUser.admin
-# 					fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
-# 						if err
-# 							log.error "RH | Unable to write new user file! "
-# 							log.error err
-
-# 			fs.readFile pathUsers, 'utf8', fPersistNewUser oUser
-# 		else
-# 			data.code = 401
-# 			data.message = 'Missing parameter for this command' 
-# 		cb null, data
-
-
-
-
-# ###
-# Handles the admin command requests.
-
-# *Requires
-# the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-# and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-# objects.*
-
-# @public handleAdminCommand( *req, resp* )
-# ###
-# exports.handleAdminCommand = ( req, resp ) =>
-# 	if req.session and
-# 			req.session.user and
-# 			req.session.user.admin
-# 		body = ''
-# 		req.on 'data', ( data ) ->
-# 			body += data
-# 		req.on 'end', =>
-# 			console.log 'RH | body is ' + typeof body
-# 			obj = body
-# 			# obj = qs.parse body
-# 			@log.info 'RH | Received admin request: ' + obj.command
-# 			arrCmd = obj.command.split( ' ' )
-# 			if not arrCmd[ 0 ] or not @objAdminCmds[ arrCmd[ 0 ] ]
-# 				resp.send 404, 'Command unknown!'
-# 			else
-# 				arrParams = arrCmd.slice 1
-# 				oParams = {}
-# 				for keyVal in arrParams
-# 					arrKV = keyVal.split ":"
-# 					if arrKV.length is 2
-# 						oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
-# 				@objAdminCmds[ arrCmd[ 0 ] ] oParams, ( err, obj ) ->
-# 					resp.send obj.code, obj
-# 	else
-# 		resp.status( 401 ).send 'You need to be logged in as admin!'

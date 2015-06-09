@@ -2,41 +2,42 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  document.title = 'Administrate';
-  $('#pagetitle').text('Hi {{{user.username}}}, issue your commands please:');
-  if (!window.CryptoJS) {
-    $('#info').attr('class', 'error');
-    $('#info').text('CryptoJS library missing! Are you connected to the internet?');
-  }
-  $('#but_submit').click(function() {
-    var data;
-    data = {
-      command: $('#inp_command').val()
-    };
-    return $.post('admincommand', data).done(function(data) {
-      $('#info').text(data.message);
-      return $('#info').attr('class', 'success');
-    }).fail(function(err) {
-      var fDelayed;
-      fDelayed = function() {
-        if (err.responseText === '') {
-          err.responseText = 'No Response from Server!';
-        }
-        $('#info').text('Error: ' + err.responseText);
-        $('#info').attr('class', 'error');
-        if (err.status === 401) {
-          return window.location.href = 'admin';
-        }
-      };
-      return setTimeout(fDelayed, 500);
+  var updateUserList;
+  updateUserList = function() {
+    $('#users *').remove();
+    return $.post('/service/user/getall').done(function(arrUsers) {
+      var i, len, results, user;
+      results = [];
+      for (i = 0, len = arrUsers.length; i < len; i++) {
+        user = arrUsers[i];
+        results.push($('#users').append($("<tr>\n	<td><img class=\"del\" title=\"Delete User\" src=\"/images/red_cross_small.png\"></td>\n	<td><kbd>" + user + "</kbd></td>\n	<td>Change Password:</td>\n	<td><input type=\"password\"></td>\n</tr>")));
+      }
+      return results;
     });
-  });
-  return $('#inp_password').keyup(function() {
-    var hp;
-    hp = CryptoJS.SHA3($(this).val(), {
+  };
+  updateUserList();
+  return $('#but_submit').click(function() {
+    var data, hp;
+    hp = CryptoJS.SHA3($('#pw').val(), {
       outputLength: 512
     });
-    return $('#display_hash').text(hp.toString());
+    data = {
+      username: $('#user').val(),
+      password: hp.toString(),
+      isAdmin: $('#admin').is(':checked')
+    };
+    return $.post('/service/admin/createuser', data).done(function(msg) {
+      main.setInfo(true, msg);
+      return updateUserList();
+    }).fail(function(err) {
+      if (err.status === 401) {
+        window.location.href = '/';
+      }
+      if (err.responseText === '') {
+        err.responseText = 'No Response from Server!';
+      }
+      return main.setInfo(false, err.responseText);
+    });
   });
 };
 

@@ -45,7 +45,7 @@ checkWebhookExists = function() {
       for (id in oHooks) {
         hook = oHooks[id];
         numHooks++;
-        elm = $('<li>').text('"' + hook.hookname + '"');
+        elm = $("<li><kbd>" + hook.hookname + "</kbd></li>");
         ul.append(elm);
         if (hook.hookname === obj.eventname) {
           elm.attr('class', 'exists');
@@ -85,13 +85,12 @@ checkRuleExists = function() {
     if (exists) {
       $('#tlrule').removeClass('red').addClass('green');
       $('#but_rule').hide();
-      $('#but_emit').show();
+      return $('#but_emit').show();
     } else {
       $('#tlrule').removeClass('green').addClass('red');
       $('#but_rule').show();
-      $('#but_emit').hide();
+      return $('#but_emit').hide();
     }
-    return console.log(oRules);
   });
 };
 
@@ -106,7 +105,15 @@ fOnLoad = function() {
   editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
   $.get('/data/example_event.txt', function(data) {
-    editor.setValue(data, -1);
+    var txt;
+    if (oParams.hookname) {
+      txt = '\n' + JSON.stringify({
+        eventname: oParams.hookname
+      }, null, '\t') + '\n';
+      editor.setValue(txt, -1);
+    } else {
+      editor.setValue(data, -1);
+    }
     checkWebhookExists();
     return editor.getSession().on('change', function() {
       return checkWebhookExists();

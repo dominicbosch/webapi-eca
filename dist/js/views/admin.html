@@ -5,11 +5,28 @@
 	<script src="/js/admin.js"></script>
 {% endblock %}
 
+{% block pagetitle %}Administration{% endblock %}
+
 {% block content %}
-	<input type="text" id="inp_command" style="width:300px" />
-	<button type="button" id="but_submit">command</button>
-	<br><br>
-	<h3>Get your password hashed:</h3>
-	<input type="text" id="inp_password" style="width:300px" />
-	<div id="display_hash" style="font-size:10px" />
+	<h4>Create User:</h4>
+	<table class="padded">
+		<tr>
+			<td>Username</td>
+			<td>:</td>
+			<td><input id="user" type="text"></td>
+		</tr>
+		<tr>
+			<td>Password</td>
+			<td>:</td>
+			<td><input id="pw" type="password"></td>
+		</tr>
+		<tr>
+			<td>is Admin</td>
+			<td>:</td>
+			<td><input id="admin" type="checkbox"></td>
+		</tr>
+	</table>
+	<button id="but_submit">Create</button>
+	<h4>Manage Users:</h4>
+	<table id="users" class="padded"></table>
 {% endblock %}

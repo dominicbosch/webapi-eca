@@ -612,9 +612,11 @@ exports.storeUser = (function(_this) {
     log.info("DB | storeUser: '" + objUser.username + "'");
     if (objUser && objUser.username && objUser.password) {
       _this.db.sadd('users', objUser.username, replyHandler("sadd 'users' -> '" + objUser.username + "'"));
-      return _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
+      _this.db.hmset("user:" + objUser.username, objUser, replyHandler("hmset 'user:" + objUser.username + "' -> [objUser]"));
+      return true;
     } else {
-      return log.warn(new Error('DB | username or password was missing'));
+      log.warn(new Error('DB | username or password was missing'));
+      return false;
     }
   };
 })(this);
