@@ -27,25 +27,18 @@ dirHandlers = path.resolve(__dirname, '..', 'webpages', 'handlers');
 exports = module.exports;
 
 exports.init = function() {
-  var fStoreUser, oUser, user, users;
+  var fStoreUser, oUser, results, user, users;
   users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
   fStoreUser = function(username, oUser) {
     oUser.username = username;
     return db.storeUser(oUser);
   };
+  results = [];
   for (user in users) {
     oUser = users[user];
-    fStoreUser(user, oUser);
+    results.push(fStoreUser(user, oUser));
   }
-  this.allowedHooks = {};
-  return db.getAllWebhooks((function(_this) {
-    return function(err, oHooks) {
-      if (oHooks) {
-        log.info("RH | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
-        return _this.allowedHooks = oHooks;
-      }
-    };
-  })(this));
+  return results;
 };
 
 this.objAdminCmds = {
@@ -98,47 +91,6 @@ this.objAdminCmds = {
 
 
 /*
-Handles possible events that were posted to this server and pushes them into the
-event queue.
- */
-
-exports.handleEvent = function(req, res) {
-  var answ;
-  if (req.body && req.body.eventname) {
-    answ = {
-      code: 200,
-      message: "Thank you for the event: " + req.body.eventname
-    };
-    res.status(answ.code).send(answ);
-    return db.pushEvent(req.body);
-  } else {
-    return res.send(400, 'Your event was missing important parameters!');
-  }
-};
-
-
-/*
-Present the desired forge page to the user.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleForge( *req, resp* )
- */
-
-exports.handleForge = function(req, resp) {
-  var page;
-  page = req.query.page;
-  if (!req.session.user) {
-    page = 'login';
-  }
-  return renderPage(page, req, resp);
-};
-
-
-/*
 Handles the admin command requests.
 
 *Requires
@@ -183,59 +135,5 @@ exports.handleAdminCommand = (function(_this) {
     } else {
       return resp.status(401).send('You need to be logged in as admin!');
     }
-  };
-})(this);
-
-
-/*
-Handles webhook posts
- */
-
-exports.handleWebhooks = (function(_this) {
-  return function(req, resp) {
-    var body, hookid, oHook;
-    hookid = req.url.substring(10).split('/')[0];
-    oHook = _this.allowedHooks[hookid];
-    if (oHook) {
-      body = '';
-      req.on('data', function(data) {
-        return body += data;
-      });
-      return req.on('end', function() {
-        var obj;
-        body.engineReceivedTime = (new Date()).getTime();
-        obj = {
-          eventname: oHook.hookname,
-          body: body
-        };
-        if (oHook.username) {
-          obj.username = oHook.username;
-        }
-        db.pushEvent(obj);
-        return resp.send(200, JSON.stringify({
-          message: "Thank you for the event: '" + oHook.hookname + "'",
-          evt: obj
-        }));
-      });
-    } else {
-      return resp.send(404, "Webhook not existing!");
-    }
-  };
-})(this);
-
-exports.activateWebhook = (function(_this) {
-  return function(user, hookid, name) {
-    _this.log.info("HL | Webhook '" + hookid + "' activated");
-    return _this.allowedHooks[hookid] = {
-      hookname: name,
-      username: user
-    };
-  };
-})(this);
-
-exports.deactivateWebhook = (function(_this) {
-  return function(hookid) {
-    _this.log.info("HL | Webhook '" + hookid + "' deactivated");
-    return delete _this.allowedHooks[hookid];
   };
 })(this);

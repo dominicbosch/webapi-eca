@@ -15,6 +15,17 @@ express = require('express');
 
 router = module.exports = express.Router();
 
+this.allowedHooks = {};
+
+db.getAllWebhooks((function(_this) {
+  return function(err, oHooks) {
+    if (oHooks) {
+      log.info("SRVC | WEBHOOKS | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
+      return _this.allowedHooks = oHooks;
+    }
+  };
+})(this));
+
 
 /*
 A post request retrieved on this handler causes the user object to be
@@ -46,45 +57,48 @@ router.post('/create', function(req, res) {
     return res.status(400).send('Please provide event name');
   } else {
     user = req.session.pub;
-    console.log(req.body);
     return db.getAllUserWebhooks(user.username, (function(_this) {
-      return function(err, arrHooks) {
-        var hookExists, hookid, hookname;
+      return function(err, oHooks) {
+        var genHookID, hookExists, hookid, oHook;
         hookExists = false;
-        for (hookid in arrHooks) {
-          hookname = arrHooks[hookid];
-          if (hookname === req.body.hookname) {
+        for (hookid in oHooks) {
+          oHook = oHooks[hookid];
+          if (oHook.hookname === req.body.hookname) {
             hookExists = true;
           }
         }
         if (hookExists) {
           return res.status(409).send('Webhook already existing: ' + req.body.hookname);
         } else {
-          return db.getAllWebhookIDs(function(err, arrHooks) {
-            var genHookID;
-            genHookID = function(arrHooks) {
-              var i, j;
-              hookid = '';
-              for (i = j = 0; j <= 1; i = ++j) {
-                hookid += Math.random().toString(36).substring(2);
-              }
-              if (arrHooks && arrHooks.indexOf(hookid) > -1) {
-                hookid = genHookID(arrHooks);
-              }
-              return hookid;
-            };
-            hookid = genHookID(arrHooks);
-            db.createWebhook(user.username, hookid, req.body.hookname, req.body.isPublic === 'true');
-            return res.status(200).send({
-              hookid: hookid,
-              hookname: req.body.hookname
-            });
+          genHookID = function() {
+            var i, j;
+            hookid = '';
+            for (i = j = 0; j <= 1; i = ++j) {
+              hookid += Math.random().toString(36).substring(2);
+            }
+            if (oHooks && Object.keys(oHooks).indexOf(hookid) > -1) {
+              hookid = genHookID();
+            }
+            return hookid;
+          };
+          hookid = genHookID();
+          db.createWebhook(user.username, hookid, req.body.hookname, req.body.isPublic === 'true');
+          allowedHooks[hookid] = {
+            hookname: req.body.hookname,
+            username: user.username
+          };
+          log.info("SRVC | WEBHOOKS '" + hookid + "' created and activated");
+          return res.status(200).send({
+            hookid: hookid,
+            hookname: req.body.hookname
           });
         }
       };
     })(this));
   }
 });
+
+router.post('/event/:id', function(req, res) {});
 
 router.post('/delete/:id', function(req, res) {
   log.warn('SRVC | WEBHOOKS | implemnt delete id');

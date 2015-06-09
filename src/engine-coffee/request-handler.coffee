@@ -38,11 +38,6 @@ exports.init = () ->
 	fStoreUser user, oUser for user, oUser of users
 
 
-	@allowedHooks = {}
-	db.getAllWebhooks ( err, oHooks ) =>
-		if oHooks
-			log.info "RH | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
-			@allowedHooks = oHooks
 
 # Register the shutdown handler to the admin command. 
 @objAdminCmds =
@@ -83,38 +78,6 @@ exports.init = () ->
 
 
 
-###
-Handles possible events that were posted to this server and pushes them into the
-event queue.
-###
-exports.handleEvent = ( req, res ) ->
-	# If required event properties are present we process the event #
-	if req.body and req.body.eventname
-		answ =
-			code: 200
-			message: "Thank you for the event: #{ req.body.eventname }"
-		res.status( answ.code ).send answ
-		db.pushEvent req.body
-	else
-		res.send 400, 'Your event was missing important parameters!'
-
-
-###
-Present the desired forge page to the user.
-
-*Requires
-the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-objects.*
-
-@public handleForge( *req, resp* )
-###
-exports.handleForge = ( req, resp ) ->
-	page = req.query.page
-	if not req.session.user
-		page = 'login'
-	renderPage page, req, resp
-
 
 ###
 Handles the admin command requests.
@@ -152,43 +115,3 @@ exports.handleAdminCommand = ( req, resp ) =>
 					resp.send obj.code, obj
 	else
 		resp.status( 401 ).send 'You need to be logged in as admin!'
-
-
-###
-Handles webhook posts
-###
-exports.handleWebhooks = ( req, resp ) =>
-	hookid = req.url.substring( 10 ).split( '/' )[ 0 ]
-	oHook = @allowedHooks[ hookid ]
-	if oHook
-		body = ''
-		req.on 'data', ( data ) ->
-			body += data
-		req.on 'end', () ->
-			body.engineReceivedTime = (new Date()).getTime()
-			obj =
-				eventname: oHook.hookname
-				body: body
-			if oHook.username
-				obj.username = oHook.username
-			db.pushEvent obj
-			resp.send 200, JSON.stringify
-				message: "Thank you for the event: '#{ oHook.hookname }'"
-				evt: obj
-	else
-		resp.send 404, "Webhook not existing!"
-
-
-# Activate a webhook. the body will be JSON parsed, the name of the webhook will
-# be the event name given to the event object, a timestamp will be added
-exports.activateWebhook = ( user, hookid, name ) =>
-	@log.info "HL | Webhook '#{ hookid }' activated"
-	@allowedHooks[ hookid ] =
-		hookname: name
-		username: user
-
-
-# Deactivate a webhook
-exports.deactivateWebhook = ( hookid ) =>
-	@log.info "HL | Webhook '#{ hookid }' deactivated"
-	delete @allowedHooks[ hookid ]

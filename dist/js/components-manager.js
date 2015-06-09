@@ -579,35 +579,5 @@ commandFunctions = {
         message: 'OK!'
       });
     }
-  },
-  get_all_webhooks: function(user, oBody, callback) {
-    return db.getAllUserWebhookNames(user.username, function(err, data) {
-      if (err) {
-        return callback({
-          code: 400,
-          message: "We didn't like your request!"
-        });
-      } else {
-        data = JSON.stringify(data) || null;
-        return callback({
-          code: 200,
-          message: data
-        });
-      }
-    });
-  },
-  delete_webhook: function(user, oBody, callback) {
-    var answ;
-    answ = hasRequiredParams(['hookid'], oBody);
-    if (answ.code !== 200) {
-      return callback(answ);
-    } else {
-      rh.deactivateWebhook(oBody.hookid);
-      db.deleteWebhook(user.username, oBody.hookid);
-      return callback({
-        code: 200,
-        message: 'OK!'
-      });
-    }
   }
 };

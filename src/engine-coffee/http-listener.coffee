@@ -100,17 +100,6 @@ exports.init = ( conf ) =>
 		app.use '/service/' + servicePath, require path.resolve __dirname, 'services', fileName
 
 
-	## FIXME remove all redundant routes
-
-	# # - **`GET` to _"/forge"_:** Displays different forge pages
-	# app.get '/forge', requestHandler.handleForge
-
-	# app.post '/admincommand', requestHandler.handleAdminCommand
-	# # - **`POST` to _"/event/*"_:** event posting, mainly a webhook for the webpage
-	# app.post '/event', requestHandler.handleEvent
-	# # - **`POST` to _"/webhooks/*"_:** Webhooks retrieve remote events
-	# app.post '/webhooks/*', requestHandler.handleWebhooks
-
 	# If the routing is getting down here, then we didn't find anything to do and
 	# tell the user that he ran into a 404, Not found
 	app.get '*', ( req, res, next ) ->

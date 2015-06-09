@@ -1,19 +1,5 @@
 'use strict';
-var arrKV, arrParams, fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl, i, len, oParams, param;
-
-arrParams = window.location.search.substring(1).split('&');
-
-oParams = {};
-
-for (i = 0, len = arrParams.length; i < len; i++) {
-  param = arrParams[i];
-  arrKV = param.split('=');
-  oParams[arrKV[0]] = arrKV[1];
-}
-
-if (oParams.id) {
-  oParams.id = decodeURIComponent(oParams.id);
-}
+var fFailedRequest, fIssueRequest, fOnLoad, fProcessWebhookList, fShowWebhookUsage, fUpdateWebhookList, hostUrl;
 
 hostUrl = [location.protocol, '//', location.host].join('');
 

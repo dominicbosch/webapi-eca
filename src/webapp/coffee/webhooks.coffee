@@ -1,15 +1,5 @@
 'use strict';
 
-# Fetch the search string and transform it into an object for easy access
-arrParams = window.location.search.substring(1).split '&'
-oParams = {}
-for param in arrParams
-	arrKV = param.split '='
-	oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
-
-if oParams.id
-	oParams.id = decodeURIComponent oParams.id
-
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
 fIssueRequest = ( args ) ->

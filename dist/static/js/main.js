@@ -1,4 +1,16 @@
 'use strict';
+var arrKV, arrParams, i, len, oParams, param;
+
+arrParams = window.location.search.substring(1).split('&');
+
+oParams = {};
+
+for (i = 0, len = arrParams.length; i < len; i++) {
+  param = arrParams[i];
+  arrKV = param.split('=');
+  oParams[arrKV[0]] = arrKV[1];
+}
+
 $(document).ready(function() {
   var elSelected, els, url;
   url = window.location.href;

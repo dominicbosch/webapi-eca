@@ -123,11 +123,12 @@ table .centered {
 }
 
 #tabletl td {
+	font-size: 0.9em;
 	padding-left: 15px;
+	padding-top: 5px;
 }
 
 #tabletl button {
-	font-size: 0.8em;
 	width: 120px;
 }
 

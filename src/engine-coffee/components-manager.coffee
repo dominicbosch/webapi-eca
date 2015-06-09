@@ -504,30 +504,3 @@ commandFunctions =
 				code: 200
 				message: 'OK!'
 
-
-# WEBHOOKS
-# --------
-
-	get_all_webhooks: ( user, oBody, callback ) ->
-		db.getAllUserWebhookNames user.username, ( err, data ) ->
-			if err
-				callback
-					code: 400
-					message: "We didn't like your request!"
-			else
-				data = JSON.stringify( data ) || null
-				callback
-					code: 200
-					message: data
-
-	delete_webhook: ( user, oBody, callback ) ->
-		answ = hasRequiredParams [ 'hookid' ], oBody
-		if answ.code isnt 200
-			callback answ
-		else
-			rh.deactivateWebhook oBody.hookid
-			db.deleteWebhook user.username, oBody.hookid
-			callback
-				code: 200
-				message: 'OK!'
-		

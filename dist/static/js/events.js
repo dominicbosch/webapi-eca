@@ -59,6 +59,7 @@ checkWebhookExists = function() {
       } else {
         $('#tlwebh').removeClass('green').addClass('red');
         $('#but_webh').show();
+        $('#but_rule').hide();
         $('#but_emit').hide();
       }
       if (numHooks === 0) {
@@ -83,11 +84,11 @@ checkRuleExists = function() {
     }
     if (exists) {
       $('#tlrule').removeClass('red').addClass('green');
-      $('#but_prep').hide();
+      $('#but_rule').hide();
       $('#but_emit').show();
     } else {
       $('#tlrule').removeClass('green').addClass('red');
-      $('#but_prep').show();
+      $('#but_rule').show();
       $('#but_emit').hide();
     }
     return console.log(oRules);
@@ -147,7 +148,7 @@ fOnLoad = function() {
       return window.location.href = '/views/webhooks?id=' + encodeURIComponent(obj.eventname);
     }
   });
-  return $('#but_prep').on('click', function() {
+  return $('#but_rule').on('click', function() {
     var oSelector, obj, sel, url;
     obj = parseEvent();
     if (obj) {

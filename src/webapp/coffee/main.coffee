@@ -1,5 +1,12 @@
 'use strict';
 
+# Fetch the search string and transform it into a global object for easy access
+arrParams = window.location.search.substring(1).split '&'
+oParams = {}
+for param in arrParams
+	arrKV = param.split '='
+	oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
+
 $( document ).ready () ->
 	url = window.location.href
 	els =  $( 'ul.nav a' ).filter () ->

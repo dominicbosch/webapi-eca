@@ -43,6 +43,7 @@ checkWebhookExists = () ->
 				# main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
 				$( '#tlwebh' ).removeClass( 'green' ).addClass 'red'
 				$( '#but_webh' ).show()
+				$( '#but_rule' ).hide()
 				$( '#but_emit' ).hide()
 
 			if numHooks is 0
@@ -60,12 +61,12 @@ checkRuleExists = () ->
 				exists = true
 		if exists
 			$( '#tlrule' ).removeClass( 'red' ).addClass 'green'
-			$( '#but_prep' ).hide()
+			$( '#but_rule' ).hide()
 			$( '#but_emit' ).show()
 			# main.setInfo true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!'
 		else
 			$( '#tlrule' ).removeClass( 'green' ).addClass 'red'
-			$( '#but_prep' ).show()
+			$( '#but_rule' ).show()
 			$( '#but_emit' ).hide()
 			# main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
 				
@@ -119,7 +120,7 @@ fOnLoad = () ->
 			window.location.href = '/views/webhooks?id=' + encodeURIComponent obj.eventname
 
 		 
-	$( '#but_prep' ).on 'click', () ->
+	$( '#but_rule' ).on 'click', () ->
 		obj = parseEvent()
 		if obj
 			if obj.eventname and typeof obj.eventname is 'string' and obj.eventname isnt ''
