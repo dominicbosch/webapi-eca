@@ -529,6 +529,20 @@ exports.getUserIds = ( cb ) =>
 	@db.smembers "users", cb
 	
 ###
+Fetch all user IDs and pass them to cb(err, obj).
+
+@public getUserIds( *cb* )
+###
+
+exports.getAllUsers = ( cb ) =>
+	getSetRecords "users", exports.getUser, ( err, arrDat ) ->
+		if err
+			cb err
+		else
+			delete oUser.password for name, oUser of arrDat
+			cb null, arrDat
+	
+###
 Fetch a user by id and pass it to cb(err, obj).
 
 @public getUser( *userId, cb* )

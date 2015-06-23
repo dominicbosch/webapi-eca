@@ -637,6 +637,30 @@ exports.getUserIds = (function(_this) {
 
 
 /*
+Fetch all user IDs and pass them to cb(err, obj).
+
+@public getUserIds( *cb* )
+ */
+
+exports.getAllUsers = (function(_this) {
+  return function(cb) {
+    return getSetRecords("users", exports.getUser, function(err, arrDat) {
+      var name, oUser;
+      if (err) {
+        return cb(err);
+      } else {
+        for (name in arrDat) {
+          oUser = arrDat[name];
+          delete oUser.password;
+        }
+        return cb(null, arrDat);
+      }
+    });
+  };
+})(this);
+
+
+/*
 Fetch a user by id and pass it to cb(err, obj).
 
 @public getUser( *userId, cb* )

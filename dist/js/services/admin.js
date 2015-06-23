@@ -21,10 +21,18 @@ pathUsers = path.resolve(__dirname, '..', '..', 'config', 'users.json');
 
 router = module.exports = express.Router();
 
+router.use('/*', function(req, res, next) {
+  if (req.session.pub.admin === 'true') {
+    return next();
+  } else {
+    return res.status(401).send('You are not admin, you böse bueb you!');
+  }
+});
+
 router.post('/createuser', function(req, res) {
   if (req.body.username && req.body.password) {
     return db.getUserIds(function(err, arrUsers) {
-      var fPersistNewUser, oUser;
+      var oUser;
       if (arrUsers.indexOf(req.body.username) > -1) {
         return res.status(409).send('User already existing!');
       } else {
@@ -34,29 +42,21 @@ router.post('/createuser', function(req, res) {
           admin: req.body.isAdmin
         };
         db.storeUser(oUser);
-        fPersistNewUser = function(oUser) {
-          return function(err, data) {
-            var users;
-            users = JSON.parse(data);
-            users[oUser.username] = {
-              password: oUser.password,
-              admin: oUser.admin
-            };
-            return fs.writeFile(pathUsers, JSON.stringify(users, void 0, 2), 'utf8', function(err) {
-              if (err) {
-                log.error("RH | Unable to write new user file! ");
-                log.error(err);
-                return res.status(500).send('User not persisted!');
-              } else {
-                return res.send('New user "' + oUser.username + '" created!');
-              }
-            });
-          };
-        };
-        return fs.readFile(pathUsers, 'utf8', fPersistNewUser(oUser));
+        log.info('New user "' + oUser.username + '" created by "' + req.session.pub.username + '"!');
+        return res.send('New user "' + oUser.username + '" created!');
       }
     });
   } else {
-    return res.status(401).send('Missing parameter for this command!');
+    return res.status(400).send('Missing parameter for this command!');
+  }
+});
+
+router.post('/deleteuser', function(req, res) {
+  if (req.body.username === req.session.pub.username) {
+    return res.status(403).send('You dream du! You really shouldn\'t delete yourself!');
+  } else {
+    db.deleteUser(req.body.username);
+    log.info('User "' + req.body.username + '" deleted by "' + req.session.pub.username + '"!');
+    return res.send('User "' + req.body.username + '" deleted!');
   }
 });

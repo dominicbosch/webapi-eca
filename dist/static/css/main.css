@@ -156,6 +156,15 @@ img.tl.red {
 img.tl.green {
 	content: url( "/images/tl_green.png" );
 }
+#users {
+	font-size: 0.8em;	
+}
+
+#users .name {
+	font-weight: bold;
+	font-family: "Lucida Console", Monaco, monospace;
+	padding-right: 20px;
+}
 
 /*
 #editor_conditions {

@@ -25,6 +25,12 @@ pathUsers = path.resolve __dirname, '..', '..', 'config', 'users.json'
 
 router = module.exports = express.Router()
 
+router.use '/*', ( req, res, next ) ->
+	if req.session.pub.admin is 'true'
+		next()
+	else
+		res.status( 401 ).send 'You are not admin, you böse bueb you!'
+
 router.post '/createuser', ( req, res ) ->
 	if req.body.username and req.body.password
 		db.getUserIds ( err, arrUsers ) ->
@@ -36,42 +42,16 @@ router.post '/createuser', ( req, res ) ->
 					password: req.body.password
 					admin: req.body.isAdmin
 				db.storeUser oUser
-
-				fPersistNewUser = ( oUser ) ->
-					( err, data ) -> 
-						users = JSON.parse data
-						users[ oUser.username ] =
-							password: oUser.password
-							admin: oUser.admin
-						fs.writeFile pathUsers, JSON.stringify( users, undefined, 2 ), 'utf8', ( err ) ->
-							if err
-								log.error "RH | Unable to write new user file! "
-								log.error err
-								res.status( 500 ).send 'User not persisted!'
-							else
-								res.send 'New user "' + oUser.username + '" created!'
-
-				fs.readFile pathUsers, 'utf8', fPersistNewUser oUser
-
+				log.info 'New user "' + oUser.username + '" created by "' + req.session.pub.username + '"!'
+				res.send 'New user "' + oUser.username + '" created!'
 	else
-		res.status( 401 ).send 'Missing parameter for this command!' 
+		res.status( 400 ).send 'Missing parameter for this command!' 
 
-
-
-
-# # - External Modules: [crypto-js](https://github.com/evanvosberg/crypto-js)
-# crypto = require 'crypto-js'
-
-# # Prepare the user command handlers which are invoked via HTTP requests.
-# exports = module.exports
-
-
-# # Register the shutdown handler to the admin command. 
-# @objAdminCmds =
-# 	shutdown: ( obj, cb ) ->
-# 		data =
-# 			code: 200
-# 			message: 'Shutting down... BYE!'
-# 		setTimeout process.exit, 500
-# 		cb null, data
-
+router.post '/deleteuser', ( req, res ) ->
+	if req.body.username is req.session.pub.username
+		res.status( 403 ).send 'You dream du! You really shouldn\'t delete yourself!'
+	else
+		db.deleteUser req.body.username
+		log.info 'User "' + req.body.username + '" deleted by "' + req.session.pub.username + '"!'
+		res.send 'User "' + req.body.username + '" deleted!'
+		# FIXME we also need to deactivate all running event pollers
