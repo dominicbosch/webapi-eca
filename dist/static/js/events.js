@@ -1,5 +1,5 @@
 'use strict';
-var checkRuleExists, checkWebhookExists, editor, fFindKeyStringPair, fOnLoad, parseEvent;
+var checkRuleExists, editor, fFindKeyStringPair, fOnLoad, parseEvent, updateWebhookList;
 
 editor = null;
 
@@ -32,44 +32,50 @@ fFindKeyStringPair = function(obj) {
   return null;
 };
 
-checkWebhookExists = function() {
-  var obj;
-  obj = parseEvent();
-  if (obj) {
-    return $.post('/service/webhooks/getall', function(oHooks) {
-      var elm, exist, exists, hook, id, numHooks, ul;
-      $('#listhooks *').remove();
-      numHooks = 0;
-      exist = false;
-      ul = $('<ul>');
-      for (id in oHooks) {
-        hook = oHooks[id];
-        numHooks++;
-        elm = $("<li><kbd>" + hook.hookname + "</kbd></li>");
-        ul.append(elm);
-        if (hook.hookname === obj.eventname) {
-          elm.attr('class', 'exists');
-          exists = true;
-        }
+updateWebhookList = function() {
+  return $.post('/service/webhooks/getallvisible', function(oHooks) {
+    var createRow, exists, hook, id, numHooks, ref, ref1, table;
+    $('#listhooks *').remove();
+    numHooks = 0;
+    exists = false;
+    table = $('<table>');
+    table.append($("<tr><th>Event Name</th><th>Webhook Owner</th></tr>"));
+    createRow = function(hook, isMine) {
+      var elm;
+      numHooks++;
+      elm = $("<tr><td><kbd>" + hook.hookname + "</kbd></td><td>" + (isMine ? '(you)' : hook.username) + "</td></tr>");
+      table.append(elm);
+      if (hook.hookname === $('#inp_webh').val()) {
+        elm.attr('class', 'exists');
+        return exists = true;
       }
-      if (exists) {
-        $('#tlwebh').removeClass('red').addClass('green');
-        $('#but_webh').hide();
-        checkRuleExists();
-      } else {
-        $('#tlwebh').removeClass('green').addClass('red');
-        $('#but_webh').show();
-        $('#but_rule').hide();
-        $('#but_emit').hide();
-      }
-      if (numHooks === 0) {
-        return $('#listhooks').text('You do not have any Webhooks! Create one first!');
-      } else {
-        $('#listhooks').text('The Event Names of your available Webhooks are:');
-        return $('#listhooks').append(ul);
-      }
-    });
-  }
+    };
+    ref = oHooks["private"];
+    for (id in ref) {
+      hook = ref[id];
+      createRow(hook, true);
+    }
+    ref1 = oHooks["public"];
+    for (id in ref1) {
+      hook = ref1[id];
+      createRow(hook);
+    }
+    if (exists) {
+      $('#tlwebh').removeClass('red').addClass('green');
+      $('#but_webh').hide();
+      checkRuleExists();
+    } else {
+      $('#tlwebh').removeClass('green').addClass('red');
+      $('#but_webh').show();
+      $('#but_rule').hide();
+      $('#but_emit').hide();
+    }
+    if (numHooks === 0) {
+      return $('#sel_webh').hide();
+    } else {
+      return $('#sel_webh').show();
+    }
+  });
 };
 
 checkRuleExists = function() {
@@ -95,6 +101,7 @@ checkRuleExists = function() {
 };
 
 fOnLoad = function() {
+  var txt;
   main.registerHoverInfo($('#pagetitle'), 'eventinfo.html');
   editor = ace.edit('editor');
   editor.setTheme('ace/theme/crimson_editor');
@@ -104,27 +111,18 @@ fOnLoad = function() {
   editor.setFontSize('16px');
   editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
-  $.get('/data/example_event.txt', function(data) {
-    var txt;
-    if (oParams.hookname) {
-      txt = '\n' + JSON.stringify({
-        eventname: oParams.hookname
-      }, null, '\t') + '\n';
-      editor.setValue(txt, -1);
-    } else {
-      editor.setValue(data, -1);
-    }
-    checkWebhookExists();
-    return editor.getSession().on('change', function() {
-      return checkWebhookExists();
-    });
-  });
+  if (oParams.hookname) {
+    $('#inp_webh').val(oParams.hookname);
+  }
+  txt = '\n' + JSON.stringify(JSON.parse($('#eventSource').text()), null, '\t') + '\n';
+  editor.setValue(txt, -1);
   $('#editor_theme').change(function(el) {
     return editor.setTheme('ace/theme/' + $(this).val());
   });
   $('#editor_font').change(function(el) {
     return editor.setFontSize($(this).val());
   });
+  $('#inp_webh').on('input', updateWebhookList);
   $('#but_emit').click(function() {
     var obj;
     window.scrollTo(0, 0);
@@ -149,11 +147,7 @@ fOnLoad = function() {
     }
   });
   $('#but_webh').click(function() {
-    var obj;
-    obj = parseEvent();
-    if (obj) {
-      return window.location.href = '/views/webhooks?id=' + encodeURIComponent(obj.eventname);
-    }
+    return window.location.href = '/views/webhooks?id=' + encodeURIComponent($('#inp_webh').val());
   });
   return $('#but_rule').on('click', function() {
     var oSelector, obj, sel, url;

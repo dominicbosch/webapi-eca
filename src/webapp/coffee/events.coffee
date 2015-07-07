@@ -19,39 +19,43 @@ fFindKeyStringPair = ( obj ) ->
 				return oRet
 	null
 
-checkWebhookExists = () ->
-	obj = parseEvent()
-	if obj
-		$.post '/service/webhooks/getall', ( oHooks ) ->
-			$( '#listhooks *' ).remove()
-			numHooks = 0
-			exist = false
-			ul = $ '<ul>'
-			for id, hook of oHooks
-				numHooks++
-				elm = $ "<li><kbd>#{ hook.hookname }</kbd></li>"
-				ul.append elm
-				if hook.hookname is obj.eventname
-					elm.attr 'class', 'exists'
-					exists = true
-					
-			if exists
-				# main.setInfo true, 'A Webhook exists for this Event!'
-				$( '#tlwebh' ).removeClass( 'red' ).addClass 'green'
-				$( '#but_webh' ).hide()
-				checkRuleExists()
-			else
-				# main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
-				$( '#tlwebh' ).removeClass( 'green' ).addClass 'red'
-				$( '#but_webh' ).show()
-				$( '#but_rule' ).hide()
-				$( '#but_emit' ).hide()
+updateWebhookList = () ->
+	$.post '/service/webhooks/getallvisible', ( oHooks ) ->
+		$( '#listhooks *' ).remove()
+		numHooks = 0
+		exists = false
+		table = $ '<table>'
+		table.append $ "<tr><th>Event Name</th><th>Webhook Owner</th></tr>"
+		createRow = (hook, isMine) ->
+			numHooks++
+			elm = $ "<tr><td><kbd>#{ hook.hookname }</kbd></td><td>#{ if isMine then '(you)' else hook.username}</td></tr>"
+			table.append elm
+			if hook.hookname is $('#inp_webh').val()
+				elm.attr 'class', 'exists'
+				exists = true
+		createRow hook, true for id, hook of oHooks.private
+		createRow hook for id, hook of oHooks.public
+				
+		if exists
+			# main.setInfo true, 'A Webhook exists for this Event!'
+			$( '#tlwebh' ).removeClass( 'red' ).addClass 'green'
+			$( '#but_webh' ).hide()
+			checkRuleExists()
+		else
+			# main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
+			$( '#tlwebh' ).removeClass( 'green' ).addClass 'red'
+			$( '#but_webh' ).show()
+			$( '#but_rule' ).hide()
+			$( '#but_emit' ).hide()
 
-			if numHooks is 0
-				$( '#listhooks' ).text 'You do not have any Webhooks! Create one first!'
-			else
-				$( '#listhooks' ).text 'The Event Names of your available Webhooks are:'
-				$( '#listhooks' ).append ul
+		if numHooks is 0
+			# $( '#listhooks' ).text 'You do not have any Webhooks! Create one first!'
+			$('#sel_webh').hide()
+		else
+			$('#sel_webh').show()
+
+			# $( '#listhooks' ).text 'Your available Webhooks are:'
+			# $( '#listhooks' ).append table
 
 checkRuleExists = () ->
 	$.post '/service/rules/getall', ( oRules ) ->
@@ -80,24 +84,22 @@ fOnLoad = () ->
 	editor.getSession().setMode 'ace/mode/json'
 	editor.setShowPrintMargin false
 
-	$.get '/data/example_event.txt', ( data ) ->
+	# $.get '/data/example_event.txt', ( data ) ->
 		# If hookname has been passed in the url, the user wants to emit an event for this
-		if oParams.hookname
-			txt = '\n' + JSON.stringify({ eventname: oParams.hookname }, null, '\t') + '\n'
-			editor.setValue txt, -1
-		else
-			editor.setValue data, -1
-		checkWebhookExists()
 
-		# Only register change handler after we initially filled the editor
-		editor.getSession().on 'change', () ->
-			checkWebhookExists()
+	if oParams.hookname
+		$('#inp_webh').val oParams.hookname
+
+	txt = '\n' + JSON.stringify(JSON.parse($('#eventSource').text()), null, '\t') + '\n'
+	editor.setValue txt, -1
 
 	$( '#editor_theme' ).change ( el ) ->
 		editor.setTheme 'ace/theme/' + $( this ).val()
 		
 	$( '#editor_font' ).change ( el ) ->
 		editor.setFontSize $( this ).val()
+
+	$( '#inp_webh' ).on 'input', updateWebhookList
 
 	$( '#but_emit' ).click () ->
 		window.scrollTo 0, 0
@@ -117,10 +119,7 @@ fOnLoad = () ->
 						setTimeout fDelayed, 500
 					
 	$( '#but_webh' ).click () ->
-		obj = parseEvent()
-		if obj
-			# window.open '/views/webhooks?id=' + encodeURIComponent obj.eventname, '_blank'
-			window.location.href = '/views/webhooks?id=' + encodeURIComponent obj.eventname
+		window.location.href = '/views/webhooks?id=' + encodeURIComponent $('#inp_webh').val()
 		 
 	$( '#but_rule' ).on 'click', () ->
 		obj = parseEvent()

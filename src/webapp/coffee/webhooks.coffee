@@ -11,33 +11,38 @@ failedRequest = ( msg ) ->
 
 updateWebhookList = () ->
 	main.clearInfo()
-	$.post( '/service/webhooks/getall' )
+	$.post('/service/webhooks/getallvisible')
 		.done ( oHooks ) ->
-			$( '#table_webhooks *' ).remove()
-			if Object.keys( oHooks ).length > 0
-				$( '#table_webhooks' ).append $( '<h4>' ).text 'Your Webhooks:'
-				table = $( '<table>' ).appendTo $( '#table_webhooks' )
-				for hookid, oHook of oHooks
+			$('#table_webhooks *').remove()
+			prl = if oHooks.private then Object.keys(oHooks.private).length else 0
+			pul = if oHooks.public then Object.keys(oHooks.public).length else 0
+			if prl + pul > 0
+				createWebhookRow = (oHook, isMine) ->
 					img = if oHook.isPublic is 'true' then 'public' else 'private'
 					tit = if oHook.isPublic is 'true' then 'Public' else 'Private'
 					table.append $ """
 						<tr>
-							<td><img class="del" title="Delete Webhook" src="/images/red_cross_small.png"></td>
-							<td style="white-space: nowrap"><kbd>#{ oHook.hookname }</kbd></td>
-							<td class="centered" title="#{ tit }">
-								<img src="/images/#{ img }.png"></td>
-							<td><input value="#{ hostUrl }/service/webhooks/event/#{ hookid }"></td>
+							<td>#{if isMine then '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' else '' }</td>
+							<td style="white-space: nowrap"><kbd>#{oHook.hookname}</kbd></td>
+							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.username}</td>
+							<td class="centered" title="#{tit}">
+								<img src="/images/#{img}.png"></td>
+							<td><input value="#{hostUrl}/service/webhooks/event/#{hookid}"></td>
 						</tr>
 					"""
+				$('#table_webhooks').append $('<h4>').text 'Your available Webhooks:'
+				table = $('<table>').appendTo $ '#table_webhooks'
+				table.append '<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>'
+				createWebhookRow(oHook, true) for hookid, oHook of oHooks.private
+				createWebhookRow(oHook) for hookid, oHook of oHooks.public
 			else
-				$( '#table_webhooks' )
-					.append $( '<div>' ).attr( 'id', 'listhooks' ).text 'You don\'t have any existing webhooks'
+				$('#table_webhooks').append $('<div>').attr('id', 'listhooks').text 'There are no webhooks available for you!'
 		.fail failedRequest 'Unable to get Webhook list'
 
 fShowWebhookUsage = ( hookid, hookname ) ->
-	$( '#display_hookurl *' ).remove()
+	$('#display_hookurl *').remove()
 	if hookid
-		$( '#display_hookurl' ).append $ """
+		$('#display_hookurl').append $ """
 			<div>This is the Webhook Url you can use for your Events <kbd>#{ hookname }</kbd> :</div>
 			<input class="url" type="text" value="#{ hostUrl }/service/webhooks/event/#{ hookid }"><br>
 			<div><b>Now you can <a href="/views/events?hookname=#{ hookname }">emit an Event</a> 
@@ -45,11 +50,11 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 		"""
 
 fOnLoad = () ->
-	main.registerHoverInfo $( '#pagetitle' ), 'webhookinfo.html'
+	main.registerHoverInfo $('#pagetitle'), 'webhookinfo.html'
 	updateWebhookList()
 
-	$( '#inp_hookname' ).val oParams.id
-	$( '#but_submit' ).click ->
+	$('#inp_hookname').val oParams.id
+	$('#but_submit').click ->
 		main.clearInfo()
 
 		hookname = $( '#inp_hookname' ).val()
@@ -79,6 +84,7 @@ fOnLoad = () ->
 					$( '#display_hookurl *' ).remove()
 					main.setInfo true, 'Webhook deleted!'
 					updateWebhookList()
-				.fail failedRequest 'Unable to delete Webhook!'
+				.fail (err) ->
+					failedRequest(err.responseText) err
 
 window.addEventListener 'load', fOnLoad, true

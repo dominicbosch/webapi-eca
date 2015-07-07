@@ -2,6 +2,11 @@ h4 {
 	padding-top: 20px;
 }
 
+th {
+	white-space: nowrap;
+	padding-right: 10px;
+}
+
 #bannerimg {
 	padding-left: 2%;
 	max-height: 80px;
@@ -119,6 +124,10 @@ input.url {
 	font-size: 0.8em;
 }
 
+#listhooks td, #listhooks th {
+	padding-left: 10px;
+}
+
 #listhooks .exists kbd {
 	background-color: #150;
 	color: #fff;
@@ -164,6 +173,10 @@ img.tl.green {
 	font-weight: bold;
 	font-family: "Lucida Console", Monaco, monospace;
 	padding-right: 20px;
+}
+
+#eventControls button, #eventControls select {
+	display: none;
 }
 
 /*

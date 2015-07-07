@@ -15,22 +15,35 @@ failedRequest = function(msg) {
 
 updateWebhookList = function() {
   main.clearInfo();
-  return $.post('/service/webhooks/getall').done(function(oHooks) {
-    var hookid, img, oHook, results, table, tit;
+  return $.post('/service/webhooks/getallvisible').done(function(oHooks) {
+    var createWebhookRow, hookid, oHook, prl, pul, ref, ref1, results, table;
     $('#table_webhooks *').remove();
-    if (Object.keys(oHooks).length > 0) {
-      $('#table_webhooks').append($('<h4>').text('Your Webhooks:'));
-      table = $('<table>').appendTo($('#table_webhooks'));
-      results = [];
-      for (hookid in oHooks) {
-        oHook = oHooks[hookid];
+    prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
+    pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
+    if (prl + pul > 0) {
+      createWebhookRow = function(oHook, isMine) {
+        var img, tit;
         img = oHook.isPublic === 'true' ? 'public' : 'private';
         tit = oHook.isPublic === 'true' ? 'Public' : 'Private';
-        results.push(table.append($("<tr>\n	<td><img class=\"del\" title=\"Delete Webhook\" src=\"/images/red_cross_small.png\"></td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td><input value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>")));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td><input value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
+      };
+      $('#table_webhooks').append($('<h4>').text('Your available Webhooks:'));
+      table = $('<table>').appendTo($('#table_webhooks'));
+      table.append('<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>');
+      ref = oHooks["private"];
+      for (hookid in ref) {
+        oHook = ref[hookid];
+        createWebhookRow(oHook, true);
+      }
+      ref1 = oHooks["public"];
+      results = [];
+      for (hookid in ref1) {
+        oHook = ref1[hookid];
+        results.push(createWebhookRow(oHook));
       }
       return results;
     } else {
-      return $('#table_webhooks').append($('<div>').attr('id', 'listhooks').text('You don\'t have any existing webhooks'));
+      return $('#table_webhooks').append($('<div>').attr('id', 'listhooks').text('There are no webhooks available for you!'));
     }
   }).fail(failedRequest('Unable to get Webhook list'));
 };
@@ -78,7 +91,9 @@ fOnLoad = function() {
         $('#display_hookurl *').remove();
         main.setInfo(true, 'Webhook deleted!');
         return updateWebhookList();
-      }).fail(failedRequest('Unable to delete Webhook!'));
+      }).fail(function(err) {
+        return failedRequest(err.responseText)(err);
+      });
     }
   });
 };

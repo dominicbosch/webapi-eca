@@ -1,4 +1,0 @@
-
-{
-	"eventname": "button-click"
-}

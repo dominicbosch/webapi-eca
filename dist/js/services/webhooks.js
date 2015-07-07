@@ -26,17 +26,9 @@ db.getAllWebhooks((function(_this) {
   };
 })(this));
 
-router.post('/get/:id', function(req, res) {
-  log.warn('SRVC | WEBHOOKS | implemnt get id');
-  db.getAllUserWebhooks(req.session.pub.username, function(err, arr) {
-    return log.info('Webhooks' + JSON.stringify(arr));
-  });
-  return res.send('TODO!');
-});
-
-router.post('/getall', function(req, res) {
+router.post('/getallvisible', function(req, res) {
   log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
-  return db.getAllUserWebhooks(req.session.pub.username, function(err, arr) {
+  return db.getAllVisibleWebhooks(req.session.pub.username, function(err, arr) {
     if (err) {
       return res.status(500).send('Fetching all webhooks failed');
     } else {
@@ -96,9 +88,14 @@ router.post('/delete/:id', function(req, res) {
   var hookid;
   hookid = req.params.id;
   log.info('SRVC | WEBHOOKS | Deleting Webhook ' + hookid);
-  delete allowedHooks[hookid];
-  db.deleteWebhook(req.session.pub.username, hookid);
-  return res.send('OK!');
+  return db.deleteWebhook(req.session.pub.username, hookid, function(err, msg) {
+    if (!err) {
+      delete allowedHooks[hookid];
+      return res.send('OK!');
+    } else {
+      return res.status(400).send(err);
+    }
+  });
 });
 
 router.post('/event/:id', function(req, res) {

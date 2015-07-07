@@ -236,7 +236,7 @@ getSetRecords = (function(_this) {
             if (err) {
               log.warn(err, "DB | fetching single element: '" + prop + "'");
             } else if (!data) {
-              log.warn(new Error("Empty key in DB: '" + prop + "'"));
+              log.warn("Empty key in set '" + set + "' DB: '" + prop + "'");
             } else {
               objReplies[prop] = data;
             }
@@ -277,8 +277,8 @@ IndexedModules = (function() {
     log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
   }
 
-  IndexedModules.prototype.setDB = function(db) {
-    this.db = db;
+  IndexedModules.prototype.setDB = function(db1) {
+    this.db = db1;
     return log.info("DB | (IdxedMods) Registered new DB connection for '" + this.setname + "'");
   };
 
@@ -763,6 +763,9 @@ exports.createWebhook = (function(_this) {
   return function(username, hookid, hookname, isPublic) {
     _this.db.sadd("webhooks", hookid, replyHandler("sadd 'webhooks' -> '" + hookid + "'"));
     _this.db.sadd("user:" + username + ":webhooks", hookid, replyHandler("sadd 'user:" + username + ":webhooks' -> '" + hookid + "'"));
+    if (isPublic) {
+      _this.db.sadd("webhooks:public", hookid, replyHandler("sadd 'webhooks:public' -> '" + hookid + "'"));
+    }
     return _this.db.hmset("webhook:" + hookid, 'hookname', hookname, 'username', username, 'isPublic', isPublic, replyHandler("set webhook:" + hookid + " -> [" + hookname + ", " + username + "]"));
   };
 })(this);
@@ -813,6 +816,34 @@ exports.getAllUserWebhooks = (function(_this) {
 
 
 /*
+Gets all the user's visible webhooks with names.
+ */
+
+exports.getAllVisibleWebhooks = (function(_this) {
+  return function(username, cb) {
+    return getSetRecords("user:" + username + ":webhooks", exports.getFullWebhook, function(err, oHooks) {
+      if (err) {
+        return cb(err);
+      } else {
+        return getSetRecords("webhooks:public", exports.getFullWebhook, function(err, oPubHooks) {
+          var id;
+          if (oPubHooks) {
+            for (id in oHooks) {
+              delete oPubHooks[id];
+            }
+          }
+          return cb(err, {
+            "private": oHooks,
+            "public": oPubHooks
+          });
+        });
+      }
+    });
+  };
+})(this);
+
+
+/*
 Returns all webhook IDs. Can be used to check for existing webhooks.
  */
 
@@ -839,10 +870,20 @@ Delete a webhook.
  */
 
 exports.deleteWebhook = (function(_this) {
-  return function(username, hookid) {
-    _this.db.srem("webhooks", hookid, replyHandler("srem 'webhooks' -> '" + hookid + "'"));
-    _this.db.srem("user:" + username + ":webhooks", hookid, replyHandler("srem 'user:" + username + ":webhooks' -> '" + hookid + "'"));
-    return _this.db.del("webhook:" + hookid, replyHandler("del webhook:" + hookid));
+  return function(username, hookid, cb) {
+    var db;
+    db = _this.db;
+    return db.sismember("user:" + username + ":webhooks", hookid, function(err, isUsersHook) {
+      if (isUsersHook) {
+        db.srem("webhooks", hookid, replyHandler("srem 'webhooks' -> '" + hookid + "'"));
+        db.srem("webhooks:public", hookid, replyHandler("srem 'webhooks:public' -> '" + hookid + "'"));
+        db.srem("user:" + username + ":webhooks", hookid, replyHandler("srem 'user:" + username + ":webhooks' -> '" + hookid + "'"));
+        db.del("webhook:" + hookid, replyHandler("del webhook:" + hookid));
+        return cb(null, 'Deleted');
+      } else {
+        return cb('This is not your webhook!');
+      }
+    });
   };
 })(this);
 

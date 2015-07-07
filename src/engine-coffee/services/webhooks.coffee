@@ -24,17 +24,17 @@ db.getAllWebhooks ( err, oHooks ) =>
 		log.info "SRVC | WEBHOOKS | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
 		allowedHooks = oHooks
 
-# User requests a webhook
-router.post '/get/:id', ( req, res ) ->
-	log.warn 'SRVC | WEBHOOKS | implemnt get id'
-	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
-		log.info 'Webhooks' + JSON.stringify arr
-	res.send 'TODO!'
+# # User requests a webhook
+# router.post '/get/:id', ( req, res ) ->
+# 	log.warn 'SRVC | WEBHOOKS | implement get id'
+# 	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
+# 		log.info 'Webhooks' + JSON.stringify arr
+# 	res.send 'TODO!'
 
 # User fetches all his existing webhooks
-router.post '/getall', ( req, res ) ->
+router.post '/getallvisible', ( req, res ) ->
 	log.info 'SRVC | WEBHOOKS | Fetching all Webhooks'
-	db.getAllUserWebhooks req.session.pub.username, ( err, arr ) ->
+	db.getAllVisibleWebhooks req.session.pub.username, ( err, arr ) ->
 		if err
 			res.status( 500 ).send 'Fetching all webhooks failed'
 		else
@@ -73,9 +73,12 @@ router.post '/create', ( req, res ) ->
 router.post '/delete/:id', ( req, res ) ->
 	hookid = req.params.id
 	log.info 'SRVC | WEBHOOKS | Deleting Webhook ' + hookid
-	delete allowedHooks[ hookid ]
-	db.deleteWebhook req.session.pub.username, hookid
-	res.send 'OK!'
+	db.deleteWebhook req.session.pub.username, hookid, (err, msg) ->
+		if not err
+			delete allowedHooks[ hookid ]
+			res.send 'OK!'
+		else
+			res.status(400).send err
 
 # A remote service pushes an event over a webhook to our system
 # http://localhost:8080/service/webhooks/event/v0lruppnxsdwt5h8ybny7gb9rh9smz6cwfudwqptnxbf0f6r

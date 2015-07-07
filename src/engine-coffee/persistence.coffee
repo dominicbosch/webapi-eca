@@ -192,7 +192,7 @@ getSetRecords = ( set, fSingle, cb ) =>
 						log.warn err, "DB | fetching single element: '#{ prop }'"
 					else if not data
 						# There was no data behind the key
-						log.warn new Error "Empty key in DB: '#{ prop }'"
+						log.warn "Empty key in set '#{set}' DB: '#{prop}'"
 					else
 						# We found a valid record and add it to the reply object
 						objReplies[ prop ] = data
@@ -579,7 +579,7 @@ exports.deleteUser = ( userId ) =>
 	@db.del "user:#{ userId }:active-rules",
 		replyHandler "del user:#{ userId }:active-rules"
 
-	# TODO we also need to delete this user's modules
+	# TODO we also need to delete this user's modules and stop them from running!
 
 ###
 Checks the credentials and on success returns the user object to the
@@ -617,6 +617,8 @@ exports.createWebhook = ( username, hookid, hookname, isPublic ) =>
 	@db.sadd "webhooks", hookid, replyHandler "sadd 'webhooks' -> '#{ hookid }'"
 	@db.sadd "user:#{ username }:webhooks", hookid,
 		replyHandler "sadd 'user:#{ username }:webhooks' -> '#{ hookid }'"
+	if isPublic
+		@db.sadd "webhooks:public", hookid, replyHandler "sadd 'webhooks:public' -> '#{ hookid }'"
 	@db.hmset "webhook:#{ hookid }", 'hookname', hookname, 'username', username, 'isPublic', isPublic,
 		replyHandler "set webhook:#{ hookid } -> [#{ hookname }, #{ username }]"
 
@@ -645,6 +647,20 @@ exports.getAllUserWebhooks = ( username, cb ) =>
 	getSetRecords "user:#{ username }:webhooks", exports.getFullWebhook, cb
 
 ###
+Gets all the user's visible webhooks with names.
+###
+exports.getAllVisibleWebhooks = ( username, cb ) =>
+	getSetRecords "user:#{ username }:webhooks", exports.getFullWebhook, (err, oHooks) ->
+		if err then cb err
+		else
+			getSetRecords "webhooks:public", exports.getFullWebhook, (err, oPubHooks) ->
+				if oPubHooks
+					delete oPubHooks[id] for id of oHooks
+				cb err,
+					private: oHooks
+					public: oPubHooks
+
+###
 Returns all webhook IDs. Can be used to check for existing webhooks.
 ###
 exports.getAllWebhookIDs = ( cb ) =>
@@ -659,11 +675,18 @@ exports.getAllWebhooks = ( cb ) =>
 ###
 Delete a webhook.
 ###
-exports.deleteWebhook = ( username, hookid ) =>
-	@db.srem "webhooks", hookid, replyHandler "srem 'webhooks' -> '#{ hookid }'"
-	@db.srem "user:#{ username }:webhooks", hookid,
-		replyHandler "srem 'user:#{ username }:webhooks' -> '#{ hookid }'"
-	@db.del "webhook:#{ hookid }", replyHandler "del webhook:#{ hookid }"
+exports.deleteWebhook = ( username, hookid, cb ) =>
+	db = @db #OMFG coffeescript...
+	db.sismember "user:#{ username }:webhooks", hookid, (err, isUsersHook) ->
+		if isUsersHook
+			db.srem "webhooks", hookid, replyHandler "srem 'webhooks' -> '#{ hookid }'"
+			db.srem "webhooks:public", hookid, replyHandler "srem 'webhooks:public' -> '#{ hookid }'"
+			db.srem "user:#{ username }:webhooks", hookid,
+				replyHandler "srem 'user:#{ username }:webhooks' -> '#{ hookid }'"
+			db.del "webhook:#{ hookid }", replyHandler "del webhook:#{ hookid }"
+			cb null, 'Deleted'
+		else
+			cb 'This is not your webhook!'
 
 ###
 Shuts down the db link.
