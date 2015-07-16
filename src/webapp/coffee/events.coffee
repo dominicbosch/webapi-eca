@@ -2,80 +2,66 @@
 
 editor = null
 
-parseEvent = () ->
-	try
-		obj = JSON.parse editor.getValue()
-	catch err
-		main.setInfo false, 'You have errors in your JSON object! ' + err
+createWebhookList = () ->
+	$('#but_rule').hide()
+	$('#but_emit').hide()
+	if oParams.webhook
+		$('#inp_webh').hide()
+		$('#but_webh').hide()
+
+	$.post '/service/webhooks/getallvisible', (oHooks) ->
+		list = $ '#sel_webh'
+		$('*', list).remove()
+		list.append $ '<option>(new with name):</option>'
+		createRow = (id, hook, isMine) ->
+			owner = if isMine then 'yours' else hook.username
+			elm = $ '<option value="'+id+'">'+hook.hookname+' ('+owner+')</option>'
+			list.append elm
+		
+		createRow id, hook, true for id, hook of oHooks.private
+		createRow id, hook for id, hook of oHooks.public
+
+		# If webhook has been passed in the url, the user wants to emit an event for this
+		if oParams.webhook
+			selEl = $ '#sel_webh [value="'+oParams.webhook+'"]'
+			if selEl.length > 0
+				selEl.prop 'selected', true
+				updateWebhookSelection()
+			else
 
 
-fFindKeyStringPair = ( obj ) ->
-	for key, val of obj
-		if typeof val is 'string' or typeof val is 'number'
-			return key: key, val: val
-		else if typeof val is 'object'
-			oRet = fFindKeyStringPair val
-			if oRet
-				return oRet
-	null
 
-updateWebhookList = () ->
-	$.post '/service/webhooks/getallvisible', ( oHooks ) ->
-		$( '#listhooks *' ).remove()
-		numHooks = 0
-		exists = false
-		table = $ '<table>'
-		table.append $ "<tr><th>Event Name</th><th>Webhook Owner</th></tr>"
-		createRow = (hook, isMine) ->
-			numHooks++
-			elm = $ "<tr><td><kbd>#{ hook.hookname }</kbd></td><td>#{ if isMine then '(you)' else hook.username}</td></tr>"
-			table.append elm
-			if hook.hookname is $('#inp_webh').val()
-				elm.attr 'class', 'exists'
-				exists = true
-		createRow hook, true for id, hook of oHooks.private
-		createRow hook for id, hook of oHooks.public
-				
-		if exists
-			# main.setInfo true, 'A Webhook exists for this Event!'
-			$( '#tlwebh' ).removeClass( 'red' ).addClass 'green'
-			$( '#but_webh' ).hide()
-			checkRuleExists()
-		else
-			# main.setInfo false, 'No Webhook exists for this Event Name, please create one!'
-			$( '#tlwebh' ).removeClass( 'green' ).addClass 'red'
-			$( '#but_webh' ).show()
-			$( '#but_rule' ).hide()
-			$( '#but_emit' ).hide()
-
-		if numHooks is 0
-			# $( '#listhooks' ).text 'You do not have any Webhooks! Create one first!'
-			$('#sel_webh').hide()
-		else
-			$('#sel_webh').show()
-
-			# $( '#listhooks' ).text 'Your available Webhooks are:'
-			# $( '#listhooks' ).append table
+updateWebhookSelection = () ->
+	if $(':selected', this).index() is 0
+		$('#tlwebh').removeClass('green').addClass 'red'
+		$('#inp_webh').show()
+		$('#but_webh').show()
+		$('#but_rule').hide()
+	else
+		$('#tlwebh').removeClass('red').addClass 'green'
+		$('#inp_webh').hide()
+		$('#but_webh').hide()
+		checkRuleExists()
 
 checkRuleExists = () ->
-	$.post '/service/rules/getall', ( oRules ) ->
+	$.post '/service/rules/getall', (oRules) ->
+		console.log 'checking for existing rules:', oRules
 		exists = false
 		for prop, rule in oRules
 			if rule.eventtype is 'Webhook' and rule.eventname is name
 				exists = true
 		if exists
-			$( '#tlrule' ).removeClass( 'red' ).addClass 'green'
-			$( '#but_rule' ).hide()
-			$( '#but_emit' ).show()
-			# main.setInfo true, 'The required Webhook exists and a Rule is listening for events with this name! Go on and push your event!'
+			$('#tlrule').removeClass('red').addClass 'green'
+			$('#but_rule').hide()
+			$('#but_emit').show()
+			main.setInfo true, 'Webhook valid and Rule is setup for your events! Go on and push your event!'
 		else
-			$( '#tlrule' ).removeClass( 'green' ).addClass 'red'
-			$( '#but_rule' ).show()
-			$( '#but_emit' ).hide()
-			# main.setInfo false, 'No Rule is listening for this Event Name, please create one!'
+			$('#tlrule').removeClass('green').addClass 'red'
+			$('#but_rule').show()
+			$('#but_emit').hide()
 
 fOnLoad = () ->
-	main.registerHoverInfo $( '#pagetitle' ), 'eventinfo.html'
+	main.registerHoverInfo $('#pagetitle'), 'eventinfo.html'
 
 	editor = ace.edit 'editor'
 	editor.setTheme 'ace/theme/crimson_editor'
@@ -84,55 +70,42 @@ fOnLoad = () ->
 	editor.getSession().setMode 'ace/mode/json'
 	editor.setShowPrintMargin false
 
-	# $.get '/data/example_event.txt', ( data ) ->
-		# If hookname has been passed in the url, the user wants to emit an event for this
-
-	if oParams.hookname
-		$('#inp_webh').val oParams.hookname
-
+	# This is a Jackson way to get the username into the event body ;-P
 	txt = '\n' + JSON.stringify(JSON.parse($('#eventSource').text()), null, '\t') + '\n'
 	editor.setValue txt, -1
 
-	$( '#editor_theme' ).change ( el ) ->
-		editor.setTheme 'ace/theme/' + $( this ).val()
+	$('#editor_theme').change () ->
+		editor.setTheme 'ace/theme/' + $(this).val()
 		
-	$( '#editor_font' ).change ( el ) ->
-		editor.setFontSize $( this ).val()
+	$('#editor_font').change () ->
+		editor.setFontSize $(this).val()
 
-	$( '#inp_webh' ).on 'input', updateWebhookList
+	$('#sel_webh').on 'change', updateWebhookSelection
 
-	$( '#but_emit' ).click () ->
+	$('#but_webh').click () ->
+		window.location.href = '/views/webhooks?id=' + encodeURIComponent $('#inp_webh').val()
+		 
+	$('#but_rule').on 'click', () ->
+		window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
+
+	$('#but_emit').click () ->
 		window.scrollTo 0, 0
-		obj = parseEvent()
+		try
+			obj = JSON.parse editor.getValue()
+		catch err
+			main.setInfo false, 'You have errors in your JSON object! ' + err
+
+		selectedHook = $('#sel_webh').val()
 		if obj
-			$.post( '/event', obj )
+			console.log 'posting to ' + '/service/webhooks/' + selectedHook
+			$.post('/service/webhooks/' + selectedHook, obj )
 				.done ( data ) ->
 					main.setInfo true, data.message
 				.fail ( err ) ->
 					if err.status is 401
-						window.location.href = '/views/events'
-					else
-						fDelayed = () ->
-							if err.responseText is ''
-								err.responseText = 'No Response from Server!'
-							main.setInfo false, 'Error in upload: ' + err.responseText
-						setTimeout fDelayed, 500
-					
-	$( '#but_webh' ).click () ->
-		window.location.href = '/views/webhooks?id=' + encodeURIComponent $('#inp_webh').val()
-		 
-	$( '#but_rule' ).on 'click', () ->
-		obj = parseEvent()
-		if obj
-			if obj.eventname and typeof obj.eventname is 'string' and obj.eventname isnt ''
-				sel = ''
-				if obj.body and typeof obj.body is 'object'
-					oSelector = fFindKeyStringPair obj.body
-					if oSelector
-						sel = "&selkey=#{ oSelector.key }&selval=#{ oSelector.val }"
-				url = 'rules_create?eventtype=custom&eventname=' + obj.eventname + sel
-				window.open url, '_blank'
-			else
-				main.setInfo false, 'Please provide a valid eventname'
+						window.location.href = '/'
+					main.setInfo false, 'Error in upload: ' + err.responseText
+
+	createWebhookList()
 
 window.addEventListener 'load', fOnLoad, true

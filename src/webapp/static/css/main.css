@@ -175,10 +175,10 @@ img.tl.green {
 	padding-right: 20px;
 }
 
-#eventControls button, #eventControls select {
-	display: none;
+#inp_webh {
+	font-size: 0.8em;
+	font-family: "Lucida Console", Monaco, monospace;
 }
-
 /*
 #editor_conditions {
 	float: left;

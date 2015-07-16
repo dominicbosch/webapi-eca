@@ -1,18 +1,8 @@
 'use strict';
-var arrKV, arrParams, domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, j, len, oParams, param, strPublicKey, table, tr,
+var domEventTriggerParameters, domInputEventName, domInputEventTiming, domSectionActionParameters, domSectionSelectedActions, domSelectEventTrigger, domSelectWebhook, el, fAddActionUserArgs, fAddActionUserParams, fAddEventUserArgs, fAddSelectedAction, fConvertDayHourToMinutes, fConvertTimeToDate, fDisplayEventParams, fFailedRequest, fFetchActionFunctionArgs, fFetchActionParams, fFetchEventFunctionArgs, fFetchEventParams, fFillActionFunction, fFillEventParams, fIssueRequest, fOnLoad, fPrepareEventType, strPublicKey, table, tr,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 strPublicKey = '';
-
-arrParams = window.location.search.substring(1).split('&');
-
-oParams = {};
-
-for (j = 0, len = arrParams.length; j < len; j++) {
-  param = arrParams[j];
-  arrKV = param.split('=');
-  oParams[arrKV[0]] = arrKV[1];
-}
 
 if (oParams.id) {
   oParams.id = decodeURIComponent(oParams.id);
@@ -169,9 +159,6 @@ fPrepareEventType = function(eventtype, cb) {
   $('#select_event_type').val(eventtype);
   $('#event_parameters > div').detach();
   switch (eventtype) {
-    case 'Custom Event':
-      $('#event_parameters').append(domInputEventName);
-      return typeof cb === "function" ? cb() : void 0;
     case 'Webhook':
       return fIssueRequest({
         command: 'get_all_webhooks',
@@ -208,7 +195,7 @@ fPrepareEventType = function(eventtype, cb) {
       return fIssueRequest({
         command: 'get_event_triggers',
         done: function(data) {
-          var err, events, evt, id, k, len1, oEps;
+          var err, events, evt, id, j, len, oEps;
           try {
             oEps = JSON.parse(data.message);
             if (JSON.stringify(oEps) === '{}') {
@@ -220,8 +207,8 @@ fPrepareEventType = function(eventtype, cb) {
               $('#select_eventtrigger option').remove();
               for (id in oEps) {
                 events = oEps[id];
-                for (k = 0, len1 = events.length; k < len1; k++) {
-                  evt = events[k];
+                for (j = 0, len = events.length; j < len; j++) {
+                  evt = events[j];
                   $('#select_eventtrigger').append($('<option>').text(id + ' -> ' + evt));
                 }
               }
@@ -275,7 +262,7 @@ fFetchEventParams = function(name) {
 
 fDisplayEventParams = function(id) {
   return function(data) {
-    var i, inp, name, shielded;
+    var i, inp, name, oParams, shielded;
     if (data.message) {
       oParams = JSON.parse(data.message);
       table = $('<table>');
@@ -311,7 +298,7 @@ fFillEventParams = function(moduleId) {
       })
     },
     done: function(data) {
-      var oParam, par, results;
+      var oParam, oParams, par, param, results;
       oParams = JSON.parse(data.message);
       results = [];
       for (param in oParams) {
@@ -339,7 +326,7 @@ fFetchEventFunctionArgs = function(arrName) {
       })
     },
     done: function(data) {
-      var functionArgument, k, len1, ref, td;
+      var functionArgument, j, len, oParams, ref, td;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
@@ -348,8 +335,8 @@ fFetchEventFunctionArgs = function(arrName) {
           }
           table = $('<table>').appendTo($('#event_trigger_params'));
           ref = oParams[arrName[1]];
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            functionArgument = ref[k];
+          for (j = 0, len = ref.length; j < len; j++) {
+            functionArgument = ref[j];
             tr = $('<tr>').attr('class', 'funcMappings').appendTo(table);
             tr.append($('<td>').css('width', '20px'));
             td = $('<td>').appendTo(tr);
@@ -386,11 +373,11 @@ fAddEventUserArgs = function(name) {
       arrFuncs = ref[key];
       par = $("#event_trigger_params");
       results.push((function() {
-        var k, len1, ref1, results1;
+        var j, len, ref1, results1;
         ref1 = JSON.parse(arrFuncs);
         results1 = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          oFunc = ref1[k];
+        for (j = 0, len = ref1.length; j < len; j++) {
+          oFunc = ref1[j];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
@@ -439,7 +426,7 @@ fFetchActionParams = function(modName) {
       })
     },
     done: function(data) {
-      var comment, div, inp, name, results, shielded, subdiv;
+      var comment, div, inp, name, oParams, results, shielded, subdiv;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (JSON.stringify(oParams) !== '{}') {
@@ -494,15 +481,15 @@ fFetchActionFunctionArgs = function(tag, arrName) {
       })
     },
     done: function(data) {
-      var functionArgument, k, len1, ref, results, td;
+      var functionArgument, j, len, oParams, ref, results, td;
       if (data.message) {
         oParams = JSON.parse(data.message);
         if (oParams[arrName[1]]) {
           table = $('<table>').appendTo(tag);
           ref = oParams[arrName[1]];
           results = [];
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            functionArgument = ref[k];
+          for (j = 0, len = ref.length; j < len; j++) {
+            functionArgument = ref[j];
             tr = $('<tr>').appendTo(table);
             td = $('<td>').appendTo(tr);
             td.append($('<div>').attr('class', 'funcarg').text(functionArgument));
@@ -543,7 +530,7 @@ fFillActionFunction = function(name) {
 
 fAddActionUserParams = function(name) {
   return function(data) {
-    var domMod, oParam, par, results;
+    var domMod, oParam, oParams, par, param, results;
     oParams = JSON.parse(data.message);
     domMod = $("#action_dispatcher_params div").filter(function() {
       return $('div.modName', this).text() === name;
@@ -575,11 +562,11 @@ fAddActionUserArgs = function(name) {
         return $('td.title', this).text() === (name + " -> " + key);
       });
       results.push((function() {
-        var k, len1, ref1, results1;
+        var j, len, ref1, results1;
         ref1 = JSON.parse(arrFuncs);
         results1 = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          oFunc = ref1[k];
+        for (j = 0, len = ref1.length; j < len; j++) {
+          oFunc = ref1[j];
           tr = $("tr", par).filter(function() {
             return $('.funcarg', this).text() === ("" + oFunc.argument);
           });
@@ -628,15 +615,6 @@ fOnLoad = function() {
     return fPrepareEventType($(this).val());
   });
   switch (oParams.eventtype) {
-    case 'custom':
-      name = decodeURIComponent(oParams.eventname);
-      $('#input_id').val("My '" + name + "' Rule");
-      fPrepareEventType('Custom Event', function() {
-        $('input', domInputEventName).val(name);
-        $('input', domInputEventName).focus();
-        return editor.setValue("[\n\n]");
-      });
-      break;
     case 'webhook':
       name = decodeURIComponent(oParams.hookname);
       $('#input_id').val("My '" + name + "' Rule");
@@ -660,10 +638,10 @@ fOnLoad = function() {
       for (module in oAis) {
         actions = oAis[module];
         results.push((function() {
-          var k, len1, results1;
+          var j, len, results1;
           results1 = [];
-          for (k = 0, len1 = actions.length; k < len1; k++) {
-            act = actions[k];
+          for (j = 0, len = actions.length; j < len; j++) {
+            act = actions[j];
             i++;
             arrEls = $("#action_dispatcher_params div").filter(function() {
               return $(this).text() === (module + " -> " + act);
@@ -730,14 +708,6 @@ fOnLoad = function() {
         case '':
           $('#select_event_type').focus();
           throw new Error('Please choose an event type!');
-          break;
-        case 'Custom Event':
-          el = $('#input_eventname');
-          if (el.val() === '') {
-            el.focus();
-            throw new Error('Please assign an Event Name!');
-          }
-          eventname = el.val();
           break;
         case 'Webhook':
           eventname = $('#select_eventhook').val();
@@ -898,7 +868,7 @@ fOnLoad = function() {
         if (oRule) {
           $('#input_id').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, k, len1, mins, ref, results;
+            var action, arrName, d, j, len, mins, ref, results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -924,16 +894,13 @@ fOnLoad = function() {
                   $('#info').text('Your Webhook does not exist anymore!');
                   $('#info').attr('class', 'error');
                 }
-                break;
-              case 'Custom Event':
-                $('input', domInputEventName).val(oRule.eventname);
             }
             editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
             domSectionSelectedActions.show();
             ref = oRule.actions;
             results = [];
-            for (k = 0, len1 = ref.length; k < len1; k++) {
-              action = ref[k];
+            for (j = 0, len = ref.length; j < len; j++) {
+              action = ref[j];
               arrName = action.split(' -> ');
               results.push(fAddSelectedAction(action));
             }

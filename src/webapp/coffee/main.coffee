@@ -23,6 +23,8 @@ $( document ).ready () ->
 
 window.main =
 	setInfo: ( isSuccess, msg ) ->
+		# col = if isSuccess then 'rgba(20,80,0,1)' else 'rgba(150,50,50,1)'
+		# d3.select('#skeletonTicker').text(msg).transition().duration(300).style 'background-color', col
 		$( '#skeletonTicker' ).text msg
 		$( '#skeletonTicker' ).attr 'class', if isSuccess then 'success' else 'error'
 		window.scrollTo 0, 0
@@ -30,6 +32,7 @@ window.main =
 	clearInfo: () ->
 		$( '#skeletonTicker' ).text ''
 		$( '#skeletonTicker' ).attr 'class', ''
+		# d3.select('#skeletonTicker').text('').transition().duration(300).style 'background-color', 'rgba(0,0,0,0)'
 
 	registerHoverInfo: ( el, file ) ->
 		hoverOut = () ->
@@ -39,7 +42,7 @@ window.main =
 					$( '#tooltip' ).fadeOut()
 			setTimeout checkHover, 0
 			
-		$.get '/help/' + file, ( html ) ->
+		$.get '/help/' + file, (html) ->
 			info = $( '<img>' )
 				.attr( 'src', '/images/info.png' )
 				.attr( 'class', 'infoimg' )

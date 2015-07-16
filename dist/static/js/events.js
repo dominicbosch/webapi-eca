@@ -1,86 +1,66 @@
 'use strict';
-var checkRuleExists, editor, fFindKeyStringPair, fOnLoad, parseEvent, updateWebhookList;
+var checkRuleExists, createWebhookList, editor, fOnLoad, updateWebhookSelection;
 
 editor = null;
 
-parseEvent = function() {
-  var err, obj;
-  try {
-    return obj = JSON.parse(editor.getValue());
-  } catch (_error) {
-    err = _error;
-    return main.setInfo(false, 'You have errors in your JSON object! ' + err);
+createWebhookList = function() {
+  $('#but_rule').hide();
+  $('#but_emit').hide();
+  if (oParams.webhook) {
+    $('#inp_webh').hide();
+    $('#but_webh').hide();
   }
-};
-
-fFindKeyStringPair = function(obj) {
-  var key, oRet, val;
-  for (key in obj) {
-    val = obj[key];
-    if (typeof val === 'string' || typeof val === 'number') {
-      return {
-        key: key,
-        val: val
-      };
-    } else if (typeof val === 'object') {
-      oRet = fFindKeyStringPair(val);
-      if (oRet) {
-        return oRet;
-      }
-    }
-  }
-  return null;
-};
-
-updateWebhookList = function() {
   return $.post('/service/webhooks/getallvisible', function(oHooks) {
-    var createRow, exists, hook, id, numHooks, ref, ref1, table;
-    $('#listhooks *').remove();
-    numHooks = 0;
-    exists = false;
-    table = $('<table>');
-    table.append($("<tr><th>Event Name</th><th>Webhook Owner</th></tr>"));
-    createRow = function(hook, isMine) {
-      var elm;
-      numHooks++;
-      elm = $("<tr><td><kbd>" + hook.hookname + "</kbd></td><td>" + (isMine ? '(you)' : hook.username) + "</td></tr>");
-      table.append(elm);
-      if (hook.hookname === $('#inp_webh').val()) {
-        elm.attr('class', 'exists');
-        return exists = true;
-      }
+    var createRow, hook, id, list, ref, ref1, selEl;
+    list = $('#sel_webh');
+    $('*', list).remove();
+    list.append($('<option>(new with name):</option>'));
+    createRow = function(id, hook, isMine) {
+      var elm, owner;
+      owner = isMine ? 'yours' : hook.username;
+      elm = $('<option value="' + id + '">' + hook.hookname + ' (' + owner + ')</option>');
+      return list.append(elm);
     };
     ref = oHooks["private"];
     for (id in ref) {
       hook = ref[id];
-      createRow(hook, true);
+      createRow(id, hook, true);
     }
     ref1 = oHooks["public"];
     for (id in ref1) {
       hook = ref1[id];
-      createRow(hook);
+      createRow(id, hook);
     }
-    if (exists) {
-      $('#tlwebh').removeClass('red').addClass('green');
-      $('#but_webh').hide();
-      checkRuleExists();
-    } else {
-      $('#tlwebh').removeClass('green').addClass('red');
-      $('#but_webh').show();
-      $('#but_rule').hide();
-      $('#but_emit').hide();
-    }
-    if (numHooks === 0) {
-      return $('#sel_webh').hide();
-    } else {
-      return $('#sel_webh').show();
+    if (oParams.webhook) {
+      selEl = $('#sel_webh [value="' + oParams.webhook + '"]');
+      if (selEl.length > 0) {
+        selEl.prop('selected', true);
+        return updateWebhookSelection();
+      } else {
+
+      }
     }
   });
+};
+
+updateWebhookSelection = function() {
+  if ($(':selected', this).index() === 0) {
+    $('#tlwebh').removeClass('green').addClass('red');
+    $('#inp_webh').show();
+    $('#but_webh').show();
+    return $('#but_rule').hide();
+  } else {
+    $('#tlwebh').removeClass('red').addClass('green');
+    $('#inp_webh').hide();
+    $('#but_webh').hide();
+    return checkRuleExists();
+  }
 };
 
 checkRuleExists = function() {
   return $.post('/service/rules/getall', function(oRules) {
     var exists, i, len, prop, rule;
+    console.log('checking for existing rules:', oRules);
     exists = false;
     for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
       prop = oRules[rule];
@@ -91,7 +71,8 @@ checkRuleExists = function() {
     if (exists) {
       $('#tlrule').removeClass('red').addClass('green');
       $('#but_rule').hide();
-      return $('#but_emit').show();
+      $('#but_emit').show();
+      return main.setInfo(true, 'Webhook valid and Rule is setup for your events! Go on and push your event!');
     } else {
       $('#tlrule').removeClass('green').addClass('red');
       $('#but_rule').show();
@@ -111,63 +92,44 @@ fOnLoad = function() {
   editor.setFontSize('16px');
   editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
-  if (oParams.hookname) {
-    $('#inp_webh').val(oParams.hookname);
-  }
   txt = '\n' + JSON.stringify(JSON.parse($('#eventSource').text()), null, '\t') + '\n';
   editor.setValue(txt, -1);
-  $('#editor_theme').change(function(el) {
+  $('#editor_theme').change(function() {
     return editor.setTheme('ace/theme/' + $(this).val());
   });
-  $('#editor_font').change(function(el) {
+  $('#editor_font').change(function() {
     return editor.setFontSize($(this).val());
   });
-  $('#inp_webh').on('input', updateWebhookList);
-  $('#but_emit').click(function() {
-    var obj;
-    window.scrollTo(0, 0);
-    obj = parseEvent();
-    if (obj) {
-      return $.post('/event', obj).done(function(data) {
-        return main.setInfo(true, data.message);
-      }).fail(function(err) {
-        var fDelayed;
-        if (err.status === 401) {
-          return window.location.href = '/views/events';
-        } else {
-          fDelayed = function() {
-            if (err.responseText === '') {
-              err.responseText = 'No Response from Server!';
-            }
-            return main.setInfo(false, 'Error in upload: ' + err.responseText);
-          };
-          return setTimeout(fDelayed, 500);
-        }
-      });
-    }
-  });
+  $('#sel_webh').on('change', updateWebhookSelection);
   $('#but_webh').click(function() {
     return window.location.href = '/views/webhooks?id=' + encodeURIComponent($('#inp_webh').val());
   });
-  return $('#but_rule').on('click', function() {
-    var oSelector, obj, sel, url;
-    obj = parseEvent();
+  $('#but_rule').on('click', function() {
+    return window.open('rules_create?webhook=' + $('#sel_webh').val(), '_blank');
+  });
+  $('#but_emit').click(function() {
+    var err, obj, selectedHook;
+    window.scrollTo(0, 0);
+    try {
+      obj = JSON.parse(editor.getValue());
+    } catch (_error) {
+      err = _error;
+      main.setInfo(false, 'You have errors in your JSON object! ' + err);
+    }
+    selectedHook = $('#sel_webh').val();
     if (obj) {
-      if (obj.eventname && typeof obj.eventname === 'string' && obj.eventname !== '') {
-        sel = '';
-        if (obj.body && typeof obj.body === 'object') {
-          oSelector = fFindKeyStringPair(obj.body);
-          if (oSelector) {
-            sel = "&selkey=" + oSelector.key + "&selval=" + oSelector.val;
-          }
+      console.log('posting to ' + '/service/webhooks/' + selectedHook);
+      return $.post('/service/webhooks/' + selectedHook, obj).done(function(data) {
+        return main.setInfo(true, data.message);
+      }).fail(function(err) {
+        if (err.status === 401) {
+          window.location.href = '/';
         }
-        url = 'rules_create?eventtype=custom&eventname=' + obj.eventname + sel;
-        return window.open(url, '_blank');
-      } else {
-        return main.setInfo(false, 'Please provide a valid eventname');
-      }
+        return main.setInfo(false, 'Error in upload: ' + err.responseText);
+      });
     }
   });
+  return createWebhookList();
 };
 
 window.addEventListener('load', fOnLoad, true);

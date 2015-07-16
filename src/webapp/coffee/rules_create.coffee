@@ -7,14 +7,6 @@
 # FIXME: notify of non existing Action dispatcher in the first place!
 
 strPublicKey = ''
-
-# Fetch the search string and transform it into an object for easy access
-arrParams = window.location.search.substring(1).split '&'
-oParams = {}
-for param in arrParams
-	arrKV = param.split '='
-	oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
-
 if oParams.id
 	oParams.id = decodeURIComponent oParams.id
 
@@ -152,11 +144,6 @@ fPrepareEventType = ( eventtype, cb ) ->
 	$( '#select_event_type' ).val eventtype
 	$( '#event_parameters > div' ).detach()
 	switch eventtype
-
-		# The user wants to react to custom event
-		when 'Custom Event'
-			$( '#event_parameters' ).append domInputEventName
-			cb?()
 
 		# The user wants a webhook as event producer
 		when 'Webhook'
@@ -508,14 +495,6 @@ fOnLoad = () ->
 
 	# If the user is coming from an event UI he wants a rule to be setup for him
 	switch oParams.eventtype
-		when 'custom'
-			name = decodeURIComponent oParams.eventname
-			$( '#input_id' ).val "My '#{ name }' Rule" 
-			fPrepareEventType 'Custom Event', () ->
-				$( 'input', domInputEventName ).val name
-				$( 'input', domInputEventName ).focus()
-				editor.setValue "[\n\n]" # For now we don't prepare conditions
-
 		when 'webhook'
 			name = decodeURIComponent oParams.hookname
 			$( '#input_id' ).val "My '#{ name }' Rule" 
@@ -593,13 +572,6 @@ fOnLoad = () ->
 				when ''
 					$( '#select_event_type' ).focus()
 					throw new Error 'Please choose an event type!'
-
-				when 'Custom Event'
-					el = $( '#input_eventname' )
-					if el.val() is ''
-						el.focus()
-						throw new Error 'Please assign an Event Name!'
-					eventname = el.val()
 
 				when 'Webhook'
 					eventname = $( '#select_eventhook' ).val()
@@ -768,9 +740,6 @@ fOnLoad = () ->
 									window.scrollTo 0, 0
 									$( '#info' ).text 'Your Webhook does not exist anymore!'
 									$( '#info' ).attr 'class', 'error'
-
-							when 'Custom Event'
-								$( 'input', domInputEventName ).val oRule.eventname
 
 						# Conditions
 						editor.setValue JSON.stringify oRule.conditions, undefined, 2

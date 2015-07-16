@@ -42,10 +42,11 @@ updateWebhookList = () ->
 fShowWebhookUsage = ( hookid, hookname ) ->
 	$('#display_hookurl *').remove()
 	if hookid
+		main.setInfo true, 'Webhook created!'
 		$('#display_hookurl').append $ """
 			<div>This is the Webhook Url you can use for your Events <kbd>#{ hookname }</kbd> :</div>
 			<input class="url" type="text" value="#{ hostUrl }/service/webhooks/event/#{ hookid }"><br>
-			<div><b>Now you can <a href="/views/events?hookname=#{ hookname }">emit an Event</a> 
+			<div><b>Now you can <a href="/views/events?webhook=#{ hookid }">emit an Event</a> 
 			on this Webhook!</b></div>
 		"""
 
@@ -65,7 +66,7 @@ fOnLoad = () ->
 			data = 
 				hookname: hookname
 				isPublic: $( '#inp_public' ).is( ':checked' )
-			$.post( '/service/webhooks/create', data )
+			$.post '/service/webhooks/create', data
 				.done ( data ) ->
 					updateWebhookList()
 					fShowWebhookUsage data.hookid, data.hookname

@@ -1,11 +1,10 @@
 'use strict';
 
-
 fOnLoad = () ->
 	fErrHandler = ( errMsg ) ->
 		( err ) ->
 			if err.status is 401
-				window.location.href = 'forge?page=edit_rules'
+				window.location.href = '/'
 			else
 				$( '#log_col' ).text ""
 				fDelayed = () ->

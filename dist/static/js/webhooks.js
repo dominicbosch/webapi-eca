@@ -51,7 +51,8 @@ updateWebhookList = function() {
 fShowWebhookUsage = function(hookid, hookname) {
   $('#display_hookurl *').remove();
   if (hookid) {
-    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"url\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"><br>\n<div><b>Now you can <a href=\"/views/events?hookname=" + hookname + "\">emit an Event</a> \non this Webhook!</b></div>"));
+    main.setInfo(true, 'Webhook created!');
+    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"url\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"><br>\n<div><b>Now you can <a href=\"/views/events?webhook=" + hookid + "\">emit an Event</a> \non this Webhook!</b></div>"));
   }
 };
 
