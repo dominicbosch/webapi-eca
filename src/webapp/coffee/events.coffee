@@ -12,9 +12,9 @@ createWebhookList = () ->
 	$.post '/service/webhooks/getallvisible', (oHooks) ->
 		list = $ '#sel_webh'
 		$('*', list).remove()
-		list.append $ '<option>(new with name):</option>'
+		list.append $ '<option>[ create new webhook with name: ]</option>'
 		createRow = (id, hook, isMine) ->
-			owner = if isMine then 'yours' else hook.username
+			owner = if isMine then 'yours' else hook.username+'\'s'
 			elm = $ '<option value="'+id+'">'+hook.hookname+' ('+owner+')</option>'
 			list.append elm
 		
@@ -66,7 +66,7 @@ fOnLoad = () ->
 	editor = ace.edit 'editor'
 	editor.setTheme 'ace/theme/crimson_editor'
 	editor.setOptions maxLines: 15
-	editor.setFontSize '16px'
+	editor.setFontSize '14px'
 	editor.getSession().setMode 'ace/mode/json'
 	editor.setShowPrintMargin false
 
@@ -83,7 +83,10 @@ fOnLoad = () ->
 	$('#sel_webh').on 'change', updateWebhookSelection
 
 	$('#but_webh').click () ->
-		window.location.href = '/views/webhooks?id=' + encodeURIComponent $('#inp_webh').val()
+		if $('#inp_webh').val() is ''
+			main.setInfo false, 'Please enter a Webhook name'
+		else
+			window.location.href = '/views/webhooks?id='+$('#inp_webh').val()
 		 
 	$('#but_rule').on 'click', () ->
 		window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
@@ -97,8 +100,8 @@ fOnLoad = () ->
 
 		selectedHook = $('#sel_webh').val()
 		if obj
-			console.log 'posting to ' + '/service/webhooks/' + selectedHook
-			$.post('/service/webhooks/' + selectedHook, obj )
+			console.log 'posting to ' + '/service/webhooks/event/' + selectedHook
+			$.post('/service/webhooks/event/' + selectedHook, obj )
 				.done ( data ) ->
 					main.setInfo true, data.message
 				.fail ( err ) ->

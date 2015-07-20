@@ -24,7 +24,7 @@ init = function(args) {
     process.exit();
   }
   log.init(args);
-  log.info('EP | Event Trigger Poller starts up');
+  log.info('EP | Event Poller Trigger starts up');
   process.on('uncaughtException', function(err) {
     log.error('CURRENT STATE:');
     log.error(JSON.stringify(this.currentState, null, 2));

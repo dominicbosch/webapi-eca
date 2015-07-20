@@ -6,7 +6,7 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var createNodeModule, cs, db, encryption, fPush, fPushEvent, fs, getFunctionParamNames, loadEventTrigger, log, logFunction, oModules, path, regexpComments, searchComment, vm;
+var createNodeModule, cs, db, encryption, fs, getFunctionParamNames, i, len, log, logFunction, mod, oModules, path, regexpComments, request, searchComment, sendToWebhook, vm;
 
 log = require('./logging');
 
@@ -22,7 +22,14 @@ path = require('path');
 
 cs = require('coffee-script');
 
+request = require('request');
+
 oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
+
+for (i = 0, len = oModules.length; i < len; i++) {
+  mod = oModules[i];
+  oModules[mod] = require(mod);
+}
 
 logFunction = function(uId, rId, mId) {
   return function(msg) {
@@ -99,24 +106,26 @@ exports.compileString = (function(_this) {
   };
 })(this);
 
-fPushEvent = function(userId, oRule, modType) {
-  return function(obj) {
-    var timestamp;
-    timestamp = (new Date()).toISOString();
-    if (modType === 'eventtrigger') {
-      return db.pushEvent({
-        eventname: oRule.eventname + '_created:' + oRule.timestamp,
-        body: obj
-      });
-    } else {
-      return db.pushEvent(obj);
-    }
+sendToWebhook = function(log) {
+  return function(hook, evt) {
+    var options;
+    options = {
+      uri: hook,
+      method: 'POST',
+      json: true,
+      body: evt
+    };
+    return request(options, function(err, res, body) {
+      if (err || res.statusCode !== 200) {
+        return log('ERROR(' + __filename + ') REQUESTING: ' + hook + ' (' + (new Date()) + ')');
+      }
+    });
   };
 };
 
 createNodeModule = (function(_this) {
   return function(src, userId, oRule, modId, modType, dbMod, params, comment, cb) {
-    var answ, err, fName, fRegisterArguments, func, i, len, logFunc, mod, msg, oFuncArgs, oFuncParams, ref, sandbox;
+    var answ, err, fName, fRegisterArguments, func, j, len1, logFunc, msg, oFuncArgs, oFuncParams, ref, sandbox;
     if (!params) {
       params = {};
     }
@@ -130,14 +139,12 @@ createNodeModule = (function(_this) {
       id: userId + "." + oRule.id + "." + modId + ".vm",
       params: params,
       log: logFunc,
-      debug: console.log,
       exports: {},
-      setTimeout: setTimeout,
-      pushEvent: fPushEvent(userId, oRule, modType)
+      sendEvent: sendToWebhook(logFunc)
     };
-    for (i = 0, len = oModules.length; i < len; i++) {
-      mod = oModules[i];
-      sandbox[mod] = require(mod);
+    for (j = 0, len1 = oModules.length; j < len1; j++) {
+      mod = oModules[j];
+      sandbox[mod] = mod;
     }
     try {
       vm.runInNewContext(src, sandbox, sandbox.id);
@@ -189,32 +196,12 @@ createNodeModule = (function(_this) {
   };
 })(this);
 
-fPush = function(evtname) {
-  return function(obj) {
-    if (evtname) {
-      return db.pushEvent({
-        eventname: evtname,
-        body: obj
-      });
-    } else {
-      return db.pushEvent(obj);
-    }
-  };
-};
-
-loadEventTrigger = function(oRule) {
-  var context;
-  return context = {
-    pushEvent: fPush(oRule.eventname)
-  };
-};
-
 searchComment = function(lang, src) {
-  var arrSrc, comm, i, len, line;
+  var arrSrc, comm, j, len1, line;
   arrSrc = src.split('\n');
   comm = '';
-  for (i = 0, len = arrSrc.length; i < len; i++) {
-    line = arrSrc[i];
+  for (j = 0, len1 = arrSrc.length; j < len1; j++) {
+    line = arrSrc[j];
     line = line.trim();
     if (line !== '') {
       if (lang === 'CoffeeScript') {

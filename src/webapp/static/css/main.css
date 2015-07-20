@@ -78,6 +78,11 @@ input.url {
 	padding-right: 2%;
 }
 
+.editorSettings {
+	padding-left: 20px;
+	font-size: 0.8em;
+}
+
 #editor {
 	border: 1px solid lightgray;
 	width: 100%;

@@ -14,10 +14,10 @@ createWebhookList = function() {
     var createRow, hook, id, list, ref, ref1, selEl;
     list = $('#sel_webh');
     $('*', list).remove();
-    list.append($('<option>(new with name):</option>'));
+    list.append($('<option>[ create new webhook with name: ]</option>'));
     createRow = function(id, hook, isMine) {
       var elm, owner;
-      owner = isMine ? 'yours' : hook.username;
+      owner = isMine ? 'yours' : hook.username + '\'s';
       elm = $('<option value="' + id + '">' + hook.hookname + ' (' + owner + ')</option>');
       return list.append(elm);
     };
@@ -89,7 +89,7 @@ fOnLoad = function() {
   editor.setOptions({
     maxLines: 15
   });
-  editor.setFontSize('16px');
+  editor.setFontSize('14px');
   editor.getSession().setMode('ace/mode/json');
   editor.setShowPrintMargin(false);
   txt = '\n' + JSON.stringify(JSON.parse($('#eventSource').text()), null, '\t') + '\n';
@@ -102,7 +102,11 @@ fOnLoad = function() {
   });
   $('#sel_webh').on('change', updateWebhookSelection);
   $('#but_webh').click(function() {
-    return window.location.href = '/views/webhooks?id=' + encodeURIComponent($('#inp_webh').val());
+    if ($('#inp_webh').val() === '') {
+      return main.setInfo(false, 'Please enter a Webhook name');
+    } else {
+      return window.location.href = '/views/webhooks?id=' + $('#inp_webh').val();
+    }
   });
   $('#but_rule').on('click', function() {
     return window.open('rules_create?webhook=' + $('#sel_webh').val(), '_blank');
@@ -118,8 +122,8 @@ fOnLoad = function() {
     }
     selectedHook = $('#sel_webh').val();
     if (obj) {
-      console.log('posting to ' + '/service/webhooks/' + selectedHook);
-      return $.post('/service/webhooks/' + selectedHook, obj).done(function(data) {
+      console.log('posting to ' + '/service/webhooks/event/' + selectedHook);
+      return $.post('/service/webhooks/event/' + selectedHook, obj).done(function(data) {
         return main.setInfo(true, data.message);
       }).fail(function(err) {
         if (err.status === 401) {

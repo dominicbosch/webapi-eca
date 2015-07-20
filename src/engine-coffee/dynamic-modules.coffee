@@ -22,21 +22,22 @@ vm = require 'vm'
 fs = require 'fs'
 path = require 'path'
 
-# - External Modules: [coffee-script](http://coffeescript.org/),
-#       [crypto-js](https://www.npmjs.org/package/crypto-js) and
-#       [import-io](https://www.npmjs.org/package/import-io)
+# - External Modules: [coffee-script](http://coffeescript.org/) and
+#       [request](https://github.com/request/request)
 cs = require 'coffee-script'
+request = require 'request'
 
 oModules = JSON.parse fs.readFileSync path.resolve __dirname, '..', 'config', 'modules.json'
+oModules[mod] = require mod for mod in oModules # Replace all the module names with the actual module objects
 
 logFunction = ( uId, rId, mId ) ->
 	( msg ) ->
 		db.appendLog uId, rId, mId, msg
 
 regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
-getFunctionParamNames = ( fName, func, oFuncs ) ->
+getFunctionParamNames = (fName, func, oFuncs) ->
 	fnStr = func.toString().replace regexpComments, ''
-	result = fnStr.slice( fnStr.indexOf( '(' ) + 1, fnStr.indexOf( ')' ) ).match /([^\s,]+)/g
+	result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match /([^\s,]+)/g
 	if not result
 		result = []
 	oFuncs[fName] = result
@@ -52,7 +53,7 @@ compile it first into JS.
 @param {Object} params
 @param {String} lang
 ###
-exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) =>
+exports.compileString = (src, userId, oRule, modId, lang, modType, dbMod, cb) =>
 	comment = searchComment lang, src
 	if lang is 'CoffeeScript'
 		try
@@ -82,16 +83,16 @@ exports.compileString = ( src, userId, oRule, modId, lang, modType, dbMod, cb ) 
 	else
 		createNodeModule src, userId, oRule, modId, modType, dbMod, null, comment, cb
 
-
-fPushEvent = ( userId, oRule, modType ) ->
-	( obj ) ->
-		timestamp = ( new Date() ).toISOString()
-		if modType is 'eventtrigger'
-			db.pushEvent
-				eventname: oRule.eventname + '_created:' + oRule.timestamp
-				body: obj
-		else
-			db.pushEvent obj
+sendToWebhook = (log) ->
+	(hook, evt) ->
+		options =
+			uri: hook
+			method: 'POST'
+			json: true 
+			body: evt
+		request options, (err, res, body) ->
+			if err or res.statusCode isnt 200
+				log 'ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')'
 
 createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment, cb ) =>
 	if not params
@@ -109,12 +110,11 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 		id: "#{ userId }.#{ oRule.id }.#{ modId }.vm"
 		params: params
 		log: logFunc
-		debug: console.log
 		exports: {}
-		setTimeout: setTimeout # This one allows probably too much
-		pushEvent: fPushEvent userId, oRule, modType
+		sendEvent: sendToWebhook logFunc
+
 	# Attach all modules that are allowed for the coders, as defined in config/modules.json
-	sandbox[ mod ] = require mod for mod in oModules
+	sandbox[mod] = mod for mod in oModules
 
 #FIXME ENGINE BREAKS if non-existing module is used??? 
 
@@ -162,32 +162,16 @@ createNodeModule = ( src, userId, oRule, modId, modType, dbMod, params, comment,
 		logger: sandbox.log
 		comment: comment
 
-
-
-fPush = ( evtname ) ->
-	( obj ) ->
-		if evtname
-			db.pushEvent
-				eventname: evtname
-				body: obj
-		else
-			db.pushEvent obj
-
-loadEventTrigger = ( oRule ) ->
-	context =
-		pushEvent: fPush( oRule.eventname )
-
-
-searchComment = ( lang, src ) ->
+searchComment = (lang, src) ->
 	arrSrc = src.split '\n'
 	comm = ''
 	for line in arrSrc
 		line = line.trim()
 		if line isnt ''
 			if lang is 'CoffeeScript'
-				if line.substring( 0, 1 ) is '#' and line.substring( 1, 3 ) isnt '###' 
-					comm += line.substring( 1 ) + '\n'
+				if line.substring(0, 1) is '#' and line.substring(1, 3) isnt '###' 
+					comm += line.substring(1) + '\n'
 			else
-				if line.substring( 0, 2 ) is '//'
-					comm += line.substring( 2 ) + '\n'
+				if line.substring(0, 2) is '//'
+					comm += line.substring(2) + '\n'
 	comm
