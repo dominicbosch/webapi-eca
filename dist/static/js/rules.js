@@ -28,27 +28,21 @@ fOnLoad = function() {
     };
   };
   fFetchRules = function() {
-    return $.post('/usercommand/get_rules').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
+    return $.post('/service/rules/getall').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateRuleList = function(data) {
-    var i, img, inp, len, ref, results, ruleName, tr;
+    var i, len, results, ruleName;
     $('#tableRules tr').remove();
-    ref = data.message;
-    results = [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      ruleName = ref[i];
-      tr = $('<tr>');
-      img = $('<img>').attr('class', 'del').attr('title', 'Delete Rule').attr('src', 'images/red_cross_small.png');
-      tr.append($('<td>').append(img));
-      img = $('<img>').attr('class', 'edit').attr('title', 'Edit Rule').attr('src', 'images/edit.png');
-      tr.append($('<td>').append(img));
-      img = $('<img>').attr('class', 'log').attr('title', 'Show Rule Log').attr('src', 'images/logicon.png');
-      tr.append($('<td>').append(img));
-      inp = $('<div>').text(ruleName);
-      tr.append($('<td>').append(inp));
-      results.push($('#tableRules').append(tr));
+    if (data.length === 0) {
+      return $('#tableRules').html('<tr><td><h4>You don\'t have any rules!</h4></td></tr>');
+    } else {
+      results = [];
+      for (i = 0, len = data.length; i < len; i++) {
+        ruleName = data[i];
+        results.push($('#tableRules').append($("<tr>\n	<td><img class=\"del\" title=\"Delete Rule\" src=\"images/red_cross_small.png\"></td>\n	<td><img class=\"edit\" title=\"Edit Rule\" src=\"images/edit.png\"></td>\n	<td><img class=\"log\" title=\"Show Rule Log\" src=\"images/logicon.png\"></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
+      }
+      return results;
     }
-    return results;
   };
   fFetchRules();
   $('#tableRules').on('click', 'img.del', function() {
@@ -71,6 +65,7 @@ fOnLoad = function() {
   });
   return $('#tableRules').on('click', 'img.log', function() {
     var data, ruleName;
+    console.warn('TODO open div over whole page with log in editor');
     ruleName = $('div', $(this).closest('tr')).text();
     data = {
       body: JSON.stringify({
@@ -81,7 +76,7 @@ fOnLoad = function() {
       var log, ts;
       ts = (new Date()).toISOString();
       log = data.message.replace(new RegExp("\n", 'g'), "<br>");
-      return $('#log_col').html("<h3>" + ruleName + " Log:</h3> <i>( updated UTC|" + ts + " )</i><br/><br/>" + log);
+      return $('#log_col').html("<h3>" + ruleName + " Log:</h3> <i>(updated UTC|" + ts + ")</i><br/><br/>" + log);
     }).fail(fErrHandler('Could not get rule log! '));
   });
 };

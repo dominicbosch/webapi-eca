@@ -221,7 +221,7 @@ getSetRecords = (function(_this) {
         log.warn(err, "DB | fetching '" + set + "'");
         return cb(err);
       } else if (arrReply.length === 0) {
-        return cb();
+        return cb(null, []);
       } else {
         semaphore = arrReply.length;
         objReplies = {};

@@ -168,9 +168,9 @@ getSetRecords = ( set, fSingle, cb ) =>
 			# If an error happens we return it to the callback function
 			log.warn err, "DB | fetching '#{ set }'"
 			cb err
-		else if arrReply.length == 0
-			# If the set was empty we return null to the callback
-			cb()
+		else if arrReply.length is 0
+			# If the set was empty we return an empty array to the callback
+			cb null, []
 		else
 			# We need to fetch all the entries from the set and use a semaphore
 			# since the fetching from the DB will happen asynchronously
@@ -419,6 +419,7 @@ Query the DB for a rule and pass it to cb(err, obj).
 ###
 exports.getAllRules = ( userId, cb ) =>
 	log.info "DB | getAllRules( '#{ userId }' )"
+	# Attention! This is a nested callback hell! be cautious!
 	getUserRule = ( ruleId, inCb ) ->
 		exports.getRule userId, ruleId, inCb
 	getSetRecords "user:#{ userId }:rules", getUserRule, cb

@@ -141,7 +141,8 @@ fConvertDayHourToMinutes = ( strDayHour ) ->
 
 #	Prepare the event section when a different event type is selected
 fPrepareEventType = ( eventtype, cb ) ->
-	$( '#select_event_type' ).val eventtype
+	console.warn 'GONE!'
+	# $( '#select_event_type' ).val eventtype
 	$( '#event_parameters > div' ).detach()
 	switch eventtype
 
@@ -164,7 +165,6 @@ fPrepareEventType = ( eventtype, cb ) ->
 							
 						else
 							fDisplayError 'No webhooks found! Choose another Event Type or create a Webhook.'
-							$( '#select_event_type' ).val ''
 
 					catch err
 						fDisplayError 'Badly formed webhooks!'
@@ -183,7 +183,6 @@ fPrepareEventType = ( eventtype, cb ) ->
 						oEps = JSON.parse data.message
 						if JSON.stringify( oEps ) is '{}'
 							fDisplayError 'No Event Triggers found! Create one first!'
-							$( '#select_event_type' ).val ''
 
 						else
 							$( '#event_parameters' ).append domSelectEventTrigger
@@ -490,8 +489,9 @@ fOnLoad = () ->
 # -----
 
 	# Event type is changed, changes the whole event section
-	$( '#select_event_type' ).change () ->
-		fPrepareEventType $( this ).val()
+	console.warn('GONE!');
+	# $( '#select_event_type' ).change () ->
+	# 	fPrepareEventType $( this ).val()
 
 	# If the user is coming from an event UI he wants a rule to be setup for him
 	switch oParams.eventtype
@@ -567,39 +567,40 @@ fOnLoad = () ->
 				$( '#input_id' ).focus()
 				throw new Error 'Please enter a rule name!'
 
-			eventtype = $( '#select_event_type' ).val()
-			switch eventtype
-				when ''
-					$( '#select_event_type' ).focus()
-					throw new Error 'Please choose an event type!'
+			console.warn 'GONE!'
+			# eventtype = $( '#select_event_type' ).val()
+			# switch eventtype
+			# 	when ''
+			# 		$( '#select_event_type' ).focus()
+			# 		throw new Error 'Please choose an event type!'
 
-				when 'Webhook'
-					eventname = $( '#select_eventhook' ).val()
+			# 	when 'Webhook'
+			# 		eventname = $( '#select_eventhook' ).val()
 
-				when 'Event Trigger'
-					eventname = $( '#select_eventtrigger' ).val()
-					ep = {}
-					$( "#event_trigger_params tr" ).each () ->
-						key = $( this ).children( '.key' ).text()
-						val = $( 'input', this ).val()
-						if val is ''
-							$( 'input', this ).focus()
-							throw new Error "Please enter a value for '#{ key }' in the event module!"
-						shielded = $( 'input', this ).attr( 'type' ) is 'password'
-						ep[ key ] =
-							shielded: shielded
-						if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
-							encryptedParam = cryptico.encrypt val, strPublicKey
-							ep[ key ].value = encryptedParam.cipher 
-						else
-							ep[ key ].value = val
+			# 	when 'Event Trigger'
+			# 		eventname = $( '#select_eventtrigger' ).val()
+			# 		ep = {}
+			# 		$( "#event_trigger_params tr" ).each () ->
+			# 			key = $( this ).children( '.key' ).text()
+			# 			val = $( 'input', this ).val()
+			# 			if val is ''
+			# 				$( 'input', this ).focus()
+			# 				throw new Error "Please enter a value for '#{ key }' in the event module!"
+			# 			shielded = $( 'input', this ).attr( 'type' ) is 'password'
+			# 			ep[ key ] =
+			# 				shielded: shielded
+			# 			if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
+			# 				encryptedParam = cryptico.encrypt val, strPublicKey
+			# 				ep[ key ].value = encryptedParam.cipher 
+			# 			else
+			# 				ep[ key ].value = val
 
-					evtFuncs = {}
-					evtFuncs[ eventname ] = []
-					$( '#event_trigger_params tr.funcMappings' ).each () ->
-						evtFuncs[ eventname ].push
-							argument: $( 'div.funcarg', this ).text()
-							value: $( 'input[type=text]', this ).val()
+			# 		evtFuncs = {}
+			# 		evtFuncs[ eventname ] = []
+			# 		$( '#event_trigger_params tr.funcMappings' ).each () ->
+			# 			evtFuncs[ eventname ].push
+			# 				argument: $( 'div.funcarg', this ).text()
+			# 				value: $( 'input[type=text]', this ).val()
 
 			if $( '#selected_actions tr' ).length is 0
 				throw new Error 'Please select at least one action or create one!'
@@ -671,9 +672,10 @@ fOnLoad = () ->
 					else
 						fFailedRequest( "#{ obj.id } not stored!" ) err
 
-			if $( '#select_event_type' ).val() is 'Event Trigger'
-				start = fConvertTimeToDate( $( '#input_start' ).val() ).toISOString()
-				mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
+			console.warn 'GONE!'
+			# if $( '#select_event_type' ).val() is 'Event Trigger'
+			# 	start = fConvertTimeToDate( $( '#input_start' ).val() ).toISOString()
+			# 	mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
 
 			obj = 
 				body: JSON.stringify

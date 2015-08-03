@@ -156,7 +156,7 @@ fConvertDayHourToMinutes = function(strDayHour) {
 };
 
 fPrepareEventType = function(eventtype, cb) {
-  $('#select_event_type').val(eventtype);
+  console.warn('GONE!');
   $('#event_parameters > div').detach();
   switch (eventtype) {
     case 'Webhook':
@@ -178,7 +178,6 @@ fPrepareEventType = function(eventtype, cb) {
               $('#event_parameters').append(domSelectWebhook);
             } else {
               fDisplayError('No webhooks found! Choose another Event Type or create a Webhook.');
-              $('#select_event_type').val('');
             }
           } catch (_error) {
             err = _error;
@@ -200,7 +199,6 @@ fPrepareEventType = function(eventtype, cb) {
             oEps = JSON.parse(data.message);
             if (JSON.stringify(oEps) === '{}') {
               fDisplayError('No Event Triggers found! Create one first!');
-              $('#select_event_type').val('');
             } else {
               $('#event_parameters').append(domSelectEventTrigger);
               $('#event_parameters').append(domInputEventTiming.show());
@@ -611,9 +609,7 @@ fOnLoad = function() {
   $('#action_parameters').append(domSectionSelectedActions);
   $('#action_parameters').append(domSectionActionParameters);
   $('#input_id').focus();
-  $('#select_event_type').change(function() {
-    return fPrepareEventType($(this).val());
-  });
+  console.warn('GONE!');
   switch (oParams.eventtype) {
     case 'webhook':
       name = decodeURIComponent(oParams.hookname);
@@ -695,7 +691,7 @@ fOnLoad = function() {
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {
-    var actFuncs, acts, ap, conds, ep, err, eventname, eventtype, evtFuncs, fCheckOverwrite, mins, obj, start;
+    var actFuncs, acts, ap, conds, err, fCheckOverwrite, obj;
     window.scrollTo(0, 0);
     fClearInfo();
     try {
@@ -703,46 +699,7 @@ fOnLoad = function() {
         $('#input_id').focus();
         throw new Error('Please enter a rule name!');
       }
-      eventtype = $('#select_event_type').val();
-      switch (eventtype) {
-        case '':
-          $('#select_event_type').focus();
-          throw new Error('Please choose an event type!');
-          break;
-        case 'Webhook':
-          eventname = $('#select_eventhook').val();
-          break;
-        case 'Event Trigger':
-          eventname = $('#select_eventtrigger').val();
-          ep = {};
-          $("#event_trigger_params tr").each(function() {
-            var encryptedParam, key, shielded, val;
-            key = $(this).children('.key').text();
-            val = $('input', this).val();
-            if (val === '') {
-              $('input', this).focus();
-              throw new Error("Please enter a value for '" + key + "' in the event module!");
-            }
-            shielded = $('input', this).attr('type') === 'password';
-            ep[key] = {
-              shielded: shielded
-            };
-            if (!shielded || $('input', this).attr('unchanged') !== 'true') {
-              encryptedParam = cryptico.encrypt(val, strPublicKey);
-              return ep[key].value = encryptedParam.cipher;
-            } else {
-              return ep[key].value = val;
-            }
-          });
-          evtFuncs = {};
-          evtFuncs[eventname] = [];
-          $('#event_trigger_params tr.funcMappings').each(function() {
-            return evtFuncs[eventname].push({
-              argument: $('div.funcarg', this).text(),
-              value: $('input[type=text]', this).val()
-            });
-          });
-      }
+      console.warn('GONE!');
       if ($('#selected_actions tr').length === 0) {
         throw new Error('Please select at least one action or create one!');
       }
@@ -819,10 +776,7 @@ fOnLoad = function() {
           }
         };
       };
-      if ($('#select_event_type').val() === 'Event Trigger') {
-        start = fConvertTimeToDate($('#input_start').val()).toISOString();
-        mins = fConvertDayHourToMinutes($('#input_interval').val());
-      }
+      console.warn('GONE!');
       obj = {
         body: JSON.stringify({
           id: $('#input_id').val(),

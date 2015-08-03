@@ -180,6 +180,8 @@ init = =>
 			# Grab all required log config fields
 			
 			# Initialize the trigger poller with the required CLI arguments
+			
+			# !!! TODO Fork one process per event trigger module!!! This is the only real safe solution for now
 			poller = cp.fork path.resolve( __dirname, nameEP )
 			poller.send
 				intevent: 'startup'

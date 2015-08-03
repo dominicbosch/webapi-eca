@@ -21,6 +21,7 @@ router = module.exports = express.Router()
 router.post '/getall', ( req, res ) ->
 	log.info 'SRVC | RULES | Fetching all Rules'
 	db.getAllRules req.session.pub.username, ( err, arr ) ->
+		console.log 'DB returned arr', arr
 		if err
 			res.status( 500 ).send 'Fetching all rules failed'
 		else
