@@ -49,21 +49,6 @@ An object of users with their active rules and the required action modules
 #events in the DB and query for them if a rule is evaluated. Through this we would allow
 #a CEP approach, rather than just ECA and could combine events/evaluate time constraints
 listUserRules = {}
-isRunning = false
-
-###
-Module call
------------
-Initializes the Engine and starts polling the event queue for new events.
-
-@param {Object} args
-###
-exports = module.exports
-exports.init = () =>
-	if not isRunning
-		setTimeout exports.startEngine, 10 # Very important, this forks a token for the poll task
-		module.exports
-
 
 ###
 This is a helper function for the unit tests so we can verify that action
@@ -75,12 +60,6 @@ modules are loaded correctly
 #the whole list
 exports.getListUserRules = () ->
 	listUserRules
-
-# We need this so we can shut it down after the module unit tests
-exports.startEngine = () ->
-	if not isRunning
-		isRunning = true
-		pollQueue()
 
 ###
 An event associated to rules happened and is captured here. Such events 
@@ -120,7 +99,7 @@ dispatcher modules are loaded, updated or deleted.
 updateActionModules = ( updatedRuleId ) =>
 	
 	# Remove all action dispatcher modules that are not required anymore
-	fRemoveNotRequired = ( oUser ) ->
+	for name, oUser of listUserRules
 
 		# Check whether the action is still existing in the rule
 		fRequired = ( actionName ) ->
@@ -135,17 +114,17 @@ updateActionModules = ( updatedRuleId ) =>
 			for action of oUser[updatedRuleId].rule.actions 
 				delete oUser[updatedRuleId].actions[action] if not fRequired action
 
-	fRemoveNotRequired oUser for name, oUser of listUserRules
 
+	# load all required modules for all users
 	# Add action dispatcher modules that are not yet loaded
-	fAddRequired = ( userName, oUser ) =>
+	for userName, oUser of listUserRules
 
 		# Check whether the action is existing in a rule and load if not
-		fCheckRules = ( oMyRule ) =>
-
+		# Go thorugh all rules and check whether the action is still required
+		for nmRl, oMyRule of oUser
+			for action in oMyRule.rule.actions
 			# Load the action dispatcher module if it was part of the updated rule or if it's new
-			fAddIfNewOrNotExisting = ( actionName ) =>
-				moduleName = (actionName.split ' -> ')[ 0 ]
+				moduleName = (action.split ' -> ')[ 0 ]
 				if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
 					db.actionDispatchers.getModule userName, moduleName, ( err, obj ) =>
 						if obj
@@ -168,21 +147,7 @@ updateActionModules = ( updatedRuleId ) =>
 						else
 							log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
 
-			fAddIfNewOrNotExisting action for action in oMyRule.rule.actions
 
-		# Go thorugh all rules and check whether the action is still required
-		fCheckRules oRl for nmRl, oRl of oUser
-
-	# load all required modules for all users
-	fAddRequired userName, oUser for userName, oUser of listUserRules
-
-numExecutingFunctions = 1
-pollQueue = () ->
-	if isRunning
-		db.popEvent ( err, obj ) ->
-			if not err and obj
-				processEvent obj
-		setTimeout pollQueue, 20 * numExecutingFunctions #FIXME right way to adapt to load?
 
 oOperators =
 	'<': ( x, y ) -> x < y
@@ -235,17 +200,16 @@ validConditions = ( evt, rule, userId, ruleId ) ->
 ###
 Handles retrieved events.
 
-@private processEvent ( *evt* )
+@public processEvent ( *evt* )
 @param {Object} evt
 ###
-processEvent = ( evt ) =>
+exports.processEvent = ( evt ) =>
 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
 		if not node
 			log.error "EN | Didn't find property in user rule list: " + arrPath.join( ', ' ) + " at depth " + depth
 			return
 		if depth is arrPath.length
 			try
-				numExecutingFunctions++
 				log.info "EN | #{ funcName } executes..."
 				arrArgs = []
 				if node.funcArgs[ funcName ]
@@ -272,8 +236,6 @@ processEvent = ( evt ) =>
 			catch err
 				log.info "EN | ERROR IN ACTION INVOKER: " + err.message
 				node.logger err.message
-			if numExecutingFunctions-- % 100 is 0
-				log.warn "EN | The system is producing too many tokens! Currently: #{ numExecutingFunctions }"
 		else
 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth + 1
 
@@ -301,6 +263,5 @@ processEvent = ( evt ) =>
 		fCheckEventForUser userName, oUser for userName, oUser of listUserRules
 
 exports.shutDown = () ->
-	isRunning = false
 	listUserRules = {}
 	

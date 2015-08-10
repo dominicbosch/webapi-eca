@@ -55,7 +55,7 @@ window.main = {
     };
     return $.get('/help/' + file, function(html) {
       var info;
-      info = $('<img>').attr('src', '/images/info.png').attr('class', 'infoimg').mouseleave(hoverOut).mouseenter(function(e) {
+      info = $('<img>').attr('class', 'infoimg').mouseleave(hoverOut).mouseenter(function(e) {
         $(this).addClass('hovered');
         return $('#tooltip').html(html).css('top', e.target.offsetTop + e.target.height - 20).css('left', e.target.offsetLeft + (e.target.width / 2) - 20).fadeIn().mouseleave(hoverOut).mouseenter(function() {
           return $(this).addClass('hovered');

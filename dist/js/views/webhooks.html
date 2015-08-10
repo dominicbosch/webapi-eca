@@ -8,13 +8,13 @@
 
 {% block content %}
 	<div class="container-fluid">
+		<div class="row" id="table_webhooks"></div>
 		<div class="row"><h4>Create a Webhook:</h4></div>
-		<div class="row">Event Name: <input type="text" id="inp_hookname" /></div>
+		<div class="row"><b>Event Name:</b> <input type="text" id="inp_hookname" /></div>
 		<div class="row">
 			Events over this Webhook are available to all users : <input type="checkbox" id="inp_public" />
 		</div>
 		<div class="row"><button type="button" id="but_submit">Create!</button></div>
 		<div class="row" id="display_hookurl"></div>
-		<div class="row" id="table_webhooks"></div>
 	</div>
 {% endblock %}

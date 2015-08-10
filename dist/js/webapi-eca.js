@@ -175,8 +175,6 @@ init = (function(_this) {
           }
           return results;
         });
-        log.info('RS | Initialzing engine');
-        engine.init();
         log.info('RS | Forking a child process for the trigger poller');
         poller = cp.fork(path.resolve(__dirname, nameEP));
         poller.send({

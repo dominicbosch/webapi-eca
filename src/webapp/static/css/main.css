@@ -9,7 +9,7 @@ th {
 
 #bannerimg {
 	padding-left: 2%;
-	max-height: 80px;
+	max-height: 90px;
 }
 
 nav.navbar {
@@ -40,6 +40,7 @@ nav.navbar {
 	margin-left: 10px;
 	width: 17px;
 	height: auto;
+	content: url("/images/info.png")
 }
 
 .error {
@@ -54,9 +55,24 @@ nav.navbar {
 	padding-bottom: 10px;
 }
 
+.smallpadded {
+	padding: 3px;
+}
+.mediummarged {
+	margin: 6px;
+}
+.smallmarged {
+	margin: 3px;
+}
+
 h1 {
 	margin-top: 5px;
 	font-size: 2em;
+}
+
+input {
+	margin: 6px 4px;
+	font-family: "Lucida Console", Monaco, monospace;
 }
 
 table .centered {
@@ -67,10 +83,22 @@ table.padded td {
 	padding: 2px;
 }
 
-input.url {
-	width: 70%;
-	font-size: 0.8em;
+table.list .highlight {
+	font-weight: bold;
 	font-family: "Lucida Console", Monaco, monospace;
+	padding-right: 20px;
+}
+
+.hundredwide {
+	width: 100%;
+}
+
+.seventywide {
+	width: 70%;
+}
+
+.smallfont {
+	font-size: 0.8em;
 }
 
 #mainbody {
@@ -99,10 +127,6 @@ input.url {
 	padding: 3px 4px;
 }
 
-#loginButton {
-	margin-top: 6px;
-}
-
 #tooltip {
 	max-width: 300px;
 	overflow: hidden;
@@ -125,32 +149,8 @@ input.url {
 	font-size: 0.8em;
 }
 
-#listhooks {
-	font-size: 0.8em;
-}
-
-#listhooks td, #listhooks th {
-	padding-left: 10px;
-}
-
-#listhooks .exists kbd {
-	background-color: #150;
-	color: #fff;
-	font-weight: bold;
-	/*text-decoration: underline;*/
-}
-
-#table_webhooks input {
-	font-size: 0.7em;
-	font-family: "Lucida Console", Monaco, monospace;
-}
-
 #table_webhooks td {
 	padding-right: 10px;
-}
-
-#table_webhooks td:last-child, #table_webhooks td:last-child input {
-	width: 100%;
 }
 
 #tabletl td {
@@ -170,28 +170,10 @@ img.tl.red {
 img.tl.green {
 	content: url( "/images/tl_green.png" );
 }
-#users {
-	font-size: 0.8em;	
-}
 
-#users .name {
-	font-weight: bold;
-	font-family: "Lucida Console", Monaco, monospace;
-	padding-right: 20px;
+img.del {
+	cursor: pointer;
 }
-
-#inp_webh {
-	font-size: 0.8em;
-	font-family: "Lucida Console", Monaco, monospace;
-}
-/*
-#editor_conditions {
-	float: left;
-	border: 1px solid lightgray;
-	margin: auto;
-	height: 150px;
-	width: 500px;
-}*/
 
 
 /*

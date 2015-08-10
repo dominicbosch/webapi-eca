@@ -27,11 +27,11 @@ updateWebhookList = () ->
 							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.username}</td>
 							<td class="centered" title="#{tit}">
 								<img src="/images/#{img}.png"></td>
-							<td><input value="#{hostUrl}/service/webhooks/event/#{hookid}"></td>
+							<td class="hundredwide"><input class="smallfont hundredwide" value="#{hostUrl}/service/webhooks/event/#{hookid}"></td>
 						</tr>
 					"""
 				$('#table_webhooks').append $('<h4>').text 'Your available Webhooks:'
-				table = $('<table>').appendTo $ '#table_webhooks'
+				table = $('<table>').attr('class', 'seventywide').appendTo $ '#table_webhooks'
 				table.append '<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>'
 				createWebhookRow(oHook, true) for hookid, oHook of oHooks.private
 				createWebhookRow(oHook) for hookid, oHook of oHooks.public
@@ -45,7 +45,7 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 		main.setInfo true, 'Webhook created!'
 		$('#display_hookurl').append $ """
 			<div>This is the Webhook Url you can use for your Events <kbd>#{ hookname }</kbd> :</div>
-			<input class="url" type="text" value="#{ hostUrl }/service/webhooks/event/#{ hookid }"><br>
+			<input class="seventywide smallfont" type="text" value="#{ hostUrl }/service/webhooks/event/#{ hookid }"><br>
 			<div><b>Now you can <a href="/views/events?webhook=#{ hookid }">emit an Event</a> 
 			on this Webhook!</b></div>
 		"""

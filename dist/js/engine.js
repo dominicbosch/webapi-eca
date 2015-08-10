@@ -9,7 +9,7 @@ Engine
 
 TODO events should have: raising-time, reception-time and eventually sender-uri and recipient-uri
  */
-var db, dynmod, exports, isRunning, jsonQuery, listUserRules, log, numExecutingFunctions, oOperators, pollQueue, processEvent, updateActionModules, validConditions;
+var db, dynmod, jsonQuery, listUserRules, log, oOperators, updateActionModules, validConditions;
 
 log = require('./logging');
 
@@ -43,28 +43,6 @@ An object of users with their active rules and the required action modules
 
 listUserRules = {};
 
-isRunning = false;
-
-
-/*
-Module call
------------
-Initializes the Engine and starts polling the event queue for new events.
-
-@param {Object} args
- */
-
-exports = module.exports;
-
-exports.init = (function(_this) {
-  return function() {
-    if (!isRunning) {
-      setTimeout(exports.startEngine, 10);
-      return module.exports;
-    }
-  };
-})(this);
-
 
 /*
 This is a helper function for the unit tests so we can verify that action
@@ -75,13 +53,6 @@ modules are loaded correctly
 
 exports.getListUserRules = function() {
   return listUserRules;
-};
-
-exports.startEngine = function() {
-  if (!isRunning) {
-    isRunning = true;
-    return pollQueue();
-  }
 };
 
 
@@ -128,9 +99,9 @@ dispatcher modules are loaded, updated or deleted.
 
 updateActionModules = (function(_this) {
   return function(updatedRuleId) {
-    var fAddRequired, fRemoveNotRequired, name, oUser, results, userName;
-    fRemoveNotRequired = function(oUser) {
-      var action, fRequired, results;
+    var action, fRequired, moduleName, name, nmRl, oMyRule, oUser, results, userName;
+    for (name in listUserRules) {
+      oUser = listUserRules[name];
       fRequired = function(actionName) {
         var action, i, len, ref;
         ref = oUser[updatedRuleId].rule.actions;
@@ -143,81 +114,58 @@ updateActionModules = (function(_this) {
         return false;
       };
       if (oUser[updatedRuleId]) {
-        results = [];
         for (action in oUser[updatedRuleId].rule.actions) {
           if (!fRequired(action)) {
-            results.push(delete oUser[updatedRuleId].actions[action]);
-          } else {
-            results.push(void 0);
+            delete oUser[updatedRuleId].actions[action];
           }
         }
-        return results;
       }
-    };
-    for (name in listUserRules) {
-      oUser = listUserRules[name];
-      fRemoveNotRequired(oUser);
     }
-    fAddRequired = function(userName, oUser) {
-      var fCheckRules, nmRl, oRl, results;
-      fCheckRules = function(oMyRule) {
-        var action, fAddIfNewOrNotExisting, i, len, ref, results;
-        fAddIfNewOrNotExisting = function(actionName) {
-          var moduleName;
-          moduleName = (actionName.split(' -> '))[0];
-          if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
-            return db.actionDispatchers.getModule(userName, moduleName, function(err, obj) {
-              if (obj) {
-                return dynmod.compileString(obj.data, userName, oMyRule.rule, moduleName, obj.lang, "actiondispatcher", db.actionDispatchers, function(result) {
-                  if (result.answ.code === 200) {
-                    log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
-                  } else {
-                    log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
-                  }
-                  return oMyRule.actions[moduleName] = result;
-                });
-              } else {
-                return log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
-              }
-            });
-          }
-        };
-        ref = oMyRule.rule.actions;
-        results = [];
-        for (i = 0, len = ref.length; i < len; i++) {
-          action = ref[i];
-          results.push(fAddIfNewOrNotExisting(action));
-        }
-        return results;
-      };
-      results = [];
-      for (nmRl in oUser) {
-        oRl = oUser[nmRl];
-        results.push(fCheckRules(oRl));
-      }
-      return results;
-    };
     results = [];
     for (userName in listUserRules) {
       oUser = listUserRules[userName];
-      results.push(fAddRequired(userName, oUser));
+      results.push((function() {
+        var results1;
+        results1 = [];
+        for (nmRl in oUser) {
+          oMyRule = oUser[nmRl];
+          results1.push((function() {
+            var i, len, ref, results2;
+            ref = oMyRule.rule.actions;
+            results2 = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+              action = ref[i];
+              moduleName = (action.split(' -> '))[0];
+              if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
+                results2.push(db.actionDispatchers.getModule(userName, moduleName, (function(_this) {
+                  return function(err, obj) {
+                    if (obj) {
+                      return dynmod.compileString(obj.data, userName, oMyRule.rule, moduleName, obj.lang, "actiondispatcher", db.actionDispatchers, function(result) {
+                        if (result.answ.code === 200) {
+                          log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
+                        } else {
+                          log.error("EN | Compilation of code failed! " + userName + ", " + oMyRule.rule.id + ", " + moduleName + ": " + result.answ.message);
+                        }
+                        return oMyRule.actions[moduleName] = result;
+                      });
+                    } else {
+                      return log.warn("EN | " + moduleName + " not found for " + oMyRule.rule.id + "!");
+                    }
+                  };
+                })(this)));
+              } else {
+                results2.push(void 0);
+              }
+            }
+            return results2;
+          }).call(this));
+        }
+        return results1;
+      }).call(_this));
     }
     return results;
   };
 })(this);
-
-numExecutingFunctions = 1;
-
-pollQueue = function() {
-  if (isRunning) {
-    db.popEvent(function(err, obj) {
-      if (!err && obj) {
-        return processEvent(obj);
-      }
-    });
-    return setTimeout(pollQueue, 20 * numExecutingFunctions);
-  }
-};
 
 oOperators = {
   '<': function(x, y) {
@@ -293,11 +241,11 @@ validConditions = function(evt, rule, userId, ruleId) {
 /*
 Handles retrieved events.
 
-@private processEvent ( *evt* )
+@public processEvent ( *evt* )
 @param {Object} evt
  */
 
-processEvent = (function(_this) {
+exports.processEvent = (function(_this) {
   return function(evt) {
     var fCheckEventForUser, fSearchAndInvokeAction, oUser, results, userName;
     fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
@@ -308,7 +256,6 @@ processEvent = (function(_this) {
       }
       if (depth === arrPath.length) {
         try {
-          numExecutingFunctions++;
           log.info("EN | " + funcName + " executes...");
           arrArgs = [];
           if (node.funcArgs[funcName]) {
@@ -336,14 +283,11 @@ processEvent = (function(_this) {
           }
           arrArgs.push(evt);
           node.module[funcName].apply(_this, arrArgs);
-          log.info("EN | " + funcName + " finished execution");
+          return log.info("EN | " + funcName + " finished execution");
         } catch (_error) {
           err = _error;
           log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
-          node.logger(err.message);
-        }
-        if (numExecutingFunctions-- % 100 === 0) {
-          return log.warn("EN | The system is producing too many tokens! Currently: " + numExecutingFunctions);
+          return node.logger(err.message);
         }
       } else {
         return fSearchAndInvokeAction(node[arrPath[depth]], arrPath, funcName, evt, depth + 1);
@@ -392,6 +336,5 @@ processEvent = (function(_this) {
 })(this);
 
 exports.shutDown = function() {
-  isRunning = false;
   return listUserRules = {};
 };

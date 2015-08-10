@@ -142,65 +142,6 @@ replyHandler = (function(_this) {
 
 
 /*
-Push an event into the event queue.
-
-@public pushEvent( *oEvent* )
-@param {Object} oEvent
- */
-
-exports.pushEvent = (function(_this) {
-  return function(oEvent) {
-    if (oEvent) {
-      log.info("DB | Event pushed into the queue: '" + oEvent.eventname + "'");
-      return _this.db.rpush('event_queue', JSON.stringify(oEvent));
-    } else {
-      return log.warn('DB | Why would you give me an empty event...');
-    }
-  };
-})(this);
-
-
-/*
-Pop an event from the event queue and pass it to cb(err, obj).
-
-@public popEvent( *cb* )
-@param {function} cb
- */
-
-exports.popEvent = (function(_this) {
-  return function(cb) {
-    var makeObj;
-    makeObj = function(pcb) {
-      return function(err, obj) {
-        var er, oEvt;
-        try {
-          oEvt = JSON.parse(obj);
-          return pcb(err, oEvt);
-        } catch (_error) {
-          er = _error;
-          return pcb(er);
-        }
-      };
-    };
-    return _this.db.lpop('event_queue', makeObj(cb));
-  };
-})(this);
-
-
-/*
-Purge the event queue.
-
-@public purgeEventQueue()
- */
-
-exports.purgeEventQueue = (function(_this) {
-  return function() {
-    return _this.db.del('event_queue', replyHandler('purging event queue'));
-  };
-})(this);
-
-
-/*
 Fetches all linked data set keys from a linking set, fetches the single
 data objects via the provided function and returns the results to cb(err, obj).
 
@@ -272,6 +213,7 @@ IndexedModules = (function() {
     this.getModuleIds = bind(this.getModuleIds, this);
     this.getAvailableModuleIds = bind(this.getAvailableModuleIds, this);
     this.getModuleField = bind(this.getModuleField, this);
+    this.getAllModules = bind(this.getAllModules, this);
     this.getModule = bind(this.getModule, this);
     this.storeModule = bind(this.storeModule, this);
     log.info("DB | (IdxedMods) Instantiated indexed modules for '" + this.setname + "'");
@@ -301,6 +243,15 @@ IndexedModules = (function() {
     log.info("DB | (IdxedMods) " + this.setname + ".getModule( " + userId + ", " + mId + " )");
     log.info("hgetall " + this.setname + ":" + mId);
     return this.db.hgetall(this.setname + ":" + mId, cb);
+  };
+
+  IndexedModules.prototype.getAllModules = function(userId, cb) {
+    var gM;
+    log.info("DB | (IdxedMods) " + this.setname + ".getAllModules( " + userId + " )");
+    gM = function(mId) {
+      return getModule(userId, mId, cb);
+    };
+    return getSetRecords(this.setname + "s", gM, cb);
   };
 
   IndexedModules.prototype.getModuleField = function(userId, mId, field, cb) {

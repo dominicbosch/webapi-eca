@@ -108,47 +108,6 @@ replyHandler = ( action ) =>
 		else
 			log.info "DB | #{ action }: #{ reply }"
 
-
-###
-Push an event into the event queue.
-
-@public pushEvent( *oEvent* )
-@param {Object} oEvent
-###
-exports.pushEvent = ( oEvent ) =>
-	if oEvent
-		log.info "DB | Event pushed into the queue: '#{ oEvent.eventname }'"
-		@db.rpush 'event_queue', JSON.stringify oEvent
-	else
-		log.warn 'DB | Why would you give me an empty event...'
-
-
-###
-Pop an event from the event queue and pass it to cb(err, obj).
-
-@public popEvent( *cb* )
-@param {function} cb
-###
-exports.popEvent = ( cb ) =>
-	makeObj = ( pcb ) ->
-		( err, obj ) ->
-			try
-				oEvt = JSON.parse obj
-				pcb err, oEvt 
-			catch er
-				pcb er
-	@db.lpop 'event_queue', makeObj cb
-
-
-###
-Purge the event queue.
-
-@public purgeEventQueue()
-###
-exports.purgeEventQueue = () =>
-	@db.del 'event_queue', replyHandler 'purging event queue'  
-
-
 ###
 Fetches all linked data set keys from a linking set, fetches the single
 data objects via the provided function and returns the results to cb(err, obj).
@@ -238,6 +197,12 @@ class IndexedModules
 		log.info "DB | (IdxedMods) #{ @setname }.getModule( #{ userId }, #{ mId } )"
 		log.info "hgetall #{ @setname }:#{ mId }"
 		@db.hgetall "#{ @setname }:#{ mId }", cb
+
+	getAllModules: (userId, cb) =>
+		log.info "DB | (IdxedMods) #{ @setname }.getAllModules( #{ userId } )"
+		gM = (mId) ->
+			getModule userId, mId, cb
+		getSetRecords "#{ @setname }s", gM, cb
 
 	getModuleField: ( userId, mId, field, cb ) =>
 		# log.info "DB | (IdxedMods) #{ @setname }.getModuleField( #{ userId }, #{ mId }, #{ field } )"

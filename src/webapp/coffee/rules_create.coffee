@@ -5,69 +5,20 @@
 #
 
 # FIXME: notify of non existing Action dispatcher in the first place!
-
+editor = null
 strPublicKey = ''
 if oParams.id
 	oParams.id = decodeURIComponent oParams.id
-
-# Webpage elements. Registered here for easier access
-domInputEventName = $( '<div>' )
-el = $( '<input>' ).attr( 'type', 'text' )
-	.attr( 'style', 'font-size:1em' )
-	.attr( 'id', 'input_eventname' )
-domInputEventName.append $( '<h4>' ).text( 'Event Name : ' ).append el
-
-domSelectWebhook = $( '<div>' )
-el = $( '<select>' ).attr( 'type', 'text' )
-	.attr( 'style', 'font-size:1em' )
-	.attr( 'id', 'select_eventhook' )
-domSelectWebhook.append $( '<h4>' ).text( 'Webhook Name : ' ).append el
-
-domSelectEventTrigger = $( '<div>' )
-el = $( '<select>' ).attr( 'type', 'text' )
-	.attr( 'style', 'font-size:1em' )
-	.attr( 'id', 'select_eventtrigger' )
-el.change () ->	fFetchEventParams $( this ).val()
-domSelectEventTrigger.append $( '<h4>' ).text( 'Event Trigger : ' ).append el
-
-domInputEventTiming = $( '<div>' ).attr( 'class', 'indent20' )
-$( '<div>' ).attr( 'class', 'comment' ).appendTo domInputEventTiming
-table = $( '<table>' ).appendTo domInputEventTiming
-tr = $( '<tr>' ).appendTo table
-tr.append $( '<td>' ).text "Start Time : "
-tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_start' ).attr( 'type', 'text' )
-tr.append $( '<td>' ).html " <b>\"hh:mm\"</b>, default = Immediately"
-
-tr = $( '<tr>' ).appendTo table
-tr.append $( '<td>' ).text "Interval : "
-tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_interval' ).attr( 'type', 'text' )
-tr.append $( '<td>' ).html " <b>\"days hours:minutes\"</b>, default = 10 minutes"
-
-domEventTriggerParameters = $( '<div>' ).attr 'id', 'event_trigger_params'
-
-domSectionSelectedActions = $( '<div>' )
-domSectionSelectedActions.append $( '<div>' ).html "<b>Selected Actions:</b>"
-domSectionSelectedActions.append $( '<table> ' ).attr( 'id', 'selected_actions' )
-domSectionSelectedActions.hide()
-
-domSectionActionParameters = $( '<div>' )
-domSectionActionParameters.append $( '<div>' ).html "<br><br><b>Required User-specific Data:</b><br><br>"
-domSectionActionParameters.append $( '<div>' ).attr( 'id', 'action_dispatcher_params' )
-domSectionActionParameters.append $( '<div>' ).html "<br><br>"
-domSectionActionParameters.hide()
-
-fFailedRequest = ( msg ) ->
-	( err ) ->
+# <-- FIXED
+sendRequest = (url, data, cb) ->
+	console.log 'sending request to ' + url
+	main.clearInfo()
+	req = $.post url, data
+	req.fail ( err ) ->
 		if err.status is 401
-			window.location.href = 'forge?page=forge_rule'
-		else
-			fDisplayError msg
-
-fIssueRequest = ( args ) ->
-	fClearInfo()
-	$.post( '/usercommand/' + args.command, args.data )
-		.done args.done
-		.fail args.fail
+			window.location.href = '/views/login'
+		else cb? err
+# FIXED -->
 
 # Convert a time string ( d h:m ) to a date
 fConvertTimeToDate = ( str ) ->
@@ -139,91 +90,90 @@ fConvertDayHourToMinutes = ( strDayHour ) ->
 # EVENT Related Helper Functions
 #
 
-#	Prepare the event section when a different event type is selected
 fPrepareEventType = ( eventtype, cb ) ->
 	console.warn 'GONE!'
-	# $( '#select_event_type' ).val eventtype
-	$( '#event_parameters > div' ).detach()
-	switch eventtype
+	# # $( '#select_event_type' ).val eventtype
+	# $( '#eventParameters > div' ).detach()
+	# switch eventtype
 
-		# The user wants a webhook as event producer
-		when 'Webhook'
-			fIssueRequest
-				command: 'get_all_webhooks'
-				done: ( data ) ->
-					try
-						oHooks = JSON.parse data.message
-						selHook = $( 'select', domSelectWebhook )
-						selHook.children().remove()
-						i = 0
-						for hookid, hookname of oHooks
-							i++
-							selHook.append $( '<option>' ).text hookname
+	# 	# The user wants a webhook as event producer
+	# 	when 'Webhook'
+	# 		req = sendRequest '/service/webhooks/getallvisible'
+	# 		req.done ( data ) ->
+	# 			try
+	# 				oHooks = JSON.parse data.message
+	# 				selHook = $( 'select', domSelectWebhook )
+	# 				selHook.children().remove()
+	# 				i = 0
+	# 				for hookid, hookname of oHooks
+	# 					i++
+	# 					selHook.append $( '<option>' ).text hookname
 
-						if i > 0
-							$( '#event_parameters' ).append domSelectWebhook
-							
-						else
-							fDisplayError 'No webhooks found! Choose another Event Type or create a Webhook.'
+	# 				if i > 0
+	# 					$( '#eventParameters' ).append domSelectWebhook
+						
+	# 				else
+	# 					fDisplayError 'No webhooks found! Choose another Event Type or create a Webhook.'
 
-					catch err
-						fDisplayError 'Badly formed webhooks!'
-					
-					cb?()
+	# 			catch err
+	# 				fDisplayError 'Badly formed webhooks!'
+				
+	# 			cb?()
 
-				fail: () ->
-					fFailedRequest 'Unable to get webhooks!'
-					cb?()
+	# 		req.fail () ->
+	# 				console.log 'Unable to get webhooks!'
+	# 				cb?()
 
-		when 'Event Trigger'
-			fIssueRequest
-				command: 'get_event_triggers'
-				done: ( data ) ->
-					try
-						oEps = JSON.parse data.message
-						if JSON.stringify( oEps ) is '{}'
-							fDisplayError 'No Event Triggers found! Create one first!'
+	# 	when 'Event Trigger'
 
-						else
-							$( '#event_parameters' ).append domSelectEventTrigger
-							$( '#event_parameters' ).append domInputEventTiming.show()
+	# 		sendRequest
+	# 			command: 'get_event_triggers'
+	# 			done: ( data ) ->
+	# 				try
+	# 					oEps = JSON.parse data.message
+	# 					if JSON.stringify( oEps ) is '{}'
+	# 						fDisplayError 'No Event Triggers found! Create one first!'
 
-							$( '#select_eventtrigger option' ).remove()
-							for id, events of oEps
-								for evt in events
-									$( '#select_eventtrigger' ).append $( '<option>' ).text id + ' -> ' + evt
+	# 					else
+	# 						$( '#eventParameters' ).append domSelectEventTrigger
+	# 						$( '#eventParameters' ).append domInputEventTiming.show()
 
-							fFetchEventParams $( 'option:selected', domSelectEventTrigger ).text()
+	# 						$( '#select_eventtrigger option' ).remove()
+	# 						for id, events of oEps
+	# 							for evt in events
+	# 								$( '#select_eventtrigger' ).append $( '<option>' ).text id + ' -> ' + evt
 
-					catch err
-						console.error 'ERROR: non-object received for event trigger from server: ' + data.message
-					cb?()
+	# 						fFetchEventParams $( 'option:selected', domSelectEventTrigger ).text()
 
-				fail: () ->
-					fFailedRequest 'Error fetching Event Trigger'
-					cb?()
+	# 				catch err
+	# 					console.error 'ERROR: non-object received for event trigger from server: ' + data.message
+	# 				cb?()
+
+	# 			fail: () ->
+	# 				console.log 'Error fetching Event Trigger'
+	# 				cb?()
 
 # Fetch the required Event Trigger parameters
 fFetchEventParams = ( name ) ->
 	$( '#event_trigger_params *' ).remove()
 	if name
-		$( '#event_parameters' ).append domEventTriggerParameters
+		$( '#eventParameters' ).append domEventTriggerParameters
 		arr = name.split ' -> '
-		fIssueRequest
+		sendRequest
 			command: 'get_event_trigger_params'
 			data: 
 				body: JSON.stringify
 					id: arr[ 0 ]
 			done: fDisplayEventParams arr[ 0 ]
-			fail: fFailedRequest 'Error fetching Event Trigger params'
-		fIssueRequest
+			fail: console.log 'Error fetching Event Trigger params'
+		sendRequest
 			command: 'get_event_trigger_comment'
 			data: 
 				body: JSON.stringify
 					id: arr[ 0 ]
 			done: ( data ) ->
 				$( '.comment', domInputEventTiming ).html data.message.replace /\n/g, '<br>' 
-			fail: fFailedRequest 'Error fetching Event Trigger comment'
+			fail: console.log 'Error fetching Event Trigger comment'
 		fFetchEventFunctionArgs arr
 
 fDisplayEventParams = ( id ) ->
@@ -248,7 +198,7 @@ fDisplayEventParams = ( id ) ->
 				fFillEventParams id
 
 fFillEventParams = ( moduleId ) ->
-	fIssueRequest
+	sendRequest
 		command: 'get_event_trigger_user_params'
 		data:
 			body: JSON.stringify
@@ -265,7 +215,7 @@ fFillEventParams = ( moduleId ) ->
 
 # Fetch function arguments required for an event polling function
 fFetchEventFunctionArgs = ( arrName ) ->
-	fIssueRequest
+	sendRequest
 		command: 'get_event_trigger_function_arguments'
 		data:
 			body: JSON.stringify
@@ -287,7 +237,7 @@ fFetchEventFunctionArgs = ( arrName ) ->
 						td = $( '<td>' ).appendTo tr
 						td.append $( '<input>' ).attr 'type', 'text'
 						tr.append td
-					fIssueRequest
+					sendRequest
 						command: 'get_event_trigger_user_arguments'
 						data:
 							body: JSON.stringify
@@ -295,7 +245,7 @@ fFetchEventFunctionArgs = ( arrName ) ->
 								moduleId: arrName[ 0 ]
 						done: fAddEventUserArgs arrName[ 1 ]
 
-		fail: fFailedRequest 'Error fetching event trigger function arguments'
+		fail: console.log 'Error fetching event trigger function arguments'
 
 fAddEventUserArgs = ( name ) ->
 	( data ) ->
@@ -335,7 +285,7 @@ fAddSelectedAction = ( name ) ->
 	setTimeout fDelayed, 300
 
 fFetchActionParams = ( modName ) ->
-	fIssueRequest
+	sendRequest
 		command: 'get_action_dispatcher_params'
 		data: 
 			body: JSON.stringify
@@ -351,14 +301,14 @@ fFetchActionParams = ( modName ) ->
 						.attr( 'class', 'modName underlined' ).text modName
 
 					comment = $( '<div>' ).attr( 'class', 'comment indent20' ).appendTo div
-					fIssueRequest
+					sendRequest
 						command: 'get_action_dispatcher_comment'
 						data: 
 							body: JSON.stringify
 								id: modName
 						done: ( data ) ->
 							comment.html data.message.replace /\n/g, '<br>'
-						fail: fFailedRequest 'Error fetching Event Trigger comment'
+						fail: console.log 'Error fetching Event Trigger comment'
 
 					table = $ '<table>'
 					div.append table
@@ -374,10 +324,10 @@ fFetchActionParams = ( modName ) ->
 						tr.append $( '<td>' ).text(' : ').append inp
 						table.append tr
 
-		fail: fFailedRequest 'Error fetching action dispatcher params'
+		fail: console.log 'Error fetching action dispatcher params'
 
 fFetchActionFunctionArgs = ( tag, arrName ) ->
-	fIssueRequest
+	sendRequest
 		command: 'get_action_dispatcher_function_arguments'
 		data: 
 			body: JSON.stringify
@@ -395,17 +345,17 @@ fFetchActionFunctionArgs = ( tag, arrName ) ->
 						td = $( '<td>' ).appendTo tr
 						td.append $( '<input>' ).attr 'type', 'text'
 						tr.append td
-		fail: fFailedRequest 'Error fetching action dispatcher function params'
+		fail: console.log 'Error fetching action dispatcher function params'
 
 fFillActionFunction = ( name ) ->
-	fIssueRequest
+	sendRequest
 		command: 'get_action_dispatcher_user_params'
 		data: 
 			body: JSON.stringify
 				id: name
 		done: fAddActionUserParams name
 
-	fIssueRequest
+	sendRequest
 		command: 'get_action_dispatcher_user_arguments'
 		data:
 			body: JSON.stringify
@@ -436,28 +386,27 @@ fAddActionUserArgs = ( name ) ->
 					$( '.funcarg', this ).text() is "#{ oFunc.argument }"
 				$( "input[type=text]", tr ).val oFunc.value
 				# $( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
+# <-- FIXED
+
+setEditorReadOnly = (isTrue) ->
+	editor.setReadOnly isTrue
+	$('.ace_content').css 'background', if isTrue then '#BBB' else '#FFF'
 
 # ONLOAD
 # ------
 #
 # When the document has loaded we really start to execute some logic
-
 fOnLoad = () ->
 	# Fetch the public key from the engine
-	fIssueRequest
-		command: 'get_public_key'
-		done: ( data ) ->
-			strPublicKey = data.message
-		fail: ( err ) ->
-			if err.status is 401
-				window.location.href = 'forge?page=forge_rule'
-			else
-				fDisplayError 'When fetching public key. Unable to send user specific parameters securely!'
+	req = sendRequest '/service/session/publickey', null, (err) ->
+		main.setInfo false, 'Error when fetching public key. Unable to send user specific parameters securely!'
+	req.done ( data ) ->
+		strPublicKey = data
 
-	editor = ace.edit "editor_conditions"
+	editor = ace.edit "divConditionsEditor"
 	# editor.setTheme "ace/theme/monokai"
 	editor.setTheme "ace/theme/crimson_editor"
-	editor.setFontSize "18px"
+	editor.setFontSize "16px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
@@ -479,49 +428,72 @@ fOnLoad = () ->
 				}
 			]
 			"""
-
-	$( '#action_parameters' ).append domSectionSelectedActions
-	$( '#action_parameters' ).append domSectionActionParameters
 	$( '#input_id' ).focus()
 
 
 # EVENT
 # -----
 
-	# Event type is changed, changes the whole event section
-	console.warn('GONE!');
-	# $( '#select_event_type' ).change () ->
-	# 	fPrepareEventType $( this ).val()
+	req = sendRequest '/service/webhooks/getallvisible'
+	req.done ( oHooks ) ->
+		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
+		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
+		if prl + pul is 0
+			$('#selectWebhook').html('<h4 class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h4>')
+			setEditorReadOnly true
+		else
+			domSelect = $('<select>').attr('class','mediummarged')
+			createWebhookRow = (oHook, isMine) ->
+				img = if oHook.isPublic is 'true' then 'public' else 'private'
+				tit = if oHook.isPublic is 'true' then 'Public' else 'Private'
+				domSelect.append $ """<option value="#{oHook.hookid}">#{oHook.hookname} (#{if isMine then 'yours' else oHook.username})</option>"""
+			$('#selectWebhook').append $('<div>').append($('<h4>').text('Your available Webhooks:').append(domSelect))
+			createWebhookRow(oHook, true) for hookid, oHook of oHooks.private
+			createWebhookRow(oHook) for hookid, oHook of oHooks.public
+# FIXED -->
 
-	# If the user is coming from an event UI he wants a rule to be setup for him
-	switch oParams.eventtype
-		when 'webhook'
-			name = decodeURIComponent oParams.hookname
-			$( '#input_id' ).val "My '#{ name }' Rule" 
-			fPrepareEventType 'Webhook', () ->
-				$( 'select', domSelectWebhook ).val name
+	req = sendRequest '/service/actiondispatcher/getall'
+	req.done ( arrAD ) ->
+		if(arrAD.length is 0)
+			$('#actionSelection').html('<h4 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h4>')
+			setEditorReadOnly true
+		else
+			console.log('AWESOME', arrAD)
+
+			# <select id="select_actions"><option></option></select>
+			# <br><br>
+			# <div id="actionParameters">
+			# 	<div>
+			# 		<b>Selected Actions:</b>
+			# 		<table id="selected_actions"></table>
+			# 	</div>
+			# 	<br>
+			# 	<div>
+			# 		<b>Required User-specific Data:</b>
+			# 		<div id="action_dispatcher_params"></div>
+			# 	</div>
+			# </div>
 
 
-# ACTIONS
-
-	fIssueRequest
-		command: 'get_action_dispatchers'
-		done: ( data ) ->
-			try
-				oAis = JSON.parse data.message
-			catch err
-				console.error 'ERROR: non-object received from server: ' + data.message
-				return
-			i = 0
-			for module, actions of oAis
-				for act in actions
-					i++
-					arrEls = $( "#action_dispatcher_params div" ).filter () ->
-						$( this ).text() is "#{ module } -> #{ act }"
-					# It could have been loaded async before through the rules into the action params
-					if arrEls.length is 0
-						$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
-		fail: fFailedRequest 'Error fetching Action Dispatchers'
+# TODO fill action dispatchers
+	# sendRequest
+	# 	command: 'get_action_dispatchers'
+	# 	done: ( data ) ->
+	# 		try
+	# 			oAis = JSON.parse data.message
+	# 		catch err
+	# 			console.error 'ERROR: non-object received from server: ' + data.message
+	# 			return
+	# 		i = 0
+	# 		for module, actions of oAis
+	# 			for act in actions
+	# 				i++
+	# 				arrEls = $( "#action_dispatcher_params div" ).filter () ->
+	# 					$( this ).text() is "#{ module } -> #{ act }"
+	# 				# It could have been loaded async before through the rules into the action params
+	# 				if arrEls.length is 0
+	# 					$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
+	# 	fail: console.log 'Error fetching Action Dispatchers'
 
 
 	$( '#select_actions' ).on 'change', () ->
@@ -560,7 +532,6 @@ fOnLoad = () ->
 
 	$( '#but_submit' ).click () ->
 		window.scrollTo 0, 0
-		fClearInfo()
 
 		try
 			if $( '#input_id' ).val() is ''
@@ -662,15 +633,15 @@ fOnLoad = () ->
 							payl = JSON.parse obj.body
 							payl.overwrite = true
 							obj.body = JSON.stringify payl
-							fIssueRequest
+							sendRequest
 								command: obj.command
 								data: obj
 								done: ( data ) ->
 									$( '#info' ).text data.message
 									$( '#info' ).attr 'class', 'success'
-								fail: fFailedRequest "#{ obj.id } not stored!"
+								fail: console.log "#{ obj.id } not stored!"
 					else
-						fFailedRequest( "#{ obj.id } not stored!" ) err
+						console.log( "#{ obj.id } not stored!" ) err
 
 			console.warn 'GONE!'
 			# if $( '#select_event_type' ).val() is 'Event Trigger'
@@ -690,7 +661,7 @@ fOnLoad = () ->
 					actions: acts
 					actionparams: ap
 					actionfunctions: actFuncs
-			fIssueRequest
+			sendRequest
 				command: 'forge_rule'
 				data: obj
 				done: ( data ) ->
@@ -705,7 +676,7 @@ fOnLoad = () ->
 # Preload editting of a Rule
 # -----------
 	if oParams.id
-		fIssueRequest
+		sendRequest
 			command: 'get_rule'
 			data: 
 				body: JSON.stringify
@@ -761,6 +732,6 @@ fOnLoad = () ->
 				else
 					try
 						msg = JSON.parse( err.responseText ).message
-				fFailedRequest( 'Error in upload: ' + msg ) err
+				console.log( 'Error in upload: ' + msg ) err
 
 window.addEventListener 'load', fOnLoad, true

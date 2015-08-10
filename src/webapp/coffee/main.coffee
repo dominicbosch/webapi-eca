@@ -44,7 +44,6 @@ window.main =
 			
 		$.get '/help/' + file, (html) ->
 			info = $( '<img>' )
-				.attr( 'src', '/images/info.png' )
 				.attr( 'class', 'infoimg' )
 				.mouseleave hoverOut
 				.mouseenter ( e ) ->

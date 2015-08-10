@@ -13,6 +13,8 @@ Serve Session
 log = require '../logging'
 # - [Persistence](persistence.html)
 db = require '../persistence'
+# - [Encryption](encryption.html)
+encryption = require '../encryption'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 
@@ -43,3 +45,5 @@ router.post '/logout', ( req, res ) ->
 		delete req.session.pub
 		res.send 'Bye!'
 
+router.post '/publickey', ( req, res ) ->
+	res.send encryption.getPublicKey()

@@ -171,10 +171,6 @@ init = =>
 						oUser.username = username
 						db.storeUser oUser
 
-			log.info 'RS | Initialzing engine'
-			#TODO We could in the future make the engine a child process as well
-			engine.init()
-
 			# Start the trigger poller. The components manager will emit events for it
 			log.info 'RS | Forking a child process for the trigger poller'
 			# Grab all required log config fields

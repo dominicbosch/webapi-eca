@@ -5,11 +5,13 @@ Serve Session
 =============
 > Answers session requests from the user
  */
-var db, express, log, router;
+var db, encryption, express, log, router;
 
 log = require('../logging');
 
 db = require('../persistence');
+
+encryption = require('../encryption');
 
 express = require('express');
 
@@ -48,4 +50,8 @@ router.post('/logout', function(req, res) {
     delete req.session.pub;
     return res.send('Bye!');
   }
+});
+
+router.post('/publickey', function(req, res) {
+  return res.send(encryption.getPublicKey());
 });

@@ -19,7 +19,7 @@ fOnLoad = () ->
 								src="/images/red_cross_small.png" data-userid="#{ name }"></td>
 							<td>#{ if oUser.admin is 'true' then '<img title="Administrator"
 								src="/images/admin.png">' else '' }</td>
-							<td class="name">#{ name }</td>
+							<td class="highlight">#{ name }</td>
 							<td>Change Password:</td>
 							<td><input type="password" data-userid="#{ name }"></td>
 						</tr>

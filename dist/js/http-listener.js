@@ -101,8 +101,13 @@ exports.init = (function(_this) {
       return next(err);
     });
     app.use(function(err, req, res, next) {
-      res.status(404);
-      return res.render('404', req.session.pub);
+      if (req.method === 'GET') {
+        res.status(404);
+        return res.render('404', req.session.pub);
+      } else {
+        log.error(err);
+        return res.status(500).send('There was an error while processing your request!');
+      }
     });
     prt = parseInt(conf['http-port']) || 8111;
     server = app.listen(prt);

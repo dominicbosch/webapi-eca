@@ -103,10 +103,14 @@ exports.init = ( conf ) =>
 		err.status = 404
 		next err
 
-	# Handle 404 errors
+	# Handle errors
 	app.use ( err, req, res, next ) ->
-		res.status 404 
-		res.render '404', req.session.pub
+		if req.method is 'GET'
+			res.status 404
+			res.render '404', req.session.pub
+		else
+			log.error err
+			res.status(500).send 'There was an error while processing your request!'
 
 	prt = parseInt( conf[ 'http-port' ] ) || 8111 # inbound event channel
 	server = app.listen prt

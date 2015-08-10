@@ -1,0 +1,37 @@
+h2 {
+	margin-left: -10px;
+	padding-left: 10px;
+	background: #e7e7e7;
+	border: 1px solid #d6d6d6;
+	border-radius: 4px;
+}
+
+h2::first-letter {
+	font-size: 1.5em;
+	/*text-decoration: underline;*/
+}
+
+h4 {
+	padding-top: 10px;
+}
+
+.empty {
+	padding: 30px;
+	background-color: #FCB;
+}
+
+#actionParameters {
+	display: none;
+}
+
+#divConditions {
+    display: inline-block;
+    width: 100%;
+}
+#divConditionsEditor {
+	float: left;
+	border: 1px solid lightgray;
+	margin: auto;
+	height: 150px;
+	width: 500px;
+}

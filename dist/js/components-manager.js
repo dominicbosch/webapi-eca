@@ -83,6 +83,8 @@ exports.addRuleListener = (function(_this) {
   };
 })(this);
 
+console.warn('CM get rid of qs!!!');
+
 exports.handleUserCommand = (function(_this) {
   return function(req, resp) {
     var body;

@@ -1,9 +1,8 @@
 
 ###
 
-Serve Code Plugin
-=================
-> Answers code plugin requests from the user
+Serve EVENT TRIGGERS
+====================
 
 ###
 
@@ -16,4 +15,4 @@ db = require '../persistence'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 
-exports = module.exports = express.Router()
+router = module.exports = express.Router()

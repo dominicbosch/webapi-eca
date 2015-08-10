@@ -25,10 +25,10 @@ updateWebhookList = function() {
         var img, tit;
         img = oHook.isPublic === 'true' ? 'public' : 'private';
         tit = oHook.isPublic === 'true' ? 'Public' : 'Private';
-        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td><input value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h4>').text('Your available Webhooks:'));
-      table = $('<table>').appendTo($('#table_webhooks'));
+      table = $('<table>').attr('class', 'seventywide').appendTo($('#table_webhooks'));
       table.append('<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>');
       ref = oHooks["private"];
       for (hookid in ref) {
@@ -52,7 +52,7 @@ fShowWebhookUsage = function(hookid, hookname) {
   $('#display_hookurl *').remove();
   if (hookid) {
     main.setInfo(true, 'Webhook created!');
-    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"url\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"><br>\n<div><b>Now you can <a href=\"/views/events?webhook=" + hookid + "\">emit an Event</a> \non this Webhook!</b></div>"));
+    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"seventywide smallfont\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"><br>\n<div><b>Now you can <a href=\"/views/events?webhook=" + hookid + "\">emit an Event</a> \non this Webhook!</b></div>"));
   }
 };
 

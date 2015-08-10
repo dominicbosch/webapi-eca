@@ -83,29 +83,7 @@ exports.addRuleListener = ( eh ) =>
 # @public handleUser( *req, resp* )
 # ###
 
-
-# exports.router = router = express.Router()
-# router.use ( req, res, next ) ->
-# 	if req.session and req.session.user
-# 		next()
-# 	else
-# 		res.status( 401 ).send 'Login first!'
-
-# router.post 'get_public_key', ( req, res ) ->
-# 	obj =
-# 		code: 200
-# 		message: encryption.getPublicKey()
-# 	res.status( obj.code ).send obj
-
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-# router.post 'get_public_key', ( req, res ) ->
-		
+console.warn 'CM get rid of qs!!!'
 exports.handleUserCommand = ( req, resp ) =>
 	if req.session and req.session.user
 		body = ''

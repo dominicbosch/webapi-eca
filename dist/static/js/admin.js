@@ -18,7 +18,7 @@ fOnLoad = function() {
       var name, oUser;
       for (name in arrUsers) {
         oUser = arrUsers[name];
-        $('#users').append($("<tr>\n	<td><img class=\"del\" title=\"Delete User\"\n		src=\"/images/red_cross_small.png\" data-userid=\"" + name + "\"></td>\n	<td>" + (oUser.admin === 'true' ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"name\">" + name + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + name + "\"></td>\n</tr>"));
+        $('#users').append($("<tr>\n	<td><img class=\"del\" title=\"Delete User\"\n		src=\"/images/red_cross_small.png\" data-userid=\"" + name + "\"></td>\n	<td>" + (oUser.admin === 'true' ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"highlight\">" + name + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + name + "\"></td>\n</tr>"));
       }
       $('#users .del').click(function() {
         var data, uid;
