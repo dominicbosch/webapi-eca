@@ -1,17 +1,5 @@
 'use strict';
 
-# Fetch the search string and transform it into an object for easy access
-arrParams = window.location.search.substring(1).split '&'
-oParams = {}
-for param in arrParams
-	arrKV = param.split '='
-	oParams[ arrKV[ 0 ] ] = arrKV[ 1 ]
-
-if oParams.type is 'event_trigger'
-	moduleName = 'Event Trigger'
-else
-	moduleName = 'Action Dispatcher'
-	oParams.type = 'action_dispatcher'
 if oParams.id
 	oParams.id = decodeURIComponent oParams.id
 
@@ -33,6 +21,11 @@ fErrHandler = ( errMsg ) ->
 			setTimeout fDelayed, 500
 
 fOnLoad = () ->
+# TODO first check whether it is a valid module before setting the title
+	title = if oParams.id then 'Edit ' else 'Create '
+	title = title + if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
+	$('#pagetitle').text title
+
 	# Setup the ACE editor
 	editor = ace.edit "editor"
 	editor.setTheme "ace/theme/crimson_editor"
@@ -67,7 +60,7 @@ fOnLoad = () ->
 
 	fAddInputRow = ( tag ) ->
 		tr = $ '<tr>'
-		img = $( '<img>' ).attr( 'title', 'Remove?').attr 'src', 'images/red_cross_small.png'
+		img = $( '<img>' ).attr( 'title', 'Remove?').attr 'src', '/images/red_cross_small.png'
 		cb = $( '<input>' ).attr( 'type', 'checkbox' ).attr 'title', 'Password shielded input?'
 		inp = $( '<input>' ).attr( 'type', 'text' ).attr 'class', 'textinput'
 		tr.append( $( '<td>' ).append img )

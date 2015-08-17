@@ -1,5 +1,31 @@
+
+h1 {
+	margin-top: 5px;
+	font-size: 2.1em;
+}
+
+h2 {
+	font-size: 1.8em;
+	margin-left: -10px;
+	padding-left: 10px;
+	background: #e7e7e7;
+	border: 1px solid #d6d6d6;
+	border-radius: 4px;
+}
+
+h2.capitalized::first-letter {
+	font-size: 1.5em;
+	font-weight: bold;
+}
+
+h3 {
+	font-size: 1.5em;
+	padding-top: 10px;
+}
+
 h4 {
-	padding-top: 20px;
+	font-size: 1.2em;
+	padding-top: 10px;
 }
 
 th {
@@ -61,13 +87,11 @@ nav.navbar {
 .mediummarged {
 	margin: 6px;
 }
+.bigmargeleft {
+	margin-left: 20px;
+}
 .smallmarged {
 	margin: 3px;
-}
-
-h1 {
-	margin-top: 5px;
-	font-size: 2em;
 }
 
 input {
@@ -99,6 +123,9 @@ table.list .highlight {
 
 .smallfont {
 	font-size: 0.8em;
+}
+.nowrap {
+	white-space: nowrap;
 }
 
 #mainbody {
@@ -163,6 +190,19 @@ table.list .highlight {
 	width: 120px;
 }
 
+.float-div {
+	float: left;
+	/*margin: 10px;*/
+}
+
+.thirtyhigh {
+	height: 30px;
+}
+
+.twohundred-wide {
+	width: 180px;
+}
+
 img.tl.red {
 	content: url( "/images/tl_red.png" );
 }
@@ -174,6 +214,10 @@ img.tl.green {
 img.del {
 	cursor: pointer;
 }
+/*
+#sel_webh, #but_rule {
+	margin: 10px;
+}*/
 
 
 /*
@@ -277,12 +321,6 @@ button {
 }
 
 
-#pagetitle {
-	font-size: 1.6em;
-	font-weight: bold;
-	padding-top: 0px;
-	padding-bottom: 5px;
-}
 
 #select_event_type {
 	font-size: 1em;

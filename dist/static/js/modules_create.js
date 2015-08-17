@@ -1,22 +1,5 @@
 'use strict';
-var arrKV, arrParams, fErrHandler, fOnLoad, i, len, moduleName, oParams, param;
-
-arrParams = window.location.search.substring(1).split('&');
-
-oParams = {};
-
-for (i = 0, len = arrParams.length; i < len; i++) {
-  param = arrParams[i];
-  arrKV = param.split('=');
-  oParams[arrKV[0]] = arrKV[1];
-}
-
-if (oParams.type === 'event_trigger') {
-  moduleName = 'Event Trigger';
-} else {
-  moduleName = 'Action Dispatcher';
-  oParams.type = 'action_dispatcher';
-}
+var fErrHandler, fOnLoad;
 
 if (oParams.id) {
   oParams.id = decodeURIComponent(oParams.id);
@@ -48,7 +31,10 @@ fErrHandler = function(errMsg) {
 };
 
 fOnLoad = function() {
-  var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj;
+  var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
+  title = oParams.id ? 'Edit ' : 'Create ';
+  title = title + (oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger');
+  $('#pagetitle').text(title);
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
@@ -82,7 +68,7 @@ fOnLoad = function() {
   fAddInputRow = function(tag) {
     var cb, img, inp, tr;
     tr = $('<tr>');
-    img = $('<img>').attr('title', 'Remove?').attr('src', 'images/red_cross_small.png');
+    img = $('<img>').attr('title', 'Remove?').attr('src', '/images/red_cross_small.png');
     cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
     inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
     tr.append($('<td>').append(img));
@@ -178,7 +164,7 @@ fOnLoad = function() {
       })
     };
     return $.post('/usercommand/get_full_' + oParams.type, obj).done(function(data) {
-      var oMod, ref, shielded;
+      var oMod, param, ref, shielded;
       oMod = JSON.parse(data.message);
       if (oMod) {
         ref = JSON.parse(oMod.params);

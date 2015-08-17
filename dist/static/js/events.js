@@ -83,7 +83,7 @@ checkRuleExists = function() {
 
 fOnLoad = function() {
   var txt;
-  main.registerHoverInfo($('#pagetitle'), 'eventinfo.html');
+  main.registerHoverInfo($('#eventbody'), 'eventinfo.html');
   editor = ace.edit('editor');
   editor.setTheme('ace/theme/crimson_editor');
   editor.setOptions({

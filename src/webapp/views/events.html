@@ -1,59 +1,76 @@
 {% extends 'skeleton.html' %}
 
 {% block head %}
-	<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-	<script src="/js/events.js"></script>
-	<script type="text/template" id="eventSource">{"clickername": "{{username}}"}</script>
+<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="/js/events.js"></script>
+<script type="text/template" id="eventSource">{"clickername": "{{username}}"}</script>
 {% endblock %}
 
 {% block pagetitle %}Emit Events{% endblock %}
 
 {% block content %}
-	<div class="container-fluid">
-		<div class="row">
-			<h4>Event Body:</h4>
-			<div id="editor"></div>
-		</div>
-		<div class="row editorSettings">
-			Theme: 
-			<select id="editor_theme">
-				<option value="monokai">Monokai</option>
-				<option value="crimson_editor" selected>Crimson Editor</option>
-			</select>
-			Font Size: 
-			<select id="editor_font">
-				<option>10px</option>
-				<option>11px</option>
-				<option>12px</option>
-				<option>13px</option>
-				<option selected>14px</option>
-				<option>15px</option>
-				<option>16px</option>
-				<option>18px</option>
-				<option>20px</option>
-				<option>24px</option>
-			</select>
-		</div>
-		<div class="row" id="eventControls">
-			<h4>Prerequisites:</h4>
-			Before emitting an event, be sure: <br>
-			<table id="tabletl">
-				<tr>
-					<td><img id="tlwebh" class="tl red" /> Webhook exists</td>
-					<td><select id="sel_webh"></select></td>
-					<td><input id="inp_webh"/></td>
-					<td><button id="but_webh">Create Webhook</button></td>
-				</tr>
-				<tr>
-					<td><img id="tlrule" class="tl red" /> Rule exists</td>
-					<td><button id="but_rule">Create Rule</button></td>
-					<td></td>
-					<td></td>
-				</tr>
-			</table>
-		</div>
-		<div class="row">
-			<button id="but_emit">Emit Event</button>
-		</div>
+<div class="container-fluid">
+	<div class="row" id="eventControls">
+		<h2>Prerequisites:</h2>
+		Before emitting an event, be sure: <br>
+		<!-- FIXME this looks ugly and behaves ugly too! use bootstrap? -->
+		<!-- <table id="tabletl">
+			<tr>
+				<td><img id="tlwebh" class="tl red" /> Webhook exists</td>
+				<td><select id="sel_webh"></select></td>
+				<td><input id="inp_webh"/></td>
+				<td><button id="but_webh">Create Webhook</button></td>
+			</tr>
+			<tr>
+			<td><img id="tlrule" class="tl red" /> Rule exists for Webhooks</td>
+				<td><button id="but_rule">Create Rule</button></td>
+				<td></td>
+				<td></td>
+			</tr>
+		</table> -->
 	</div>
+	<div class="row thirtyhigh">
+
+
+
+				
+				
+
+
+		<div class="float-div twohundred-wide"><img id="tlwebh" class="tl red" /> Webhook exists </div>
+		<div class="float-div bigmargeleft"><select id="sel_webh"></select></div>
+		<div class="float-div bigmargeleft"><input id="inp_webh"/><button id="but_webh">Create Webhook</button></div>
+	</div>
+	<div class="row thirtyhigh">
+		<div class="float-div twohundred-wide"><img id="tlrule" class="tl red" /> Rule exists for Webhooks</div>
+		<div class="float-div bigmargeleft"><button id="but_rule">Create Rule</button></div>
+	</div>
+	<div class="row">
+		<h2 id="eventbody">Event Body:</h2>
+		<div id="editor"></div>
+	</div>
+	<div class="row editorSettings">
+		Theme: 
+		<select id="editor_theme">
+			<option value="monokai">Monokai</option>
+			<option value="crimson_editor" selected>Crimson Editor</option>
+		</select>
+		Font Size: 
+		<select id="editor_font">
+			<option>10px</option>
+			<option>11px</option>
+			<option>12px</option>
+			<option>13px</option>
+			<option selected>14px</option>
+			<option>15px</option>
+			<option>16px</option>
+			<option>18px</option>
+			<option>20px</option>
+			<option>24px</option>
+		</select>
+	</div>
+	<div class="row">
+		<button id="but_emit">Emit Event</button>
+	</div>
+</div>
 {% endblock %}

@@ -34,7 +34,7 @@ fOnLoad = function() {
     var i, len, results, ruleName;
     $('#tableRules tr').remove();
     if (data.length === 0) {
-      return $('#tableRules').html('<tr><td><h4>You don\'t have any rules!</h4></td></tr>');
+      return $('#tableRules').html('<tr><td><h3>You don\'t have any rules!</h3></td></tr>');
     } else {
       results = [];
       for (i = 0, len = data.length; i < len; i++) {

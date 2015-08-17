@@ -26,7 +26,7 @@ fOnLoad = () ->
 	fUpdateRuleList = (data) ->
 		$('#tableRules tr').remove()
 		if data.length is 0
-			$('#tableRules').html '<tr><td><h4>You don\'t have any rules!</h4></td></tr>'
+			$('#tableRules').html '<tr><td><h3>You don\'t have any rules!</h3></td></tr>'
 		else
 			for ruleName in data
 				$('#tableRules').append  $ """<tr>

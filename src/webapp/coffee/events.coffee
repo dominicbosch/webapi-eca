@@ -61,7 +61,7 @@ checkRuleExists = () ->
 			$('#but_emit').hide()
 
 fOnLoad = () ->
-	main.registerHoverInfo $('#pagetitle'), 'eventinfo.html'
+	main.registerHoverInfo $('#eventbody'), 'eventinfo.html'
 
 	editor = ace.edit 'editor'
 	editor.setTheme 'ace/theme/crimson_editor'
