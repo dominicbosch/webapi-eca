@@ -3,61 +3,68 @@
 {% block head %}
 <script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="/js/modules_create.js"></script>
+<script type="text/template" id="etSource">
+###
+A simple Hello World code block
+###
+exports.pollHelloWorld = () ->
+	log 'Hello World!'
+</script>
+<script type="text/template" id="adSource">
+###
+A simple Hello World code block
+###
+exports.sayHelloWorld = () ->
+	log 'Hello World!'
+</script>
+
 {% endblock %}
+
+{% block pagetitle %}<span id="pagetitle"></span>{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
 	<div class="row">
 		<h2>Module Name: <input id="input_id" type="text" /></h2>
-		<table id="editor_table">
-			<tr>
-				<td id="editor_col" valign="top">
-					<div id="editor"></div>
-					<span>Important: when using request add option pool: false and when using http add agent: false if you intend to heavily poll one source. otherwise you will run into connection pool issues!</span>
-				  <button id="but_submit">save</button>
-				</td>
-			</tr>
-		</table>
+	</div>
 
-
-
-
-		<div class="row">
-  		<div class="col-sm-9">.col-md-1</div>
+	<div class="row">
+  		<div class="col-sm-9">
+			<div class="row">
+				<div id="editor" class="modules"></div>
+  			</div>
+			<div class="row editorSettings">
+				Theme: 
+				<select id="editor_theme">
+					<option value="monokai">Monokai</option>
+					<option value="crimson_editor" selected>Crimson Editor</option>
+				</select>
+				Font Size: 
+				<select id="editor_font">
+					<option>10px</option>
+					<option>11px</option>
+					<option>12px</option>
+					<option>13px</option>
+					<option selected>14px</option>
+					<option>15px</option>
+					<option>16px</option>
+					<option>18px</option>
+					<option>20px</option>
+					<option>24px</option>
+				</select>
+				<select id="editor_mode">
+					<option>CoffeeScript</option>
+					<option>JavaScript</option>
+				</select>
+			</div>
+  		</div>
 		<div class="col-sm-3">
 			This module requires user-specific properties:
 			<table id="tableParams"></table>
 		</div>
-		<div class="row editorSettings">
-			Theme: 
-			<select id="editor_theme">
-				<option value="monokai">Monokai</option>
-				<option value="crimson_editor" selected>Crimson Editor</option>
-			</select>
-			Font Size: 
-			<select id="editor_font">
-				<option>10px</option>
-				<option>11px</option>
-				<option>12px</option>
-				<option>13px</option>
-				<option selected>14px</option>
-				<option>15px</option>
-				<option>16px</option>
-				<option>18px</option>
-				<option>20px</option>
-				<option>24px</option>
-			</select>
-			<select id="editor_mode">
-				<option>CoffeeScript</option>
-				<option>JavaScript</option>
-			</select>
-		</div>
-
-
-
-
-
-
+	</div>
+	<div class="row">
+		<button id="but_submit">save</button>
 	</div>
 </div>
 {% endblock %}

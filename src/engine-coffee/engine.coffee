@@ -129,14 +129,14 @@ updateActionModules = ( updatedRuleId ) =>
 					db.actionDispatchers.getModule userName, moduleName, ( err, obj ) =>
 						if obj
 							# we compile the module and pass: 
-							dynmod.compileString obj.data,  # code
-								userName,                           # userId
-								oMyRule.rule,                    	# oRule
-								moduleName,                         # moduleId
-								obj.lang,                           # script language
-								"actiondispatcher",                    # module type
-								db.actionDispatchers,                  # the DB interface
-								( result ) =>
+							args =
+								src: obj.data,					# code
+								lang: obj.lang,					# script language
+								userId: userName,				# userId
+								modId: moduleName,				# moduleId
+								modType: 'actiondispatcher'		# module type
+								oRule: oMyRule.rule,			# oRule
+							dynmod.compileString args, ( result ) =>
 									if result.answ.code is 200
 										log.info "EN | Module '#{ moduleName }' successfully loaded for userName
 											'#{ userName }' in rule '#{ oMyRule.rule.id }'"

@@ -151,6 +151,7 @@ sendRequest = (url, data, cb) ->
 setEditorReadOnly = (isTrue) ->
 	editor.setReadOnly isTrue
 	$('.ace_content').css 'background', if isTrue then '#BBB' else '#FFF'
+	$('#fill_example').toggle !isTrue
 
 # ONLOAD
 # ------
@@ -199,7 +200,7 @@ fOnLoad = () ->
 		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
 		if prl + pul is 0
-			$('#selectWebhook').html('<h3class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3')
+			$('#selectWebhook').html('<h3 class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3>')
 			setEditorReadOnly true
 		else
 				
@@ -209,7 +210,7 @@ fOnLoad = () ->
 				owner = if isMine then 'yours' else oHook.username
 				selStr = if oParams.webhook and oParams.webhook is hookid then 'selected' else ''
 				domSelect.append $ "<option value=\"#{ hookid }\" #{ selStr }>#{ oHook.hookname } (#{ owner })</option>"
-			$('#selectWebhook').append $('<div>').append($('<h3>').text('Your available Webhooks:').append(domSelect))
+			$('#selectWebhook').append $('<h3>').text('Your available Webhooks:').append(domSelect)
 			createWebhookRow(hookid, oHook, true) for hookid, oHook of oHooks.private
 			createWebhookRow(hookid, oHook) for hookid, oHook of oHooks.public
 # FIXED -->

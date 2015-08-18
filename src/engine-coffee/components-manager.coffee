@@ -72,51 +72,6 @@ exports.addRuleListener = ( eh ) =>
 		fGoThroughUsers user, rules for user, rules of objUsers
 
 
-# ###
-# Handles the user command requests.
-
-# *Requires
-# the [request](http://nodejs.org/api/http.html#http_class_http_clientrequest)
-# and [response](http://nodejs.org/api/http.html#http_class_http_serverresponse)
-# objects.*
-
-# @public handleUser( *req, resp* )
-# ###
-
-console.warn 'CM get rid of qs!!!'
-exports.handleUserCommand = ( req, resp ) =>
-	if req.session and req.session.user
-		body = ''
-		#Append data to body while receiving fragments
-		req.on 'data', ( data ) ->
-			body += data
-		req.on 'end', =>
-			obj = qs.parse body
-			# Let the user request handler service answer the request
-			@userRequestHandler req.session.user, obj, ( obj ) ->
-				resp.send obj.code, obj
-	else
-		resp.send 401, 'Login first!'
-
-
-
-
-###
-Checks whether all required parameters are present in the body.
-
-@private hasRequiredParams ( *arrParams, oBody* )
-@param {Array} arrParams
-@param {Object} oBody
-###
-hasRequiredParams = ( arrParams, oBody ) ->
-	answ =
-		code: 400
-		message: "Your request didn't contain all necessary fields! Requires: #{ arrParams.join() }"
-	return answ for param in arrParams when not oBody[param]
-	answ.code = 200
-	answ.message = 'All required properties found'
-	answ
-
 ###
 Fetches all available modules and return them together with the available functions.
 
@@ -138,13 +93,12 @@ getModules = ( user, oBody, dbMod, callback ) ->
 			if sem is 0
 				answReq()
 			else
-				fGetFunctions = ( id ) =>
+				for id in arrNames
 					dbMod.getModule userName, id, ( err, oModule ) =>
 						if oModule
 							oRes[id] = JSON.parse oModule.functions
 						if --sem is 0
 							answReq()
-				fGetFunctions id for id in arrNames
 
 	dbMod.getAvailableModuleIds user.username, fProcessIds user.username
 
@@ -188,39 +142,6 @@ getModuleUserArguments = ( user, oBody, dbMod, callback ) ->
 			answ.message = oBody
 			callback answ
 
-forgeModule = ( user, oBody, modType, dbMod, callback ) =>
-	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oBody
-	if answ.code isnt 200
-		callback answ
-	else
-		if oBody.overwrite
-			storeModule user, oBody, modType, dbMod, callback
-		else
-			dbMod.getModule user.username, oBody.id, ( err, mod ) =>
-				if mod
-					answ.code = 409
-					answ.message = 'Module name already existing: ' + oBody.id
-					callback answ
-				else
-					storeModule user, oBody, modType, dbMod, callback
-
-storeModule = ( user, oBody, modType, dbMod, callback ) =>
-	src = oBody.data
-	dynmod.compileString src, user.username, id: 'dummyRule', oBody.id, oBody.lang, modType, null, ( cm ) =>
-		answ = cm.answ
-		if answ.code is 200
-			funcs = []
-			funcs.push name for name, id of cm.module
-			log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
-			answ.message = 
-				" Module #{ oBody.id } successfully stored! Found following function(s): #{ funcs }"
-			oBody.functions = JSON.stringify funcs
-			oBody.functionArgs = JSON.stringify cm.funcParams
-			oBody.comment = cm.comment
-			dbMod.storeModule user.username, oBody
-			# if oBody.public is 'true'
-			# 	dbMod.publish oBody.id
-		callback answ
 
 # Store a rule and inform everybody about it
 # ------------------------------------------

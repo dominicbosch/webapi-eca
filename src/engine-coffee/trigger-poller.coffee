@@ -86,15 +86,15 @@ fLoadModule = ( msg ) ->
 			if not obj
 				log.info "EP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
 			else
-				 # we compile the module and pass: 
-				dynmod.compileString obj.data,    # code
-					msg.user,                     # userId
-					msg.rule,                  	  # oRule
-					arrName[ 0 ],                 # moduleId
-					obj.lang,                     # script language
-					"eventtrigger",               # the module type
-					db.eventTriggers,             # the DB interface
-					( result ) ->
+				 # we compile the module and pass:
+				args =
+					src: obj.data,					# code
+					lang: obj.lang,					# script language
+					userId: msg.user,				# userId
+					modId: arrName[0],				# moduleId
+					modType: 'eventtrigger'		# module type
+					oRule: msg.rule,			# oRule
+				dynmod.compileString args, ( result ) ->
 						if not result.answ is 200
 							log.error "EP | Compilation of code failed! #{ msg.user },
 								#{ msg.rule.id }, #{ arrName[ 0 ] }"

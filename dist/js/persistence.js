@@ -408,9 +408,15 @@ Appends a log entry.
 @public log( *userId, ruleId, moduleId, message* )
  */
 
-exports.appendLog = (function(_this) {
+exports.logRule = (function(_this) {
   return function(userId, ruleId, moduleId, message) {
-    return _this.db.append(userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 1000)) + "\n");
+    return _this.db.append(userId + ":" + ruleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 500)) + "\n");
+  };
+})(this);
+
+exports.logPoller = (function(_this) {
+  return function(userId, moduleId, message) {
+    return _this.db.append(userId + ":poller:" + moduleId + ":log", "[UTC|" + ((new Date()).toISOString()) + "] {" + moduleId + "} " + (message.substring(0, 500)) + "\n");
   };
 })(this);
 

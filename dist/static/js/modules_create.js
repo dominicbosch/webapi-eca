@@ -9,7 +9,7 @@ fErrHandler = function(errMsg) {
   return function(err) {
     var fDelayed;
     if (err.status === 401) {
-      return window.location.href = "forge?page=forge_module?type=" + oParams.type;
+      return window.location.href = "/";
     } else {
       $('#log_col').text("");
       fDelayed = function() {
@@ -38,7 +38,7 @@ fOnLoad = function() {
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
-  editor.setFontSize("18px");
+  editor.setFontSize("14px");
   editor.setShowPrintMargin(false);
   editor.session.setUseSoftTabs(false);
   $('#editor_mode').change(function(el) {
@@ -87,13 +87,28 @@ fOnLoad = function() {
     return fChangeInputVisibility();
   });
   $('#tableParams').on('keyup', 'input', function(e) {
-    var code, par;
+    var code, i, myNewVal, par;
     code = e.keyCode || e.which;
     if (code !== 9) {
       par = $(this).closest('tr');
+      myNewVal = $(this).val();
+      if (myNewVal !== '') {
+        i = 0;
+        $('#tableParams input.textinput').each(function() {
+          if (myNewVal === $(this).val()) {
+            return i++;
+          }
+        });
+        $(this).toggleClass('inputerror', i > 1);
+        if (i > 1) {
+          main.setInfo(false, 'User-specific properties can\'t have the same name!');
+        } else {
+          main.clearInfo();
+        }
+      }
       if (par.is(':last-child')) {
         return fAddInputRow(par.parent());
-      } else if ($(this).val() === '' && !par.is(':only-child')) {
+      } else if (myNewVal === '' && !par.is(':only-child')) {
         return par.remove();
       }
     }
@@ -183,18 +198,15 @@ fOnLoad = function() {
       return fAddUserParam('', false);
     }).fail(fErrHandler("Could not get module " + oParams.id + "!"));
   } else {
-    editor.setValue($("#template_" + oParams.type).text());
-    editor.moveCursorTo(0, 0);
-    if (oParams.type === 'event_trigger') {
-      $('#input_id').val('EmailYak');
-      fAddUserParam('apikey', true);
-      return fAddUserParam('', false);
+    $('#input_id').val('Hello World');
+    if (oParams.m === 'ad') {
+      editor.insert($('#adSource').text());
+      fAddUserParam('', false);
     } else {
-      $('#input_id').val('ProBinder');
-      fAddUserParam('username', false);
-      fAddUserParam('password', true);
-      return fAddUserParam('', false);
+      editor.insert($('#etSource').text());
+      fAddUserParam('', false);
     }
+    return editor.moveCursorTo(0, 0);
   }
 };
 

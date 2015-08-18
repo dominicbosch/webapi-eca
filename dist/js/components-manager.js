@@ -7,7 +7,7 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, forgeModule, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, hasRequiredParams, log, path, storeModule, storeRule;
+var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, log, path, storeRule;
 
 log = require('./logging');
 
@@ -83,55 +83,6 @@ exports.addRuleListener = (function(_this) {
   };
 })(this);
 
-console.warn('CM get rid of qs!!!');
-
-exports.handleUserCommand = (function(_this) {
-  return function(req, resp) {
-    var body;
-    if (req.session && req.session.user) {
-      body = '';
-      req.on('data', function(data) {
-        return body += data;
-      });
-      return req.on('end', function() {
-        var obj;
-        obj = qs.parse(body);
-        return _this.userRequestHandler(req.session.user, obj, function(obj) {
-          return resp.send(obj.code, obj);
-        });
-      });
-    } else {
-      return resp.send(401, 'Login first!');
-    }
-  };
-})(this);
-
-
-/*
-Checks whether all required parameters are present in the body.
-
-@private hasRequiredParams ( *arrParams, oBody* )
-@param {Array} arrParams
-@param {Object} oBody
- */
-
-hasRequiredParams = function(arrParams, oBody) {
-  var answ, i, len, param;
-  answ = {
-    code: 400,
-    message: "Your request didn't contain all necessary fields! Requires: " + (arrParams.join())
-  };
-  for (i = 0, len = arrParams.length; i < len; i++) {
-    param = arrParams[i];
-    if (!oBody[param]) {
-      return answ;
-    }
-  }
-  answ.code = 200;
-  answ.message = 'All required properties found';
-  return answ;
-};
-
 
 /*
 Fetches all available modules and return them together with the available functions.
@@ -147,7 +98,7 @@ getModules = function(user, oBody, dbMod, callback) {
   var fProcessIds;
   fProcessIds = function(userName) {
     return function(err, arrNames) {
-      var answReq, fGetFunctions, i, id, len, oRes, results, sem;
+      var answReq, i, id, len, oRes, results, sem;
       oRes = {};
       answReq = function() {
         return callback({
@@ -159,22 +110,19 @@ getModules = function(user, oBody, dbMod, callback) {
       if (sem === 0) {
         return answReq();
       } else {
-        fGetFunctions = (function(_this) {
-          return function(id) {
-            return dbMod.getModule(userName, id, function(err, oModule) {
+        results = [];
+        for (i = 0, len = arrNames.length; i < len; i++) {
+          id = arrNames[i];
+          results.push(dbMod.getModule(userName, id, (function(_this) {
+            return function(err, oModule) {
               if (oModule) {
                 oRes[id] = JSON.parse(oModule.functions);
               }
               if (--sem === 0) {
                 return answReq();
               }
-            });
-          };
-        })(this);
-        results = [];
-        for (i = 0, len = arrNames.length; i < len; i++) {
-          id = arrNames[i];
-          results.push(fGetFunctions(id));
+            };
+          })(this)));
         }
         return results;
       }
@@ -242,58 +190,6 @@ getModuleUserArguments = function(user, oBody, dbMod, callback) {
     });
   }
 };
-
-forgeModule = (function(_this) {
-  return function(user, oBody, modType, dbMod, callback) {
-    var answ;
-    answ = hasRequiredParams(['id', 'params', 'lang', 'data'], oBody);
-    if (answ.code !== 200) {
-      return callback(answ);
-    } else {
-      if (oBody.overwrite) {
-        return storeModule(user, oBody, modType, dbMod, callback);
-      } else {
-        return dbMod.getModule(user.username, oBody.id, function(err, mod) {
-          if (mod) {
-            answ.code = 409;
-            answ.message = 'Module name already existing: ' + oBody.id;
-            return callback(answ);
-          } else {
-            return storeModule(user, oBody, modType, dbMod, callback);
-          }
-        });
-      }
-    }
-  };
-})(this);
-
-storeModule = (function(_this) {
-  return function(user, oBody, modType, dbMod, callback) {
-    var src;
-    src = oBody.data;
-    return dynmod.compileString(src, user.username, {
-      id: 'dummyRule'
-    }, oBody.id, oBody.lang, modType, null, function(cm) {
-      var answ, funcs, id, name, ref;
-      answ = cm.answ;
-      if (answ.code === 200) {
-        funcs = [];
-        ref = cm.module;
-        for (name in ref) {
-          id = ref[name];
-          funcs.push(name);
-        }
-        log.info("CM | Storing new module with functions " + (funcs.join(', ')));
-        answ.message = " Module " + oBody.id + " successfully stored! Found following function(s): " + funcs;
-        oBody.functions = JSON.stringify(funcs);
-        oBody.functionArgs = JSON.stringify(cm.funcParams);
-        oBody.comment = cm.comment;
-        dbMod.storeModule(user.username, oBody);
-      }
-      return callback(answ);
-    });
-  };
-})(this);
 
 storeRule = (function(_this) {
   return function(user, oBody, callback) {

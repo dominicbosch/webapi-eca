@@ -139,8 +139,17 @@ updateActionModules = (function(_this) {
               if (!oMyRule.actions[moduleName] || oMyRule.rule.id === updatedRuleId) {
                 results2.push(db.actionDispatchers.getModule(userName, moduleName, (function(_this) {
                   return function(err, obj) {
+                    var args;
                     if (obj) {
-                      return dynmod.compileString(obj.data, userName, oMyRule.rule, moduleName, obj.lang, "actiondispatcher", db.actionDispatchers, function(result) {
+                      args = {
+                        src: obj.data,
+                        lang: obj.lang,
+                        userId: userName,
+                        modId: moduleName,
+                        modType: 'actiondispatcher',
+                        oRule: oMyRule.rule
+                      };
+                      return dynmod.compileString(args, function(result) {
                         if (result.answ.code === 200) {
                           log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
                         } else {

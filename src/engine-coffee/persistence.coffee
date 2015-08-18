@@ -353,9 +353,14 @@ Appends a log entry.
 
 @public log( *userId, ruleId, moduleId, message* )
 ###
-exports.appendLog = ( userId, ruleId, moduleId, message ) =>
+exports.logRule = ( userId, ruleId, moduleId, message ) =>
 	@db.append "#{ userId }:#{ ruleId }:log", 
-		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message.substring( 0, 1000 ) }\n"
+		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message.substring( 0, 500 ) }\n"
+
+# Purge Logs
+exports.logPoller = ( userId, moduleId, message ) =>
+	@db.append "#{ userId }:poller:#{ moduleId }:log", 
+		"[UTC|#{ ( new Date() ).toISOString() }] {#{ moduleId }} #{ message.substring( 0, 500 ) }\n"
 
 ###
 Retrieves a log entry.

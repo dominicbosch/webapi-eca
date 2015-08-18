@@ -51,6 +51,13 @@ exports.testCompile = ( test ) ->
 
 	paramOne = 'First Test'
 	code = "exports.testFunc = () ->\n\t'#{ paramOne }'"
+	# args =
+	# 	src: obj.data,					# code
+	# 	lang: obj.lang,					# script language
+	# 	userId: userName,				# userId
+	# 	modId: moduleName,				# moduleId
+	# 	modType: 'actiondispatcher'		# module type
+	# 	oRule: oMyRule.rule,			# oRule
 	dm.compileString code, 'userOne', 'ruleOne', 'moduleOne', 'CoffeeScript', 'eventpoller', null, ( result ) ->
 		test.strictEqual 200, result.answ.code
 		moduleOne = result.module

@@ -6,7 +6,7 @@ if oParams.id
 fErrHandler = ( errMsg ) ->
 	( err ) ->
 		if err.status is 401
-			window.location.href = "forge?page=forge_module?type=#{ oParams.type }"
+			window.location.href = "/"
 		else
 			$( '#log_col' ).text ""
 			fDelayed = () ->
@@ -31,10 +31,9 @@ fOnLoad = () ->
 	editor.setTheme "ace/theme/crimson_editor"
 	# editor.setTheme "ace/theme/monokai"
 	editor.getSession().setMode "ace/mode/coffee"
-	editor.setFontSize "18px"
+	editor.setFontSize "14px"
 	editor.setShowPrintMargin false
-	editor.session.setUseSoftTabs false 
-	
+	editor.session.setUseSoftTabs false
 
 	$( '#editor_mode' ).change ( el ) ->
 		if $( this ).val() is 'CoffeeScript'
@@ -76,13 +75,25 @@ fOnLoad = () ->
 			par.remove()
 		fChangeInputVisibility()
 
+
 	$( '#tableParams' ).on 'keyup', 'input', ( e ) ->
 		code = e.keyCode or e.which
 		if code isnt 9
 			par = $( this ).closest( 'tr' )
+			myNewVal = $(this).val()
+			if myNewVal isnt ''
+				i = 0
+				$( '#tableParams input.textinput' ).each () ->
+					i++ if myNewVal is $(this).val() 
+				
+				$(this).toggleClass 'inputerror', i > 1
+				if i > 1
+					main.setInfo false, 'User-specific properties can\'t have the same name!'
+				else 
+					main.clearInfo()
 			if par.is ':last-child'
 				fAddInputRow par.parent()
-			else if $( this ).val() is '' and not par.is ':only-child'
+			else if myNewVal is '' and not par.is ':only-child'
 				par.remove()
 
 	fChangeInputVisibility()
@@ -159,16 +170,13 @@ fOnLoad = () ->
 
 	else
 		# We add the standard template, params and names
-		editor.setValue $( "#template_#{ oParams.type }" ).text()
-		editor.moveCursorTo 0, 0
-		if oParams.type is 'event_trigger'
-			$( '#input_id' ).val 'EmailYak'
-			fAddUserParam 'apikey', true
+		$('#input_id').val 'Hello World'
+		if oParams.m is 'ad'
+			editor.insert $('#adSource').text()
 			fAddUserParam '', false
 		else
-			$( '#input_id' ).val 'ProBinder'
-			fAddUserParam 'username', false
-			fAddUserParam 'password', true
+			editor.insert $('#etSource').text()
 			fAddUserParam '', false
+		editor.moveCursorTo 0, 0
 
 window.addEventListener 'load', fOnLoad, true

@@ -69,6 +69,11 @@ nav.navbar {
 	content: url("/images/info.png")
 }
 
+.inputerror {
+	background-color: #933;
+	color: #FFF;
+}
+
 .error {
 	background-color: #933;
 }
@@ -143,6 +148,10 @@ table.list .highlight {
 	width: 100%;
 }
 
+#editor.modules {
+	height: 400px;
+}
+
 #loginTable {
 	float: left;
 	text-align: center;
@@ -200,6 +209,7 @@ table.list .highlight {
 }
 
 .twohundred-wide {
+	height: 40px;
 	width: 180px;
 }
 
@@ -214,10 +224,18 @@ img.tl.green {
 img.del {
 	cursor: pointer;
 }
-/*
-#sel_webh, #but_rule {
-	margin: 10px;
-}*/
+
+#tls select, #tls input {
+	margin: 3px;
+}
+
+#tls select {
+	margin-top: 6px;
+}
+
+#but_rule {
+	margin-left: 3px;
+}
 
 
 /*

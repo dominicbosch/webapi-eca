@@ -67,10 +67,19 @@ fLoadModule = function(msg) {
   arrName = msg.rule.eventname.split(' -> ');
   fAnonymous = function() {
     return db.eventTriggers.getModule(msg.user, arrName[0], function(err, obj) {
+      var args;
       if (!obj) {
         return log.info("EP | No module retrieved for " + arrName[0] + ", must be a custom event or Webhook");
       } else {
-        return dynmod.compileString(obj.data, msg.user, msg.rule, arrName[0], obj.lang, "eventtrigger", db.eventTriggers, function(result) {
+        args = {
+          src: obj.data,
+          lang: obj.lang,
+          userId: msg.user,
+          modId: arrName[0],
+          modType: 'eventtrigger',
+          oRule: msg.rule
+        };
+        return dynmod.compileString(args, function(result) {
           var nd, now, oUser, start;
           if (!result.answ === 200) {
             log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);

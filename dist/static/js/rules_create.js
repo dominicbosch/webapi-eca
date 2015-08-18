@@ -25,7 +25,8 @@ sendRequest = function(url, data, cb) {
 
 setEditorReadOnly = function(isTrue) {
   editor.setReadOnly(isTrue);
-  return $('.ace_content').css('background', isTrue ? '#BBB' : '#FFF');
+  $('.ace_content').css('background', isTrue ? '#BBB' : '#FFF');
+  return $('#fill_example').toggle(!isTrue);
 };
 
 fOnLoad = function() {
@@ -57,7 +58,7 @@ fOnLoad = function() {
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
     if (prl + pul === 0) {
-      $('#selectWebhook').html('<h3class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3');
+      $('#selectWebhook').html('<h3 class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3>');
       return setEditorReadOnly(true);
     } else {
       domSelect = $('<select>').attr('class', 'mediummarged');
@@ -68,7 +69,7 @@ fOnLoad = function() {
         selStr = oParams.webhook && oParams.webhook === hookid ? 'selected' : '';
         return domSelect.append($("<option value=\"" + hookid + "\" " + selStr + ">" + oHook.hookname + " (" + owner + ")</option>"));
       };
-      $('#selectWebhook').append($('<div>').append($('<h3>').text('Your available Webhooks:').append(domSelect)));
+      $('#selectWebhook').append($('<h3>').text('Your available Webhooks:').append(domSelect));
       ref = oHooks["private"];
       for (hookid in ref) {
         oHook = ref[hookid];
