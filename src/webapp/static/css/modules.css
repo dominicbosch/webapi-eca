@@ -1,0 +1,19 @@
+#schedule {
+	display: none;
+}
+
+.floater {
+	background-color: #CCC;
+	text-align: center;
+	border-radius: 5px;
+	/*float: left;*/
+	padding: 5px;
+}
+
+.timepicker {
+	text-align: center;
+}
+
+.timepicker select {
+	margin-right: 15px;
+}

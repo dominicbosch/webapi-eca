@@ -31,10 +31,22 @@ fErrHandler = function(errMsg) {
 };
 
 fOnLoad = function() {
-  var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
   title = oParams.id ? 'Edit ' : 'Create ';
   title = title + (oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger');
   $('#pagetitle').text(title);
+  if (oParams.m !== 'ad') {
+    main.registerHoverInfo($('#schedule > h2'), 'schedule.html');
+    $('#schedule').show();
+    dateNow = new Date();
+    $('#datetimePicker').datetimepicker({
+      defaultDate: dateNow,
+      minDate: dateNow
+    });
+    $('#timePicker').datetimepicker({
+      format: 'LT'
+    });
+  }
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
@@ -189,6 +201,11 @@ fOnLoad = function() {
         }
         $('#input_id').val(oMod.id);
         $('#editor_mode').val(oMod.lang);
+        if (oMod.lang === 'CoffeeScript') {
+          editor.getSession().setMode("ace/mode/coffee");
+        } else {
+          editor.getSession().setMode("ace/mode/javascript");
+        }
         if (oMod["public"] === 'true') {
           $('#is_public').prop('checked', true);
         }

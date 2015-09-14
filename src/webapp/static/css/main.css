@@ -6,8 +6,9 @@ h1 {
 
 h2 {
 	font-size: 1.8em;
+	margin-top: 10px;
 	margin-left: -10px;
-	padding-left: 10px;
+	padding: 5px;
 	background: #e7e7e7;
 	border: 1px solid #d6d6d6;
 	border-radius: 4px;
@@ -99,7 +100,7 @@ nav.navbar {
 	margin: 3px;
 }
 
-input {
+input.consoled {
 	margin: 6px 4px;
 	font-family: "Lucida Console", Monaco, monospace;
 }
