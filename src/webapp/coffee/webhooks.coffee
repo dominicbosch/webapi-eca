@@ -30,7 +30,7 @@ updateWebhookList = () ->
 							<td class="hundredwide"><input class="smallfont hundredwide" value="#{hostUrl}/service/webhooks/event/#{hookid}"></td>
 						</tr>
 					"""
-				$('#table_webhooks').append $('<h2>').text 'Your available Webhooks:'
+				$('#table_webhooks').append $('<h2>').text 'Available Webhooks'
 				table = $('<table>').attr('class', 'seventywide').appendTo $ '#table_webhooks'
 				table.append '<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>'
 				createWebhookRow(oHook, true) for hookid, oHook of oHooks.private

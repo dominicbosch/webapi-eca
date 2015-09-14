@@ -1,51 +1,38 @@
 'use strict';
 
+urlService = '/service/'
+
+if oParams.m is 'ad'
+	urlService += 'actiondispatcher/'
+	modName = 'Action Dispatcher'
+else
+	urlService += 'eventtrigger/'
+	modName = 'Event Trigger'
 
 fOnLoad = () ->
-	$( '#module_type' ).change () ->
-		fFetchModules()
+	$('.moduletype').text modName
+	$('#linkMod').attr 'href', '/views/modules_create?m=' + oParams.m
 
-	fErrHandler = ( errMsg ) ->
-		( err ) ->
-			if err.status is 401
-				window.location.href = 'forge?page=edit_modules'
-			else
-				fDelayed = () ->
-					if err.responseText is ''
-						msg = 'No Response from Server!'
-					else
-						try
-							oErr = JSON.parse err.responseText
-							msg = oErr.message
-					$( '#info' ).text errMsg + msg
-					$( '#info' ).attr 'class', 'error'
-				setTimeout fDelayed, 500
-
-	fFetchModules = () ->
-		if $( '#module_type' ).val() is 'Event Trigger'
-			cmd = 'get_event_triggers'
+	req = $.post urlService + 'getall'
+	req.done ( arrModules ) ->
+		if arrModules.length is 0
+			$('#tableModules').html '<h3>No '+modName+'s available!'
 		else
-			cmd = 'get_action_dispatchers'
-		$.post( '/usercommand/' + cmd )
-			.done fUpdateModuleList
-			.fail fErrHandler 'Did not retrieve rules! '
-
-	fUpdateModuleList = ( data ) ->
-		$( '#tableModules tr' ).remove()
-		oMods = JSON.parse data.message
-		for modName of oMods
-			tr = $ '<tr>'
-			inp = $( '<div>' ).text modName
-			img = $( '<img>' ).attr( 'class', 'del' )
-				.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
-			tr.append( $( '<td>' ).append img )
-			img = $( '<img>' ).attr( 'class', 'log' )
-				.attr( 'title', 'Edit Module' ).attr 'src', 'images/edit.png'
-			tr.append( $( '<td>' ).append img )
-			tr.append( $( '<td>' ).append inp )
-			$( '#tableModules' ).append tr
-
-	fFetchModules()
+			for modName of arrModules
+				tr = $ '<tr>'
+				inp = $( '<div>' ).text modName
+				img = $( '<img>' ).attr( 'class', 'del' )
+					.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
+				tr.append( $( '<td>' ).append img )
+				img = $( '<img>' ).attr( 'class', 'log' )
+					.attr( 'title', 'Edit Module' ).attr 'src', 'images/edit.png'
+				tr.append( $( '<td>' ).append img )
+				tr.append( $( '<td>' ).append inp )
+				$( '#tableModules' ).append tr
+	req.fail ( err ) ->
+		if err.status is 401
+			window.location.href = '/'
+		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
 
 	$( '#tableModules' ).on 'click', 'img.del', () ->
 		modName = $( 'div', $( this ).closest( 'tr' )).text()

@@ -1,30 +1,17 @@
 {% extends 'skeleton.html' %}
 
 {% block head %}
-    <script src="js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-    <script src="js/modules_edit.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/modules.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
+
+{% block pagetitle %}<span class="moduletype"></span>{% endblock %}
 
 {% block content %}
-	<h3>Available Modules:</h3>
-	<table id="tableModules"></table>
-	TODO: Enable timing for event pollers!
+<div class="container-fluid">
+	<div class="row">
+		<a id="linkMod">Create a new <span class="moduletype"></span>!</a>
+		<table id="tableModules"></table>
+	</div>
+</div>
 {% endblock %}
-
-
-<!-- 
-domInputEventTiming = $( '<div>' ).attr( 'class', 'indent20' )
-$( '<div>' ).attr( 'class', 'comment' ).appendTo domInputEventTiming
-table = $( '<table>' ).appendTo domInputEventTiming
-tr = $( '<tr>' ).appendTo table
-tr.append $( '<td>' ).text "Start Time : "
-tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_start' ).attr( 'type', 'text' )
-tr.append $( '<td>' ).html " <b>\"hh:mm\"</b>, default = Immediately"
-
-tr = $( '<tr>' ).appendTo table
-tr.append $( '<td>' ).text "Interval : "
-tr.append $( '<td>' ).append $( '<input>' ).attr( 'id', 'input_interval' ).attr( 'type', 'text' )
-tr.append $( '<td>' ).html " <b>\"days hours:minutes\"</b>, default = 10 minutes"
-
-domEventTriggerParameters = $( '<div>' ).attr 'id', 'event_trigger_params'
- -->

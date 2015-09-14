@@ -17,7 +17,13 @@ express = require 'express'
 
 router = module.exports = express.Router()
 
-
+router.post '/getall', ( req, res ) ->
+	log.info 'SRVC | EVENT TRIGGERS | Fetching all'
+	db.eventTriggers.getAllModules req.session.pub.username, (err, oETs) ->
+		if err
+			res.status(500).send err
+		else
+			res.send oETs
 
 # forgeModule = ( user, oBody, modType, dbMod, callback ) =>
 # 	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oBody

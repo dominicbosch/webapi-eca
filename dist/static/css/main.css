@@ -113,7 +113,7 @@ table.padded td {
 	padding: 2px;
 }
 
-table.list .highlight {
+table.padded .highlight {
 	font-weight: bold;
 	font-family: "Lucida Console", Monaco, monospace;
 	padding-right: 20px;
@@ -238,6 +238,10 @@ img.del {
 	margin-left: 3px;
 }
 
+.empty {
+	padding: 30px;
+	background-color: #FCB;
+}
 
 /*
 h4 {

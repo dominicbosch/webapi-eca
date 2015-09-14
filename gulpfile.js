@@ -51,7 +51,7 @@ if (argv.watch) {
 fSimpleCoffeePipe = function(task, dirSrc, dirDest) {
   var stream;
   if (argv.watch) {
-    gutil.log(chalk.yellow("Adding Coffee watch for compiling from \"" + dirSrc + "\" to \"" + dirDest + "\""));
+    gutil.log(chalk.yellow("Adding Coffee watch for compilation from \"" + dirSrc + "\" to \"" + dirDest + "\""));
     stream = watch(dirSrc).pipe(plumber({
       errorHandler: fHandleError
     })).pipe(debug({

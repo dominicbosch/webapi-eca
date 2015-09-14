@@ -45,7 +45,7 @@ if argv.watch
 fSimpleCoffeePipe = ( task, dirSrc, dirDest ) ->
 	# If user wants to watch, we add the watch ahndler
 	if argv.watch
-		gutil.log chalk.yellow "Adding Coffee watch for compiling from \"#{ dirSrc }\" to \"#{ dirDest }\""
+		gutil.log chalk.yellow "Adding Coffee watch for compilation from \"#{ dirSrc }\" to \"#{ dirDest }\""
 		stream = watch( dirSrc ).pipe( plumber errorHandler: fHandleError )
 			.pipe debug title: 'Change detected in (' + task + '): '
 	else
