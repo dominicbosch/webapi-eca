@@ -40,6 +40,7 @@ init = ( args ) ->
 		log.error err
 
 	# Initialize required modules (should be in cache already)
+	log.info args
 	db.init args[ 'db-port' ]
 	db.selectDatabase args[ 'db-select' ]
 		

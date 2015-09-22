@@ -9,16 +9,6 @@ fErrHandler = (errMsg) ->
 			window.location.href = "/"
 		else
 			$('#log_col').text ""
-			fDelayed = () ->
-				if err.responseText is ''
-					msg = 'No Response from Server!'
-				else
-					try
-						oErr = JSON.parse err.responseText
-						msg = oErr.message
-				$('#info').text errMsg + msg
-				$('#info').attr 'class', 'error'
-			setTimeout fDelayed, 500
 
 fOnLoad = () ->
 # TODO first check whether it is a valid module before setting the title

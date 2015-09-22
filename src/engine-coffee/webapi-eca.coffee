@@ -18,7 +18,7 @@ log = require './logging'
 # - [Configuration](config.html)
 conf = require './config'
 
-# - [Persistence](persistence.html)
+# # - [Persistence](persistence.html)
 db = require './persistence'
 
 # - [ECA Components Manager](components-manager.html)
@@ -72,9 +72,9 @@ opt =
 		alias : 'db-port',
 		describe: 'Specify a port for the redis DB'
 
-#  `-s`, `--db-select`: Specify a database
+#  `-s`, `--db-db`: Specify a database
 	's':
-		alias : 'db-select',
+		alias : 'db-db',
 		describe: 'Specify a database identifier'
 
 #  `-m`, `--mode`: Specify a run mode: [development|productive]
@@ -121,21 +121,22 @@ if !conf.isInit
 	console.error 'FAIL: Config file not ready! Shutting down...'
 	process.exit()
 
-conf[ 'http-port' ] = parseInt argv.w || conf[ 'http-port' ] || 8125
-conf[ 'db-port' ] = parseInt argv.d || conf[ 'db-port' ] || 6379
-conf[ 'db-select' ] = parseInt argv.s || conf[ 'db-select' ] || 0
+conf['http-port'] = parseInt argv.w || conf['http-port'] || 8125
+conf.db.module = conf.db.module || 'redis'
+conf.db.port = parseInt argv.d || conf.db.port || 6379
+conf.db.db = argv.s || conf.db.db || 0
 
 if not conf.log
 	conf.log = {}
 conf.mode = argv.m || conf.mode || 'productive'
-conf.log[ 'std-level' ] = argv.i || conf.log[ 'std-level' ] || 'error'
-conf.log[ 'file-level' ] = argv.f || conf.log[ 'file-level' ] || 'warn'
-conf.log[ 'file-path' ] = argv.p || conf.log[ 'file-path' ] || 'warn'
+conf.log['std-level'] = argv.i || conf.log['std-level'] || 'error'
+conf.log['file-level'] = argv.f || conf.log['file-level'] || 'warn'
+conf.log['file-path'] = argv.p || conf.log['file-path'] || 'warn'
 conf.log.trace = argv.t || conf.log.trace || 'off'
 conf.log.nolog = argv.n || conf.log.nolog
 if not conf.log.nolog
 	try
-		fs.writeFileSync path.resolve( conf.log[ 'file-path' ] ), ' '
+		fs.writeFileSync path.resolve( conf.log['file-path'] ), ' '
 	catch e
 		console.log e
 
@@ -149,13 +150,14 @@ This function is invoked right after the module is loaded and starts the server.
 @private init()
 ###
 init = =>
-	encryption.init conf[ 'keygenpp' ]
+	encryption.init conf['keygenpp']
 	
 	log.info 'RS | Initialzing DB'
-	db.init conf[ 'db-port' ]
+	db.init conf.db
 	# > We only proceed with the initialization if the DB is ready
+	log.info 'DB INITTED, CHECKING CONNECTION'
+	log.info Object.keys db
 	db.isConnected ( err ) =>
-		db.selectDatabase conf[ 'db-select' ]
 		if err
 			log.error 'RS | No DB connection, shutting down system!'
 			shutDown()

@@ -1,7 +1,15 @@
 {
 	"http-port": 8080,
-	"db-port": 6379,
-	"db-select": 0,
+	"db": {
+		"module": "redis",
+		"port": 6379,
+		"db": 0
+	},
+	"db2": {
+		"module": "postgres",
+		"port": 5432,
+		"db": "webapi-eca"
+	},
 	"mode": "development",
 	"gc": "forced",
 	"log": {

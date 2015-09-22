@@ -31,6 +31,7 @@ init = function(args) {
     log.error('Probably one of the Event Triggers produced an error!');
     return log.error(err);
   });
+  log.info(args);
   db.init(args['db-port']);
   db.selectDatabase(args['db-select']);
   return encryption.init(args['keygenpp']);

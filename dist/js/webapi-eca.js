@@ -61,7 +61,7 @@ opt = {
     describe: 'Specify a port for the redis DB'
   },
   's': {
-    alias: 'db-select',
+    alias: 'db-db',
     describe: 'Specify a database identifier'
   },
   'm': {
@@ -106,9 +106,11 @@ if (!conf.isInit) {
 
 conf['http-port'] = parseInt(argv.w || conf['http-port'] || 8125);
 
-conf['db-port'] = parseInt(argv.d || conf['db-port'] || 6379);
+conf.db.module = conf.db.module || 'redis';
 
-conf['db-select'] = parseInt(argv.s || conf['db-select'] || 0);
+conf.db.port = parseInt(argv.d || conf.db.port || 6379);
+
+conf.db.db = argv.s || conf.db.db || 0;
 
 if (!conf.log) {
   conf.log = {};
@@ -150,10 +152,11 @@ init = (function(_this) {
   return function() {
     encryption.init(conf['keygenpp']);
     log.info('RS | Initialzing DB');
-    db.init(conf['db-port']);
+    db.init(conf.db);
+    log.info('DB INITTED, CHECKING CONNECTION');
+    log.info(Object.keys(db));
     return db.isConnected(function(err) {
       var pathUsers, poller, users;
-      db.selectDatabase(conf['db-select']);
       if (err) {
         log.error('RS | No DB connection, shutting down system!');
         return shutDown();

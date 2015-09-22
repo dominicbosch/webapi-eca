@@ -7,25 +7,10 @@ if (oParams.id) {
 
 fErrHandler = function(errMsg) {
   return function(err) {
-    var fDelayed;
     if (err.status === 401) {
       return window.location.href = "/";
     } else {
-      $('#log_col').text("");
-      fDelayed = function() {
-        var msg, oErr;
-        if (err.responseText === '') {
-          msg = 'No Response from Server!';
-        } else {
-          try {
-            oErr = JSON.parse(err.responseText);
-            msg = oErr.message;
-          } catch (_error) {}
-        }
-        $('#info').text(errMsg + msg);
-        return $('#info').attr('class', 'error');
-      };
-      return setTimeout(fDelayed, 500);
+      return $('#log_col').text("");
     }
   };
 };

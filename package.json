@@ -31,9 +31,12 @@
     "nodeunit": "0.9.1",
     "optimist": "0.6.1",
     "pagerank": "1.2.0",
+    "pg": "^4.4.1",
+    "pg-hstore": "^2.3.2",
     "prettydiff": "1.11.21",
     "redis": "0.12.1",
     "request": "2.57.0",
+    "sequelize": "^3.8.0",
     "swig": "^1.4.2"
   },
   "devDependencies": {
