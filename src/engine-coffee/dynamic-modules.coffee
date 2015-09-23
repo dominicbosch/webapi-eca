@@ -6,12 +6,11 @@ Dynamic Modules
 > with only a few allowed node.js modules.
 ###
 
+db = global.db
 # **Loads Modules:**
 
 # - [Logging](logging.html)
 log = require './logging'
-# - [Persistence](persistence.html)
-db = require './persistence'
 # - [Encryption](encryption.html)
 encryption = require './encryption'
 

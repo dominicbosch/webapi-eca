@@ -9,14 +9,13 @@ Components Manager
 
 ###
 
+exports = module.exports
+geb = global.eventBackbone
+db = global.db
 # **Loads Modules:**
 
 # - [Logging](logging.html)
 log = require './logging'
-# - [Persistence](persistence.html)
-db = require './persistence'
-# - [Dynamic Modules](dynamic-modules.html)
-dynmod = require './dynamic-modules'
 # - [Encryption](encryption.html)
 encryption = require './encryption'
 
@@ -25,12 +24,8 @@ encryption = require './encryption'
 #   [events](http://nodejs.org/api/events.html)
 fs = require 'fs'
 path = require 'path'
-events = require 'events'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
-eventEmitter = new events.EventEmitter()
-
-exports = module.exports
 
 ###
 Add an event handler (eh) that listens for rules.
@@ -39,7 +34,7 @@ Add an event handler (eh) that listens for rules.
 @param {function} eh
 ###
 exports.addRuleListener = ( eh ) =>
-	eventEmitter.addListener 'rule', eh
+	geb.addListener 'rule', eh
 
 	# Fetch all active rules per user
 	db.getAllActivatedRuleIdsPerUser ( err, objUsers ) =>
@@ -58,7 +53,7 @@ exports.addRuleListener = ( eh ) =>
 							eventInfo = "Starting at #{ new Date( oRule.eventstart ) }, Interval set to #{ oRule.eventinterval } minutes"
 							db.appendLog user, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
 
-							eventEmitter.emit 'rule',
+							geb.emit 'rule',
 								intevent: 'init'
 								user: user
 								rule: oRule
@@ -197,7 +192,7 @@ storeRule = ( user, oBody, callback ) =>
 		db.appendLog user.username, rule.id, "INIT", "Rule '#{ rule.id }' initialized. #{ eventInfo }"
 		
 		# Inform everbody about the new rule
-		eventEmitter.emit 'rule',
+		geb.emit 'rule',
 			intevent: 'new'
 			user: user.username
 			rule: rule
@@ -366,7 +361,7 @@ commandFunctions =
 			callback answ
 		else
 			db.deleteRule user.username, oBody.id
-			eventEmitter.emit 'rule',
+			geb.emit 'rule',
 				intevent: 'del'
 				user: user.username
 				rule: null

@@ -9,7 +9,7 @@ var db, express, log, router;
 
 log = require('../logging');
 
-db = require('../persistence');
+db = global.db;
 
 express = require('express');
 

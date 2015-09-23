@@ -21,15 +21,28 @@
 # ###
 
 # # **Loads Modules:**
+# - [Logging](logging.html)
+# log = require './logging'
 
-# # - [Logging](logging.html)
-log = require './logging'
+# exports = module.exports
+
+# exports.init = (oConf) ->
+# 	log.info 'loading conf'
+# 	log.info oConf
+# 	db = require './persistence/' + oConf.module
+# 	console.log db
+# 	console.log global.db
+# 	# for prop, func of db
+# 	# 	console.log prop, func
+# 	global.db[prop] = func for prop, func of db
+# 	console.log global.db
+	# exports[prop] = func for prop, func of global.db
+
+
 
 # # - External Modules:
 # #   [redis](https://github.com/mranney/node_redis)
 # redis = require 'redis'
-
-exports = module.exports
 
 # ###
 # Module call
@@ -38,28 +51,7 @@ exports = module.exports
 
 # @param {Object} args
 # ###
-class DBInterface
-	constructor: (@zeugs) ->
-		log.info 'zeugs'
-	init: (oConf) ->
-		log.info 'PS | INIT DB MODULE: ' + oConf.module
-		log.info Object.keys exports
-		exports = require './persistence/' + oConf.module
-		log.info 'Overwriting exports'
-		log.info Object.keys exports
 
-
-exports = new DBInterface
-
-console.log 'STARTING PERSISTENCE'
-console.log @isInit
-if not @isInit
-	console.log 'INITING SYMBOL'
-	@isInit = Symbol 'Init'
-
-log.info @isInit
-
-# exports = module.exports
 
 # exports.init = ( oConf ) =>
 # 	log.info 'PS | INIT DB MODULE: ' + oConf.module

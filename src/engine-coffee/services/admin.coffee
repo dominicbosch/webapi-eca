@@ -16,8 +16,7 @@ path = require 'path'
 
 # - [Logging](logging.html)
 log = require '../logging'
-# - [Persistence](persistence.html)
-db = require '../persistence'
+db = global.db
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 

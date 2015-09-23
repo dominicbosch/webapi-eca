@@ -11,8 +11,7 @@ Serve Session
 
 # - [Logging](logging.html)
 log = require '../logging'
-# - [Persistence](persistence.html)
-db = require '../persistence'
+db = global.db
 # - [Encryption](encryption.html)
 encryption = require '../encryption'
 # - External Modules: [express](http://expressjs.com/api.html)

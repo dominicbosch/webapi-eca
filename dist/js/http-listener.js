@@ -9,9 +9,9 @@ HTTP Listener
  */
 var app, bodyParser, db, express, fs, log, path, session, swig;
 
-log = require('./logging');
+db = global.db;
 
-db = require('./persistence');
+log = require('./logging');
 
 path = require('path');
 
@@ -34,7 +34,7 @@ Initializes the request routing and starts listening on the given port.
 
 exports.init = (function(_this) {
   return function(conf) {
-    var arrServices, fileName, i, len, prt, server, servicePath, sess_sec, sessionMiddleware;
+    var arrServices, fileName, i, len, modService, prt, server, servicePath, sess_sec, sessionMiddleware;
     if (conf.mode === 'productive') {
       process.on('uncaughtException', function(e) {
         log.error('This is a general exception catcher, but should really be removed in the future!');
@@ -92,7 +92,8 @@ exports.init = (function(_this) {
       fileName = arrServices[i];
       log.info('  -> ' + fileName);
       servicePath = fileName.substring(0, fileName.length - 3);
-      app.use('/service/' + servicePath, require(path.resolve(__dirname, 'services', fileName)));
+      modService = require(path.resolve(__dirname, 'services', fileName));
+      app.use('/service/' + servicePath, modService);
     }
     app.get('*', function(req, res, next) {
       var err;

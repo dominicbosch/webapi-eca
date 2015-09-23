@@ -9,7 +9,7 @@ var db, encryption, express, log, router;
 
 log = require('../logging');
 
-db = require('../persistence');
+db = global.db;
 
 encryption = require('../encryption');
 

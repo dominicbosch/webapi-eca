@@ -10,13 +10,23 @@ WebAPI-ECA Engine
 >
 > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
  */
-var argv, cm, conf, cp, db, e, encryption, engine, fs, http, init, log, nameEP, opt, optimist, path, shutDown, usage;
+var argv, cm, conf, cp, db, e, encryption, engine, events, fs, geb, http, init, log, nameEP, opt, optimist, path, shutDown, usage;
+
+fs = require('fs');
+
+path = require('path');
+
+cp = require('child_process');
+
+events = require('events');
+
+db = global.db = {};
+
+geb = global.eventBackbone = new events.EventEmitter();
 
 log = require('./logging');
 
 conf = require('./config');
-
-db = require('./persistence');
 
 cm = require('./components-manager');
 
@@ -28,11 +38,9 @@ encryption = require('./encryption');
 
 nameEP = 'trigger-poller';
 
-fs = require('fs');
-
-path = require('path');
-
-cp = require('child_process');
+geb.addListener('eventtrigger', function(msg) {
+  return console.log(msg);
+});
 
 optimist = require('optimist');
 
@@ -150,11 +158,17 @@ This function is invoked right after the module is loaded and starts the server.
 
 init = (function(_this) {
   return function() {
+    var dbMod, func, prop;
     encryption.init(conf['keygenpp']);
     log.info('RS | Initialzing DB');
+    dbMod = require('./persistence/' + conf.db.module);
+    for (prop in dbMod) {
+      func = dbMod[prop];
+      global.db[prop] = func;
+    }
+    log.info('RS | Adding DB support for ' + Object.keys(dbMod));
     db.init(conf.db);
     log.info('DB INITTED, CHECKING CONNECTION');
-    log.info(Object.keys(db));
     return db.isConnected(function(err) {
       var pathUsers, poller, users;
       if (err) {
@@ -190,13 +204,13 @@ init = (function(_this) {
           }
           return fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
         });
-        log.info('RS | Initialzing module manager');
+        log.info('RS | Initialzing module manager and its event listeners');
         cm.addRuleListener(engine.internalEvent);
-        cm.addRuleListener(function(evt) {
-          return poller.send(evt);
-        });
+        cm.addRuleListener(poller.send);
         log.info('RS | Initialzing http listener');
-        return http.init(conf);
+        http.init(conf);
+        log.info('RS | All good so far, informing all modules about proper system initialization');
+        return geb.emit('system', 'init');
       }
     });
   };
@@ -232,6 +246,8 @@ process.on('message', function(cmd) {
   if (cmd === 'die') {
     log.warn('RS | GOT DIE COMMAND');
     return shutDown();
+  } else {
+    return log.warn('Received unknown command: ' + cmd);
   }
 });
 

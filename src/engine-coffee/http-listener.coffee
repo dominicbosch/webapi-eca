@@ -7,13 +7,12 @@ HTTP Listener
 > takes care of the request.
 
 ###
+db = global.db
 
 # **Loads Modules:**
 
 # - [Logging](logging.html)
 log = require './logging'
-# - [Persistence](persistence.html)
-db = require './persistence'
 
 # - Node.js Modules: [path](http://nodejs.org/api/path.html) and
 # 	[fs](http://nodejs.org/api/fs.html)
@@ -93,7 +92,8 @@ exports.init = ( conf ) =>
 	for fileName in arrServices
 		log.info '  -> ' + fileName
 		servicePath = fileName.substring 0, fileName.length - 3
-		app.use '/service/' + servicePath, require path.resolve __dirname, 'services', fileName
+		modService = require path.resolve __dirname, 'services', fileName
+		app.use '/service/' + servicePath, modService
 
 
 	# If the routing is getting down here, then we didn't find anything to do and

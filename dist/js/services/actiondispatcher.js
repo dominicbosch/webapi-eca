@@ -8,7 +8,7 @@ var db, dynmod, express, log, router, storeModule;
 
 log = require('../logging');
 
-db = require('../persistence');
+db = global.db;
 
 dynmod = require('../dynamic-modules');
 

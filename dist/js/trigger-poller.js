@@ -6,13 +6,9 @@ Dynamic Modules
 > Compiles CoffeeScript modules and loads JS modules in a VM, together
 > with only a few allowed node.js modules.
  */
-var config, db, dynmod, encryption, fCallFunction, fCheckAndRun, fLoadModule, init, isRunning, listUserModules, log, pollLoop;
+var dynmod, encryption, fCallFunction, fCheckAndRun, init, isRunning, listUserModules, log, pollLoop, requestModule;
 
 log = require('./logging');
-
-config = require('./config');
-
-db = require('./persistence');
 
 dynmod = require('./dynamic-modules');
 
@@ -32,9 +28,7 @@ init = function(args) {
     return log.error(err);
   });
   log.info(args);
-  db.init(args['db-port']);
-  db.selectDatabase(args['db-select']);
-  return encryption.init(args['keygenpp']);
+  return encryption.init(args.keygenpp);
 };
 
 listUserModules = {};
@@ -53,7 +47,7 @@ process.on('message', function(msg) {
   }
   log.info("EP | Got info about new rule: " + msg.intevent);
   if (msg.intevent === 'new' || msg.intevent === 'init') {
-    fLoadModule(msg);
+    requestModule(msg);
   }
   if (msg.intevent === 'del') {
     delete listUserModules[msg.user][msg.ruleId];
@@ -63,10 +57,15 @@ process.on('message', function(msg) {
   }
 });
 
-fLoadModule = function(msg) {
-  var arrName, fAnonymous;
+requestModule = function(msg) {
+  var arrName;
   arrName = msg.rule.eventname.split(' -> ');
-  fAnonymous = function() {
+  if (msg.intevent === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
+    process.send({
+      command: 'get-ep',
+      user: msg.user,
+      module: arrName[0]
+    });
     return db.eventTriggers.getModule(msg.user, arrName[0], function(err, obj) {
       var args;
       if (!obj) {
@@ -126,9 +125,6 @@ fLoadModule = function(msg) {
         });
       }
     });
-  };
-  if (msg.intevent === 'new' || !listUserModules[msg.user] || !listUserModules[msg.user][msg.rule.id]) {
-    return fAnonymous();
   }
 };
 

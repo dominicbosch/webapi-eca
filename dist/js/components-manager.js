@@ -7,13 +7,15 @@ Components Manager
 > Event Trigger and Action Dispatcher modules are loaded as strings and stored in the database,
 > then compiled into node modules and rules and used in the engine and event Trigger.
  */
-var commandFunctions, db, dynmod, encryption, eventEmitter, events, exports, express, fs, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, log, path, storeRule;
+var commandFunctions, db, encryption, exports, express, fs, geb, getModuleComment, getModuleParams, getModuleUserArguments, getModuleUserParams, getModules, log, path, storeRule;
+
+exports = module.exports;
+
+geb = global.eventBackbone;
+
+db = global.db;
 
 log = require('./logging');
-
-db = require('./persistence');
-
-dynmod = require('./dynamic-modules');
 
 encryption = require('./encryption');
 
@@ -21,13 +23,7 @@ fs = require('fs');
 
 path = require('path');
 
-events = require('events');
-
 express = require('express');
-
-eventEmitter = new events.EventEmitter();
-
-exports = module.exports;
 
 
 /*
@@ -39,7 +35,7 @@ Add an event handler (eh) that listens for rules.
 
 exports.addRuleListener = (function(_this) {
   return function(eh) {
-    eventEmitter.addListener('rule', eh);
+    geb.addListener('rule', eh);
     return db.getAllActivatedRuleIdsPerUser(function(err, objUsers) {
       var fGoThroughUsers, results, rules, user;
       fGoThroughUsers = function(user, rules) {
@@ -54,7 +50,7 @@ exports.addRuleListener = (function(_this) {
               if (oRule.eventstart) {
                 eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
                 db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
-                return eventEmitter.emit('rule', {
+                return geb.emit('rule', {
                   intevent: 'init',
                   user: user,
                   rule: oRule
@@ -241,7 +237,7 @@ storeRule = (function(_this) {
       }
       db.resetLog(user.username, rule.id);
       db.appendLog(user.username, rule.id, "INIT", "Rule '" + rule.id + "' initialized. " + eventInfo);
-      eventEmitter.emit('rule', {
+      geb.emit('rule', {
         intevent: 'new',
         user: user.username,
         rule: rule
@@ -433,7 +429,7 @@ commandFunctions = {
       return callback(answ);
     } else {
       db.deleteRule(user.username, oBody.id);
-      eventEmitter.emit('rule', {
+      geb.emit('rule', {
         intevent: 'del',
         user: user.username,
         rule: null,

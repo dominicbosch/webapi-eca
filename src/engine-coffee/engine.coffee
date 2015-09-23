@@ -10,12 +10,11 @@ TODO events should have: raising-time, reception-time and eventually sender-uri 
 
 ###
 
+db = global.db
 # **Loads Modules:**
 
 # - [Logging](logging.html)
 log = require './logging'
-# - [Persistence](persistence.html)
-db = require './persistence'
 # - [Dynamic Modules](dynamic-modules.html)
 dynmod = require './dynamic-modules'
 

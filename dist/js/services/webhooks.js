@@ -5,11 +5,13 @@ Serve Webhooks
 ==============
 > Answers webhook requests from the user
  */
-var allowedHooks, db, express, log, router;
+var allowedHooks, db, express, geb, log, router;
+
+db = global.db;
+
+geb = global.eventBackbone;
 
 log = require('../logging');
-
-db = require('../persistence');
 
 express = require('express');
 
@@ -17,14 +19,16 @@ router = module.exports = express.Router();
 
 allowedHooks = {};
 
-db.getAllWebhooks((function(_this) {
-  return function(err, oHooks) {
-    if (oHooks) {
-      log.info("SRVC | WEBHOOKS | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
-      return allowedHooks = oHooks;
-    }
-  };
-})(this));
+geb.addListener('system', function(msg) {
+  if (msg === 'init') {
+    return db.getAllWebhooks(function(err, oHooks) {
+      if (oHooks) {
+        log.info("SRVC | WEBHOOKS | Initializing " + (Object.keys(oHooks).length) + " Webhooks");
+        return allowedHooks = oHooks;
+      }
+    });
+  }
+});
 
 router.post('/getallvisible', function(req, res) {
   log.info('SRVC | WEBHOOKS | Fetching all Webhooks');

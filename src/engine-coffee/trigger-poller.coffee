@@ -12,8 +12,6 @@ Dynamic Modules
 # [Encryption](encryption.html)
 # and [Dynamic Modules](dynamic-modules.html)
 log = require './logging'
-config = require './config'
-db = require './persistence'
 dynmod = require './dynamic-modules'
 encryption = require './encryption'
 
@@ -40,11 +38,8 @@ init = ( args ) ->
 		log.error err
 
 	# Initialize required modules (should be in cache already)
-	log.info args
-	db.init args[ 'db-port' ]
-	db.selectDatabase args[ 'db-select' ]
-		
-	encryption.init args[ 'keygenpp' ]
+	log.info args		
+	encryption.init args.keygenpp
 
 # Initialize module local variables and 
 listUserModules = {}
@@ -67,7 +62,7 @@ process.on 'message', ( msg ) ->
 
 	# A initialization notification or a new rule
 	if msg.intevent is 'new' or msg.intevent is 'init'
-		fLoadModule msg
+		requestModule msg
 		# We fetch the module also if the rule was updated
 
 # TODO if server restarts we would have to start modules in the interval
@@ -80,9 +75,16 @@ process.on 'message', ( msg ) ->
 			delete listUserModules[msg.user]
 
 # Loads a module if required
-fLoadModule = ( msg ) ->
+requestModule = ( msg ) ->
 	arrName = msg.rule.eventname.split ' -> '
-	fAnonymous = () ->
+	if msg.intevent is 'new' or
+			not listUserModules[ msg.user ] or 
+			not listUserModules[ msg.user ][ msg.rule.id ]
+				# // FIXME This needs to be message passing to the mother process
+		process.send
+			command: 'get-ep'
+			user: msg.user
+			module: arrName[0]
 		db.eventTriggers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
 				log.info "EP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
@@ -143,11 +145,6 @@ fLoadModule = ( msg ) ->
 						else
 							fCheckAndRun msg.user, msg.rule.id, msg.rule.timestamp
 
-
-	if msg.intevent is 'new' or
-			not listUserModules[ msg.user ] or 
-			not listUserModules[ msg.user ][ msg.rule.id ]
-		fAnonymous()
 
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->

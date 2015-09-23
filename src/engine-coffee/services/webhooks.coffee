@@ -7,22 +7,26 @@ Serve Webhooks
 
 ###
 
+db = global.db
+geb = global.eventBackbone
+
 # **Loads Modules:**
 
 # - [Logging](logging.html)
 log = require '../logging'
-# - [Persistence](persistence.html)
-db = require '../persistence'
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 
 router = module.exports = express.Router()
 
 allowedHooks = {}
-db.getAllWebhooks ( err, oHooks ) =>
-	if oHooks
-		log.info "SRVC | WEBHOOKS | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
-		allowedHooks = oHooks
+
+geb.addListener 'system', (msg) ->
+	if msg is 'init'
+		db.getAllWebhooks ( err, oHooks ) ->
+			if oHooks
+				log.info "SRVC | WEBHOOKS | Initializing #{ Object.keys( oHooks ).length } Webhooks"  
+				allowedHooks = oHooks
 
 # # User requests a webhook
 # router.post '/get/:id', ( req, res ) ->

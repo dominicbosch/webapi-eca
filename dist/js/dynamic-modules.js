@@ -8,9 +8,9 @@ Dynamic Modules
  */
 var cs, db, encryption, fs, getFunctionParamNames, i, len, log, mod, oModules, path, regexpComments, request, searchComment, vm;
 
-log = require('./logging');
+db = global.db;
 
-db = require('./persistence');
+log = require('./logging');
 
 encryption = require('./encryption');
 

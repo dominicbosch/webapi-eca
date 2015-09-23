@@ -13,7 +13,7 @@ path = require('path');
 
 log = require('../logging');
 
-db = require('../persistence');
+db = global.db;
 
 express = require('express');
 

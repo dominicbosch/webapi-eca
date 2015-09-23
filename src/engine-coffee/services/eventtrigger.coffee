@@ -10,11 +10,12 @@ Serve EVENT TRIGGERS
 
 # - [Logging](logging.html)
 log = require '../logging'
-# - [Persistence](persistence.html)
-db = require '../persistence'
+db = global.db
 # - External Modules: [express](http://expressjs.com/api.html)
 express = require 'express'
 
+geb = global.eventBackbone
+geb.emit 'eventtrigger', 'wow'
 router = module.exports = express.Router()
 
 router.post '/getall', ( req, res ) ->
@@ -24,6 +25,10 @@ router.post '/getall', ( req, res ) ->
 			res.status(500).send err
 		else
 			res.send oETs
+
+router.post '/store', ( req, res ) ->
+	log.info 'SRVC | EVENT TRIGGERS | Storing new EP'
+
 
 # forgeModule = ( user, oBody, modType, dbMod, callback ) =>
 # 	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oBody

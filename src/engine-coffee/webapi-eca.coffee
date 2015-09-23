@@ -10,16 +10,25 @@ WebAPI-ECA Engine
 > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 ###
 
-# **Loads Modules:**
+# - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
+# [path](http://nodejs.org/api/path.html),
+# [child_process](http://nodejs.org/api/child_process.html)
+fs = require 'fs'
+path = require 'path'
+cp = require 'child_process'
+# heapdump = require 'heapdump'
+# and [events](http://nodejs.org/api/events.html)
+events = require 'events'
+db = global.db = {}
+geb = global.eventBackbone = new events.EventEmitter()
+
+# **Loads Own Modules:**
 
 # - [Logging](logging.html)
 log = require './logging'
 
 # - [Configuration](config.html)
 conf = require './config'
-
-# # - [Persistence](persistence.html)
-db = require './persistence'
 
 # - [ECA Components Manager](components-manager.html)
 cm = require './components-manager'
@@ -36,14 +45,9 @@ encryption = require './encryption'
 # - [Trigger Poller](trigger-poller.html) *(will be forked into a child process)*
 nameEP = 'trigger-poller'
 
-# - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
-# [path](http://nodejs.org/api/path.html)
-# and [child_process](http://nodejs.org/api/child_process.html)
-fs = require 'fs'
-path = require 'path'
-cp = require 'child_process'
-# heapdump = require 'heapdump'
 
+geb.addListener 'eventtrigger', (msg) ->
+	console.log msg
 # - External Modules: [optimist](https://github.com/substack/node-optimist)
 optimist = require 'optimist'
 
@@ -153,10 +157,13 @@ init = =>
 	encryption.init conf['keygenpp']
 	
 	log.info 'RS | Initialzing DB'
+	# db = db = require './persistence/' + conf.db.module
+	dbMod = require './persistence/' + conf.db.module
+	global.db[prop] = func for prop, func of dbMod
+	log.info 'RS | Adding DB support for ' + Object.keys dbMod
 	db.init conf.db
 	# > We only proceed with the initialization if the DB is ready
 	log.info 'DB INITTED, CHECKING CONNECTION'
-	log.info Object.keys db
 	db.isConnected ( err ) =>
 		if err
 			log.error 'RS | No DB connection, shutting down system!'
@@ -193,12 +200,15 @@ init = =>
 			# after the engine and the trigger poller have been initialized we can
 			# initialize the module manager and register event listener functions
 			# from engine and trigger poller
-			log.info 'RS | Initialzing module manager'
+			log.info 'RS | Initialzing module manager and its event listeners'
 			cm.addRuleListener engine.internalEvent
-			cm.addRuleListener ( evt ) -> poller.send evt
+			cm.addRuleListener poller.send
 
 			log.info 'RS | Initialzing http listener'			
 			http.init conf
+
+			log.info 'RS | All good so far, informing all modules about proper system initialization'
+			geb.emit 'system', 'init'
 
 ###
 Shuts down the server.
@@ -230,6 +240,8 @@ process.on 'message', ( cmd ) ->
 	if cmd is 'die'
 		log.warn 'RS | GOT DIE COMMAND'
 		shutDown()
+	else
+		log.warn 'Received unknown command: ' + cmd
 
 process.on 'SIGINT', () ->
 	log.warn 'RS | GOT SIGINT'

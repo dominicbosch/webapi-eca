@@ -10,8 +10,7 @@ Serve ACTION DISPATCHERS
 
 # - [Logging](logging.html)
 log = require '../logging'
-# - [Persistence](persistence.html)
-db = require '../persistence'
+db = global.db
 # - [Dynamic Modules](dynamic-modules.html)
 dynmod = require '../dynamic-modules'
 # - External Modules: [express](http://expressjs.com/api.html)

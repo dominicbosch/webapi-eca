@@ -11,9 +11,9 @@ TODO events should have: raising-time, reception-time and eventually sender-uri 
  */
 var db, dynmod, jsonQuery, listUserRules, log, oOperators, updateActionModules, validConditions;
 
-log = require('./logging');
+db = global.db;
 
-db = require('./persistence');
+log = require('./logging');
 
 dynmod = require('./dynamic-modules');
 
