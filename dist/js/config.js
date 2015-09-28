@@ -26,7 +26,7 @@ It is possible to hand a configPath for a custom configuration file path.
 
 oConfig.init = (function(_this) {
   return function(filePath) {
-    var configPath, e, oConffile, oValue, prop;
+    var configPath, e, error, oConffile, oValue, prop;
     if (_this.isInitialized) {
       return console.error('ERROR: Already initialized configuration!');
     } else {
@@ -42,8 +42,8 @@ oConfig.init = (function(_this) {
           return console.error('ERROR: Already initialized configuration!');
         };
         return oConfig.isInit = true;
-      } catch (_error) {
-        e = _error;
+      } catch (error) {
+        e = error;
         oConfig = null;
         return console.error("Failed loading config file: " + e.message);
       }

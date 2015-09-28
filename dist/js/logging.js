@@ -14,7 +14,7 @@ exports = module.exports = {
   error: function() {},
   fatal: function() {},
   init: function(args) {
-    var e, func, logPath, opt, prop, ref;
+    var e, error, error1, func, logPath, opt, prop, ref;
     if (args.log.nolog) {
       return delete exports.init;
     } else {
@@ -33,8 +33,8 @@ exports = module.exports = {
         try {
           fs.writeFileSync(logPath + '.temp', 'temp');
           fs.unlinkSync(logPath + '.temp');
-        } catch (_error) {
-          e = _error;
+        } catch (error) {
+          e = error;
           console.error("Log folder '" + logPath + "' is not writable");
           return;
         }
@@ -53,8 +53,8 @@ exports = module.exports = {
           exports[prop] = func;
         }
         return delete exports.init;
-      } catch (_error) {
-        e = _error;
+      } catch (error1) {
+        e = error1;
         console.error(e);
         return delete exports.init;
       }

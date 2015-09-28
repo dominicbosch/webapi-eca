@@ -17,7 +17,7 @@ fOnLoad = () ->
 	$('#pagetitle').text title
 	
 	if oParams.m isnt 'ad'
-		main.registerHoverInfo $('#schedule > h2'), 'schedule.html'
+		main.registerHoverInfo $('#schedule > h2'), 'modules_schedule.html'
 		$('#schedule').show()
 		# document.getElementById('datePicker').value = new Date().toDateInputValue();
 		dateNow = new Date()

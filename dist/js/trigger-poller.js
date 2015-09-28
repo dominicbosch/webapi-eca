@@ -130,15 +130,15 @@ requestModule = function(msg) {
 
 fCheckAndRun = function(userId, ruleId, timestamp) {
   return function() {
-    var e, oRule;
+    var e, error, oRule;
     log.info("EP | Check and run user " + userId + ", rule " + ruleId);
     if (isRunning && listUserModules[userId] && listUserModules[userId][ruleId]) {
       if (listUserModules[userId][ruleId].timestamp === timestamp) {
         oRule = listUserModules[userId][ruleId];
         try {
           fCallFunction(userId, ruleId, oRule);
-        } catch (_error) {
-          e = _error;
+        } catch (error) {
+          e = error;
           log.error('Error during execution of poller');
         }
         return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.eventinterval);
@@ -150,7 +150,7 @@ fCheckAndRun = function(userId, ruleId, timestamp) {
 };
 
 fCallFunction = function(userId, ruleId, oRule) {
-  var arrArgs, err, i, len, oArg, ref;
+  var arrArgs, err, error, i, len, oArg, ref;
   try {
     arrArgs = [];
     if (oRule.funcArgs && oRule.funcArgs[oRule.pollfunc]) {
@@ -166,8 +166,8 @@ fCallFunction = function(userId, ruleId, oRule) {
       user: userId
     };
     return oRule.module[oRule.pollfunc].apply(this, arrArgs);
-  } catch (_error) {
-    err = _error;
+  } catch (error) {
+    err = error;
     log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
     throw err;
     return oRule.logger(err.message);

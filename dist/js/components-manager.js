@@ -42,7 +42,7 @@ exports.addRuleListener = (function(_this) {
         var fFetchRule, i, len, results, rule;
         fFetchRule = function(rule) {
           return db.getRule(user, rule, function(err, strRule) {
-            var eventInfo, oRule;
+            var error, eventInfo, oRule;
             try {
               oRule = JSON.parse(strRule);
               db.resetLog(user, oRule.id);
@@ -56,8 +56,8 @@ exports.addRuleListener = (function(_this) {
                   rule: oRule
                 });
               }
-            } catch (_error) {
-              err = _error;
+            } catch (error) {
+              err = error;
               return log.warn("CM | There's an invalid rule in the system: " + strRule);
             }
           });

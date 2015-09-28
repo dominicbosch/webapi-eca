@@ -210,7 +210,7 @@ Checks whether all conditions of the rule are met by the event.
  */
 
 validConditions = function(evt, rule, userId, ruleId) {
-  var cond, err, i, len, op, ref, selectedProperty, val;
+  var cond, err, error, i, len, op, ref, selectedProperty, val;
   if (rule.conditions.length === 0) {
     return true;
   }
@@ -238,8 +238,8 @@ validConditions = function(evt, rule, userId, ruleId) {
       if (!op(val, cond.compare)) {
         return false;
       }
-    } catch (_error) {
-      err = _error;
+    } catch (error) {
+      err = error;
       db.appendLog(userId, ruleId, 'Condition', "Error: Selector '" + cond.selector + "', Operator " + cond.operator + ", Compare: " + cond.compare);
     }
   }
@@ -258,7 +258,7 @@ exports.processEvent = (function(_this) {
   return function(evt) {
     var fCheckEventForUser, fSearchAndInvokeAction, oUser, results, userName;
     fSearchAndInvokeAction = function(node, arrPath, funcName, evt, depth) {
-      var argument, arrArgs, arrSelectors, data, err, i, j, len, len1, oArg, ref, sel, selector;
+      var argument, arrArgs, arrSelectors, data, err, error, i, j, len, len1, oArg, ref, sel, selector;
       if (!node) {
         log.error("EN | Didn't find property in user rule list: " + arrPath.join(', ') + " at depth " + depth);
         return;
@@ -293,8 +293,8 @@ exports.processEvent = (function(_this) {
           arrArgs.push(evt);
           node.module[funcName].apply(_this, arrArgs);
           return log.info("EN | " + funcName + " finished execution");
-        } catch (_error) {
-          err = _error;
+        } catch (error) {
+          err = error;
           log.info("EN | ERROR IN ACTION INVOKER: " + err.message);
           return node.logger(err.message);
         }

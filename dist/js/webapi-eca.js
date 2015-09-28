@@ -10,7 +10,7 @@ WebAPI-ECA Engine
 >
 > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
  */
-var argv, cm, conf, cp, db, e, encryption, engine, events, fs, geb, http, init, log, nameEP, opt, optimist, path, shutDown, usage;
+var argv, cm, conf, cp, db, e, encryption, engine, error, events, fs, geb, http, init, log, nameEP, opt, optimist, path, shutDown, usage;
 
 fs = require('fs');
 
@@ -139,8 +139,8 @@ conf.log.nolog = argv.n || conf.log.nolog;
 if (!conf.log.nolog) {
   try {
     fs.writeFileSync(path.resolve(conf.log['file-path']), ' ');
-  } catch (_error) {
-    e = _error;
+  } catch (error) {
+    e = error;
     console.log(e);
   }
 }

@@ -129,7 +129,7 @@ fOnLoad = function() {
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {
-    var actFuncs, acts, ap, conds, err, fCheckOverwrite, obj;
+    var actFuncs, acts, ap, conds, err, error, error1, fCheckOverwrite, obj;
     window.scrollTo(0, 0);
     try {
       if ($('#input_id').val() === '') {
@@ -183,8 +183,8 @@ fOnLoad = function() {
       });
       try {
         conds = JSON.parse(editor.getValue());
-      } catch (_error) {
-        err = _error;
+      } catch (error) {
+        err = error;
         throw new Error("Parsing of your conditions failed! Needs to be an Array of Strings!");
       }
       if (!(conds instanceof Array)) {
@@ -238,8 +238,8 @@ fOnLoad = function() {
         },
         fail: fCheckOverwrite(obj)
       });
-    } catch (_error) {
-      err = _error;
+    } catch (error1) {
+      err = error1;
       $('#info').text('Error in upload: ' + err.message);
       $('#info').attr('class', 'error');
       return alert(err.message);
@@ -306,7 +306,7 @@ fOnLoad = function() {
         } else {
           try {
             msg = JSON.parse(err.responseText).message;
-          } catch (_error) {}
+          } catch (undefined) {}
         }
         return console.log('Error in upload: ' + msg)(err);
       }

@@ -57,7 +57,7 @@ compile it first into JS.
  */
 
 exports.compileString = function(args, cb) {
-  var answ, dbMod, err, getUserParams, logFunction, ruleId, src;
+  var answ, dbMod, err, error, getUserParams, logFunction, ruleId, src;
   if (!args.src || !args.userid || !args.moduleid || !args.lang || !args.moduletype) {
     answ = {
       code: 500,
@@ -83,8 +83,8 @@ exports.compileString = function(args, cb) {
     try {
       log.info("DM | Compiling module '" + args.moduleid + "' for user '" + args.userid + "'");
       src = cs.compile(src);
-    } catch (_error) {
-      err = _error;
+    } catch (error) {
+      err = error;
       cb({
         answ: {
           code: 400,
@@ -103,7 +103,7 @@ exports.compileString = function(args, cb) {
     getUserParams = dbMod.getUserParams;
   }
   return getUserParams(moduleid, userid, function(err, obj) {
-    var fName, fRegisterArguments, func, j, len1, msg, name, oFuncArgs, oFuncParams, oParam, oParams, ref, ref1, sandbox;
+    var error1, error2, fName, fRegisterArguments, func, j, len1, msg, name, oFuncArgs, oFuncParams, oParam, oParams, ref, ref1, sandbox;
     try {
       oParams = {};
       ref = JSON.parse(obj);
@@ -112,8 +112,8 @@ exports.compileString = function(args, cb) {
         oParams[name] = encryption.decrypt(oParam.value);
       }
       log.info("DM | Loaded user defined params for ");
-    } catch (_error) {
-      err = _error;
+    } catch (error1) {
+      err = error1;
       log.warn("DM | Error during parsing of user defined params for " + args.muserid + ", " + (args.m(rule.id)) + ", " + args.mmoduleid);
       log.warn(err);
     }
@@ -148,8 +148,8 @@ exports.compileString = function(args, cb) {
     }
     try {
       vm.runInNewContext(args.src, sandbox, sandbox.id);
-    } catch (_error) {
-      err = _error;
+    } catch (error2) {
+      err = error2;
       answ.code = 400;
       msg = err.message;
       if (!msg) {
@@ -169,12 +169,13 @@ exports.compileString = function(args, cb) {
     fRegisterArguments = (function(_this) {
       return function(fName) {
         return function(err, obj) {
+          var error3;
           if (obj) {
             try {
               oFuncArgs[fName] = JSON.parse(obj);
               return log.info("DM | Found and attached user-specific arguments to " + userid + ", " + rule.id + ", " + moduleid + ": " + obj);
-            } catch (_error) {
-              err = _error;
+            } catch (error3) {
+              err = error3;
               log.warn("DM | Error during parsing of user-specific arguments for " + userid + ", " + rule.id + ", " + moduleid);
               return log.warn(err);
             }

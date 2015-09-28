@@ -51,7 +51,7 @@ fShowWebhookUsage = ( hookid, hookname ) ->
 		"""
 
 fOnLoad = () ->
-	main.registerHoverInfo $('#pagetitle'), 'webhookinfo.html'
+	main.registerHoverInfo $('#pagetitle'), 'webhooks_info.html'
 	updateWebhookList()
 
 	$('#inp_hookname').val oParams.id

@@ -108,7 +108,7 @@ gulp.task('compile-gulp', 'Compile GULP coffee file', function(cb) {
 });
 
 gulp.task('clean', 'Cleanup previously deployed distribution', function(cb) {
-  return del(paths.dist, cb);
+  return del(paths.dist).then(cb);
 });
 
 gulp.task('compile', 'Compile the system\'s coffee files in the project', function(cb) {
@@ -120,11 +120,12 @@ gulp.task('compile', 'Compile the system\'s coffee files in the project', functi
     return cb();
   };
   if (argv.watch) {
-    return compile();
+    compile();
   } else {
     gutil.log(chalk.red("Deleting folder \"" + paths.dist + "\""));
-    return del(paths.dist, compile);
+    del(paths.dist).then(compile);
   }
+  return null;
 });
 
 gulp.task('deploy', 'Deploy all system resources into the distribution folder', ['compile'], function(cb) {
@@ -206,28 +207,3 @@ gulp.task('start', 'Run the system in the dist folder', ['deploy'], function() {
 /*
 Unit TESTS!
  */
-
-gulp.task('test', 'Run unit tests', function(cb) {
-  var cs, db, fEnd, fl;
-  process.chdir(__dirname);
-  global.pathToEngine = path.resolve(__dirname, 'dist', 'js');
-  db = require(path.join(global.pathToEngine, 'persistence'));
-  cs = require('coffee-script');
-  fEnd = function() {
-    console.log("Shutting down DB from unit_test.sh script. \nThis might take as long as the event poller loop delay is...");
-    return db.shutDown();
-  };
-  if (typeof cs.register === "function") {
-    cs.register();
-  }
-  if (gutil.env.testfile) {
-    fl = path.resolve(gutil.env.testfile);
-    if (fs.existsSync(fl)) {
-      return nodeunit.reporters["default"].run([fl], null, fEnd);
-    } else {
-      return console.error('File not found!!');
-    }
-  } else {
-    return nodeunit.reporters["default"].run(['src/unittests'], null, fEnd);
-  }
-});

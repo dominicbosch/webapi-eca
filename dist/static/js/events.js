@@ -83,7 +83,9 @@ checkRuleExists = function() {
 
 fOnLoad = function() {
   var txt;
-  main.registerHoverInfo($('#eventbody'), 'eventinfo.html');
+  main.registerHoverInfo($('#eventbody'), 'events_info.html');
+  main.registerHoverInfo($('#info_webhook'), 'webhooks_info.html');
+  main.registerHoverInfo($('#info_rule'), 'rules_info.html');
   editor = ace.edit('editor');
   editor.setTheme('ace/theme/crimson_editor');
   editor.setOptions({
@@ -112,12 +114,12 @@ fOnLoad = function() {
     return window.open('rules_create?webhook=' + $('#sel_webh').val(), '_blank');
   });
   $('#but_emit').click(function() {
-    var err, obj, selectedHook;
+    var err, error, obj, selectedHook;
     window.scrollTo(0, 0);
     try {
       obj = JSON.parse(editor.getValue());
-    } catch (_error) {
-      err = _error;
+    } catch (error) {
+      err = error;
       main.setInfo(false, 'You have errors in your JSON object! ' + err);
     }
     selectedHook = $('#sel_webh').val();

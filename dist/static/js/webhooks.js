@@ -57,7 +57,7 @@ fShowWebhookUsage = function(hookid, hookname) {
 };
 
 fOnLoad = function() {
-  main.registerHoverInfo($('#pagetitle'), 'webhookinfo.html');
+  main.registerHoverInfo($('#pagetitle'), 'webhooks_info.html');
   updateWebhookList();
   $('#inp_hookname').val(oParams.id);
   $('#but_submit').click(function() {

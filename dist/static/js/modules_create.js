@@ -21,7 +21,7 @@ fOnLoad = function() {
   title = title + (oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger');
   $('#pagetitle').text(title);
   if (oParams.m !== 'ad') {
-    main.registerHoverInfo($('#schedule > h2'), 'schedule.html');
+    main.registerHoverInfo($('#schedule > h2'), 'modules_schedule.html');
     $('#schedule').show();
     dateNow = new Date();
     $('#datetimePicker').datetimepicker({
