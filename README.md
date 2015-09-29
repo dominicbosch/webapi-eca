@@ -14,7 +14,7 @@ Getting started
 
 **Prerequisites:**
 
- - `node.js` and `npm` (find it [here](http://nodejs.org/))
+ - `node.js` (v0.12.7) and `npm` (find it [here](http://nodejs.org/))
  - *(optional) Gulp if you want to use the implemented build tool:
     `sudo npm install -g gulp*
  - *(optional) Pygments if you want to generate the doc:
