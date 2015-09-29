@@ -59,16 +59,11 @@ exports.init = (function(_this) {
           return log.error(err);
         }
       });
+      log.info('DB:REDIS | SELECT DB: ' + oConf.db);
+      _this.db.select(oConf.db);
       exports.eventTriggers.setDB(_this.db);
       return exports.actionDispatchers.setDB(_this.db);
     }
-  };
-})(this);
-
-exports.selectDatabase = (function(_this) {
-  return function(id) {
-    log.info('DB:REDIS | SELECT DB: ' + id);
-    return _this.db.select(id);
   };
 })(this);
 

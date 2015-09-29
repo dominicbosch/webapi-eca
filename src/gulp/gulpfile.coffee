@@ -116,7 +116,7 @@ gulp.task 'compile', 'Compile the system\'s coffee files in the project', (cb) -
 	null
 
 gulp.task 'deploy', 'Deploy all system resources into the distribution folder', [ 'compile' ], (cb) ->
-	semaphore = 4
+	semaphore = 5
 	isComplete = () ->
 		if --semaphore is 0
 			cb()
@@ -133,6 +133,9 @@ gulp.task 'deploy', 'Deploy all system resources into the distribution folder', 
 				.pipe debug title: 'Deploying: '
 		stream
 
+	fetchStream(paths.src + 'engine-js/**/*')
+		.pipe(gulp.dest paths.dist + 'js/')
+		.on 'end', isComplete
 	fetchStream(paths.src + 'webapp/static/**/*')
 		.pipe(gulp.dest paths.dist + 'static/')
 		.on 'end', isComplete

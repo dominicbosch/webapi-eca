@@ -58,13 +58,11 @@ exports.init = ( oConf ) =>
 			else
 				log.error err
 		
+		log.info 'DB:REDIS | SELECT DB: ' + oConf.db
+		@db.select oConf.db
+		
 		exports.eventTriggers.setDB @db
 		exports.actionDispatchers.setDB @db
-		# exports.selectDatabase oConf.db
-
-exports.selectDatabase = ( id ) =>
-	log.info 'DB:REDIS | SELECT DB: ' + id
-	@db.select id
 
 ###
 Checks whether the db is connected and passes either an error on failure after

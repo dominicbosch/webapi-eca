@@ -1,11 +1,11 @@
 {
 	"http-port": 8080,
-	"db": {
+	"db2": {
 		"module": "redis",
 		"port": 6379,
 		"db": 0
 	},
-	"db2": {
+	"db": {
 		"module": "postgres",
 		"port": 5432,
 		"db": "webapi-eca"

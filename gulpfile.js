@@ -130,7 +130,7 @@ gulp.task('compile', 'Compile the system\'s coffee files in the project', functi
 
 gulp.task('deploy', 'Deploy all system resources into the distribution folder', ['compile'], function(cb) {
   var fetchStream, isComplete, semaphore;
-  semaphore = 4;
+  semaphore = 5;
   isComplete = function() {
     if (--semaphore === 0) {
       return cb();
@@ -153,6 +153,7 @@ gulp.task('deploy', 'Deploy all system resources into the distribution folder', 
     }
     return stream;
   };
+  fetchStream(paths.src + 'engine-js/**/*').pipe(gulp.dest(paths.dist + 'js/')).on('end', isComplete);
   fetchStream(paths.src + 'webapp/static/**/*').pipe(gulp.dest(paths.dist + 'static/')).on('end', isComplete);
   fetchStream(paths.src + 'webapp/views/**/*').pipe(gulp.dest(paths.dist + 'js/views/')).on('end', isComplete);
   fetchStream(paths.lib + '*').pipe(gulp.dest(paths.distEngine)).pipe(gulp.dest(paths.dist + 'static/js/lib')).on('end', isComplete);

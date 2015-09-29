@@ -160,17 +160,15 @@ init = =>
 	# db = db = require './persistence/' + conf.db.module
 	dbMod = require './persistence/' + conf.db.module
 	global.db[prop] = func for prop, func of dbMod
-	log.info 'RS | Adding DB support for ' + Object.keys dbMod
 	db.init conf.db
 	# > We only proceed with the initialization if the DB is ready
-	log.info 'DB INITTED, CHECKING CONNECTION'
 	db.isConnected ( err ) =>
 		if err
 			log.error 'RS | No DB connection, shutting down system!'
 			shutDown()
 
 		else
-			log.info 'RS | Initialzing Users'
+			log.info 'RS | Succcessfully connected to DB, Initialzing Users'
 			pathUsers = path.resolve __dirname, '..', 'config', 'users.json'
 			# Load the standard users from the user config file if they are not already existing
 			users = JSON.parse fs.readFileSync pathUsers, 'utf8'

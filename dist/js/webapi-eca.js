@@ -166,16 +166,14 @@ init = (function(_this) {
       func = dbMod[prop];
       global.db[prop] = func;
     }
-    log.info('RS | Adding DB support for ' + Object.keys(dbMod));
     db.init(conf.db);
-    log.info('DB INITTED, CHECKING CONNECTION');
     return db.isConnected(function(err) {
       var pathUsers, poller, users;
       if (err) {
         log.error('RS | No DB connection, shutting down system!');
         return shutDown();
       } else {
-        log.info('RS | Initialzing Users');
+        log.info('RS | Succcessfully connected to DB, Initialzing Users');
         pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
         users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
         db.getUserIds(function(err, arrUserIds) {
