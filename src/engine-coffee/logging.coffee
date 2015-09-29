@@ -43,8 +43,8 @@ exports = module.exports =
 				if args.log.trace is 'on'
 					opt.src = true
 				# if there's a custom path defined for the log, we adopt the setting.
-				if args.log[ 'file-path' ]
-					logPath = path.resolve args.log[ 'file-path' ]
+				if args.log.filepath
+					logPath = path.resolve args.log.filepath
 				else
 					logPath = path.resolve __dirname, '..', '..', 'logs', 'server.log'
 
@@ -60,11 +60,11 @@ exports = module.exports =
 				# The log levels are defined per stream according to the CLI args.log or the configuration.
 				opt.streams = [
 					{
-						level: args.log[ 'std-level' ]
+						level: args.log.stdlevel
 						stream: process.stdout
 					},
 					{
-						level: args.log[ 'file-level' ]
+						level: args.log.filelevel
 						path: logPath
 					}
 				]

@@ -110,14 +110,14 @@ exports.init = (function(_this) {
         return res.status(500).send('There was an error while processing your request!');
       }
     });
-    prt = parseInt(conf['http-port']) || 8111;
+    prt = parseInt(conf.httpport) || 8111;
     server = app.listen(prt);
     log.info("HL | Started listening on port " + prt);
     server.on('listening', function() {
       var addr;
       addr = server.address();
-      if (addr.port !== conf['http-port']) {
-        log.error(addr.port, conf['http-port']);
+      if (addr.port !== conf.httpport) {
+        log.error(addr.port, conf.httpport);
         log.error('HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!');
         return process.exit();
       }

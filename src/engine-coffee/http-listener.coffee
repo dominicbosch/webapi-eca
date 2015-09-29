@@ -112,14 +112,14 @@ exports.init = ( conf ) =>
 			log.error err
 			res.status(500).send 'There was an error while processing your request!'
 
-	prt = parseInt( conf[ 'http-port' ] ) || 8111 # inbound event channel
+	prt = parseInt( conf.httpport ) || 8111 # inbound event channel
 	server = app.listen prt
 	log.info "HL | Started listening on port #{ prt }"
 
 	server.on 'listening', () =>
 		addr = server.address()
-		if addr.port isnt conf[ 'http-port' ]
-			log.error addr.port, conf[ 'http-port' ]
+		if addr.port isnt conf.httpport
+			log.error addr.port, conf.httpport
 			log.error 'HL | OPENED HTTP-PORT IS NOT WHAT WE WANTED!!! Shutting down!'
 			process.exit()
 
