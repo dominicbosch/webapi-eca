@@ -11,6 +11,8 @@ TODO events should have: raising-time, reception-time and eventually sender-uri 
 ###
 
 db = global.db
+geb = global.eventBackbone
+
 # **Loads Modules:**
 
 # - [Logging](logging.html)
@@ -60,6 +62,42 @@ modules are loaded correctly
 exports.getListUserRules = () ->
 	listUserRules
 
+geb.addListener 'rule', ( evt ) =>
+# Fetch all active rules per user
+db.getAllActivatedRuleIdsPerUser ( err, objUsers ) =>
+	
+
+	# FIXME Using let instead of var int hose loops below we will be able to save ourselves from the scope problem!
+	# Go through all rules of each user
+	fGoThroughUsers = ( user, rules ) =>
+
+		# Fetch the rules object for each rule in each user
+		fFetchRule = ( rule ) =>
+			db.getRule user, rule, ( err, strRule ) =>
+				try 
+					oRule = JSON.parse strRule
+					db.resetLog user, oRule.id
+					eventInfo = ''
+					if oRule.eventstart
+						eventInfo = "Starting at #{ new Date( oRule.eventstart ) }, Interval set to #{ oRule.eventinterval } minutes"
+						db.appendLog user, oRule.id, "INIT", "Rule '#{ oRule.id }' initialized. #{ eventInfo }"
+
+						geb.emit 'rule',
+							intevent: 'init'
+							user: user
+							rule: oRule
+				catch err
+					log.warn "CM | There's an invalid rule in the system: #{ strRule }"
+
+		# Go through all rules for each user
+		fFetchRule rule for rule in rules
+				
+	# Go through each user
+	fGoThroughUsers user, rules for user, rules of objUsers
+
+
+
+
 ###
 An event associated to rules happened and is captured here. Such events 
 are basically CRUD on rules.
@@ -67,7 +105,9 @@ are basically CRUD on rules.
 @public internalEvent ( *evt* )
 @param {Object} evt
 ###
-exports.internalEvent = ( evt ) =>
+
+
+geb.addListener 'rule', ( evt ) =>
 	if not listUserRules[ evt.user ] and evt.intevent isnt 'del'
 		listUserRules[ evt.user ] = {}
 		

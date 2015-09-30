@@ -9,9 +9,11 @@ Engine
 
 TODO events should have: raising-time, reception-time and eventually sender-uri and recipient-uri
  */
-var db, dynmod, jsonQuery, listUserRules, log, oOperators, updateActionModules, validConditions;
+var db, dynmod, geb, jsonQuery, listUserRules, log, oOperators, updateActionModules, validConditions;
 
 db = global.db;
+
+geb = global.eventBackbone;
 
 log = require('./logging');
 
@@ -55,6 +57,53 @@ exports.getListUserRules = function() {
   return listUserRules;
 };
 
+geb.addListener('rule', (function(_this) {
+  return function(evt) {};
+})(this));
+
+db.getAllActivatedRuleIdsPerUser((function(_this) {
+  return function(err, objUsers) {
+    var fGoThroughUsers, results, rules, user;
+    fGoThroughUsers = function(user, rules) {
+      var fFetchRule, i, len, results, rule;
+      fFetchRule = function(rule) {
+        return db.getRule(user, rule, function(err, strRule) {
+          var error, eventInfo, oRule;
+          try {
+            oRule = JSON.parse(strRule);
+            db.resetLog(user, oRule.id);
+            eventInfo = '';
+            if (oRule.eventstart) {
+              eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
+              db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
+              return geb.emit('rule', {
+                intevent: 'init',
+                user: user,
+                rule: oRule
+              });
+            }
+          } catch (error) {
+            err = error;
+            return log.warn("CM | There's an invalid rule in the system: " + strRule);
+          }
+        });
+      };
+      results = [];
+      for (i = 0, len = rules.length; i < len; i++) {
+        rule = rules[i];
+        results.push(fFetchRule(rule));
+      }
+      return results;
+    };
+    results = [];
+    for (user in objUsers) {
+      rules = objUsers[user];
+      results.push(fGoThroughUsers(user, rules));
+    }
+    return results;
+  };
+})(this));
+
 
 /*
 An event associated to rules happened and is captured here. Such events 
@@ -64,7 +113,7 @@ are basically CRUD on rules.
 @param {Object} evt
  */
 
-exports.internalEvent = (function(_this) {
+geb.addListener('rule', (function(_this) {
   return function(evt) {
     var oRule, oUser;
     if (!listUserRules[evt.user] && evt.intevent !== 'del') {
@@ -86,7 +135,7 @@ exports.internalEvent = (function(_this) {
       return delete listUserRules[evt.user];
     }
   };
-})(this);
+})(this));
 
 
 /*

@@ -10,15 +10,18 @@
 // > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 
 // - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
-// [path](http://nodejs.org/api/path.html),
-// [child_process](http://nodejs.org/api/child_process.html)
-// and [events](http://nodejs.org/api/events.html)
 var fs = require('fs'),
+
+	// [path](http://nodejs.org/api/path.html),
 	path = require('path'),
+
+	// [child_process](http://nodejs.org/api/child_process.html)
 	cp = require('child_process'),
+
+	// and [events](http://nodejs.org/api/events.html)
 	events = require('events'),
-	db = global.db = {},
 	geb = global.eventBackbone = new events.EventEmitter(),
+	db = global.db = {},
 
 	// **Loads Own Modules:**
 
@@ -46,7 +49,7 @@ var fs = require('fs'),
 	// - External Modules: [optimist](https://github.com/substack/node-optimist)
 	optimist = require('optimist');
 
-geb.addListener('eventtrigger', (msg) => console.log(msg));
+geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
 
 // Let's prepare the optimist CLI optional arguments `[opt]`:
 let usage = 'This runs your webapi-based ECA engine';
@@ -169,12 +172,10 @@ function handleConnectionSuccess() {
 	// Load the standard users from the user config file if they are not already existing
 	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
 	let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUserIds((err, oReply) => {	
-		console.log('got arr', oReply);
+	db.getUserIds((err, arrReply) => {	
 		for(let username in users) {
-			if(oReply.indexOf(username) === -1) {
+			if(arrReply.indexOf(username) === -1) {
 				let oUser = users[username];
-				console.log('adding new user', oUser);
 				oUser.username = username;
 				db.storeUser(oUser);
 			}
@@ -183,27 +184,19 @@ function handleConnectionSuccess() {
 
 	// Start the trigger poller. The components manager will emit events for it
 	log.info('RS | Forking a child process for the trigger poller');
-	// Grab all required log config fields
 	
-	// Initialize the trigger poller with the required CLI arguments
-	
-	// !!! TODO Fork one process per event trigger module!!! This is the only real safe solution for now
+	// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
 	let poller = cp.fork(path.resolve(__dirname, nameEP));
-	poller.send({
-		intevent: 'startup',
-		data: conf
-	});
+	// Now that we have information about both processes we can store this information
 	fs.unlink('proc.pid', (err) => {
 		if(err)	console.log(err);
 		fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
 	});
-
-	// after the engine and the trigger poller have been initialized we can
-	// initialize the module manager and register event listener functions
-	// from engine and trigger poller
-	log.info('RS | Initialzing module manager and its event listeners');
-	cm.addRuleListener(engine.internalEvent);
-	cm.addRuleListener(poller.send);
+	// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
+	poller.send({
+		intevent: 'startup',
+		data: conf
+	});
 
 	log.info('RS | Initialzing http listener');
 	http.init(conf);
@@ -223,7 +216,7 @@ function shutDown() {
 	process.exit();
 }
 
-// Process Commands
+// ### Caught Process Messages 
 // When the server is run as a child process, this function handles messages
 // from the parent process (e.g. the testing suite)
 process.on ('message', (cmd) => {

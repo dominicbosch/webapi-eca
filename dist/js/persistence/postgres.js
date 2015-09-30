@@ -1,4 +1,6 @@
 
+// # PostgreSQL DB Connection Module
+
 // **Loads Modules:**
 
 // - [Logging](logging.html)
@@ -8,6 +10,8 @@ var Sequelize = require('sequelize');
 
 // Internal variables :
 var sequelize, Users;
+
+// ## DB Connection
 
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
 exports.init = (oDB) => {
@@ -28,37 +32,35 @@ function initializeModels() {
 		isAdmin: Sequelize.BOOLEAN
 	});
 
-	sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
+	// sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
-exports.checkConnection = (cbYes, cbNo) => {
-
-	sequelize.authenticate().then(cbYes, cbNo)
-	// .catch((err) => {
-	// 	console.log ('isFed')
-	// 	console.log (err)
-	// });
-}
+exports.checkConnection = (cbYes, cbNo) => sequelize.authenticate().then(cbYes, cbNo)
 
 // shutDown closes the DB connection
 exports.shutDown = (cb) => {
 	log.warn('POSTGRES | Closing connection!');
 	sequelize.close();
 	sequelize = null;
-}
+};
 
-// USERS
+
+// ## USERS
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.getUserIds = (cb) => {
-	console.log('Getting users');
-	Users.findAll().then((arrUsers) => cb(null, arrUsers));
-}
+	Users.findAll().then((arrRecords) => {
+		cb(null, arrRecords.map((oRecord) => {
+			return oRecord.dataValues.username;
+		}))
+	});
+};
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.storeUser = (oUser) => {
-	console.log('Storing user', oUser);
+	log.info('POSTGRES | Storing new user ' + oUser.username);
 	Users.create(oUser).then((user) =>
 		{console.log(user.get({ plain: true}));}
 	);
-}
+};
