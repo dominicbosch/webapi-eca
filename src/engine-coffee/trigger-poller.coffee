@@ -57,6 +57,7 @@ process.on 'disconnect', () ->
 process.on 'message', ( msg ) ->
 	if msg.intevent is 'startup'
 		init msg.data
+
 	log.info "EP | Got info about new rule: #{ msg.intevent }"
 	# Let's split the event string to find module and function in an array
 

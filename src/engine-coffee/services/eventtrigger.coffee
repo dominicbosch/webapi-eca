@@ -15,7 +15,7 @@ db = global.db
 express = require 'express'
 
 geb = global.eventBackbone
-geb.emit 'eventtrigger', 'wow'
+geb.emit 'eventtrigger', {intevent: 'eventtrigger', data: 'wow'}
 router = module.exports = express.Router()
 
 router.post '/getall', ( req, res ) ->

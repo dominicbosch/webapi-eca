@@ -58,49 +58,47 @@ exports.getListUserRules = function() {
 };
 
 geb.addListener('rule', (function(_this) {
-  return function(evt) {};
-})(this));
-
-db.getAllActivatedRuleIdsPerUser((function(_this) {
-  return function(err, objUsers) {
-    var fGoThroughUsers, results, rules, user;
-    fGoThroughUsers = function(user, rules) {
-      var fFetchRule, i, len, results, rule;
-      fFetchRule = function(rule) {
-        return db.getRule(user, rule, function(err, strRule) {
-          var error, eventInfo, oRule;
-          try {
-            oRule = JSON.parse(strRule);
-            db.resetLog(user, oRule.id);
-            eventInfo = '';
-            if (oRule.eventstart) {
-              eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
-              db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
-              return geb.emit('rule', {
-                intevent: 'init',
-                user: user,
-                rule: oRule
-              });
+  return function(evt) {
+    return db.getAllActivatedRuleIdsPerUser(function(err, objUsers) {
+      var fGoThroughUsers, results, rules, user;
+      fGoThroughUsers = function(user, rules) {
+        var fFetchRule, i, len, results, rule;
+        fFetchRule = function(rule) {
+          return db.getRule(user, rule, function(err, strRule) {
+            var error, eventInfo, oRule;
+            try {
+              oRule = JSON.parse(strRule);
+              db.resetLog(user, oRule.id);
+              eventInfo = '';
+              if (oRule.eventstart) {
+                eventInfo = "Starting at " + (new Date(oRule.eventstart)) + ", Interval set to " + oRule.eventinterval + " minutes";
+                db.appendLog(user, oRule.id, "INIT", "Rule '" + oRule.id + "' initialized. " + eventInfo);
+                return geb.emit('rule', {
+                  intevent: 'init',
+                  user: user,
+                  rule: oRule
+                });
+              }
+            } catch (error) {
+              err = error;
+              return log.warn("CM | There's an invalid rule in the system: " + strRule);
             }
-          } catch (error) {
-            err = error;
-            return log.warn("CM | There's an invalid rule in the system: " + strRule);
-          }
-        });
+          });
+        };
+        results = [];
+        for (i = 0, len = rules.length; i < len; i++) {
+          rule = rules[i];
+          results.push(fFetchRule(rule));
+        }
+        return results;
       };
       results = [];
-      for (i = 0, len = rules.length; i < len; i++) {
-        rule = rules[i];
-        results.push(fFetchRule(rule));
+      for (user in objUsers) {
+        rules = objUsers[user];
+        results.push(fGoThroughUsers(user, rules));
       }
       return results;
-    };
-    results = [];
-    for (user in objUsers) {
-      rules = objUsers[user];
-      results.push(fGoThroughUsers(user, rules));
-    }
-    return results;
+    });
   };
 })(this));
 

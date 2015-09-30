@@ -64,7 +64,7 @@ router.post '/create', ( req, res ) ->
 						hookid = genHookID()
 					hookid
 				hookid = genHookID()
-				db.createWebhook user.username, hookid, req.body.hookname, (req.body.isPublic is 'true')
+				db.createWebhook user.id, hookid, req.body.hookname, (req.body.isPublic is 'true')
 				allowedHooks[ hookid ] =
 					hookname: req.body.hookname
 					username: user.username

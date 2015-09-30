@@ -1,5 +1,6 @@
 {
   "admin": {
+  	"id": 0,
     "password": "7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764",
     "isAdmin": true
   }

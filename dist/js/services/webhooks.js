@@ -72,7 +72,7 @@ router.post('/create', function(req, res) {
             return hookid;
           };
           hookid = genHookID();
-          db.createWebhook(user.username, hookid, req.body.hookname, req.body.isPublic === 'true');
+          db.createWebhook(user.id, hookid, req.body.hookname, req.body.isPublic === 'true');
           allowedHooks[hookid] = {
             hookname: req.body.hookname,
             username: user.username

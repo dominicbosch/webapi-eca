@@ -9,6 +9,8 @@
 // >
 // > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 
+var poller; // the poller should be known to some functions that are executed out of the init scope
+
 // - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
 var fs = require('fs'),
 
@@ -31,9 +33,6 @@ var fs = require('fs'),
 	// - [Configuration](config.html)
 	conf = require('./config'),
 
-	// - [ECA Components Manager](components-manager.html)
-	cm = require('./components-manager'),
-
 	// - [Engine](engine.html)
 	engine = require('./engine'),
 
@@ -48,8 +47,6 @@ var fs = require('fs'),
 
 	// - External Modules: [optimist](https://github.com/substack/node-optimist)
 	optimist = require('optimist');
-
-geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
 
 // Let's prepare the optimist CLI optional arguments `[opt]`:
 let usage = 'This runs your webapi-based ECA engine';
@@ -161,48 +158,48 @@ function init() {
 
 	log.info('RS | Initialzing DB');
 	dbMod = require('./persistence/'+conf.db.module);
+	
 	dbMod.init(conf.db).then(exportDB, () => {
 		log.error('RS | No DB connection, shutting down system!');
 		shutDown();
-	}).then(handleConnectionSuccess);
-}
-
-function handleConnectionSuccess() {
-	log.info('RS | Succcessfully connected to DB, Initialzing Users');
-	// Load the standard users from the user config file if they are not already existing
-	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-	let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUserIds((err, arrReply) => {	
-		for(let username in users) {
-			if(arrReply.indexOf(username) === -1) {
-				let oUser = users[username];
-				oUser.username = username;
-				db.storeUser(oUser);
+	}).then(() => {
+		log.info('RS | Succcessfully connected to DB, Initialzing Users');
+		// Load the standard users from the user config file if they are not already existing
+		let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
+		let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+		db.getUserIds((err, arrReply) => {	
+			for(let username in users) {
+				if(arrReply.indexOf(username) === -1) {
+					let oUser = users[username];
+					oUser.username = username;
+					db.storeUser(oUser);
+				}
 			}
-		}
-	});
+		});
 
-	// Start the trigger poller. The components manager will emit events for it
-	log.info('RS | Forking a child process for the trigger poller');
-	
-	// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
-	let poller = cp.fork(path.resolve(__dirname, nameEP));
-	// Now that we have information about both processes we can store this information
-	fs.unlink('proc.pid', (err) => {
-		if(err)	console.log(err);
-		fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
-	});
-	// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
-	poller.send({
-		intevent: 'startup',
-		data: conf
-	});
+		// Start the trigger poller. The components manager will emit events for it
+		log.info('RS | Forking a child process for the trigger poller');
+		
+		// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
+		poller = cp.fork(path.resolve(__dirname, nameEP));
+		// Now that we have information about both processes we can store this information
+		fs.unlink('proc.pid', (err) => {
+			if(err)	console.log(err);
+			fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
+		});
+		// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
+		poller.send({
+			intevent: 'startup',
+			data: conf
+		});
+		geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
 
-	log.info('RS | Initialzing http listener');
-	http.init(conf);
+		log.info('RS | Initialzing http listener');
+		http.init(conf);
 
-	log.info('RS | All good so far, informing all modules about proper system initialization');
-	geb.emit('system', 'init');
+		log.info('RS | All good so far, informing all modules about proper system initialization');
+		geb.emit('system', 'init');
+	});
 }
 
 // Shuts down the server.
@@ -219,7 +216,7 @@ function shutDown() {
 // ### Caught Process Messages 
 // When the server is run as a child process, this function handles messages
 // from the parent process (e.g. the testing suite)
-process.on ('message', (cmd) => {
+process.on('message', (cmd) => {
 	// The die command redirects to the shutDown function.
 	if(cmd === 'die') {	
 		log.warn('RS | GOT DIE COMMAND');

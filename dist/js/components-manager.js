@@ -1,5 +1,11 @@
 
 /*
+ * 
+ * NOTE: THIS IS NOT USED ANYMORE! THIS IS JUST A LEGACY STORE FOR PREVIOUSLY USED CODE AND WILL BE DELETED SHORTLY
+ *
+ */
+
+/*
 
 Components Manager
 ==================
