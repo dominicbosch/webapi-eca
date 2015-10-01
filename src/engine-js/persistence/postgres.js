@@ -4,12 +4,12 @@
 // **Loads Modules:**
 
 // - [Logging](logging.html)
-var log = require('../logging');
+var log = require('../logging'),
 
-var Sequelize = require('sequelize');
+	Sequelize = require('sequelize'),
 
 // Internal variables :
-var sequelize,
+	sequelize,
 	User,
 	Webhook;
 

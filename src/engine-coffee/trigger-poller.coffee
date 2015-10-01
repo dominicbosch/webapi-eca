@@ -22,7 +22,7 @@ init = ( args ) ->
 		process.exit()
 
 	log.init args
-	log.info 'EP | Event Poller Trigger starts up'
+	log.info 'TP | Event Trigger Poller starts up'
 
 	process.on 'uncaughtException', ( err ) ->
 		log.error 'CURRENT STATE:'
@@ -38,7 +38,6 @@ init = ( args ) ->
 		log.error err
 
 	# Initialize required modules (should be in cache already)
-	log.info args		
 	encryption.init args.keygenpp
 
 # Initialize module local variables and 
@@ -48,7 +47,7 @@ isRunning = true
 # Register disconnect action. Since no standalone mode is intended
 # the event Trigger poller will shut down
 process.on 'disconnect', () ->
-	log.warn 'EP | Shutting down Event Trigger Poller'
+	log.warn 'TP | Shutting down Event Trigger Poller'
 	isRunning = false
 	# very important so the process doesnt linger on when the paren process is killed  
 	process.exit()
@@ -58,7 +57,7 @@ process.on 'message', ( msg ) ->
 	if msg.intevent is 'startup'
 		init msg.data
 
-	log.info "EP | Got info about new rule: #{ msg.intevent }"
+	log.info "TP | Got info about new rule: #{ msg.intevent }"
 	# Let's split the event string to find module and function in an array
 
 	# A initialization notification or a new rule
@@ -88,7 +87,7 @@ requestModule = ( msg ) ->
 			module: arrName[0]
 		db.eventTriggers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
 			if not obj
-				log.info "EP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
+				log.info "TP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
 			else
 				 # we compile the module and pass:
 				args =
@@ -100,7 +99,7 @@ requestModule = ( msg ) ->
 					oRule: msg.rule,			# oRule
 				dynmod.compileString args, ( result ) ->
 						if not result.answ is 200
-							log.error "EP | Compilation of code failed! #{ msg.user },
+							log.error "TP | Compilation of code failed! #{ msg.user },
 								#{ msg.rule.id }, #{ arrName[ 0 ] }"
 
 						# If user is not yet stored, we open a new object
@@ -137,7 +136,7 @@ requestModule = ( msg ) ->
 						else
 							nd = start
 								
-						log.info "EP | New event module '#{ arrName[ 0 ] }' loaded for user #{ msg.user },
+						log.info "TP | New event module '#{ arrName[ 0 ] }' loaded for user #{ msg.user },
 							in rule #{ msg.rule.id }, registered at UTC|#{ msg.rule.timestamp },
 							starting at UTC|#{ start.toISOString() } ( which is in #{ ( nd - now ) / 1000 / 60 } minutes )
 							and polling every #{ msg.rule.eventinterval } minutes"
@@ -149,7 +148,7 @@ requestModule = ( msg ) ->
 
 fCheckAndRun = ( userId, ruleId, timestamp ) ->
 	() ->
-		log.info "EP | Check and run user #{ userId }, rule #{ ruleId }"
+		log.info "TP | Check and run user #{ userId }, rule #{ ruleId }"
 		if isRunning and 
 				listUserModules[ userId ] and 
 				listUserModules[ userId ][ ruleId ]
@@ -163,7 +162,7 @@ fCheckAndRun = ( userId, ruleId, timestamp ) ->
 				
 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.eventinterval
 			else
-				log.info "EP | We found a newer polling interval and discontinue this one which
+				log.info "TP | We found a newer polling interval and discontinue this one which
 						was created at UTC|#{ timestamp }"
 
 # We have to register the poll function in belows anonymous function
@@ -181,7 +180,7 @@ fCallFunction = ( userId, ruleId, oRule ) ->
 			user: userId
 		oRule.module[ oRule.pollfunc ].apply this, arrArgs
 	catch err
-		log.info "EP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
+		log.info "TP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
 		throw err
 		oRule.logger err.message
 ###

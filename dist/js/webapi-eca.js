@@ -199,7 +199,7 @@ function init() {
 
 		log.info('RS | All good so far, informing all modules about proper system initialization');
 		geb.emit('system', 'init');
-	});
+	}).catch((err) => console.error(err, err.stack));
 }
 
 // Shuts down the server.

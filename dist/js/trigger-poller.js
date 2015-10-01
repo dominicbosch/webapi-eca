@@ -20,14 +20,13 @@ init = function(args) {
     process.exit();
   }
   log.init(args);
-  log.info('EP | Event Poller Trigger starts up');
+  log.info('TP | Event Trigger Poller starts up');
   process.on('uncaughtException', function(err) {
     log.error('CURRENT STATE:');
     log.error(JSON.stringify(this.currentState, null, 2));
     log.error('Probably one of the Event Triggers produced an error!');
     return log.error(err);
   });
-  log.info(args);
   return encryption.init(args.keygenpp);
 };
 
@@ -36,7 +35,7 @@ listUserModules = {};
 isRunning = true;
 
 process.on('disconnect', function() {
-  log.warn('EP | Shutting down Event Trigger Poller');
+  log.warn('TP | Shutting down Event Trigger Poller');
   isRunning = false;
   return process.exit();
 });
@@ -45,7 +44,7 @@ process.on('message', function(msg) {
   if (msg.intevent === 'startup') {
     init(msg.data);
   }
-  log.info("EP | Got info about new rule: " + msg.intevent);
+  log.info("TP | Got info about new rule: " + msg.intevent);
   if (msg.intevent === 'new' || msg.intevent === 'init') {
     requestModule(msg);
   }
@@ -69,7 +68,7 @@ requestModule = function(msg) {
     return db.eventTriggers.getModule(msg.user, arrName[0], function(err, obj) {
       var args;
       if (!obj) {
-        return log.info("EP | No module retrieved for " + arrName[0] + ", must be a custom event or Webhook");
+        return log.info("TP | No module retrieved for " + arrName[0] + ", must be a custom event or Webhook");
       } else {
         args = {
           src: obj.data,
@@ -82,7 +81,7 @@ requestModule = function(msg) {
         return dynmod.compileString(args, function(result) {
           var nd, now, oUser, start;
           if (!result.answ === 200) {
-            log.error("EP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
+            log.error("TP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);
           }
           if (!listUserModules[msg.user]) {
             listUserModules[msg.user] = {};
@@ -116,7 +115,7 @@ requestModule = function(msg) {
           } else {
             nd = start;
           }
-          log.info("EP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.eventinterval + " minutes");
+          log.info("TP | New event module '" + arrName[0] + "' loaded for user " + msg.user + ", in rule " + msg.rule.id + ", registered at UTC|" + msg.rule.timestamp + ", starting at UTC|" + (start.toISOString()) + " ( which is in " + ((nd - now) / 1000 / 60) + " minutes ) and polling every " + msg.rule.eventinterval + " minutes");
           if (msg.rule.eventstart) {
             return setTimeout(fCheckAndRun(msg.user, msg.rule.id, msg.rule.timestamp), nd - now);
           } else {
@@ -131,7 +130,7 @@ requestModule = function(msg) {
 fCheckAndRun = function(userId, ruleId, timestamp) {
   return function() {
     var e, error, oRule;
-    log.info("EP | Check and run user " + userId + ", rule " + ruleId);
+    log.info("TP | Check and run user " + userId + ", rule " + ruleId);
     if (isRunning && listUserModules[userId] && listUserModules[userId][ruleId]) {
       if (listUserModules[userId][ruleId].timestamp === timestamp) {
         oRule = listUserModules[userId][ruleId];
@@ -143,7 +142,7 @@ fCheckAndRun = function(userId, ruleId, timestamp) {
         }
         return setTimeout(fCheckAndRun(userId, ruleId, timestamp), oRule.eventinterval);
       } else {
-        return log.info("EP | We found a newer polling interval and discontinue this one which was created at UTC|" + timestamp);
+        return log.info("TP | We found a newer polling interval and discontinue this one which was created at UTC|" + timestamp);
       }
     }
   };
@@ -168,7 +167,7 @@ fCallFunction = function(userId, ruleId, oRule) {
     return oRule.module[oRule.pollfunc].apply(this, arrArgs);
   } catch (error) {
     err = error;
-    log.info("EP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
+    log.info("TP | ERROR in module when polled: " + oRule.id + " " + userId + ": " + err.message);
     throw err;
     return oRule.logger(err.message);
   }

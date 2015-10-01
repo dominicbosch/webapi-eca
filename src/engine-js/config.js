@@ -17,7 +17,6 @@ var fs = require('fs'),
 // It is possible to hand a configPath for a custom configuration file path.
 exports = module.exports = {
 	init: (filePath) => {
-		console.log('INITIING CONF');
 		if(isInitialized) console.error('ERROR: Already initialized configuration!');
 		else {	
 			isInitialized = true;
