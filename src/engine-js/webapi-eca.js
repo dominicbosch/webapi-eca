@@ -159,47 +159,54 @@ function init() {
 	log.info('RS | Initialzing DB');
 	dbMod = require('./persistence/'+conf.db.module);
 	
-	dbMod.init(conf.db).then(exportDB, () => {
+	// Init the database by using its promise
+	dbMod.pInit(conf.db).then(exportDB, () => {
 		log.error('RS | No DB connection, shutting down system!');
 		shutDown();
-	}).then(() => {
-		log.info('RS | Succcessfully connected to DB, Initialzing Users');
-		// Load the standard users from the user config file if they are not already existing
-		let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-		let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-		db.getUserIds((err, arrReply) => {	
-			for(let username in users) {
-				if(arrReply.indexOf(username) === -1) {
-					let oUser = users[username];
-					oUser.username = username;
-					db.storeUser(oUser);
-				}
+	}).then(initEverythingElse)
+	.catch((err) => {
+		console.error('Initialization failed!', err.stack);
+	});
+}
+
+function initEverythingElse() {
+	log.info('RS | Succcessfully connected to DB, Initialzing Users');
+	// Load the standard users from the user config file if they are not already existing
+	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
+	let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+	db.getUserIds((err, arrReply) => {	
+		for(let username in users) {
+			if(arrReply.indexOf(username) === -1) {
+				let oUser = users[username];
+				oUser.username = username;
+				db.storeUser(oUser);
 			}
-		});
+		}
+	});
 
-		// Start the trigger poller. The components manager will emit events for it
-		log.info('RS | Forking a child process for the trigger poller');
-		
-		// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
-		poller = cp.fork(path.resolve(__dirname, nameEP));
-		// Now that we have information about both processes we can store this information
-		fs.unlink('proc.pid', (err) => {
-			if(err)	console.log(err);
-			fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
-		});
-		// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
-		poller.send({
-			intevent: 'startup',
-			data: conf
-		});
-		geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
+	// Start the trigger poller. The components manager will emit events for it
+	log.info('RS | Forking a child process for the trigger poller');
+	
+	// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
+	poller = cp.fork(path.resolve(__dirname, nameEP));
+	// Now that we have information about both processes we can store this information
+	fs.unlink('proc.pid', (err) => {
+		if(err)	console.log(err);
+		fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
+	});
+	// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
+	poller.send({
+		intevent: 'startup',
+		data: conf
+	});
 
-		log.info('RS | Initialzing http listener');
-		http.init(conf);
+	geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
 
-		log.info('RS | All good so far, informing all modules about proper system initialization');
-		geb.emit('system', 'init');
-	}).catch((err) => console.error(err, err.stack));
+	log.info('RS | Initialzing http listener');
+	http.init(conf);
+
+	log.info('RS | All good so far, informing all modules about proper system initialization');
+	geb.emit('system', 'init');
 }
 
 // Shuts down the server.
@@ -209,7 +216,8 @@ function shutDown() {
 	engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener
-	// can't be stopped gracefully. Why would you stop this system anyways!?? 
+	// can't be stopped gracefully. Why would you stop this system anyways!??
+	poller.disconnect();
 	process.exit();
 }
 

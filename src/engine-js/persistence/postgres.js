@@ -16,7 +16,7 @@ var log = require('../logging'),
 // ## DB Connection
 
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
-exports.init = (oDB) => {
+exports.pInit = (oDB) => {
 	var dbPort = parseInt(oDB.port) || 5432;
 	log.info('POSTGRES | Connecting module: ' + oDB.module + ', port: ' + dbPort + ', database: ' + oDB.db);
 	sequelize = new Sequelize('postgres://postgres:postgres@localhost:' + dbPort + '/' + oDB.db, {
@@ -49,8 +49,6 @@ function initializeModels() {
 	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
 	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
-
-exports.checkConnection = (cbYes, cbNo) => sequelize.authenticate().then(cbYes, cbNo)
 
 // shutDown closes the DB connection
 exports.shutDown = (cb) => {
@@ -89,9 +87,9 @@ exports.getAllWebhooks = (cb) => {
 	}, (err) => log.error('getAllWebhooks', err));
 };
 
-exports.getAllUserWebhooks = (cb) => {
+// exports.getAllUserWebhooks = (cb) => {
 
-};
+// };
 
 exports.createWebhook = (userid, hookid, hookname, isPublic) => {
 	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + userid);

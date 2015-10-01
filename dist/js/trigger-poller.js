@@ -35,6 +35,7 @@ listUserModules = {};
 isRunning = true;
 
 process.on('disconnect', function() {
+  console.log('gong home');
   log.warn('TP | Shutting down Event Trigger Poller');
   isRunning = false;
   return process.exit();

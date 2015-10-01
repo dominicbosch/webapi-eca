@@ -47,6 +47,7 @@ isRunning = true
 # Register disconnect action. Since no standalone mode is intended
 # the event Trigger poller will shut down
 process.on 'disconnect', () ->
+	console.log 'gong home'
 	log.warn 'TP | Shutting down Event Trigger Poller'
 	isRunning = false
 	# very important so the process doesnt linger on when the paren process is killed  

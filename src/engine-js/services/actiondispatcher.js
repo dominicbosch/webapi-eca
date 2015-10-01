@@ -16,7 +16,7 @@ var log = require('../logging'),
 
 router.post('/getall', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
-	db.actionDispatchers.getAllModules(req.session.pub.username, (err, oADs) => {
+	db.getAllActionDispatchers(req.session.pub.username, (err, oADs) => {
 		if(err) res.status(500).send(err);
 		else res.send(oADs);
 	});
