@@ -159,7 +159,7 @@ function init() {
 	log.info('RS | Initialzing DB');
 	dbMod = require('./persistence/'+conf.db.module);
 	
-	// Init the database by using its promise
+	// Init the database by using its promise, wau!
 	dbMod.pInit(conf.db).then(exportDB, () => {
 		log.error('RS | No DB connection, shutting down system!');
 		shutDown();

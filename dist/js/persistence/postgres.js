@@ -1,4 +1,4 @@
-
+'use strict';
 // # PostgreSQL DB Connection Module
 
 // **Loads Modules:**
@@ -66,7 +66,7 @@ exports.getUserIds = (cb) => {
 		cb(null, arrRecords.map((oRecord) => {
 			return oRecord.dataValues.username;
 		}))
-	}, (err) => log.error('getUserIds', err));
+	}, cb);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
@@ -74,8 +74,47 @@ exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user ' + oUser.username);
 	User.create(oUser).then((user) => {
 		if(typeof cb === 'function') cb(null, user);
-	}, (err) => log.error('storeUser', err));
+	}, cb)
+	.catch((err) => console.error(err));
 };
+
+// Checks the credentials and on success returns the user object to the
+// callback(err, obj) function. The password has to be hashed (SHA-3-512)
+// beforehand by the instance closest to the user that enters the password,
+// because we only store hashes of passwords for security reasons.
+exports.loginUser = (username, password, cb) => {
+	User.findAll({ where: { username: username }}).then((arrRecords) => {
+		if(arrRecords.length === 0) cb(new Error('User not found!'));
+		else {
+			let oUser = arrRecords[0].dataValues;
+
+			console.log('found USER', oUser);
+			// FIXME this eror is caught only after the execution oif the whole server has ended. WHY???
+			throw new Error('WTF!');
+			if(typeof cb === 'function') cb(null, user);
+		}
+	}, cb)
+	.catch((err) => console.error(err));
+};
+
+// exports.loginUser = ( userId, password, cb ) =>
+// 	log.info('POSTGRES | User "'+userId+'" tries to log in');
+// 	User.create(oUser).then((user) => {
+// 		if(typeof cb === 'function') cb(null, user);
+// 	}, (err) => log.error('storeUser', err));
+// 	fCheck = ( pw ) =>
+// 		( err, obj ) =>
+// 			if err 
+// 				cb err, null
+// 			else if obj and obj.password
+// 				if pw is obj.password
+// 					log.info "DB:REDIS | User '#{ obj.username }' logged in!" 
+// 					cb null, obj
+// 				else
+// 					cb (new Error 'Wrong credentials!'), null
+// 			else
+// 				cb (new Error 'User not found!'), null
+// 	@db.hgetall "user:#{ userId }", fCheck password
 
 
 // ## WEBHOOKS
@@ -84,7 +123,7 @@ exports.getAllWebhooks = (cb) => {
 		cb(null, arrRecords.map((oRecord) => {
 			return oRecord.dataValues;
 		}))
-	}, (err) => log.error('getAllWebhooks', err));
+	}, cb);
 };
 
 // exports.getAllUserWebhooks = (cb) => {
