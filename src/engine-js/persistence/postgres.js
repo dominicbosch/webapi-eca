@@ -117,31 +117,49 @@ exports.getAllWebhooks = (cb) => {
 };
 
 exports.getAllUserWebhooks = (userid, cb) => {
-	var publicSearch = Webhook.findAll({ where: {
-		isPublic: true,
-		UserId: { $ne: userid }
-	}});
+	var publicSearch = Webhook.findAll({ 
+		include: [ User ],
+		where: {
+			isPublic: true,
+			UserId: { $ne: userid }
+		}
+	});
 
-	var privateSearch = oUsers[userid].getWebhooks();
+	var privateSearch = oUsers[userid].getWebhooks({ include: [ User ] });
 
 	publicSearch.then(() => privateSearch)
 		.then((arrRecords) => {
-			let arrHooks = arrRecords.concat(publicSearch.value());
-			let arrPromises = [];
-			for (let i = 0; i < arrHooks.length; i++) {
-				arrPromises.push(arrHooks[i].getUser());
+			function replaceUsers(arrHooks) {
+				return arrHooks.map((oRecord) => {
+					oRecord.dataValues.username = oRecord.dataValues.User.dataValues.username;
+					delete oRecord.dataValues.User;
+					return oRecord.dataValues;
+				})
 			}
-			Promise.all(arrPromises).then((arrUsers) => {
-				for (let i = 0; i < arrUsers.length; i++) {
-					arrHooks[i].dataValues.username = arrUsers[i].dataValues.username;
-				}
-				let arrResult = {
-					private: getRecVals(publicSearch.value()),
-					public: getRecVals(arrRecords)
-				};
-				cb(null, arrResult);
-			}).catch(cb);
+			let arrResult = {
+				private: replaceUsers(publicSearch.value()),
+				public: replaceUsers(arrRecords)
+			};
+			cb(null, arrResult);
 		}).catch(cb);
+	// publicSearch.then(() => privateSearch)
+	// 	.then((arrRecords) => {
+	// 		let arrHooks = arrRecords.concat(publicSearch.value());
+	// 		let arrPromises = [];
+	// 		for (let i = 0; i < arrHooks.length; i++) {
+	// 			arrPromises.push(arrHooks[i].getUser());
+	// 		}
+	// 		Promise.all(arrPromises).then((arrUsers) => {
+	// 			for (let i = 0; i < arrUsers.length; i++) {
+	// 				arrHooks[i].dataValues.username = arrUsers[i].dataValues.username;
+	// 			}
+	// 			let arrResult = {
+	// 				private: getRecVals(publicSearch.value()),
+	// 				public: getRecVals(arrRecords)
+	// 			};
+	// 			cb(null, arrResult);
+	// 		}).catch(cb);
+	// 	}).catch(cb);
 };
 
 exports.createWebhook = (userid, hookid, hookname, isPublic, cb) => {
