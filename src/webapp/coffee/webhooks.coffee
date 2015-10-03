@@ -11,15 +11,15 @@ failedRequest = ( msg ) ->
 
 updateWebhookList = () ->
 	main.clearInfo()
-	$.post('/service/webhooks/getallvisible')
+	$.post('/service/webhooks/getall')
 		.done ( oHooks ) ->
 			$('#table_webhooks *').remove()
 			prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 			pul = if oHooks.public then Object.keys(oHooks.public).length else 0
 			if prl + pul > 0
 				createWebhookRow = (oHook, isMine) ->
-					img = if oHook.isPublic is 'true' then 'public' else 'private'
-					tit = if oHook.isPublic is 'true' then 'Public' else 'Private'
+					img = if oHook.isPublic then 'public' else 'private'
+					tit = if oHook.isPublic then 'Public' else 'Private'
 					table.append $ """
 						<tr>
 							<td>#{if isMine then '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' else '' }</td>

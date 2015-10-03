@@ -1,5 +1,8 @@
 'use strict';
 // # PostgreSQL DB Connection Module
+// 
+// I think it is a good idea for now (Since we do not use promises throught the other modules) to keep
+// the promises in here and only executed callbacks with the (err, result) arguments.
 
 // **Loads Modules:**
 
@@ -9,21 +12,25 @@ var log = require('../logging'),
 	Sequelize = require('sequelize'),
 
 // Internal variables :
-	sequelize,
+	sequelize, oUsers = {},
+
+// DB Models:
 	User,
 	Webhook;
 
 // ## DB Connection
 
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
-exports.pInit = (oDB) => {
+exports.init = (oDB, cb) => {
 	var dbPort = parseInt(oDB.port) || 5432;
 	log.info('POSTGRES | Connecting module: ' + oDB.module + ', port: ' + dbPort + ', database: ' + oDB.db);
 	sequelize = new Sequelize('postgres://postgres:postgres@localhost:' + dbPort + '/' + oDB.db, {
 		// logging: false,
 		define: { timestamps: false }
 	});
-	return sequelize.authenticate().then(initializeModels);
+
+	// On success we call cb with nothing. if rejected an error is passed along:
+	sequelize.authenticate().then(initializeModels).then(() => cb(), cb);
 };
 
 // Initializes the Database model and returns also a promise
@@ -42,12 +49,17 @@ function initializeModels() {
 	// ### Define Relations
 
 	Webhook.belongsTo(User);
-	// We do not need to maintain this in the user since the user id will be the most used thing throughout the whole code
-	// User.hasMany(Webhook);
+	User.hasMany(Webhook, { onDelete: 'cascade' }); // If a user gets deleted, we delete all his webhooks too
 	
 	// Return a promise
 	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
 	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+}
+
+function getRecVals(arrRecords) {
+	return arrRecords.map((oRecord) => {
+		return oRecord.dataValues;
+	});
 }
 
 // shutDown closes the DB connection
@@ -66,16 +78,13 @@ exports.getUserIds = (cb) => {
 		cb(null, arrRecords.map((oRecord) => {
 			return oRecord.dataValues.username;
 		}))
-	}, cb);
+	}).catch(cb);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user ' + oUser.username);
-	User.create(oUser).then((user) => {
-		if(typeof cb === 'function') cb(null, user);
-	}, cb)
-	.catch((err) => console.error(err));
+	User.create(oUser).then((user) => cb(null, user.dataValues)).catch(cb);
 };
 
 // Checks the credentials and on success returns the user object to the
@@ -83,59 +92,64 @@ exports.storeUser = (oUser, cb) => {
 // beforehand by the instance closest to the user that enters the password,
 // because we only store hashes of passwords for security reasons.
 exports.loginUser = (username, password, cb) => {
-	User.findAll({ where: { username: username }}).then((arrRecords) => {
+	User.findAll({ where: { username: username } }).then((arrRecords) => {
 		if(arrRecords.length === 0) cb(new Error('User not found!'));
 		else {
 			let oUser = arrRecords[0].dataValues;
-
-			console.log('found USER', oUser);
-			// FIXME this eror is caught only after the execution oif the whole server has ended. WHY???
-			throw new Error('WTF!');
-			if(typeof cb === 'function') cb(null, user);
+			if(oUser.password === password) {
+				oUsers[oUser.id] = arrRecords[0];
+				cb(null, oUser);
+			}
+			else cb(new Error('Nice try!'));
 		}
-	}, cb)
-	.catch((err) => console.error(err));
+	}).catch(cb);
 };
 
-// exports.loginUser = ( userId, password, cb ) =>
-// 	log.info('POSTGRES | User "'+userId+'" tries to log in');
-// 	User.create(oUser).then((user) => {
-// 		if(typeof cb === 'function') cb(null, user);
-// 	}, (err) => log.error('storeUser', err));
-// 	fCheck = ( pw ) =>
-// 		( err, obj ) =>
-// 			if err 
-// 				cb err, null
-// 			else if obj and obj.password
-// 				if pw is obj.password
-// 					log.info "DB:REDIS | User '#{ obj.username }' logged in!" 
-// 					cb null, obj
-// 				else
-// 					cb (new Error 'Wrong credentials!'), null
-// 			else
-// 				cb (new Error 'User not found!'), null
-// 	@db.hgetall "user:#{ userId }", fCheck password
-
+// TODO: This approach will eventually cause a little leak if many user logouts are not caught over time.
+// Eventually we should try to track inactivity and log the sessions out and also delete the reference here
+exports.logoutUser = (userid) => delete oUsers[userid];
 
 // ## WEBHOOKS
 exports.getAllWebhooks = (cb) => {
-	Webhook.findAll().then((arrRecords) => {
-		cb(null, arrRecords.map((oRecord) => {
-			return oRecord.dataValues;
-		}))
-	}, cb);
+	Webhook.findAll()
+		.then((arrRecords) => cb(null, getRecVals(arrRecords)))
+		.catch(cb);
 };
 
-// exports.getAllUserWebhooks = (cb) => {
+exports.getAllUserWebhooks = (userid, cb) => {
+	var publicSearch = Webhook.findAll({ where: {
+		isPublic: true,
+		UserId: { $ne: userid }
+	}});
 
-// };
+	var privateSearch = oUsers[userid].getWebhooks();
 
-exports.createWebhook = (userid, hookid, hookname, isPublic) => {
+	publicSearch.then(() => privateSearch)
+		.then((arrRecords) => {
+			let arrHooks = arrRecords.concat(publicSearch.value());
+			let arrPromises = [];
+			for (let i = 0; i < arrHooks.length; i++) {
+				arrPromises.push(arrHooks[i].getUser());
+			}
+			Promise.all(arrPromises).then((arrUsers) => {
+				for (let i = 0; i < arrUsers.length; i++) {
+					arrHooks[i].dataValues.username = arrUsers[i].dataValues.username;
+				}
+				let arrResult = {
+					private: getRecVals(publicSearch.value()),
+					public: getRecVals(arrRecords)
+				};
+				cb(null, arrResult);
+			}).catch(cb);
+		}).catch(cb);
+};
+
+exports.createWebhook = (userid, hookid, hookname, isPublic, cb) => {
 	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + userid);
 	Webhook.create({
 		UserId: userid,
 		hookid: hookid,
 		hookname: hookname,
 		isPublic: isPublic
-	}).catch((err) => log.error('createWebhook', err));
+	}).then(() => cb()).catch(cb);
 };

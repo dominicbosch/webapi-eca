@@ -4,17 +4,18 @@ var checkRuleExists, createWebhookList, editor, fOnLoad, updateWebhookSelection;
 editor = null;
 
 createWebhookList = function() {
+  var list;
   $('#but_rule').hide();
   $('#but_emit').hide();
   if (oParams.webhook) {
     $('#inp_webh').hide();
     $('#but_webh').hide();
   }
-  return $.post('/service/webhooks/getallvisible', function(oHooks) {
-    var createRow, hook, id, list, ref, ref1, selEl;
-    list = $('#sel_webh');
-    $('*', list).remove();
-    list.append($('<option>[ create new webhook with name: ]</option>'));
+  list = $('#sel_webh');
+  $('*', list).remove();
+  list.append($('<option>[ create new webhook with name: ]</option>'));
+  return $.post('/service/webhooks/getall', function(oHooks) {
+    var createRow, hook, id, ref, ref1, selEl;
     createRow = function(id, hook, isMine) {
       var elm, owner;
       owner = isMine ? 'yours' : hook.username + '\'s';
@@ -60,7 +61,6 @@ updateWebhookSelection = function() {
 checkRuleExists = function() {
   return $.post('/service/rules/getall', function(oRules) {
     var exists, i, len, prop, rule;
-    console.log('checking for existing rules:', oRules);
     exists = false;
     for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
       prop = oRules[rule];

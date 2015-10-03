@@ -29,20 +29,22 @@ geb.addListener('system', (msg) => {
 });
 
 // User fetches all his existing webhooks
-router.post('/getallvisible', (req, res) => {
+router.post('/getall', (req, res) => {
 	log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
-	db.getAllVisibleWebhooks(req.session.pub.username, (err, arr) => {
-		if(err) res.status(500).send('Fetching all webhooks failed');
-		else res.send(arr);
+	db.getAllUserWebhooks(req.session.pub.id, (err, arr) => {
+		if(err) {
+			log.error(err);
+			res.status(500).send('Fetching all webhooks failed');
+		} else res.send(arr);
 	});
 });
 
-function genHookID() {
+function genHookID(arrExisting) {
 	var hid = '';
 	for(let i = 0; i < 2; i++) {
 		hid += Math.random().toString(36).substring(2);
 	}
-	if(oHooks && Object.keys(oHooks).indexOf(hid) > -1) hid = genHookID();
+	if(arrExisting.indexOf(hid) > -1) hid = genHookID(arrExisting);
 	return hid;
 }
 
@@ -50,24 +52,32 @@ function genHookID() {
 router.post('/create', (req, res) => {
 	if (!req.body.hookname) res.status(400).send('Please provide a hook name');
 	else {
-		user = req.session.pub;
-		db.getAllUserWebhooks(user.username, (err, oHooks) => {
+		let userId = req.session.pub.id;
+		console.log('userId', userId);
+		db.getAllUserWebhooks(userId, (err, oHooks) => {
 			let hookExists = false;
 			for(let hookid in oHooks) {
 				if(oHook.hookname === req.body.hookname) hookExists = true;
 			}
 			if(hookExists) res.status(409).send('Webhook already existing: '+req.body.hookname);
 			else {
-				let hookid = genHookID();
-				db.createWebhook(user.id, hookid, req.body.hookname, (req.body.isPublic==='true'));
-				allowedHooks[hookid] = {
-					hookname: req.body.hookname,
-					username: user.username
-				}
-				log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
-				res.status(200).send({
-					hookid: hookid,
-					hookname: req.body.hookname
+				let hookid = genHookID(Object.keys(oHooks || {}));
+				console.log('hookid', hookid);
+				db.createWebhook(userId, hookid, req.body.hookname, (req.body.isPublic==='true'), (err) => {
+					if(err) {
+						log.error(err);
+						res.status(500).send('Unable to create Webhook!');
+					} else {
+						log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
+						allowedHooks[hookid] = {
+							hookname: req.body.hookname,
+							userid: userId
+						}
+						res.status(200).send({
+							hookid: hookid,
+							hookname: req.body.hookname
+						});
+					}
 				});
 			}
 		});
@@ -78,7 +88,7 @@ router.post('/create', (req, res) => {
 router.post('/delete/:id', (req, res) => {
 	let hookid = req.params.id;
 	log.info('SRVC | WEBHOOKS | Deleting Webhook '+hookid);
-	db.deleteWebhook(req.session.pub.username, hookid, (err, msg) => {
+	db.deleteWebhook(req.session.pub.id, hookid, (err, msg) => {
 		if(!err) {
 			delete allowedHooks[hookid];
 			res.send('OK!');

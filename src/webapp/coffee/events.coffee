@@ -9,10 +9,10 @@ createWebhookList = () ->
 		$('#inp_webh').hide()
 		$('#but_webh').hide()
 
-	$.post '/service/webhooks/getallvisible', (oHooks) ->
-		list = $ '#sel_webh'
-		$('*', list).remove()
-		list.append $ '<option>[ create new webhook with name: ]</option>'
+	list = $ '#sel_webh'
+	$('*', list).remove()
+	list.append $ '<option>[ create new webhook with name: ]</option>'
+	$.post '/service/webhooks/getall', (oHooks) ->
 		createRow = (id, hook, isMine) ->
 			owner = if isMine then 'yours' else hook.username+'\'s'
 			elm = $ '<option value="'+id+'">'+hook.hookname+' ('+owner+')</option>'
@@ -29,8 +29,6 @@ createWebhookList = () ->
 				updateWebhookSelection()
 			else
 
-
-
 updateWebhookSelection = () ->
 	if $(':selected', this).index() is 0
 		$('#tlwebh').removeClass('green').addClass 'red'
@@ -45,7 +43,6 @@ updateWebhookSelection = () ->
 
 checkRuleExists = () ->
 	$.post '/service/rules/getall', (oRules) ->
-		console.log 'checking for existing rules:', oRules
 		exists = false
 		for prop, rule in oRules
 			if rule.eventtype is 'Webhook' and rule.eventname is name

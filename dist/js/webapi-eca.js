@@ -149,9 +149,6 @@ log.info('RS | STARTING SERVER');
 function init() {
 	var dbMod;
 	function exportDB() {
-		for(let prop in dbMod) {
-			global.db[prop] = dbMod[prop];
-		}
 	}
 
 	encryption.init(conf.keygenpp);
@@ -160,12 +157,16 @@ function init() {
 	dbMod = require('./persistence/'+conf.db.module);
 	
 	// Init the database by using its promise, wau!
-	dbMod.pInit(conf.db).then(exportDB, () => {
-		log.error('RS | No DB connection, shutting down system!');
-		shutDown();
-	}).then(initEverythingElse)
-	.catch((err) => {
-		console.error('Initialization failed!', err.stack);
+	dbMod.init(conf.db, (err) => {
+		if(err) {
+			log.error('RS | No DB connection, shutting down system!');
+			shutDown();
+		} else {
+			for(let prop in dbMod) {
+				global.db[prop] = dbMod[prop]; // export DB properties
+			}
+			initEverythingElse();
+		}
 	});
 }
 
@@ -173,34 +174,39 @@ function initEverythingElse() {
 	log.info('RS | Succcessfully connected to DB, Initialzing Users');
 	// Load the standard users from the user config file if they are not already existing
 	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-	let users = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUserIds((err, arrReply) => {	
-		for(let username in users) {
+	let arrUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+	db.getUserIds((err, arrReply) => {
+		if(err) {
+			log.error(err);
+			arrReply = [];
+		} 
+		for(let username in arrUsers) {
 			if(arrReply.indexOf(username) === -1) {
-				let oUser = users[username];
-				oUser.username = username;
-				db.storeUser(oUser);
+				arrUsers[username].username = username;
+				db.storeUser(arrUsers[username],(err, oUser) => {
+					log.info('RS | User '+oUser.username+' successfully stored with ID#'+oUser.id);
+				});
 			}
-		}
+		}	
 	});
 
-	// Start the trigger poller. The components manager will emit events for it
-	log.info('RS | Forking a child process for the trigger poller');
+	// // Start the trigger poller. The components manager will emit events for it
+	// log.info('RS | Forking a child process for the trigger poller');
 	
-	// !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
-	poller = cp.fork(path.resolve(__dirname, nameEP));
-	// Now that we have information about both processes we can store this information
-	fs.unlink('proc.pid', (err) => {
-		if(err)	console.log(err);
-		fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
-	});
-	// Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
-	poller.send({
-		intevent: 'startup',
-		data: conf
-	});
+	// // !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
+	// poller = cp.fork(path.resolve(__dirname, nameEP));
+	// // Now that we have information about both processes we can store this information
+	// fs.unlink('proc.pid', (err) => {
+	// 	if(err)	console.log(err);
+	// 	fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
+	// });
+	// // Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
+	// poller.send({
+	// 	intevent: 'startup',
+	// 	data: conf
+	// });
 
-	geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
+	// geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
 
 	log.info('RS | Initialzing http listener');
 	http.init(conf);
@@ -212,12 +218,11 @@ function initEverythingElse() {
 // Shuts down the server.
 function shutDown() {
 	log.warn('RS | Received shut down command!');
-	if(typeof db.shutDown === 'function') db.shutDown();
-	engine.shutDown();
+	if(shutDown) db.shutDown();
+	if(engine) engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener
 	// can't be stopped gracefully. Why would you stop this system anyways!??
-	poller.disconnect();
 	process.exit();
 }
 

@@ -18,11 +18,11 @@ var router = module.exports = express.Router();
 
 // Associates the user object with the session if login is successful.
 router.post('/login', (req, res) => {
-	db.loginUser(req.body.username, req.body.password, (err, usr) => {
+	db.loginUser(req.body.username, req.body.password, (err, oUser) => {
 			// Tapping on fingers, at least in log...
 		if(err) log.warn('RH | AUTH-UH-OH ('+req.body.username+'): '+err.message);
 			// no error, so we can associate the user object from the DB to the session
-		else req.session.pub = usr;
+		else req.session.pub = oUser;
 
 		if(req.session.pub) res.send('OK!');
 		else res.status(401).send('NO!');
@@ -33,6 +33,7 @@ router.post('/login', (req, res) => {
 // purged from the session, thus the user will be logged out.
 router.post('/logout', (req, res) => {
 	if(req.session) {
+		db.logoutUser(req.session.pub.id);
 		delete req.session.pub;
 		res.send('Bye!');
 	}

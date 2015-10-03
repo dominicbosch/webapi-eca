@@ -15,7 +15,7 @@ failedRequest = function(msg) {
 
 updateWebhookList = function() {
   main.clearInfo();
-  return $.post('/service/webhooks/getallvisible').done(function(oHooks) {
+  return $.post('/service/webhooks/getall').done(function(oHooks) {
     var createWebhookRow, hookid, oHook, prl, pul, ref, ref1, results, table;
     $('#table_webhooks *').remove();
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
@@ -23,8 +23,8 @@ updateWebhookList = function() {
     if (prl + pul > 0) {
       createWebhookRow = function(oHook, isMine) {
         var img, tit;
-        img = oHook.isPublic === 'true' ? 'public' : 'private';
-        tit = oHook.isPublic === 'true' ? 'Public' : 'Private';
+        img = oHook.isPublic ? 'public' : 'private';
+        tit = oHook.isPublic ? 'Public' : 'Private';
         return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
