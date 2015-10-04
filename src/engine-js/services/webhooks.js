@@ -55,8 +55,8 @@ router.post('/create', (req, res) => {
 		let userId = req.session.pub.id;
 		db.getAllUserWebhooks(userId, (err, oHooks) => {
 			let hookExists = false;
-			for(let hookid in oHooks) {
-				if(oHook.hookname === req.body.hookname) hookExists = true;
+			for(let hookid in oHooks.private) {
+				if(oHooks.private[hookid].hookname === req.body.hookname) hookExists = true;
 			}
 			if(hookExists) res.status(409).send('Webhook already existing: '+req.body.hookname);
 			else {

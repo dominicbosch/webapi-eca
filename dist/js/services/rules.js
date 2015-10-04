@@ -16,8 +16,8 @@ var router = module.exports = express.Router();
 
 router.post('/getall', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
-	db.getAllRules(req.session.pub.username, (err, arr) => {
-			if(err) res.status(500).send('Fetching all rules failed');
-			else res.send(arr);
+	db.getAllRules(req.session.pub.id, (err, arr) => {
+		if(err) res.status(500).send('Fetching all rules failed');
+		else res.send(arr);
 	});
 })

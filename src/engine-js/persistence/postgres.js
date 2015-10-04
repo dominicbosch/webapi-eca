@@ -16,7 +16,10 @@ var log = require('../logging'),
 
 // DB Models:
 	User,
-	Webhook;
+	Webhook,
+	Rule,
+	ActionDispatcher,
+	EventTrigger;
 
 // ## DB Connection
 
@@ -41,15 +44,35 @@ function initializeModels() {
 		password: Sequelize.STRING,
 		isAdmin: Sequelize.BOOLEAN
 	});
+	Rule = sequelize.define('Rule', {
+		event: Sequelize.STRING,
+		conditions: Sequelize.JSON,
+		actions: Sequelize.JSON
+	});
 	Webhook = sequelize.define('Webhook', {
 		hookid: Sequelize.STRING,
 		hookname: Sequelize.STRING,
 		isPublic: Sequelize.BOOLEAN
 	});
-	// ### Define Relations
+	EventTrigger = sequelize.define('EventTrigger', {
+		name: Sequelize.STRING,
+		code: Sequelize.STRING
+	});
+	ActionDispatcher = sequelize.define('ActionDispatcher', {
+		name: Sequelize.STRING,
+		code: Sequelize.STRING
+	});
 
+	// ### Define Relations
+	// If a user gets deleted, we delete all his realted data too (cascade) 
+	Rule.belongsTo(User);
 	Webhook.belongsTo(User);
-	User.hasMany(Webhook, { onDelete: 'cascade' }); // If a user gets deleted, we delete all his webhooks too
+	EventTrigger.belongsTo(User);
+	ActionDispatcher.belongsTo(User);
+	User.hasMany(Rule, { onDelete: 'cascade' });
+	User.hasMany(Webhook, { onDelete: 'cascade' });
+	User.hasMany(EventTrigger, { onDelete: 'cascade' });
+	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
 	
 	// Return a promise
 	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
@@ -108,7 +131,6 @@ exports.updateUserAttribute = (userid, attr, val, cb) => {
 	}).catch(cb);
 };
 
-// Fetch all user IDs and pass them to cb(err, obj).
 exports.deleteUser = (userid, cb) => {
 	log.info('POSTGRES | Deleting user #'+userid);
 	User.findById(userid).then((oRecord) => {
@@ -173,4 +195,63 @@ exports.createWebhook = (userid, hookid, hookname, isPublic, cb) => {
 		hookname: hookname,
 		isPublic: isPublic
 	}).then(() => cb()).catch(cb);
+};
+
+exports.deleteWebhook = (hookid, cb) => {
+	log.info('POSTGRES | Deleting webhook #'+hookid);
+	Webhook.findById(hookid).then((oRecord) => {
+		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!')).catch(cb);
+		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
+	})
+};
+
+
+// ## RULES
+exports.getAllRules = (userid, cb) => {
+	var query;
+	if(userid) query = { where: { UserId: userid } };
+	Rule.findAll(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
+		.catch(cb);
+};
+
+exports.deleteWebhook = (hookid, cb) => {
+	log.info('POSTGRES | Deleting webhook #'+hookid);
+	Webhook.findById(hookid).then((oRecord) => {
+		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!')).catch(cb);
+		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
+	})
+};
+
+// ## ACTION DISPATCHERS
+exports.getAllActionDispatchers = (userid, cb) => {
+	var query;
+	if(userid) query = { where: { UserId: userid } };
+	ActionDispatcher.findAll(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
+		.catch(cb);
+};
+exports.deleteActionDispatcher = (id, cb) => {
+	log.info('POSTGRES | Deleting ActionDispatcher #'+id);
+	ActionDispatcher.findById(id).then((oRecord) => {
+		if(oRecord) oRecord.destroy().then(() => cb(null, 'ActionDispatcher deleted!')).catch(cb);
+		else cb(new Error('ActionDispatcher with ID #'+id+' not found!'));
+	})
+};
+
+// ## EVENT TRIGGERS
+exports.getAllEventTriggers = (userid, cb) => {
+	var query;
+	if(userid) query = { where: { UserId: userid } };
+	ActionDispatcher.findAll(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
+		.catch(cb);
+};
+
+exports.deleteEventTrigger = (id, cb) => {
+	log.info('POSTGRES | Deleting EventTrigger #'+id);
+	EventTrigger.findById(id).then((oRecord) => {
+		if(oRecord) oRecord.destroy().then(() => cb(null, 'EventTrigger deleted!')).catch(cb);
+		else cb(new Error('EventTrigger with ID #'+id+' not found!'));
+	})
 };
