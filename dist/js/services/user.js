@@ -17,11 +17,15 @@ var log = require('../logging'),
 router.post('/passwordchange', (req, res) => {
 	db.getUser(req.session.pub.id, (err, oUser) => {
 		if(req.body.oldpassword === oUser.password) {
-			oUser.password = req.body.newpassword;
-			if(db.storeUser(oUser)) {
-				log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
-				res.send('Password changed!');
-			} else res.status(401).send('Password changing failed!');
+			db.updateUserAttribute(req.session.pub.id, 'password', req.body.newpassword, (err) => {
+				if(err) {
+					log.error('Unable to change user password!', err);
+					res.status(401).send('Password changing failed!');
+				} else {
+					log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
+					res.send('Password changed!');
+				}
+			});
 		} else res.status(409).send('Wrong password!');
 	});
 });
