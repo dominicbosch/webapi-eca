@@ -12,7 +12,7 @@ var log = require('../logging'),
 	Sequelize = require('sequelize'),
 
 // Internal variables :
-	sequelize, oUsers = {},
+	sequelize,
 
 // DB Models:
 	User,
@@ -56,10 +56,10 @@ function initializeModels() {
 	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
-function getRecVals(arrRecords) {
-	return arrRecords.map((oRecord) => {
-		return oRecord.dataValues;
-	});
+// After retrieving a plain array of sequelize records, this function transforms all
+// of the records (recursively since sequelize v3.10.0) into plain JSON objects
+function arrRecordsToJSON(arrRecords) {
+	return arrRecords.map((o) => o.toJSON());
 }
 
 // shutDown closes the DB connection
@@ -82,9 +82,39 @@ exports.getUserIds = (cb) => {
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
+exports.getUser = (userid, cb) => {
+	User.findById(userid).then((oRecord) => {
+		if(oRecord) cb(null, oRecord.toJSON());
+		else cb(new Error('User not found!'));
+	}).catch(cb);
+};
+
+// Fetch all user IDs and pass them to cb(err, obj).
 exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user ' + oUser.username);
-	User.create(oUser).then((user) => cb(null, user.dataValues)).catch(cb);
+	User.create(oUser).then((user) => cb(null, user.toJSON())).catch(cb);
+};
+
+// Fetch all user IDs and pass them to cb(err, obj).
+exports.updateUserAttribute = (userid, attr, val, cb) => {
+	log.info('POSTGRES | Updating user #' + userid);
+	User.findById(userid).then((oRecord) => {
+		if(oRecord) {
+			let oChg = {};
+			oChg[attr] = val;
+			oRecord.update(oChg, { fields: [ attr ] })
+				.then(() => cb(), cb)
+		} else cb(new Error('User not found!'));
+	}).catch(cb);
+};
+
+// Fetch all user IDs and pass them to cb(err, obj).
+exports.deleteUser = (userid, cb) => {
+	log.info('POSTGRES | Deleting user #'+userid);
+	User.findById(userid).then((oRecord) => {
+		if(oRecord) oRecord.destroy().then(() => cb(null, 'User deleted!')).catch(cb);
+		else cb(new Error('User with ID #'+userid+' not found!'));
+	})
 };
 
 // Checks the credentials and on success returns the user object to the
@@ -92,27 +122,25 @@ exports.storeUser = (oUser, cb) => {
 // beforehand by the instance closest to the user that enters the password,
 // because we only store hashes of passwords for security reasons.
 exports.loginUser = (username, password, cb) => {
-	User.findAll({ where: { username: username } }).then((arrRecords) => {
-		if(arrRecords.length === 0) cb(new Error('User not found!'));
+	User.findOne({ where: { username: username } }).then((oRecord) => {
+		if(!oRecord) cb(new Error('User not found!'));
 		else {
-			let oUser = arrRecords[0].dataValues;
-			if(oUser.password === password) {
-				oUsers[oUser.id] = arrRecords[0];
-				cb(null, oUser);
-			}
+			let oUser = oRecord.toJSON();
+			if(oUser.password === password) cb(null, oUser);
 			else cb(new Error('Nice try!'));
 		}
 	}).catch(cb);
 };
 
-// TODO: This approach will eventually cause a little leak if many user logouts are not caught over time.
-// Eventually we should try to track inactivity and log the sessions out and also delete the reference here
-exports.logoutUser = (userid) => delete oUsers[userid];
+exports.getAllUsers = (cb) => {
+	User.findAll().then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords))).catch(cb);
+};
+
 
 // ## WEBHOOKS
 exports.getAllWebhooks = (cb) => {
 	Webhook.findAll()
-		.then((arrRecords) => cb(null, getRecVals(arrRecords)))
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
 		.catch(cb);
 };
 
@@ -125,41 +153,16 @@ exports.getAllUserWebhooks = (userid, cb) => {
 		}
 	});
 
-	var privateSearch = oUsers[userid].getWebhooks({ include: [ User ] });
+	var privateSearch = User.findById(userid).then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
 
 	publicSearch.then(() => privateSearch)
 		.then((arrRecords) => {
-			function replaceUsers(arrHooks) {
-				return arrHooks.map((oRecord) => {
-					oRecord.dataValues.username = oRecord.dataValues.User.dataValues.username;
-					delete oRecord.dataValues.User;
-					return oRecord.dataValues;
-				})
-			}
 			let arrResult = {
-				private: replaceUsers(publicSearch.value()),
-				public: replaceUsers(arrRecords)
+				private: arrRecordsToJSON(arrRecords),
+				public: arrRecordsToJSON(publicSearch.value())
 			};
 			cb(null, arrResult);
 		}).catch(cb);
-	// publicSearch.then(() => privateSearch)
-	// 	.then((arrRecords) => {
-	// 		let arrHooks = arrRecords.concat(publicSearch.value());
-	// 		let arrPromises = [];
-	// 		for (let i = 0; i < arrHooks.length; i++) {
-	// 			arrPromises.push(arrHooks[i].getUser());
-	// 		}
-	// 		Promise.all(arrPromises).then((arrUsers) => {
-	// 			for (let i = 0; i < arrUsers.length; i++) {
-	// 				arrHooks[i].dataValues.username = arrUsers[i].dataValues.username;
-	// 			}
-	// 			let arrResult = {
-	// 				private: getRecVals(publicSearch.value()),
-	// 				public: getRecVals(arrRecords)
-	// 			};
-	// 			cb(null, arrResult);
-	// 		}).catch(cb);
-	// 	}).catch(cb);
 };
 
 exports.createWebhook = (userid, hookid, hookname, isPublic, cb) => {

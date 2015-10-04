@@ -18,7 +18,7 @@ createWebhookList = function() {
     var createRow, hook, id, ref, ref1, selEl;
     createRow = function(id, hook, isMine) {
       var elm, owner;
-      owner = isMine ? 'yours' : hook.username + '\'s';
+      owner = isMine ? 'yours' : hook.User.username + '\'s';
       elm = $('<option value="' + id + '">' + hook.hookname + ' (' + owner + ')</option>');
       return list.append(elm);
     };

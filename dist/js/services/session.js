@@ -33,7 +33,6 @@ router.post('/login', (req, res) => {
 // purged from the session, thus the user will be logged out.
 router.post('/logout', (req, res) => {
 	if(req.session) {
-		db.logoutUser(req.session.pub.id);
 		delete req.session.pub;
 		res.send('Bye!');
 	}

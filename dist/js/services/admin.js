@@ -24,7 +24,7 @@ var fs = require('fs'),
 var router = module.exports = express.Router();
 
 router.use('/*', (req, res, next) => {
-	if(req.session.pub.admin === 'true') next();
+	if(req.session.pub.isAdmin) next();
 	else res.status(401).send('You are not admin, you böse bueb you!');
 });
 
@@ -37,11 +37,17 @@ router.post('/createuser', (req, res) => {
 				let oUser = {
 					username: req.body.username,
 					password: req.body.password,
-					admin: req.body.isAdmin
+					isAdmin: req.body.isAdmin
 				};
-				db.storeUser(oUser);
-				log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
-				res.send('New user "'+oUser.username+'" created!');
+				db.storeUser(oUser, (err) => {
+					if(err) {
+						log.error('Unable to create user!', err);
+						res.status(500).send('Unable to create user!');
+					} else {
+						log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
+						res.send('New user "'+oUser.username+'" created!');
+					}
+				});
 			}
 		});
 	}
@@ -49,13 +55,20 @@ router.post('/createuser', (req, res) => {
 });
 
 router.post('/deleteuser', (req, res) => {
-	log.warn('SERVC ADMIN | Tits really an ID here?');
-	if(req.body.userid === req.session.pub.id) {
+	var uid = parseInt(req.body.userid);
+	if(uid === req.session.pub.id) {
 		res.status(403).send('You dream du! You really shouldn\'t delete yourself!')
 	} else {
-		db.deleteUser(req.body.username);
-		log.info('User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
-		res.send('User "'+req.body.username+'" deleted!');
-		// FIXME we also need to deactivate all running event pollers
+		db.deleteUser(uid, (err) => {
+			if(err) {	
+				res.status(500).send('Can\'t delete user!');
+				log.error('SRVC:ADMIN | Can\'t delete user!', err);
+			} else {
+				log.info('User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
+				log.warn('SRVC:ADMIN | Remove all rules, all ADs and all ETs from user!');
+				res.send('User "'+req.body.username+'" deleted!');
+				// FIXME we also need to deactivate all running event pollers
+			}
+		});
 	}
 })

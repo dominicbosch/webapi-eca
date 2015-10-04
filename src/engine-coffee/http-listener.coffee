@@ -71,7 +71,7 @@ exports.init = ( conf ) =>
 
 	app.get '/views/*', ( req, res ) ->
 		if req.session.pub || req.params[ 0 ] is 'login'
-			if req.params[ 0 ] is 'admin' && req.session.pub.admin isnt 'true'
+			if req.params[0] is 'admin' && not req.session.pub.isAdmin
 				res.render '401_admin', req.session.pub
 			else
 				res.render req.params[ 0 ], req.session.pub
@@ -79,7 +79,7 @@ exports.init = ( conf ) =>
 			res.render '401'
 
 	app.use '/service/*', ( req, res, next ) ->
-		if req.session.pub || req.params[ 0 ] is 'session/login'
+		if req.session.pub || req.params[0] is 'session/login'
 			next()
 		else
 			res.status( 401 ).send 'Not logged in!'

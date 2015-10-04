@@ -15,11 +15,11 @@ var log = require('../logging'),
 	router = module.exports = express.Router();
 
 router.post('/passwordchange', (req, res) => {
-	db.getUser(req.session.pub.username, (err, oUser) => {
+	db.getUser(req.session.pub.id, (err, oUser) => {
 		if(req.body.oldpassword === oUser.password) {
 			oUser.password = req.body.newpassword;
 			if(db.storeUser(oUser)) {
-				log.info('SRVC | USER | Password changed for: '+oUser.username);
+				log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
 				res.send('Password changed!');
 			} else res.status(401).send('Password changing failed!');
 		} else res.status(409).send('Wrong password!');
@@ -27,16 +27,18 @@ router.post('/passwordchange', (req, res) => {
 });
 
 router.post('/forcepasswordchange', (req, res) => {
-	if(req.session.pub.admin !== 'true') {
+	if(!req.session.pub.isAdmin) {
 		res.status(401).send('You are not allowed to do this!');
 	} else {
-		db.getUser(req.body.username, (err, oUser) => {
-			oUser.password = req.body.newpassword;
-			if(db.storeUser(oUser)) {
-				log.info('SRVC | USER | Password changed for: '+oUser.username);
+		db.updateUserAttribute(req.body.userid, 'password', req.body.newpassword, (err) => {
+			if(err) {
+				log.error('Unable to change user password!', err);
+				res.status(401).send('Password changing failed!');
+			} else {
+				log.info('SRVC | USER | Password changed for (#'+req.body.userid+')');
 				res.send('Password changed!');
-			} else res.status(401).send('Password changing failed!');
-		})
+			}
+		});
 	}
 });
 

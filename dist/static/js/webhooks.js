@@ -25,7 +25,7 @@ updateWebhookList = function() {
         var img, tit;
         img = oHook.isPublic ? 'public' : 'private';
         tit = oHook.isPublic ? 'Public' : 'Private';
-        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\"></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
       table = $('<table>').attr('class', 'seventywide').appendTo($('#table_webhooks'));

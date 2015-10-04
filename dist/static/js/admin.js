@@ -18,14 +18,14 @@ fOnLoad = function() {
       var name, oUser;
       for (name in arrUsers) {
         oUser = arrUsers[name];
-        $('#users').append($("<tr>\n	<td><img class=\"del\" title=\"Delete User\"\n		src=\"/images/red_cross_small.png\" data-userid=\"" + name + "\"></td>\n	<td>" + (oUser.admin === 'true' ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"highlight\">" + name + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + name + "\"></td>\n</tr>"));
+        $('#users').append($("<tr>\n	<td><img class=\"del\" title=\"Delete User\"\n		src=\"/images/red_cross_small.png\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"></td>\n	<td>" + (oUser.isAdmin ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"highlight\">" + oUser.username + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"></td>\n</tr>"));
       }
       $('#users .del').click(function() {
-        var data, uid;
-        uid = $(this).attr('data-userid');
-        if (confirm('Do you really want to delete user "' + uid + '"')) {
+        var data;
+        if (confirm('Do you really want to delete user "' + $(this).attr('data-username') + '"')) {
           data = {
-            username: uid
+            userid: $(this).attr('data-userid'),
+            username: $(this).attr('data-username')
           };
           return $.post('/service/admin/deleteuser', data).done(function(msg) {
             main.setInfo(true, msg);
@@ -34,15 +34,14 @@ fOnLoad = function() {
         }
       });
       return $('#users input').keypress(function(e) {
-        var data, hp, uid;
+        var data, hp;
         if (e.which === 13) {
-          uid = $(this).attr('data-userid');
-          if (confirm('Do you really want to change user "' + uid + '"\'s password?')) {
+          if (confirm('Do you really want to change user "' + $(this).attr('data-username') + '"\'s password?')) {
             hp = CryptoJS.SHA3($(this).val(), {
               outputLength: 512
             });
             data = {
-              username: uid,
+              userid: $(this).attr('data-userid'),
               newpassword: hp.toString()
             };
             return $.post('/service/user/forcepasswordchange', data).done(function(msg) {

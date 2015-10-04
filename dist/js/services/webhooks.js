@@ -53,7 +53,6 @@ router.post('/create', (req, res) => {
 	if (!req.body.hookname) res.status(400).send('Please provide a hook name');
 	else {
 		let userId = req.session.pub.id;
-		console.log('userId', userId);
 		db.getAllUserWebhooks(userId, (err, oHooks) => {
 			let hookExists = false;
 			for(let hookid in oHooks) {
@@ -62,7 +61,6 @@ router.post('/create', (req, res) => {
 			if(hookExists) res.status(409).send('Webhook already existing: '+req.body.hookname);
 			else {
 				let hookid = genHookID(Object.keys(oHooks || {}));
-				console.log('hookid', hookid);
 				db.createWebhook(userId, hookid, req.body.hookname, (req.body.isPublic==='true'), (err) => {
 					if(err) {
 						log.error(err);

@@ -16,19 +16,20 @@ fOnLoad = () ->
 					$( '#users' ).append $ """
 						<tr>
 							<td><img class="del" title="Delete User"
-								src="/images/red_cross_small.png" data-userid="#{ name }"></td>
-							<td>#{ if oUser.admin is 'true' then '<img title="Administrator"
+								src="/images/red_cross_small.png" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"></td>
+							<td>#{ if oUser.isAdmin then '<img title="Administrator"
 								src="/images/admin.png">' else '' }</td>
-							<td class="highlight">#{ name }</td>
+							<td class="highlight">#{ oUser.username }</td>
 							<td>Change Password:</td>
-							<td><input type="password" data-userid="#{ name }"></td>
+							<td><input type="password" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"></td>
 						</tr>
 					"""
 
 				$( '#users .del' ).click () ->
-					uid = $( this ).attr 'data-userid'
-					if confirm 'Do you really want to delete user "' + uid  + '"' 
-						data = username: uid
+					if confirm 'Do you really want to delete user "' + $(this).attr('data-username')  + '"' 
+						data = 
+							userid: $(this).attr('data-userid')
+							username: $(this).attr('data-username')
 						$.post( '/service/admin/deleteuser', data )
 							.done ( msg ) ->
 								main.setInfo true, msg
@@ -37,11 +38,10 @@ fOnLoad = () ->
 
 				$( '#users input' ).keypress ( e ) ->
 					if e.which is 13
-						uid = $( this ).attr 'data-userid'
-						if confirm 'Do you really want to change user "' + uid  + '"\'s password?' 
+						if confirm 'Do you really want to change user "'+$(this).attr('data-username')+'"\'s password?' 
 							hp = CryptoJS.SHA3 $(this).val(), outputLength: 512
 							data = 
-								username: uid
+								userid: $(this).attr('data-userid')
 								newpassword: hp.toString()
 							$.post( '/service/user/forcepasswordchange', data )
 								.done ( msg ) ->

@@ -24,7 +24,7 @@ updateWebhookList = () ->
 						<tr>
 							<td>#{if isMine then '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' else '' }</td>
 							<td style="white-space: nowrap"><kbd>#{oHook.hookname}</kbd></td>
-							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.username}</td>
+							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.User.username}</td>
 							<td class="centered" title="#{tit}">
 								<img src="/images/#{img}.png"></td>
 							<td class="hundredwide"><input class="smallfont hundredwide" value="#{hostUrl}/service/webhooks/event/#{hookid}"></td>

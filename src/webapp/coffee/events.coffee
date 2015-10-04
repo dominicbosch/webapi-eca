@@ -14,7 +14,7 @@ createWebhookList = () ->
 	list.append $ '<option>[ create new webhook with name: ]</option>'
 	$.post '/service/webhooks/getall', (oHooks) ->
 		createRow = (id, hook, isMine) ->
-			owner = if isMine then 'yours' else hook.username+'\'s'
+			owner = if isMine then 'yours' else hook.User.username+'\'s'
 			elm = $ '<option value="'+id+'">'+hook.hookname+' ('+owner+')</option>'
 			list.append elm
 		
