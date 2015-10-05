@@ -16,21 +16,21 @@ createWebhookList = function() {
   list.append($('<option>[ create new webhook with name: ]</option>'));
   return $.post('/service/webhooks/getall', function(oHooks) {
     var createRow, hook, id, ref, ref1, selEl;
-    createRow = function(id, hook, isMine) {
+    createRow = function(hook, isMine) {
       var elm, owner;
       owner = isMine ? 'yours' : hook.User.username + '\'s';
-      elm = $('<option value="' + id + '">' + hook.hookname + ' (' + owner + ')</option>');
+      elm = $('<option value="' + hook.hookid + '">' + hook.hookname + ' (' + owner + ')</option>');
       return list.append(elm);
     };
     ref = oHooks["private"];
     for (id in ref) {
       hook = ref[id];
-      createRow(id, hook, true);
+      createRow(hook, true);
     }
     ref1 = oHooks["public"];
     for (id in ref1) {
       hook = ref1[id];
-      createRow(id, hook);
+      createRow(hook);
     }
     if (oParams.webhook) {
       selEl = $('#sel_webh [value="' + oParams.webhook + '"]');

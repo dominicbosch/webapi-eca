@@ -67,14 +67,14 @@ exports.init = ( conf ) =>
 		res.render 'index', req.session.pub
 		
 	# - ** _"/"_:** Static redirect to the _"webpages/public"_ directory
-	app.use '/', express.static path.resolve __dirname, '..', 'static'
+	app.use '/', express.static path.resolve __dirname, '..', 'webapp'
 
 	app.get '/views/*', ( req, res ) ->
-		if req.session.pub || req.params[ 0 ] is 'login'
+		if req.session.pub || req.params[0] is 'login'
 			if req.params[0] is 'admin' && not req.session.pub.isAdmin
 				res.render '401_admin', req.session.pub
 			else
-				res.render req.params[ 0 ], req.session.pub
+				res.render req.params[0], req.session.pub
 		else
 			res.render '401'
 

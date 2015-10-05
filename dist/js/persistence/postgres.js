@@ -75,8 +75,8 @@ function initializeModels() {
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
 	
 	// Return a promise
-	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
-	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
+	// return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
 // After retrieving a plain array of sequelize records, this function transforms all
@@ -225,6 +225,13 @@ exports.deleteWebhook = (hookid, cb) => {
 
 // ## ACTION DISPATCHERS
 exports.getAllActionDispatchers = (userid, cb) => {
+	var query;
+	if(userid) query = { where: { UserId: userid } };
+	ActionDispatcher.findAll(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
+		.catch(cb);
+};
+exports.createActionDispatcher = (oAD, cb) => {
 	var query;
 	if(userid) query = { where: { UserId: userid } };
 	ActionDispatcher.findAll(query)

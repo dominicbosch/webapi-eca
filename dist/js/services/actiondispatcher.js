@@ -16,7 +16,7 @@ var log = require('../logging'),
 
 router.post('/getall', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
-	db.getAllActionDispatchers(req.session.pub.username, (err, oADs) => {
+	db.getAllActionDispatchers(req.session.pub.id, (err, oADs) => {
 		if(err) res.status(500).send(err);
 		else res.send(oADs);
 	});
@@ -24,42 +24,48 @@ router.post('/getall', (req, res) => {
 
 router.post('/store', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
-	if(req.overwrite) storeModule(user, req, modType, dbMod, callback); //FIXME callback undefined
-	else {
-		dbMod.getModule(user.username, req.id, (err, mod) => {
-			if(mod) {
-				answ.code = 409;
-				answ.message = 'Module name already existing: '+req.id;
-				callback(answ);
-			} else storeModule(user, req, modType, dbMod, callback); //FIXME callback undefined
-		});
-	}
+	db.getAllActionDispatchers(req.session.pub.id, (arr) => {
+		arr = arr || [];
+		let arrNames = arr.map((o) => o.name);
+		console.log('new module', req.id);
+		console.log('all actions: ', arrNames);
+		if(arrNames.indexOf(req.name) > -1) {
+			if(req.overwrite) storeModule(req.session.pub, req, res);
+			else req.status(409).send('Module name already existing: '+req.name);
+		} else {
+			if(req.overwrite) req.status(404).send('Module not found! Unable to overwrite '+req.name);
+			else storeModule(req.session.pub, req, res);
+		}
+	});
 });
 
-function storeModule(user, oBody, modType, dbMod, callback ) {	
-// src, user.username, id: 'dummyRule', oBody.id, oBody.lang, 'actiondispatcher', null,
-	let args = {
-		src: oBody.data,					// code
-		lang: oBody.lang,					// script language
-		userId: user.username,				// userId
-		modId: 'dryrun',					// moduleId
-		modType: 'actiondispatcher',		// module type
-		dryrun: true
+function storeModule(oUser, oBody, res) {	
+	let oModule = {
+		src: oBody.data,			// code
+		lang: oBody.lang,			// script language
+		globVars: oBody.globVars	// global variables required from the user to run this module
+		// userId: oUser.id,			// userId
 	};
-	dynmod.compileString( args, ( cm ) => {
-		let answ = cm.answ;
-		if(answ.code === 200) {
-			let funcs = [];//d:-
-			for(let name in cm.module) {
-				funcs.push(name);
-			}
-			log.info('CM | Storing new module with functions '+funcs.join(', '));
-			answ.message = ' Module '+oBody.id+' successfully stored! Found following function(s): '+funcs;
-			oBody.functions = JSON.stringify(funcs);
-			oBody.functionArgs = JSON.stringify(cm.funcParams);
-			oBody.comment = cm.comment;
-			dbMod.storeModule(user.username, oBody);
+	log.info('SRVC:AD | Running AD', Object.keys(oBody));
+	let mId = 'TMP|AD|'+Math.random().toString(36).substring(2)+'.vm';
+	// moduleId, src, lang, oGlobalVars, logFunction, oUser, cb
+	console.log(mId, oBody.data, oBody.lang, {}, () => {}, oUser);
+	dynmod.runStringAsModule(mId, oBody.data, oBody.lang, {}, () => {}, oUser, (err, oRunning) => {
+		if(err) {
+			log.error('SRVC:AD | Error running string as module: '+err.message);
+			res.status(err.code).send(err.message);
+		} else {
+			log.info('CM | Storing new module with functions '+Object.keys(oRunning.functionArgs).join(', '));
+			db.createActionDispatcher(oUser.username, oBody, (err) => {
+				if(err) {
+					log.warn('SRVC:AD | Unable to store Action Dispatcher', err);
+					res.status(500).send('Action Dispatcher not stored!')
+				} else {
+					log.info('SRVC:AD | Module stored');
+					res.send('Action Dispatcher stored!')
+				}
+				// answ.message = ' Module '+oBody.id+' successfully stored! Found following function(s): '+funcs;
+			});
 		}
-		callback(answ);
 	});
 }

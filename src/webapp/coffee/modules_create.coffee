@@ -8,12 +8,13 @@ fErrHandler = (errMsg) ->
 		if err.status is 401
 			window.location.href = "/"
 		else
-			$('#log_col').text ""
+			main.setInfo false, errMsg
 
 fOnLoad = () ->
-# TODO first check whether it is a valid module before setting the title
+# TODO first check whether oParams.m edit is a valid module before setting the title
+	moduleType =if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
 	title = if oParams.id then 'Edit ' else 'Create '
-	title = title + if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
+	title += moduleType
 	$('#pagetitle').text title
 	
 	if oParams.m isnt 'ad'
@@ -36,6 +37,14 @@ fOnLoad = () ->
 	editor.setFontSize "14px"
 	editor.setShowPrintMargin false
 	editor.session.setUseSoftTabs false
+	editor.getSession().on 'change', (el) ->
+		console.warn 'We should always search for export functions and provide means for ' +
+		'the user to enter a comment for each exported function'
+		# regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg
+		# function getFunctionArgumentsAsStringArray(func) {
+		# 	let fnStr = func.toString().replace(regexpComments, '');
+		# 	return fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(/([^\s,]+)/g) || [];
+		# }
 
 	$('#editor_mode').change (el) ->
 		if $(this).val() is 'CoffeeScript'
@@ -103,7 +112,7 @@ fOnLoad = () ->
 	# Add submit button logic
 	$('#but_submit').click () ->
 		if $('#input_id').val() is ''
-			alert "Please enter an #{ moduleName } name!"
+			alert "Please enter an #{moduleType} name!"
 		else
 			listParams = {}
 			$('#tableParams tr').each () ->
@@ -112,6 +121,8 @@ fOnLoad = () ->
 				if val isnt ""
 					listParams[val] = shld
 				true
+
+			moduletype = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 			obj =
 				body: JSON.stringify
 					id: $('#input_id').val()
@@ -119,28 +130,28 @@ fOnLoad = () ->
 					public: $('#is_public').is ':checked'
 					data: editor.getValue()
 					params: JSON.stringify listParams
-			fCheckOverwrite = (obj) ->
+			fCheckOverwrite = (obj, moduletype) ->
 				(err) ->
 					if err.status is 409
 						if confirm 'Are you sure you want to overwrite the existing module?'
 							bod = JSON.parse obj.body
 							bod.overwrite = true
 							obj.body = JSON.stringify bod
-							$.post('/usercommand/forge_' + oParams.type, obj)
+							$.post('/service/'+moduletype+'/store', obj)
 								.done (data) ->
 									$('#info').text data.message
 									$('#info').attr 'class', 'success'
 									alert "You need to update the rules that use this module in 
 													order for the changes to be applied to them!"
-								.fail fErrHandler "#{ moduleName } not stored!"
+								.fail fErrHandler "#{moduleType} not stored!"
 					else
-						fErrHandler("#{ moduleName } not stored!") err
+						fErrHandler("#{moduleType} not stored!") err
 			window.scrollTo 0, 0
-			$.post('/usercommand/forge_' + oParams.type, obj)
+			$.post('/service/'+moduletype+'/store', obj)
 				.done (data) ->
 					$('#info').text data.message
 					$('#info').attr 'class', 'success'
-				.fail fCheckOverwrite obj
+				.fail fCheckOverwrite obj, moduletype
 	
 	# EDIT MODULES
 

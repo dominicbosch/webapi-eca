@@ -10,15 +10,16 @@ fErrHandler = function(errMsg) {
     if (err.status === 401) {
       return window.location.href = "/";
     } else {
-      return $('#log_col').text("");
+      return main.setInfo(false, errMsg);
     }
   };
 };
 
 fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, moduleType, obj, title;
+  moduleType = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
   title = oParams.id ? 'Edit ' : 'Create ';
-  title = title + (oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger');
+  title += moduleType;
   $('#pagetitle').text(title);
   if (oParams.m !== 'ad') {
     main.registerHoverInfo($('#schedule > h2'), 'modules_schedule.html');
@@ -38,6 +39,9 @@ fOnLoad = function() {
   editor.setFontSize("14px");
   editor.setShowPrintMargin(false);
   editor.session.setUseSoftTabs(false);
+  editor.getSession().on('change', function(el) {
+    return console.warn('We should always search for export functions and provide means for ' + 'the user to enter a comment for each exported function');
+  });
   $('#editor_mode').change(function(el) {
     if ($(this).val() === 'CoffeeScript') {
       return editor.getSession().setMode("ace/mode/coffee");
@@ -112,9 +116,9 @@ fOnLoad = function() {
   });
   fChangeInputVisibility();
   $('#but_submit').click(function() {
-    var fCheckOverwrite, listParams, obj;
+    var fCheckOverwrite, listParams, moduletype, obj;
     if ($('#input_id').val() === '') {
-      return alert("Please enter an " + moduleName + " name!");
+      return alert("Please enter an " + moduleType + " name!");
     } else {
       listParams = {};
       $('#tableParams tr').each(function() {
@@ -126,6 +130,7 @@ fOnLoad = function() {
         }
         return true;
       });
+      moduletype = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
       obj = {
         body: JSON.stringify({
           id: $('#input_id').val(),
@@ -135,7 +140,7 @@ fOnLoad = function() {
           params: JSON.stringify(listParams)
         })
       };
-      fCheckOverwrite = function(obj) {
+      fCheckOverwrite = function(obj, moduletype) {
         return function(err) {
           var bod;
           if (err.status === 409) {
@@ -143,22 +148,22 @@ fOnLoad = function() {
               bod = JSON.parse(obj.body);
               bod.overwrite = true;
               obj.body = JSON.stringify(bod);
-              return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
+              return $.post('/service/' + moduletype + '/store', obj).done(function(data) {
                 $('#info').text(data.message);
                 $('#info').attr('class', 'success');
                 return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
-              }).fail(fErrHandler(moduleName + " not stored!"));
+              }).fail(fErrHandler(moduleType + " not stored!"));
             }
           } else {
-            return fErrHandler(moduleName + " not stored!")(err);
+            return fErrHandler(moduleType + " not stored!")(err);
           }
         };
       };
       window.scrollTo(0, 0);
-      return $.post('/usercommand/forge_' + oParams.type, obj).done(function(data) {
+      return $.post('/service/' + moduletype + '/store', obj).done(function(data) {
         $('#info').text(data.message);
         return $('#info').attr('class', 'success');
-      }).fail(fCheckOverwrite(obj));
+      }).fail(fCheckOverwrite(obj, moduletype));
     }
   });
   fAddUserParam = function(param, shielded) {

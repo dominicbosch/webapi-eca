@@ -13,13 +13,13 @@ createWebhookList = () ->
 	$('*', list).remove()
 	list.append $ '<option>[ create new webhook with name: ]</option>'
 	$.post '/service/webhooks/getall', (oHooks) ->
-		createRow = (id, hook, isMine) ->
+		createRow = (hook, isMine) ->
 			owner = if isMine then 'yours' else hook.User.username+'\'s'
-			elm = $ '<option value="'+id+'">'+hook.hookname+' ('+owner+')</option>'
+			elm = $ '<option value="'+hook.hookid+'">'+hook.hookname+' ('+owner+')</option>'
 			list.append elm
 		
-		createRow id, hook, true for id, hook of oHooks.private
-		createRow id, hook for id, hook of oHooks.public
+		createRow hook, true for id, hook of oHooks.private
+		createRow hook for id, hook of oHooks.public
 
 		# If webhook has been passed in the url, the user wants to emit an event for this
 		if oParams.webhook
@@ -88,6 +88,7 @@ fOnLoad = () ->
 			window.location.href = '/views/webhooks?id='+$('#inp_webh').val()
 		 
 	$('#but_rule').on 'click', () ->
+		# window.location.href = 'rules_create?webhook='+$('#sel_webh').val()
 		window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
 
 	$('#but_emit').click () ->

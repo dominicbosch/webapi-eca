@@ -52,7 +52,7 @@ fOnLoad = function() {
     return editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
   });
   $('#input_id').focus();
-  req = sendRequest('/service/webhooks/getallvisible');
+  req = sendRequest('/service/webhooks/getall');
   req.done(function(oHooks) {
     var createWebhookRow, domSelect, hookid, oHook, prl, pul, ref, ref1, results;
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;

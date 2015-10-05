@@ -195,7 +195,7 @@ fOnLoad = () ->
 # EVENT
 # -----
 
-	req = sendRequest '/service/webhooks/getallvisible'
+	req = sendRequest '/service/webhooks/getall'
 	req.done ( oHooks ) ->
 		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 		pul = if oHooks.public then Object.keys(oHooks.public).length else 0

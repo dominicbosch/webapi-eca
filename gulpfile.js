@@ -99,7 +99,7 @@ paths = {
   srcWebAppCoffee: 'src/webapp/coffee/*.coffee',
   dist: 'dist/',
   distEngine: 'dist/js',
-  distWebApp: 'dist/static/js'
+  distWebApp: 'dist/webapp'
 };
 
 gulp.task('compile-gulp', 'Compile GULP coffee file', function(cb) {
@@ -116,7 +116,7 @@ gulp.task('compile', 'Compile the system\'s coffee files in the project', functi
   compile = function() {
     var streamOne, streamTwo;
     streamOne = fSimpleCoffeePipe('compile-engine', paths.srcEngineCoffee, paths.distEngine);
-    streamTwo = fSimpleCoffeePipe('compile-webapp', paths.srcWebAppCoffee, paths.distWebApp);
+    streamTwo = fSimpleCoffeePipe('compile-webapp', paths.srcWebAppCoffee, paths.distWebApp + '/js');
     return cb();
   };
   if (argv.watch) {
@@ -153,10 +153,10 @@ gulp.task('deploy', 'Deploy all system resources into the distribution folder', 
     }
     return stream;
   };
-  fetchStream(paths.src + 'engine-js/**/*').pipe(gulp.dest(paths.dist + 'js/')).on('end', isComplete);
-  fetchStream(paths.src + 'webapp/static/**/*').pipe(gulp.dest(paths.dist + 'static/')).on('end', isComplete);
-  fetchStream(paths.src + 'webapp/views/**/*').pipe(gulp.dest(paths.dist + 'js/views/')).on('end', isComplete);
-  fetchStream(paths.lib + '*').pipe(gulp.dest(paths.distEngine)).pipe(gulp.dest(paths.dist + 'static/js/lib')).on('end', isComplete);
+  fetchStream(paths.src + 'engine-js/**/*').pipe(gulp.dest(paths.distEngine)).on('end', isComplete);
+  fetchStream(paths.src + 'webapp/static/**/*').pipe(gulp.dest(paths.distWebApp)).on('end', isComplete);
+  fetchStream(paths.src + 'webapp/views/**/*').pipe(gulp.dest(paths.distEngine + '/views/')).on('end', isComplete);
+  fetchStream(paths.lib + '*').pipe(gulp.dest(paths.distEngine)).pipe(gulp.dest(paths.distWebApp + '/js/lib')).on('end', isComplete);
   fetchStream(paths.src + 'config/*').pipe(gulp.dest(paths.dist + 'config')).on('end', isComplete);
   if (argv.watch) {
     cb();

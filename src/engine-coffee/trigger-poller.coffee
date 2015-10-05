@@ -98,7 +98,7 @@ requestModule = ( msg ) ->
 					modId: arrName[0],				# moduleId
 					modType: 'eventtrigger'		# module type
 					oRule: msg.rule,			# oRule
-				dynmod.compileString args, ( result ) ->
+				dynmod.runStringAsModule args, ( result ) ->
 						if not result.answ is 200
 							log.error "TP | Compilation of code failed! #{ msg.user },
 								#{ msg.rule.id }, #{ arrName[ 0 ] }"

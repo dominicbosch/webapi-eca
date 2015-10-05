@@ -17,3 +17,14 @@
 .timepicker select {
 	margin-right: 15px;
 }
+
+#tableParams td {
+	min-width: 15px;
+}
+
+#tableParams input.textinput { 
+	font-size: 0.9em;
+	width: 150px;
+	margin-left: 10px;
+	margin-bottom: 2px;
+}

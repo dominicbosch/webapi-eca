@@ -36,7 +36,7 @@ th {
 
 #bannerimg {
 	padding-left: 2%;
-	max-height: 90px;
+	max-height: 77.8px;
 }
 
 nav.navbar {
@@ -369,14 +369,6 @@ button {
 	padding-left: 15px;
 }
 
-#tableParams td:first-child { 
-	width: 10px;
-}
-
-#tableParams input.textinput { 
-	width: 150px;
-	margin-left: 10px;
-}
 
 #selected_actions td {
 	vertical-align: top;
@@ -394,11 +386,6 @@ button {
 
 #tableRules tr {
 	margin-bottom: 10px;
-}
-
-#log_col {
-	padding-left: 20px;
-	border-left: double #666;
 }
 
 .underlined {

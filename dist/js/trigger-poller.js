@@ -79,7 +79,7 @@ requestModule = function(msg) {
           modType: 'eventtrigger',
           oRule: msg.rule
         };
-        return dynmod.compileString(args, function(result) {
+        return dynmod.runStringAsModule(args, function(result) {
           var nd, now, oUser, start;
           if (!result.answ === 200) {
             log.error("TP | Compilation of code failed! " + msg.user + ", " + msg.rule.id + ", " + arrName[0]);

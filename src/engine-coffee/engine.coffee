@@ -175,7 +175,7 @@ updateActionModules = ( updatedRuleId ) =>
 								modId: moduleName,				# moduleId
 								modType: 'actiondispatcher'		# module type
 								oRule: oMyRule.rule,			# oRule
-							dynmod.compileString args, ( result ) =>
+							dynmod.runStringAsModule args, ( result ) =>
 									if result.answ.code is 200
 										log.info "EN | Module '#{ moduleName }' successfully loaded for userName
 											'#{ userName }' in rule '#{ oMyRule.rule.id }'"

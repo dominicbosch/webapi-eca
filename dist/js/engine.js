@@ -196,7 +196,7 @@ updateActionModules = (function(_this) {
                         modType: 'actiondispatcher',
                         oRule: oMyRule.rule
                       };
-                      return dynmod.compileString(args, function(result) {
+                      return dynmod.runStringAsModule(args, function(result) {
                         if (result.answ.code === 200) {
                           log.info("EN | Module '" + moduleName + "' successfully loaded for userName '" + userName + "' in rule '" + oMyRule.rule.id + "'");
                         } else {

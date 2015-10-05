@@ -65,7 +65,7 @@ exports.init = (function(_this) {
     app.get('/', function(req, res) {
       return res.render('index', req.session.pub);
     });
-    app.use('/', express["static"](path.resolve(__dirname, '..', 'static')));
+    app.use('/', express["static"](path.resolve(__dirname, '..', 'webapp')));
     app.get('/views/*', function(req, res) {
       if (req.session.pub || req.params[0] === 'login') {
         if (req.params[0] === 'admin' && !req.session.pub.isAdmin) {

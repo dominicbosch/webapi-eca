@@ -20,7 +20,7 @@
 		"description": ""
 	},
 	"keen": {
-		"module": "keen-js",
+		"module": "keen",
 		"description": ""
 	},
 	"request": {

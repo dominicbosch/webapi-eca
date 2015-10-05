@@ -92,7 +92,7 @@ paths =
 	srcWebAppCoffee: 'src/webapp/coffee/*.coffee'
 	dist: 'dist/'
 	distEngine: 'dist/js'
-	distWebApp: 'dist/static/js'
+	distWebApp: 'dist/webapp'
 
 
 gulp.task 'compile-gulp', 'Compile GULP coffee file', (cb) ->
@@ -105,7 +105,7 @@ gulp.task 'clean', 'Cleanup previously deployed distribution', (cb) ->
 gulp.task 'compile', 'Compile the system\'s coffee files in the project', (cb) ->
 	compile = () ->
 		streamOne = fSimpleCoffeePipe 'compile-engine', paths.srcEngineCoffee, paths.distEngine
-		streamTwo = fSimpleCoffeePipe 'compile-webapp', paths.srcWebAppCoffee, paths.distWebApp
+		streamTwo = fSimpleCoffeePipe 'compile-webapp', paths.srcWebAppCoffee, paths.distWebApp+'/js'
 		cb()
 
 	if argv.watch
@@ -134,17 +134,17 @@ gulp.task 'deploy', 'Deploy all system resources into the distribution folder', 
 		stream
 
 	fetchStream(paths.src + 'engine-js/**/*')
-		.pipe(gulp.dest paths.dist + 'js/')
+		.pipe(gulp.dest paths.distEngine)
 		.on 'end', isComplete
 	fetchStream(paths.src + 'webapp/static/**/*')
-		.pipe(gulp.dest paths.dist + 'static/')
+		.pipe(gulp.dest paths.distWebApp)
 		.on 'end', isComplete
 	fetchStream(paths.src + 'webapp/views/**/*')
-		.pipe(gulp.dest paths.dist + 'js/views/')
+		.pipe(gulp.dest paths.distEngine + '/views/')
 		.on 'end', isComplete
 	fetchStream(paths.lib + '*')
 		.pipe(gulp.dest paths.distEngine)
-		.pipe(gulp.dest paths.dist + 'static/js/lib')
+		.pipe(gulp.dest paths.distWebApp+'/js/lib')
 		.on 'end', isComplete
 	fetchStream(paths.src + 'config/*')
 		.pipe(gulp.dest paths.dist + 'config')
