@@ -13,30 +13,30 @@ var log = require('./logging'),
 
 	// - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 	vm = require('vm'),
-	//   [fs](http://nodejs.org/api/fs.html),
-	fs = require('fs'),
-	//   [path](http://nodejs.org/api/path.html) and
-	path = require('path'),
+	// //   [fs](http://nodejs.org/api/fs.html),
+	// fs = require('fs'),
+	// //   [path](http://nodejs.org/api/path.html) and
+	// path = require('path'),
 
 	// - External Modules: [coffee-script](http://coffeescript.org/) and
 	cs = require('coffee-script'),
 	//       [request](https://github.com/request/request)
 	request = require('request'),
-	geb = global.eventBackbone,
-	oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
+	geb = global.eventBackbone;
+	// oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
 
-geb.addListener('system:init', (msg) => {
-	// Replace the properties with the actual loaded modules
-	log.info('DM | Preloading modules ' + Object.keys(oModules).join(', '));
-	for(let mod in oModules) {
-		try {
-			oModules[mod] = require(oModules[mod].module);
-			log.info('DM | Loaded module ' + mod);
-		} catch(err) {
-			log.error('DM | Module not found: ' + mod);
-		}
-	}
-});
+// geb.addListener('system:modules', (msg) => {
+// 	// Replace the properties with the actual loaded modules
+// 	log.info('DM | Got new modules list: ' + Object.keys(oModules).join(', '));
+// 	for(let mod in oModules) {
+// 		try {
+// 			oModules[mod] = require(oModules[mod].module);
+// 			log.info('DM | Loaded module ' + mod);
+// 		} catch(err) {
+// 			log.error('DM | Module not found: ' + mod);
+// 		}
+// 	}
+// });
 
 let regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 function getFunctionArgumentsAsStringArray(func){	

@@ -6,21 +6,16 @@
 
 // **Loads Modules:**
 
-// - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
-var fs = require('fs'),
-
-	// [path](http://nodejs.org/api/path.html)
-	path = require('path'),
+// - External Modules: [express](http://expressjs.com/api.html)
+var express = require('express'),
 
 	// - [Logging](logging.html)
 	log = require('../logging'),
 
-	// - External Modules: [express](http://expressjs.com/api.html)
-	express = require('express'),
-
 	db = global.db,
-	geb = global.eventBackbone,
-	pathUsers = path.resolve(__dirname, '..', '..', 'config', 'users.json');
+	geb = global.eventBackbone;
+	// ,
+	// pathUsers = path.resolve(__dirname, '..', '..', 'config', 'users.json');
 
 var router = module.exports = express.Router();
 
@@ -74,4 +69,4 @@ router.post('/deleteuser', (req, res) => {
 			}
 		});
 	}
-})
+});
