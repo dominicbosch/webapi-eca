@@ -19,6 +19,7 @@ var fs = require('fs'),
 	express = require('express'),
 
 	db = global.db,
+	geb = global.eventBackbone,
 	pathUsers = path.resolve(__dirname, '..', '..', 'config', 'users.json');
 
 var router = module.exports = express.Router();
@@ -30,8 +31,9 @@ router.use('/*', (req, res, next) => {
 
 router.post('/createuser', (req, res) => {
 	if(req.body.username && req.body.password) {
-		db.getUserIds((err, arrUsers) => {
-			if(arrUsers.indexOf(req.body.username) > -1) {
+		db.getUsers((err, arrUsers) => {
+			let arrUserNames = arrUsers.map((o) = o.username);
+			if(arrUserNames.indexOf(req.body.username) > -1) {
 				res.status(409).send('User already existing!'); 
 			} else {	
 				let oUser = {
@@ -46,6 +48,7 @@ router.post('/createuser', (req, res) => {
 					} else {
 						log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
 						res.send('New user "'+oUser.username+'" created!');
+						geb.emit('user:new', oUser);
 					}
 				});
 			}

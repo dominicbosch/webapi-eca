@@ -17,15 +17,13 @@ var log = require('../logging'),
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
 
-geb.addListener('system', (msg) => {
-	if(msg === 'init') {
-		db.getAllWebhooks((err, oHooks) => {
-			if(oHooks) {
-				log.info('SRVC | WEBHOOKS | Initializing '+Object.keys(oHooks).length+' Webhooks');
-				allowedHooks = oHooks;
-			}
-		});
-	}
+geb.addListener('system:init', (msg) => {
+	db.getAllWebhooks((err, oHooks) => {
+		if(oHooks) {
+			log.info('SRVC | WEBHOOKS | Initializing '+Object.keys(oHooks).length+' Webhooks');
+			allowedHooks = oHooks;
+		}
+	});
 });
 
 // User fetches all his existing webhooks

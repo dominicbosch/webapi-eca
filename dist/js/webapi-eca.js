@@ -9,19 +9,8 @@
 // >
 // > See below in the optimist CLI preparation for allowed optional parameters `[opt]`.
 
-var poller; // the poller should be known to some functions that are executed out of the init scope
-
-// - Node.js Modules: [fs](http://nodejs.org/api/fs.html),
-var fs = require('fs'),
-
-	// [path](http://nodejs.org/api/path.html),
-	path = require('path'),
-
-	// [child_process](http://nodejs.org/api/child_process.html)
-	cp = require('child_process'),
-
-	// and [events](http://nodejs.org/api/events.html)
-	events = require('events'),
+// - Node.js Modules: [events](http://nodejs.org/api/events.html),
+var events = require('events'),
 	geb = global.eventBackbone = new events.EventEmitter(),
 	db = global.db = {},
 
@@ -35,6 +24,9 @@ var fs = require('fs'),
 
 	// - [Engine](engine.html)
 	engine = require('./engine'),
+
+	// - [Process Manager](process-manager.html)
+	pm = require('./process-manager'),
 
 	// - [HTTP Listener](http-listener.html)
 	http = require('./http-listener'),
@@ -136,11 +128,7 @@ conf.log.filelevel = argv.f || conf.log.filelevel || 'warn'
 conf.log.filepath = argv.p || conf.log.filepath || 'warn'
 conf.log.trace = argv.t || conf.log.trace || 'off'
 conf.log.nolog = argv.n || conf.log.nolog
-if(!conf.log.nolog) {
-	try {
-		fs.writeFileSync(path.resolve(conf.log.filepath), ' ');
-	} catch(e) { console.log(e) }
-}
+
 // Initialize the logger
 log.init(conf);
 log.info('RS | STARTING SERVER');
@@ -148,8 +136,6 @@ log.info('RS | STARTING SERVER');
 // This function is invoked right after the module is loaded and starts the server.
 function init() {
 	var dbMod;
-	function exportDB() {
-	}
 
 	encryption.init(conf.keygenpp);
 
@@ -165,55 +151,15 @@ function init() {
 			for(let prop in dbMod) {
 				global.db[prop] = dbMod[prop]; // export DB properties
 			}
-			initEverythingElse();
+			log.info('RS | Initialzing http listener');
+			http.init(conf);
+
+			log.info('RS | All good so far, informing all modules about proper system initialization');
+			geb.emit('system:init', conf);
 		}
 	});
 }
 
-function initEverythingElse() {
-	log.info('RS | Succcessfully connected to DB, Initialzing Users');
-	// Load the standard users from the user config file if they are not already existing
-	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-	let arrUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUserIds((err, arrReply) => {
-		if(err) {
-			log.error(err);
-			arrReply = [];
-		} 
-		for(let username in arrUsers) {
-			if(arrReply.indexOf(username) === -1) {
-				arrUsers[username].username = username;
-				db.storeUser(arrUsers[username],(err, oUser) => {
-					log.info('RS | User '+oUser.username+' successfully stored with ID#'+oUser.id);
-				});
-			}
-		}	
-	});
-
-	// // Start the trigger poller. The components manager will emit events for it
-	// log.info('RS | Forking a child process for the trigger poller');
-	
-	// // !!! TODO Fork one process per user!!! This seems to be the only real safe solution for now
-	// poller = cp.fork(path.resolve(__dirname, nameEP));
-	// // Now that we have information about both processes we can store this information
-	// fs.unlink('proc.pid', (err) => {
-	// 	if(err)	console.log(err);
-	// 	fs.writeFile('proc.pid', 'PROCESS PID: ' + process.pid + '\nCHILD PID: ' + poller.pid + '\n');
-	// });
-	// // Initialize the trigger poller with a startup message. No CLI arguments anymore! Pheww...
-	// poller.send({
-	// 	intevent: 'startup',
-	// 	data: conf
-	// });
-
-	// geb.addListener('eventtrigger', (msg) => console.log('got eventtrigger', msg));
-
-	log.info('RS | Initialzing http listener');
-	http.init(conf);
-
-	log.info('RS | All good so far, informing all modules about proper system initialization');
-	geb.emit('system', 'init');
-}
 
 // Shuts down the server.
 function shutDown() {

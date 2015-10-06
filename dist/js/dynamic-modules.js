@@ -25,17 +25,15 @@ var log = require('./logging'),
 	geb = global.eventBackbone,
 	oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
 
-geb.addListener('system', (msg) => {
-	if(msg === 'init') {
-		// Replace the properties with the actual loaded modules
-		log.info('DM | Preloading modules ' + Object.keys(oModules).join(', '));
-		for(let mod in oModules) {
-			try {
-				oModules[mod] = require(oModules[mod].module);
-				log.info('DM | Loaded module ' + mod);
-			} catch(err) {
-				log.error('DM | Module not found: ' + mod);
-			}
+geb.addListener('system:init', (msg) => {
+	// Replace the properties with the actual loaded modules
+	log.info('DM | Preloading modules ' + Object.keys(oModules).join(', '));
+	for(let mod in oModules) {
+		try {
+			oModules[mod] = require(oModules[mod].module);
+			log.info('DM | Loaded module ' + mod);
+		} catch(err) {
+			log.error('DM | Module not found: ' + mod);
 		}
 	}
 });

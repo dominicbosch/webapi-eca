@@ -16,10 +16,11 @@ var log = require('../logging'),
 
 // DB Models:
 	User,
-	Webhook,
+	Process,
 	Rule,
-	ActionDispatcher,
-	EventTrigger;
+	Webhook,
+	EventTrigger,
+	ActionDispatcher;
 
 // ## DB Connection
 
@@ -40,9 +41,15 @@ exports.init = (oDB, cb) => {
 function initializeModels() {
 	// See http://docs.sequelizejs.com/en/latest/docs/models-definition/ for a list of available data types
 	User = sequelize.define('User', {
-		username: Sequelize.STRING,
+		username: { type: Sequelize.STRING, unique: true },
 		password: Sequelize.STRING,
 		isAdmin: Sequelize.BOOLEAN
+	});
+	Process = sequelize.define('Process', {
+		pid: { type: Sequelize.INTEGER, unique: true },
+		log: Sequelize.ARRAY(Sequelize.STRING),
+		modules: Sequelize.ARRAY(Sequelize.STRING),
+		activeCodes: Sequelize.ARRAY(Sequelize.STRING)
 	});
 	Rule = sequelize.define('Rule', {
 		event: Sequelize.STRING,
@@ -50,7 +57,7 @@ function initializeModels() {
 		actions: Sequelize.JSON
 	});
 	Webhook = sequelize.define('Webhook', {
-		hookid: Sequelize.STRING,
+		hookid: { type: Sequelize.STRING, unique: true },
 		hookname: Sequelize.STRING,
 		isPublic: Sequelize.BOOLEAN
 	});
@@ -65,18 +72,20 @@ function initializeModels() {
 
 	// ### Define Relations
 	// If a user gets deleted, we delete all his realted data too (cascade) 
+	Process.belongsTo(User);
 	Rule.belongsTo(User);
 	Webhook.belongsTo(User);
 	EventTrigger.belongsTo(User);
 	ActionDispatcher.belongsTo(User);
+	User.hasOne(Process, { onDelete: 'cascade' });
 	User.hasMany(Rule, { onDelete: 'cascade' });
 	User.hasMany(Webhook, { onDelete: 'cascade' });
 	User.hasMany(EventTrigger, { onDelete: 'cascade' });
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
 	
 	// Return a promise
-	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
-	// return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
+	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
 // After retrieving a plain array of sequelize records, this function transforms all
@@ -93,20 +102,20 @@ exports.shutDown = (cb) => {
 };
 
 
+// ##
 // ## USERS
+// ##
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.getUserIds = (cb) => {
+exports.getUsers = (cb) => {
 	User.findAll().then((arrRecords) => {
-		cb(null, arrRecords.map((oRecord) => {
-			return oRecord.dataValues.username;
-		}))
+		cb(null, arrRecords.map((o) => o.toJSON()));
 	}).catch(cb);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.getUser = (userid, cb) => {
-	User.findById(userid).then((oRecord) => {
+exports.getUser = (uid, cb) => {
+	User.findById(uid).then((oRecord) => {
 		if(oRecord) cb(null, oRecord.toJSON());
 		else cb(new Error('User not found!'));
 	}).catch(cb);
@@ -115,27 +124,30 @@ exports.getUser = (userid, cb) => {
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user ' + oUser.username);
-	User.create(oUser).then((user) => cb(null, user.toJSON())).catch(cb);
+	User.create(oUser).then((obj) => {
+		cb(null, obj.toJSON());
+		// return obj.addProcess(Process.create({pid: 98765}))
+	}).catch(cb);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.updateUserAttribute = (userid, attr, val, cb) => {
-	log.info('POSTGRES | Updating user #' + userid);
-	User.findById(userid).then((oRecord) => {
+exports.updateUserAttribute = (uid, attr, val, cb) => {
+	log.info('POSTGRES | Updating user #' + uid);
+	User.findById(uid).then((oRecord) => {
 		if(oRecord) {
 			let oChg = {};
 			oChg[attr] = val;
-			oRecord.update(oChg, { fields: [ attr ] })
+			return oRecord.update(oChg, { fields: [ attr ] })
 				.then(() => cb(), cb)
 		} else cb(new Error('User not found!'));
 	}).catch(cb);
 };
 
-exports.deleteUser = (userid, cb) => {
-	log.info('POSTGRES | Deleting user #'+userid);
-	User.findById(userid).then((oRecord) => {
+exports.deleteUser = (uid, cb) => {
+	log.info('POSTGRES | Deleting user #'+uid);
+	User.findById(uid).then((oRecord) => {
 		if(oRecord) oRecord.destroy().then(() => cb(null, 'User deleted!')).catch(cb);
-		else cb(new Error('User with ID #'+userid+' not found!'));
+		else cb(new Error('User with ID #'+uid+' not found!'));
 	})
 };
 
@@ -159,23 +171,40 @@ exports.getAllUsers = (cb) => {
 };
 
 
+// ##
+// ## DEDICATED PROCESS
+// ##
+
+exports.logProcess = (uid) => {
+	User.findById(uid).then((oUser) => {
+		return oUser.getProcess().then((oProc) => {
+			console.log('got process');
+			console.log(oProc);
+		})
+	}).catch((err) => console.error('Logging failed for uid "'+uid+'"', err));
+};
+
+
+// ##
 // ## WEBHOOKS
+// ##
+
 exports.getAllWebhooks = (cb) => {
 	Webhook.findAll()
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
 		.catch(cb);
 };
 
-exports.getAllUserWebhooks = (userid, cb) => {
+exports.getAllUserWebhooks = (uid, cb) => {
 	var publicSearch = Webhook.findAll({ 
 		include: [ User ],
 		where: {
 			isPublic: true,
-			UserId: { $ne: userid }
+			UserId: { $ne: uid }
 		}
 	});
 
-	var privateSearch = User.findById(userid).then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
+	var privateSearch = User.findById(uid).then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
 
 	publicSearch.then(() => privateSearch)
 		.then((arrRecords) => {
@@ -187,13 +216,14 @@ exports.getAllUserWebhooks = (userid, cb) => {
 		}).catch(cb);
 };
 
-exports.createWebhook = (userid, hookid, hookname, isPublic, cb) => {
-	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + userid);
-	Webhook.create({
-		UserId: userid,
-		hookid: hookid,
-		hookname: hookname,
-		isPublic: isPublic
+exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
+	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + uid);
+	User.findById(uid).then((oUser) => {
+		return Webhook.create({
+			hookid: hookid,
+			hookname: hookname,
+			isPublic: isPublic
+		}).then((oWh) => oUser.addWebhook(oWh));
 	}).then(() => cb()).catch(cb);
 };
 
@@ -206,59 +236,70 @@ exports.deleteWebhook = (hookid, cb) => {
 };
 
 
+// ##
 // ## RULES
-exports.getAllRules = (userid, cb) => {
+// ##
+
+exports.getAllRules = (uid, cb) => {
 	var query;
-	if(userid) query = { where: { UserId: userid } };
+	if(uid) query = { where: { UserId: uid } };
 	Rule.findAll(query)
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
 		.catch(cb);
 };
 
-exports.deleteWebhook = (hookid, cb) => {
-	log.info('POSTGRES | Deleting webhook #'+hookid);
-	Webhook.findById(hookid).then((oRecord) => {
-		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!')).catch(cb);
-		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
-	})
-};
+// exports.deleteWebhook = (hookid, cb) => {
+// 	log.info('POSTGRES | Deleting webhook #'+hookid);
+// 	Webhook.findById(hookid).then((oRecord) => {
+// 		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!')).catch(cb);
+// 		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
+// 	})
+// };
 
+
+// ##
 // ## ACTION DISPATCHERS
-exports.getAllActionDispatchers = (userid, cb) => {
+// ##
+
+exports.getAllActionDispatchers = (uid, cb) => {
 	var query;
-	if(userid) query = { where: { UserId: userid } };
+	if(uid) query = { where: { UserId: uid } };
 	ActionDispatcher.findAll(query)
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
 		.catch(cb);
 };
-exports.createActionDispatcher = (oAD, cb) => {
-	var query;
-	if(userid) query = { where: { UserId: userid } };
-	ActionDispatcher.findAll(query)
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
-		.catch(cb);
-};
-exports.deleteActionDispatcher = (id, cb) => {
-	log.info('POSTGRES | Deleting ActionDispatcher #'+id);
-	ActionDispatcher.findById(id).then((oRecord) => {
+// exports.createActionDispatcher = (oAD, cb) => {
+// 	var query;
+// 	if(uid) query = { where: { UserId: uid } };
+// 	ActionDispatcher.findAll(query)
+// 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
+// 		.catch(cb);
+// };
+exports.deleteActionDispatcher = (aid, cb) => {
+	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
+	ActionDispatcher.findById(aid).then((oRecord) => {
 		if(oRecord) oRecord.destroy().then(() => cb(null, 'ActionDispatcher deleted!')).catch(cb);
-		else cb(new Error('ActionDispatcher with ID #'+id+' not found!'));
+		else cb(new Error('ActionDispatcher with ID #'+aid+' not found!'));
 	})
 };
 
+
+// ##
 // ## EVENT TRIGGERS
-exports.getAllEventTriggers = (userid, cb) => {
+// ##
+
+exports.getAllEventTriggers = (uid, cb) => {
 	var query;
-	if(userid) query = { where: { UserId: userid } };
+	if(uid) query = { where: { UserId: uid } };
 	ActionDispatcher.findAll(query)
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
 		.catch(cb);
 };
 
-exports.deleteEventTrigger = (id, cb) => {
-	log.info('POSTGRES | Deleting EventTrigger #'+id);
-	EventTrigger.findById(id).then((oRecord) => {
+exports.deleteEventTrigger = (eid, cb) => {
+	log.info('POSTGRES | Deleting EventTrigger #'+eid);
+	EventTrigger.findById(eid).then((oRecord) => {
 		if(oRecord) oRecord.destroy().then(() => cb(null, 'EventTrigger deleted!')).catch(cb);
-		else cb(new Error('EventTrigger with ID #'+id+' not found!'));
+		else cb(new Error('EventTrigger with ID #'+eid+' not found!'));
 	})
 };
