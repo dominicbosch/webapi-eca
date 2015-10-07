@@ -27,7 +27,7 @@ exports.init = (conf) => {
 
 exports.logStats = (uid, oData) => {
 	let i = oUserIndex[uid] || 0;
-	i = (i < 10) ? i : 0;
+	i = (i < 10000) ? i : 0;
 	fb.child(hostid+'/'+uid+'/'+i).set(oData);
 	oUserIndex[uid] = ++i;
 	
