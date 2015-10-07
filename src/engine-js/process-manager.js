@@ -61,20 +61,21 @@ function forkChild(oUser) {
 			switch(o.cmd) {
 				case 'log': db.logProcess(oUser.id, o.data);
 					break;
+				case 'stats': db.logStats(oUser.id, o.data);
+					break;
 			}
 		});
 	}
 }
 
-setInterval(() => {
-	log.info('PM | Grabbing stats from '+Object.keys(oChildren).length+' child processes');
-	for(let prop in oChildren) {
-		try {
-			oChildren[prop].send({cmd: 'stats'});
-		} catch(err) {
-			log.error('PM | Child crashed: ' + oChildren[prop].pid);
-			delete oChildren[prop];
-		}
-	}
-}, 8000); // Every ten minutes we check whether the children are still responding
-// }, 1000*60*10); // Every ten minutes we check whether the children are still responding
+// setInterval(() => {
+// 	log.info('PM | Grabbing stats from '+Object.keys(oChildren).length+' child processes');
+// 	for(let prop in oChildren) {
+// 		try {
+// 			oChildren[prop].send({cmd: 'stats'});
+// 		} catch(err) {
+// 			log.error('PM | Child crashed: ' + oChildren[prop].pid);
+// 			delete oChildren[prop];
+// 		}
+// 	}
+// }, 1000); // For now we exhaustively request stats from the children

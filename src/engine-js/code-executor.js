@@ -1,4 +1,4 @@
-// 'use strict';
+'use strict';
 
 // Code Executor
 // =============
@@ -8,19 +8,24 @@
 // 	// and [Dynamic Modules](dynamic-modules.html)
 // 	// dynmod = require('./dynamic-modules')
 // 	;
+var os = require('os');
 
-function sendLog(level, msg) {
+function sendToParent(obj) {
 	try {
-		process.send({
-			cmd: 'log',
-			data: {
-				level: level,
-				msg: msg
-			}
-		});
+		process.send(obj);
 	} catch(err) {
 		console.error(err);
 	}
+}
+
+function sendLog(level, msg) {
+	sendToParent({
+		cmd: 'log',
+		data: {
+			level: level,
+			msg: msg
+		}
+	});
 }
 
 var log = {
@@ -42,5 +47,13 @@ process.on('message', (msg) => {
 });
 
 setInterval(() => {
-}, 10000);
+	sendToParent({
+		cmd: 'stats',
+		data: {
+			timestamp: (new Date()).getTime(),
+			memory: process.memoryUsage(),
+			loadavg: os.loadavg()
+		}
+	});
+}, 10000); // We are exhaustively sending stats to the parent
 log.info('Child started with PID #'+process.pid+'!');

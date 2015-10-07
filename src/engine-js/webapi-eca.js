@@ -34,6 +34,9 @@ var events = require('events'),
 	// - [Encryption](encryption.html)
 	encryption = require('./encryption'),
 
+	// - [Firebase](persistence/firebase.html)
+	fb = require('./firebase'),
+
 	// - [Trigger Poller](trigger-poller.html) *(will be forked into a child process)*
 	nameEP = 'trigger-poller',
 
@@ -153,6 +156,7 @@ function init() {
 			}
 			log.info('RS | Initialzing http listener');
 			http.init(conf);
+			fb.init(conf.firebase);
 
 			log.info('RS | All good so far, informing all modules about proper system initialization');
 			geb.emit('system:init', conf);

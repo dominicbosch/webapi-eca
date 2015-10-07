@@ -1,14 +1,14 @@
 {
 	"httpport": 8080,
-	"db2": {
-		"module": "redis",
-		"port": 6379,
-		"db": 0
-	},
 	"db": {
 		"module": "postgres",
 		"port": 5432,
 		"db": "webapi-eca"
+	},
+	"firebase": {
+		"app": "",
+		"email": "",
+		"password": ""
 	},
 	"mode": "development",
 	"gc": "forced",

@@ -2,7 +2,7 @@
 // # PostgreSQL DB Connection Module
 // 
 // I think it is a good idea for now (Since we do not use promises throught the other modules) to keep
-// the promises in here and only executed callbacks with the (err, result) arguments.
+// the promises in here and only execute callbacks with the (err, result) arguments.
 
 // **Loads Modules:**
 
