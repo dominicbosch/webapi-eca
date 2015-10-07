@@ -7,7 +7,6 @@
 	},
 	"firebase": {
 		"app": "https://[your-app].firebaseio.com/",
-		"system": "[your-eca-instance-name]",
 		"token": "[super-secret-string-goes-here]"
 	},
 	"mode": "development",

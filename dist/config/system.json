@@ -6,8 +6,8 @@
 		"db": "webapi-eca"
 	},
 	"firebase": {
-		"app": "https://boiling-inferno-7829.firebaseio.com/",
-		"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2IjowLCJkIjp7InVpZCI6IndlYmFwaS1lY2EtbGFwdG9wIiwic29tZSI6ImFyYml0cmFyeSIsImRhdGEiOiJoZXJlIn0sImlhdCI6MTQ0NDE5MjcyM30.LXyffoLQk-qM3CjzhrLNoVpGQcmlr7X3q3dOktArN5I"
+		"app": "https://[your-app].firebaseio.com/",
+		"token": "[super-secret-string-goes-here]"
 	},
 	"mode": "development",
 	"gc": "forced",
