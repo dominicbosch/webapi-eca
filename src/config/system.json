@@ -6,9 +6,9 @@
 		"db": "webapi-eca"
 	},
 	"firebase": {
-		"app": "",
-		"email": "",
-		"password": ""
+		"app": "https://[your-app].firebaseio.com/",
+		"system": "[your-eca-instance-name]",
+		"token": "[super-secret-string-goes-here]"
 	},
 	"mode": "development",
 	"gc": "forced",

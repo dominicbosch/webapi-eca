@@ -35,7 +35,7 @@ var events = require('events'),
 	encryption = require('./encryption'),
 
 	// - [Firebase](persistence/firebase.html)
-	fb = require('./firebase'),
+	fb = require('./persistence/firebase'),
 
 	// - [Trigger Poller](trigger-poller.html) *(will be forked into a child process)*
 	nameEP = 'trigger-poller',

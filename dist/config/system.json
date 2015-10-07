@@ -6,9 +6,8 @@
 		"db": "webapi-eca"
 	},
 	"firebase": {
-		"app": "https://boiling-inferno-7829.firebaseapp.com",
-		"email": "mscliveweb@gmail.com",
-		"password": "superduper"
+		"app": "https://boiling-inferno-7829.firebaseio.com/",
+		"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2IjowLCJkIjp7InVpZCI6IndlYmFwaS1lY2EtbGFwdG9wIiwic29tZSI6ImFyYml0cmFyeSIsImRhdGEiOiJoZXJlIn0sImlhdCI6MTQ0NDE5MjcyM30.LXyffoLQk-qM3CjzhrLNoVpGQcmlr7X3q3dOktArN5I"
 	},
 	"mode": "development",
 	"gc": "forced",
