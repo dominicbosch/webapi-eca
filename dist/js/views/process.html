@@ -1,0 +1,20 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<script src="/js/process.js"></script>
+	<script src="/js/lib/line-graph.js"></script>
+	<script src="/js/lib/firebase.js"></script>
+	<link rel="stylesheet" type="text/css" href="/css/process.css">
+{% endblock %}
+
+{% block title %}Worker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row">
+		<h1 class="text-center">Worker Monitoring</h1>
+		<div id="graph1" class="aGraph" style="position:relative;width:100%;height:400px"></div>
+		<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}"></svg>
+	</div>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ var log = require('../logging'),
 
 	Firebase = require('firebase'),
 
+	oUserIndex = {},
 	fb, hostid;
 
 exports.init = (conf) => {
@@ -24,5 +25,25 @@ exports.init = (conf) => {
 	});
 }
 
-// As easy as that :)
-exports.logStats = (uid, oData) => fb.child(hostid+'/'+uid).push(oData);
+exports.logStats = (uid, oData) => {
+	let i = oUserIndex[uid] || 0;
+	i = (i < 10) ? i : 0;
+	fb.child(hostid+'/'+uid+'/'+i).set(oData);
+	oUserIndex[uid] = ++i;
+	
+	// fb.child(hostid+'/'+uid+'/timestamp/'+last).once('value', (data) => {
+	// 	let oFirst = data.val();
+	// 	if(!oFirst) oFirst = oData.timestamp;
+	// 	fb.child(hostid+'/'+uid+'/start').set(oFirst);
+	// 	fb.child(hostid+'/'+uid+'/end').set(oData.timestamp);
+	// 	fb.child(hostid+'/'+uid+'/timestamp/'+i).set(oData.timestamp);
+	// 	fb.child(hostid+'/'+uid+'/heapTotal/'+i).set(oData.memory.heapTotal);
+	// 	fb.child(hostid+'/'+uid+'/heapUsed/'+i).set(oData.memory.heapUsed);
+	// 	fb.child(hostid+'/'+uid+'/rss/'+i).set(oData.memory.rss);
+	// 	fb.child(hostid+'/'+uid+'/loadavg/'+i).set(oData.loadavg[0]);
+	// 	oUserIndex[uid] = ++i;
+	// });
+}
+		// timestamp: (new Date()).getTime(),
+		// memory: process.memoryUsage(),
+		// loadavg: os.loadavg()

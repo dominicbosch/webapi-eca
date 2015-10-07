@@ -128,7 +128,7 @@ router.post('/forbid', (req, res) => {
 	else res.status(409).send('Nope!');
 });
 
-reloadModules((err, res)=>{
-console.log(err);
-console.log(res);
-});
+// reloadModules((err, res)=>{
+// console.log(err);
+// console.log(res);
+// });

@@ -27,6 +27,7 @@ router.use('/*', (req, res, next) => {
 router.post('/createuser', (req, res) => {
 	if(req.body.username && req.body.password) {
 		db.getUsers((err, arrUsers) => {
+			console.log('db.getUsers', arrUsers);
 			let arrUserNames = arrUsers.map((o) = o.username);
 			if(arrUserNames.indexOf(req.body.username) > -1) {
 				res.status(409).send('User already existing!'); 
