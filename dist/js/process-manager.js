@@ -7,11 +7,17 @@
 // **Loads Modules:**
 // - [Logging](logging.html)
 var log = require('./logging'),
+	
+	fb = require('./persistence/firebase'),
 
 	// - Node.js Modules: [path](http://nodejs.org/api/path.html),
 	path = require('path'),
-	// 	[fs](http://nodejs.org/api/fs.html) and
+
+	// 	[fs](http://nodejs.org/api/fs.html),
 	fs = require('fs'),
+
+	// 	[os](http://nodejs.org/api/os.html) and
+	os = require('os'),
 
 	// [child_process](http://nodejs.org/api/child_process.html)
 	cp = require('child_process'),
@@ -61,14 +67,19 @@ function forkChild(oUser) {
 			switch(o.cmd) {
 				case 'log': db.logProcess(oUser.id, o.data);
 					break;
-				case 'stats': db.logStats(oUser.id, o.data);
+				case 'stats': fb.logStats(oUser.username, o.data);
 					break;
 			}
 		});
 	}
 }
 
-// setInterval(() => {
+setInterval(() => {
+	fb.logStats('webapi-eca-system', {
+		timestamp: (new Date()).getTime(),
+		memory: process.memoryUsage(),
+		loadavg: os.loadavg()
+	});
 // 	log.info('PM | Grabbing stats from '+Object.keys(oChildren).length+' child processes');
 // 	for(let prop in oChildren) {
 // 		try {
@@ -78,4 +89,4 @@ function forkChild(oUser) {
 // 			delete oChildren[prop];
 // 		}
 // 	}
-// }, 1000); // For now we exhaustively request stats from the children
+}, 10000); // For now we exhaustively request stats from the children

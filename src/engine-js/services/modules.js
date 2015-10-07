@@ -72,7 +72,8 @@ function reloadModules(cb) {
 // Load existing modules and their description
 function getModuleDescription(module, version) {
 	return new Promise((fulfill, reject) => {
-		cp.exec('npm view '+module+' description', function(error, stdout, stderr) {
+		// cp.exec('npm view '+module+' description', function(error, stdout, stderr) {
+		cp.exec('npm view '+module+' description -loglevel silent', function(error, stdout, stderr) {
 			if(error) reject(error);
 			else fulfill({
 				module: module,

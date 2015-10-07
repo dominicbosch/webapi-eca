@@ -1,0 +1,18 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<script src="/js/processes.js"></script>
+	<script src="/js/lib/firebase.js"></script>
+	<link rel="stylesheet" type="text/css" href="/css/processes.css">
+{% endblock %}
+
+{% block title %}Running Processes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row">
+		<h1 class="text-center">Process Monitoring</h1>
+		<svg id="processes-svg"></svg>
+	</div>
+</div>
+{% endblock %}
