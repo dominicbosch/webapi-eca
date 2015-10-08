@@ -55,5 +55,5 @@ setInterval(() => {
 			loadavg: os.loadavg()
 		}
 	});
-}, 10000); // We are exhaustively sending stats to the parent
+}, 10*1000); // We are exhaustively sending stats to the parent
 log.info('Child started with PID #'+process.pid+'!');

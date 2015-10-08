@@ -27,7 +27,7 @@ var log = require('./logging'),
 	oConf,
 	oChildren = {};
 
-geb.addListener('system:init', (oc) => {
+geb.addListener('firebase:init', (oc) => {
 	oConf = oc;
 	log.info('PM | Succcessfully connected to DB, Initialzing Users');
 	// Load the standard users from the user config file if they are not already existing
@@ -51,6 +51,13 @@ geb.addListener('system:init', (oc) => {
 			}
 		}
 	});
+	setInterval(() => {
+		fb.logStats('webapi-eca-system', {
+			timestamp: (new Date()).getTime(),
+			memory: process.memoryUsage(),
+			loadavg: os.loadavg()
+		});
+	}, 10*1000); // For now we exhaustively request stats from the children
 });
 
 function forkChild(oUser) {
@@ -74,19 +81,3 @@ function forkChild(oUser) {
 	}
 }
 
-setInterval(() => {
-	fb.logStats('webapi-eca-system', {
-		timestamp: (new Date()).getTime(),
-		memory: process.memoryUsage(),
-		loadavg: os.loadavg()
-	});
-// 	log.info('PM | Grabbing stats from '+Object.keys(oChildren).length+' child processes');
-// 	for(let prop in oChildren) {
-// 		try {
-// 			oChildren[prop].send({cmd: 'stats'});
-// 		} catch(err) {
-// 			log.error('PM | Child crashed: ' + oChildren[prop].pid);
-// 			delete oChildren[prop];
-// 		}
-// 	}
-}, 10000); // For now we exhaustively request stats from the children
