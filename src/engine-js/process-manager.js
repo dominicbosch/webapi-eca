@@ -7,6 +7,7 @@
 // **Loads Modules:**
 // - [Logging](logging.html)
 var log = require('./logging'),
+	pl = require('./process-logger'),
 	
 	fb = require('./persistence/firebase'),
 
@@ -15,9 +16,6 @@ var log = require('./logging'),
 
 	// 	[fs](http://nodejs.org/api/fs.html),
 	fs = require('fs'),
-
-	// 	[os](http://nodejs.org/api/os.html) and
-	os = require('os'),
 
 	// [child_process](http://nodejs.org/api/child_process.html)
 	cp = require('child_process'),
@@ -51,13 +49,7 @@ geb.addListener('firebase:init', (oc) => {
 			}
 		}
 	});
-	setInterval(() => {
-		fb.logStats('webapi-eca-system', {
-			timestamp: (new Date()).getTime(),
-			memory: process.memoryUsage(),
-			loadavg: os.loadavg()
-		});
-	}, 10*1000); // For now we exhaustively request stats from the children
+	pl((stats) => fb.logStats('webapi-eca-system', stats));
 });
 
 function forkChild(oUser) {

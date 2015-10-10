@@ -13,7 +13,12 @@
 <div class="container-fluid">
 	<div class="row">
 		<h1 class="text-center">Worker Monitoring</h1>
-		<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}"></svg>
+		<span class="heapTotal legend">- Heap Total</span>
+		<span class="heapUsed legend">- Heap Used</span>
+		<span class="rss legend">- Resident Set Size</span>
+		<span class="load legend">- CPU</span>
+		<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}">
+		</svg>
 	</div>
 </div>
 {% endblock %}

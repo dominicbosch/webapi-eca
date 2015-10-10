@@ -22,7 +22,7 @@ exports.init = (conf) => {
 		} else {
 			log.info("FB | Successfully connected to firebase with token id:", oToken.uid);
 			hostid = oToken.uid;
-			fb.child(hostid).set(null);
+			// fb.child(hostid).set(null);
 			geb.emit('firebase:init');
 		}
 	});
@@ -30,10 +30,7 @@ exports.init = (conf) => {
 
 
 exports.logStats = (uid, oData) => {
-	let i = oUsers[uid] || 0;
-	i = (i < 1000) ? i : 0;
-	fb.child(hostid+'/'+uid+'/index').set(i);
-	fb.child(hostid+'/'+uid+'/data/'+i).set(oData);
+	fb.child(hostid+'/'+uid+'/index').set(oData.index);
+	fb.child(hostid+'/'+uid+'/data/'+oData.index).set(oData);
 	fb.child(hostid+'/'+uid+'/latest').set(oData);
-	oUsers[uid] = i+1;
 }

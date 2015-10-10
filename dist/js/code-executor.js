@@ -5,10 +5,8 @@
 // > A dedicated process instance for each user with limited memory use
 
 // **Loads Modules:**
-// 	// and [Dynamic Modules](dynamic-modules.html)
-// 	// dynmod = require('./dynamic-modules')
-// 	;
-var os = require('os');
+	// and [Process Logger](process-logger.html)
+var pl = require('./process-logger');
 
 function sendToParent(obj) {
 	try {
@@ -17,6 +15,11 @@ function sendToParent(obj) {
 		console.error(err);
 	}
 }
+
+pl((stats) => sendToParent({
+	cmd: 'stats',
+	data: stats
+}));
 
 function sendLog(level, msg) {
 	sendToParent({
@@ -35,8 +38,8 @@ var log = {
 };
 
 process.on('uncaughtException', (err) => {
-	log.error('Your Code Executor produced an error!');
-	log.error(err);
+	console.error('Your Code Executor produced an error!');
+	console.error(err);
 });
 process.on('disconnect', () => {
 	log.warn('TP | Shutting down Code Executor');
@@ -46,14 +49,3 @@ process.on('message', (msg) => {
 	log.info('Child got command: ' + msg.cmd);
 });
 
-setInterval(() => {
-	sendToParent({
-		cmd: 'stats',
-		data: {
-			timestamp: (new Date()).getTime(),
-			memory: process.memoryUsage(),
-			loadavg: os.loadavg()
-		}
-	});
-}, 10*1000); // We are exhaustively sending stats to the parent
-log.info('Child started with PID #'+process.pid+'!');
