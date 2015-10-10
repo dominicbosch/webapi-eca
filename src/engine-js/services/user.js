@@ -13,6 +13,7 @@ var log = require('../logging'),
 	express = require('express'),
 
 	db = global.db,
+	geb = global.eventBackbone,
 	router = module.exports = express.Router();
 
 router.post('/passwordchange', (req, res) => {
@@ -51,5 +52,31 @@ router.post('/getall', (req, res) => {
 	db.getAllUsers((err, arrUsers) => {
 		if(err) res.status(500).send('Unable to fetch users!');
 		else res.send(arrUsers);
+	});
+});
+
+router.post('/worker/:action', (req, res) => {
+	db.getUserByName(req.body.username, (err, oUser) => {
+		if(oUser) {
+			let action = req.params.action === 'kill' ? 'kill' : 'start';
+			geb.emit('user:'+action+'worker', oUser);
+			res.send('Done')
+		} else res.status(404).send('User not found!')
+	});
+});
+
+// router.post('/worker/kill', (req, res) => {
+// 	db.getUserByName(req.body.username, (err, oUser) => {
+// 		if(oUser) {
+// 			geb.emit('user:killworker', oUser);
+// 			res.send('Done')
+// 		} else res.status(404).send('User not found!')
+// 	});
+// });
+
+router.post('/worker/get', (req, res) => {
+	db.getWorker(req.body.username, (err, oWorker) => {
+		if(err) res.status(404).send('Not found!')
+		else res.send(oWorker);
 	});
 });

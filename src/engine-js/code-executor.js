@@ -42,7 +42,7 @@ process.on('uncaughtException', (err) => {
 	console.error(err);
 });
 process.on('disconnect', () => {
-	log.warn('TP | Shutting down Code Executor');
+	console.log('TP | Shutting down Code Executor');
 	process.exit();
 });
 process.on('message', (msg) => {

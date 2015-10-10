@@ -41,8 +41,6 @@ geb.addListener('firebase:init', (oc) => {
 			if(arrUsernames.indexOf(username) === -1) {
 				arrUsers[username].username = username;
 				db.storeUser(arrUsers[username], (err, oUser) => {
-					console.log(err);
-					console.log(oUser);
 					log.info('PM | User '+oUser.username+' successfully stored with ID#'+oUser.id);
 					forkChild(oUser);
 				});
@@ -50,6 +48,17 @@ geb.addListener('firebase:init', (oc) => {
 		}
 	});
 	pl((stats) => fb.logStats('webapi-eca-system', stats));
+});
+
+geb.addListener('user:startworker', forkChild);
+
+geb.addListener('user:killworker', (oUser) => {
+	if(oChildren[oUser.id]) {
+		oChildren[oUser.id].kill();
+		log.warn('PM | Killed user process for user ID#'+oUser.id);
+		db.setWorker(oUser.id, null)
+		oChildren[oUser.id] = null;
+	}
 });
 
 function forkChild(oUser) {
@@ -62,6 +71,7 @@ function forkChild(oUser) {
 		let proc = cp.fork(path.resolve(__dirname, 'code-executor'), [], options);
 		log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
 		oChildren[oUser.id] = proc;
+		db.setWorker(oUser.id, proc.pid)
 		proc.on('message', (o) => {
 			switch(o.cmd) {
 				case 'log': db.logProcess(oUser.id, o.data);

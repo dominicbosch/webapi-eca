@@ -1,3 +1,12 @@
+
+#usernames {
+	display: none;
+}
+
+button[disabled] {
+	opacity: 0.5;
+}
+
 .legend {
 	padding-left: 20px;
 }
@@ -18,26 +27,26 @@ svg {
 .line { fill: none; }
 
 .heapTotal {
-	color: coral;
-	stroke: coral;
+	color: steelblue;
+	stroke: steelblue;
 }
 .heapUsed {
-	color: lightcoral;
-	stroke: lightcoral;
+	color: firebrick;
+	stroke: firebrick;
 }
 .rss {
 	color: lightslategrey;
 	stroke: lightslategrey;
 }
 .load {
-	color: limegreen;
-	stroke: limegreen;
+	color: darkgreen;
+	stroke: darkgreen;
 }
 .load text {
 	stroke: none;
-	fill: limegreen;
+	fill: darkgreen;
 }
 .axis.load path,
 .axis.load line {
-	stroke: limegreen;
+	stroke: darkgreen;
 }

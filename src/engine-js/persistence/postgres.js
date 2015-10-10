@@ -16,7 +16,7 @@ var log = require('../logging'),
 
 // DB Models:
 	User,
-	Process,
+	Worker,
 	Rule,
 	Webhook,
 	EventTrigger,
@@ -45,7 +45,7 @@ function initializeModels() {
 		password: Sequelize.STRING,
 		isAdmin: Sequelize.BOOLEAN
 	});
-	Process = sequelize.define('Process', {
+	Worker = sequelize.define('Worker', {
 		pid: { type: Sequelize.INTEGER, unique: true },
 		log: Sequelize.ARRAY(Sequelize.STRING),
 		modules: Sequelize.ARRAY(Sequelize.STRING),
@@ -72,12 +72,12 @@ function initializeModels() {
 
 	// ### Define Relations
 	// If a user gets deleted, we delete all his realted data too (cascade) 
-	Process.belongsTo(User);
+	Worker.belongsTo(User);
 	Rule.belongsTo(User);
 	Webhook.belongsTo(User);
 	EventTrigger.belongsTo(User);
 	ActionDispatcher.belongsTo(User);
-	User.hasOne(Process, { onDelete: 'cascade' });
+	User.hasOne(Worker, { onDelete: 'cascade' });
 	User.hasMany(Rule, { onDelete: 'cascade' });
 	User.hasMany(Webhook, { onDelete: 'cascade' });
 	User.hasMany(EventTrigger, { onDelete: 'cascade' });
@@ -123,12 +123,19 @@ exports.getUser = (uid, cb) => {
 	}, cb).catch(ec);
 };
 
-// Fetch all user IDs and pass them to cb(err, obj).
+exports.getUserByName = (username, cb) => {
+	User.findOne({ where: { username: username } }).then((oRecord) => {
+		if(oRecord) cb(null, oRecord.toJSON());
+		else cb(new Error('User not found!'));
+	}, cb).catch(ec);
+};
+
 exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user ' + oUser.username);
-	User.create(oUser).then((obj) => {
-		cb(null, obj.toJSON());
-		// return obj.addProcess(Process.create({pid: 98765}))
+	User.create(oUser).then((oNewUser) => {
+		return Worker.create({}).then((oWorker) => {
+			oNewUser.setWorker(oWorker).then(() => cb(null, oNewUser.toJSON()));
+		});
 	}, cb).catch(ec);
 };
 
@@ -174,16 +181,31 @@ exports.getAllUsers = (cb) => {
 
 
 // ##
-// ## DEDICATED PROCESS
+// ## DEDICATED WORKER PROCESS
 // ##
 
-exports.logProcess = (uid) => {
+exports.logWorker = (uid) => {
 	User.findById(uid).then((oUser) => {
-		return oUser.getProcess().then((oProc) => {
+		return oUser.getWorker().then((oWorker) => {
 			console.log('got process');
-			console.log(oProc);
+			console.log(oWorker);
 		})
-	}).catch((err) => console.error('Logging failed for uid "'+uid+'"', err));
+	}, cb).catch(ec);
+};
+
+exports.getWorker = (username, cb) => {
+	User.findOne({ where: { username: username } }).then((oUser) => {
+		if(!oUser) return cb(new Error('User not found!'))
+		return oUser.getWorker().then((oWorker) => cb(null, oWorker.toJSON()));
+	}, cb).catch(ec);
+};
+
+exports.setWorker = (uid, pid) => {
+	User.findById(uid).then((oUser) => {
+		if(oUser) return oUser.getWorker().then((oWorker) => {
+			return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
+		});
+	}).catch(ec);
 };
 
 
@@ -193,8 +215,8 @@ exports.logProcess = (uid) => {
 
 exports.getAllWebhooks = (cb) => {
 	Webhook.findAll()
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
-		.catch(cb);
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb)
+		.catch(ec);
 };
 
 exports.getAllUserWebhooks = (uid, cb) => {
@@ -215,7 +237,7 @@ exports.getAllUserWebhooks = (uid, cb) => {
 				public: arrRecordsToJSON(publicSearch.value())
 			};
 			cb(null, arrResult);
-		}).catch(cb);
+		}, cb).catch(ec);
 };
 
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
