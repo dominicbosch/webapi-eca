@@ -29,6 +29,11 @@ exports.init = (conf) => {
 }
 
 
+exports.logState = (uid, state, ts) => {
+	fb.child(hostid+'/'+uid+'/'+state).push(ts);
+}
+
+
 exports.logStats = (uid, oData) => {
 	fb.child(hostid+'/'+uid+'/index').set(oData.index);
 	fb.child(hostid+'/'+uid+'/data/'+oData.index).set(oData);

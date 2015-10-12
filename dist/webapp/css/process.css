@@ -50,3 +50,19 @@ svg {
 .axis.load line {
 	stroke: darkgreen;
 }
+
+.legend.startup {
+	color: orange;
+}
+
+.startup line {
+	stroke: orange;
+	stroke-width: 5px;
+	opacity: 0.5;
+}
+
+.shutdown line {
+	stroke: red;
+	stroke-width: 5px;
+	opacity: 0.5;
+}

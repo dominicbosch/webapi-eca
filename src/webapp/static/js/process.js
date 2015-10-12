@@ -14,8 +14,7 @@ $(document).ready(function() {
 	var canvas = svg.append('g')
 		.attr('transform', 'translate('+margin.left+','+margin.top+')');
 
-	var gPath = svg.append('g')
-		.attr('transform', 'translate('+margin.left+','+margin.top+')');
+	var gPath = canvas.append('g');
 
 	var username = svg.attr('data-user');
 	var isAdmin = svg.attr('data-admin') === 'true';
@@ -90,9 +89,11 @@ $(document).ready(function() {
 			.style('text-anchor', 'end')
 			.text('Memory Usage (MB)');
 
+	canvas.append('g').attr('class', 'startup');
+	canvas.append('g').attr('class', 'shutdown');
 
-	function displayUser(arr) {
-		arrData = arr;
+	function displayUser(oData) {
+		arrData = oData.data;
 		// Relink the array so the path gets linked right
 
 		memMax = d3.max(
@@ -114,6 +115,27 @@ $(document).ready(function() {
 		yAxisCPU = d3.svg.axis().scale(scaleYCPU)
 			.tickFormat(d3.format('%.0')).orient('left');
 
+		// Displax startups
+		if(oData.startup) {
+			let arrStartups = Object.keys(oData.startup)
+				.map(function(key) { return oData.startup[key]; });
+			console.log(arrStartups);
+			let d3s = d3.selectAll('.startup').selectAll('line').data(arrStartups);
+			d3s.exit().transition().attr('transform', 'translate(-100,0)').remove();
+			d3s.enter().append('line')
+				.attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', height+20)
+				.attr('transform', 'translate(-100,0)');
+		}
+		if(oData.shutdown) {
+			let arrShutdowns = Object.keys(oData.shutdown)
+				.map(function(key) { return oData.shutdown[key]; });
+			console.log(arrShutdowns);
+			d3s = d3.selectAll('.shutdown').selectAll('line').data(arrShutdowns);
+			d3s.exit().transition().attr('transform', 'translate(-100,0)').remove();
+			d3s.enter().append('line')
+				.attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', height+20)
+				.attr('transform', 'translate(-100,0)');
+		}
 		updateGraph();
 	}
 	
@@ -149,9 +171,9 @@ $(document).ready(function() {
 		selectBox.on('change',(el) => {
 			button.attr('disabled', 'disabled');
 			updateButton();
-			displayUser(oData[selectBox.node().value].data)
+			displayUser(oData[selectBox.node().value]);
 		});
-		displayUser(oData[username].data);
+		displayUser(oData[username]);
 		
 		if(isAdmin) selectBox.style('display', 'inline');
 
@@ -185,6 +207,9 @@ $(document).ready(function() {
 		d3.selectAll('path.load.avg').transition().attr('d', lineCPU(['loadavg', 'avg']));
 		d3.selectAll('path.load.min').transition().attr('d', lineCPU(['loadavg', 'min']));
 		d3.selectAll('path.load.max').transition().attr('d', lineCPU(['loadavg', 'max']));
+
+		d3.selectAll('.startup line').transition().attr('transform', function(d) { return 'translate('+scaleX(d)+',0)' })
 	};
+
 	window.onresize = updateGraph;
 });

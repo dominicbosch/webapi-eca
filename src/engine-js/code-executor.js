@@ -16,10 +16,7 @@ function sendToParent(obj) {
 	}
 }
 
-pl((stats) => sendToParent({
-	cmd: 'stats',
-	data: stats
-}));
+pl(sendToParent);
 
 function sendLog(level, msg) {
 	sendToParent({
@@ -38,8 +35,8 @@ var log = {
 };
 
 process.on('uncaughtException', (err) => {
-	console.error('Your Code Executor produced an error!');
-	console.error(err);
+	console.log('Your Code Executor produced an error!');
+	console.log(err);
 });
 process.on('disconnect', () => {
 	console.log('TP | Shutting down Code Executor');

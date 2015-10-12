@@ -3,8 +3,11 @@
 // 	[os](http://nodejs.org/api/os.html) and
 var os = require('os');
 
-module.exports = function(sendLog) {
-
+module.exports = function(sendStats) {
+	sendStats({
+		cmd: 'startup',
+		timestamp: (new Date()).getTime()
+	});
 	// measure every minute. min/max average over two hours (120 data points averaged),
 	// 100 data points overall -> 1.5 weeks of data displayed
 	var dataIndex = 0;
@@ -57,13 +60,16 @@ module.exports = function(sendLog) {
 		updateMetric(oCumulated.heapUsed, mem.heapUsed);
 		updateMetric(oCumulated.rss, mem.rss);
 		updateMetric(oCumulated.loadavg, os.loadavg()[0]);
-		sendLog({
-			index: dataIndex,
-			timestamp: (new Date()).getTime(),
-			heapTotal: getMetric(oCumulated.heapTotal),
-			heapUsed: getMetric(oCumulated.heapUsed),
-			rss: getMetric(oCumulated.rss),
-			loadavg: getMetric(oCumulated.loadavg)
+		sendStats({
+			cmd: 'stats',
+			data: {
+				index: dataIndex,
+				timestamp: (new Date()).getTime(),
+				heapTotal: getMetric(oCumulated.heapTotal),
+				heapUsed: getMetric(oCumulated.heapUsed),
+				rss: getMetric(oCumulated.rss),
+				loadavg: getMetric(oCumulated.loadavg)
+			}
 		});
 	}
 	resetLog();

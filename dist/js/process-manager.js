@@ -47,7 +47,7 @@ geb.addListener('firebase:init', (oc) => {
 			}
 		}
 	});
-	pl((stats) => fb.logStats('webapi-eca-system', stats));
+	pl(registerProcessLogger(null, 'webapi-eca-system'));
 });
 
 geb.addListener('user:startworker', forkChild);
@@ -61,25 +61,37 @@ geb.addListener('user:killworker', (oUser) => {
 	}
 });
 
+function registerProcessLogger(uid, username) {
+	return (oMsg) => {
+		switch(oMsg.cmd) {
+			case 'log': db.logProcess(uid, oMsg.data);
+				break;
+			case 'startup':
+			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
+				break;
+			case 'stats': fb.logStats(username, oMsg.data);
+				break;
+		}
+	}
+}
+
 function forkChild(oUser) {
 	var options = {
 		execArgv: ['--max-old-space-size=20']
+		// , stdio: [ 0, 0, 0 ]
 	};
 	if(oChildren[oUser.id]) {
 		log.warn('PM | Dedicated process for user '+oUser.username+' already existing with PID '+oChildren[oUser.id].pid);
 	} else {
 		let proc = cp.fork(path.resolve(__dirname, 'code-executor'), [], options);
+		// proc.stdout.pipe(process.stdout);
+		// proc.stderr.pipe(process.stderr);
+
 		log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
 		oChildren[oUser.id] = proc;
-		db.setWorker(oUser.id, proc.pid)
-		proc.on('message', (o) => {
-			switch(o.cmd) {
-				case 'log': db.logProcess(oUser.id, o.data);
-					break;
-				case 'stats': fb.logStats(oUser.username, o.data);
-					break;
-			}
-		});
+		db.setWorker(oUser.id, proc.pid);
+
+		proc.on('message', registerProcessLogger(oUser.id, oUser.username));
 	}
 }
 
