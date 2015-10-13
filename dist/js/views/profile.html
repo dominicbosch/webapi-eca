@@ -15,13 +15,14 @@
 
 		<h2>Worker</h2>
 		<select id="usernames"></select>
-		<span class="load legend">- CPU</span>
-		<span class="heapTotal legend">- Heap Total</span>
-		<span class="heapUsed legend">- Heap Used</span>
-		<span class="rss legend">- Resident Set Size</span>
-		<span class="startup legend">- Worker Restart</span>
+		<span class="legend load">- CPU</span>
+		<span class="legend heapTotal">- Heap Total</span>
+		<span class="legend heapUsed">- Heap Used</span>
+		<span class="legend rss">- Resident Set Size</span>
+		<span class="legend startup">| Worker Start</span>
+		<span class="legend shutdown">| Worker Shutdown</span>
 		<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}" style="width: 100%;height: 300px;"></svg>
-		<button id="workerbutton">Stop Worker</button>
+		<button id="workerbutton" disabled>Stop Worker</button>
 	
 <div class="container-fluid">
 	<div class="row">

@@ -42,56 +42,72 @@ geb.addListener('firebase:init', (oc) => {
 				arrUsers[username].username = username;
 				db.storeUser(arrUsers[username], (err, oUser) => {
 					log.info('PM | User '+oUser.username+' successfully stored with ID#'+oUser.id);
-					forkChild(oUser);
+					exports.startWorker(oUser);
 				});
 			}
 		}
+		for(let i = 0; i < arrReply.length; i++) {
+			exports.startWorker(arrReply[i]);
+		}
 	});
-	pl(registerProcessLogger(null, 'webapi-eca-system'));
+	fb.getLastIndex('webapi-eca-system', (err, id) => {
+		pl(registerProcessLogger(null, 'webapi-eca-system'), id);
+	})
 });
 
-geb.addListener('user:startworker', forkChild);
-
-geb.addListener('user:killworker', (oUser) => {
-	if(oChildren[oUser.id]) {
-		oChildren[oUser.id].kill();
-		log.warn('PM | Killed user process for user ID#'+oUser.id);
-		db.setWorker(oUser.id, null)
-		oChildren[oUser.id] = null;
-	}
+geb.addListener('system:shutdown', () => {
+	fb.logState('webapi-eca-system', 'shutdown', (new Date().getTime()))
 });
 
 function registerProcessLogger(uid, username) {
 	return (oMsg) => {
 		switch(oMsg.cmd) {
-			case 'log': db.logProcess(uid, oMsg.data);
+			case 'log:debug': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(oMsg.data));
+				break;
+			case 'log:info': db.logWorker(uid, oMsg.data);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;
 			case 'stats': fb.logStats(username, oMsg.data);
 				break;
+			default: log.warn('PM | Got unknown command:' + oMsg.comd);
 		}
 	}
 }
 
-function forkChild(oUser) {
+exports.killWorker = function(oUser, cb) {
+	if(oChildren[oUser.id]) {
+		oChildren[oUser.id].kill('SIGINT');
+		log.warn('PM | Killed user process for user ID#'+oUser.id);
+		fb.logState(oUser.username, 'shutdown', (new Date().getTime()))
+		db.setWorker(oUser.id, null)
+		oChildren[oUser.id] = null;
+		cb(null);
+	} else cb(new Error('Process not running!'))
+}
+
+exports.startWorker = function(oUser, cb) {
 	var options = {
 		execArgv: ['--max-old-space-size=20']
 		// , stdio: [ 0, 0, 0 ]
 	};
 	if(oChildren[oUser.id]) {
 		log.warn('PM | Dedicated process for user '+oUser.username+' already existing with PID '+oChildren[oUser.id].pid);
+		if(typeof cb === 'function') cb(new Error('Process already running'))
 	} else {
-		let proc = cp.fork(path.resolve(__dirname, 'code-executor'), [], options);
-		// proc.stdout.pipe(process.stdout);
-		// proc.stderr.pipe(process.stderr);
-
-		log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
-		oChildren[oUser.id] = proc;
-		db.setWorker(oUser.id, proc.pid);
-
-		proc.on('message', registerProcessLogger(oUser.id, oUser.username));
+		fb.getLastIndex(oUser.username, (err, id) => {
+			let proc = cp.fork(path.resolve(__dirname, 'code-executor'), [], options);
+			proc.send({
+				cmd: 'init',
+				startIndex: id
+			});
+			log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
+			oChildren[oUser.id] = proc;
+			db.setWorker(oUser.id, proc.pid);
+			proc.on('message', registerProcessLogger(oUser.id, oUser.username));
+			if(typeof cb === 'function') cb(null);
+		});
 	}
 }
 

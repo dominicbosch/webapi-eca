@@ -3,14 +3,14 @@
 // 	[os](http://nodejs.org/api/os.html) and
 var os = require('os');
 
-module.exports = function(sendStats) {
+module.exports = function(sendStats, startIndex) {
 	sendStats({
 		cmd: 'startup',
 		timestamp: (new Date()).getTime()
 	});
 	// measure every minute. min/max average over two hours (120 data points averaged),
 	// 100 data points overall -> 1.5 weeks of data displayed
-	var dataIndex = 0;
+	var dataIndex = startIndex;
 	var currI = 0;
 	var oCumulated;
 
@@ -74,5 +74,6 @@ module.exports = function(sendStats) {
 	}
 	resetLog();
 	updateLog();
+	dataIndex++;
 	setInterval(updateLog, 1*1000); // We are exhaustively sending stats to the parent
 }

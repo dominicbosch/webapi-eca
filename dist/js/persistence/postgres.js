@@ -84,8 +84,8 @@ function initializeModels() {
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
 	
 	// Return a promise
-	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
-	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
+	// return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
 function ec(err) { log.error(err) }
@@ -184,13 +184,13 @@ exports.getAllUsers = (cb) => {
 // ## DEDICATED WORKER PROCESS
 // ##
 
-exports.logWorker = (uid) => {
+exports.logWorker = (uid, msg) => {
 	User.findById(uid).then((oUser) => {
 		return oUser.getWorker().then((oWorker) => {
-			console.log('got process');
-			console.log(oWorker);
+			console.log('got process, logging:', msg);
+			console.log(oWorker.toJSON());
 		})
-	}, cb).catch(ec);
+	}).catch(ec);
 };
 
 exports.getWorker = (username, cb) => {

@@ -11,6 +11,7 @@ var express = require('express'),
 
 	// - [Logging](logging.html)
 	log = require('../logging'),
+	pm = require('../process-manager'),
 
 	db = global.db,
 	geb = global.eventBackbone;
@@ -27,8 +28,7 @@ router.use('/*', (req, res, next) => {
 router.post('/createuser', (req, res) => {
 	if(req.body.username && req.body.password) {
 		db.getUsers((err, arrUsers) => {
-			console.log('db.getUsers', arrUsers);
-			let arrUserNames = arrUsers.map((o) = o.username);
+			let arrUserNames = arrUsers.map((o) => o.username);
 			if(arrUserNames.indexOf(req.body.username) > -1) {
 				res.status(409).send('User already existing!'); 
 			} else {	
@@ -42,9 +42,17 @@ router.post('/createuser', (req, res) => {
 						log.error('Unable to create user!', err);
 						res.status(500).send('Unable to create user!');
 					} else {
-						log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
-						res.send('New user "'+oUser.username+'" created!');
-						geb.emit('user:new', oUser);
+						log.info('User stored... starting up his dedicated process');
+						pm.startWorker(oUser, (err) => {
+							let msg = 'New user "'+oUser.username+'" created!';
+							if(err) {
+								log.warn('Starting of process for user "'+oUser.username+'" failed!');
+								msg += ' But starting of process failed!';
+							}
+							log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
+							res.send(msg);
+							geb.emit('user:new', oUser);
+						});
 					}
 				});
 			}

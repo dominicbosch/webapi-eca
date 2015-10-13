@@ -29,6 +29,10 @@ exports.init = (conf) => {
 }
 
 
+exports.getLastIndex = (uid, cb) => {
+	fb.child(hostid+'/'+uid+'/index').once('value', (v) => cb(null, v.val() || 0));
+}
+
 exports.logState = (uid, state, ts) => {
 	fb.child(hostid+'/'+uid+'/'+state).push(ts);
 }

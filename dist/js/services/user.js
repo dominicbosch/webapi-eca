@@ -8,10 +8,12 @@
 
 // - [Logging](logging.html)
 var log = require('../logging'),
+	pm = require('../process-manager'),
 
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
 
+	arrLastStart = {},
 	db = global.db,
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
@@ -55,24 +57,37 @@ router.post('/getall', (req, res) => {
 	});
 });
 
-router.post('/worker/:action', (req, res) => {
+router.post('/worker/state/start', (req, res) => {
+	let uname = req.body.username;
+	let now = (new Date()).getTime();
+	if(arrLastStart[uname] && arrLastStart[uname] > (now - 60*1000)) {
+		res.status(400).send('You can\'t start your worker all the time. Please wait at least one minute!');
+	} else {
+		db.getUserByName(req.body.username, (err, oUser) => {
+			if(oUser) {
+				pm.startWorker(oUser, (err) => {
+					if(err) res.status(400).send(err);
+					else {
+						res.send('Done');
+						arrLastStart[uname] = now;
+					}					
+				});
+			} else res.status(404).send('User not found!')
+		});
+	}
+});
+
+router.post('/worker/state/kill', (req, res) => {
 	db.getUserByName(req.body.username, (err, oUser) => {
 		if(oUser) {
-			let action = req.params.action === 'kill' ? 'kill' : 'start';
-			geb.emit('user:'+action+'worker', oUser);
-			res.send('Done')
+			pm.killWorker(oUser, (err) => {
+				if(err) res.status(400).send(err);
+				else res.send('Done');
+			});
 		} else res.status(404).send('User not found!')
 	});
 });
 
-// router.post('/worker/kill', (req, res) => {
-// 	db.getUserByName(req.body.username, (err, oUser) => {
-// 		if(oUser) {
-// 			geb.emit('user:killworker', oUser);
-// 			res.send('Done')
-// 		} else res.status(404).send('User not found!')
-// 	});
-// });
 
 router.post('/worker/get', (req, res) => {
 	db.getWorker(req.body.username, (err, oWorker) => {

@@ -9,6 +9,7 @@ button[disabled] {
 
 .legend {
 	padding-left: 20px;
+	font-size: 0.8em;
 }
 
 svg {
@@ -39,30 +40,36 @@ svg {
 	stroke: lightslategrey;
 }
 .load {
-	color: darkgreen;
-	stroke: darkgreen;
+	color: darkmagenta;
+	stroke: darkmagenta;
 }
 .load text {
 	stroke: none;
-	fill: darkgreen;
+	fill: darkmagenta;
 }
 .axis.load path,
 .axis.load line {
-	stroke: darkgreen;
+	stroke: darkmagenta;
 }
 
 .legend.startup {
-	color: orange;
+	color: forestgreen;
+}
+.legend.shutdown {
+	color: crimson;
 }
 
 .startup line {
-	stroke: orange;
-	stroke-width: 5px;
-	opacity: 0.5;
+	shape-rendering: crispEdges;
+	stroke: forestgreen;
+	stroke-width: 2px;
+	opacity: 0.4;
 }
 
 .shutdown line {
-	stroke: red;
-	stroke-width: 5px;
-	opacity: 0.5;
+	shape-rendering: crispEdges;
+	stroke: crimson;
+	stroke-width: 2px;
+	opacity: 0.4;
+	/*opacity: 0.5;*/
 }

@@ -16,19 +16,16 @@ function sendToParent(obj) {
 	}
 }
 
-pl(sendToParent);
 
 function sendLog(level, msg) {
 	sendToParent({
-		cmd: 'log',
-		data: {
-			level: level,
-			msg: msg
-		}
+		cmd: 'log:'+level,
+		data: msg
 	});
 }
 
 var log = {
+	debug: (msg) => sendLog('debug', msg),
 	info: (msg) => sendLog('info', msg),
 	warn: (msg) => sendLog('warn', msg),
 	error: (msg) => sendLog('error', msg)
@@ -42,7 +39,13 @@ process.on('disconnect', () => {
 	console.log('TP | Shutting down Code Executor');
 	process.exit();
 });
-process.on('message', (msg) => {
-	log.info('Child got command: ' + msg.cmd);
+process.on('message', (oMsg) => {
+	switch(oMsg.cmd) {
+		case 'init': 
+			pl(sendToParent, oMsg.startIndex);
+			log.debug('Starting up with initial stats log index ' + oMsg.startIndex);
+		break;
+		default: console.log('unknown command on child', oMsg)
+	}
 });
 
