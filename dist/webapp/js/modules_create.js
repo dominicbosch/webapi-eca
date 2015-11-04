@@ -132,13 +132,11 @@ fOnLoad = function() {
       });
       moduletype = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
       obj = {
-        body: JSON.stringify({
-          id: $('#input_id').val(),
-          lang: $('#editor_mode').val(),
-          "public": $('#is_public').is(':checked'),
-          data: editor.getValue(),
-          params: JSON.stringify(listParams)
-        })
+        id: $('#input_id').val(),
+        lang: $('#editor_mode').val(),
+        "public": $('#is_public').is(':checked'),
+        data: editor.getValue(),
+        params: JSON.stringify(listParams)
       };
       fCheckOverwrite = function(obj, moduletype) {
         return function(err) {

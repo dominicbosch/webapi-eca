@@ -124,12 +124,11 @@ fOnLoad = () ->
 
 			moduletype = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 			obj =
-				body: JSON.stringify
-					id: $('#input_id').val()
-					lang: $('#editor_mode').val()
-					public: $('#is_public').is ':checked'
-					data: editor.getValue()
-					params: JSON.stringify listParams
+				id: $('#input_id').val()
+				lang: $('#editor_mode').val()
+				public: $('#is_public').is ':checked'
+				data: editor.getValue()
+				params: JSON.stringify listParams
 			fCheckOverwrite = (obj, moduletype) ->
 				(err) ->
 					if err.status is 409

@@ -23,18 +23,18 @@ router.post('/getall', (req, res) => {
 });
 
 router.post('/store', (req, res) => {
-	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
+	log.info('SRVC | ACTION DISPATCHERS | Storing');
 	db.getAllActionDispatchers(req.session.pub.id, (arr) => {
 		arr = arr || [];
 		let arrNames = arr.map((o) => o.name);
-		console.log('new module', req.id);
+		console.log('new module', req.body.id);
 		console.log('all actions: ', arrNames);
-		if(arrNames.indexOf(req.name) > -1) {
-			if(req.overwrite) storeModule(req.session.pub, req, res);
-			else req.status(409).send('Module name already existing: '+req.name);
+		if(arrNames.indexOf(req.body.name) > -1) {
+			if(req.overwrite) storeModule(req.session.pub, req.body, res);
+			else req.status(409).send('Module name already existing: '+req.body.name);
 		} else {
-			if(req.overwrite) req.status(404).send('Module not found! Unable to overwrite '+req.name);
-			else storeModule(req.session.pub, req, res);
+			if(req.overwrite) req.status(404).send('Module not found! Unable to overwrite '+req.body.name);
+			else storeModule(req.session.pub, req.body, res);
 		}
 	});
 });
@@ -49,7 +49,7 @@ function storeModule(oUser, oBody, res) {
 	log.info('SRVC:AD | Running AD', Object.keys(oBody));
 	let mId = 'TMP|AD|'+Math.random().toString(36).substring(2)+'.vm';
 	// moduleId, src, lang, oGlobalVars, logFunction, oUser, cb
-	console.log(mId, oBody.data, oBody.lang, {}, () => {}, oUser);
+	console.log(mId, oBody, oUser);
 	dynmod.runStringAsModule(mId, oBody.data, oBody.lang, {}, () => {}, oUser, (err, oRunning) => {
 		if(err) {
 			log.error('SRVC:AD | Error running string as module: '+err.message);

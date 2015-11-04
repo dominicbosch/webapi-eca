@@ -185,19 +185,8 @@ $(document).ready(function() {
 		if(suspendUpdates) {
 			d3State = d3.transition().duration(700)
 				.each('end', function() { suspendUpdates = false; });
-			// d3.selectAll('.x.axis').transition().duration(700).call(xAxis)
-			// 	.selectAll('text.axislabel').attr('transform', 'translate('+width/2+',40)');
-
-			// d3.selectAll('.y.axis.mem').transition().duration(700).call(yAxis).attr('transform', 'translate('+width+',0)');
-			// d3.selectAll('.y.axis.load').transition().duration(700).call(yAxisCPU)
-			// 	.each('end', function() { suspendUpdates = false; });
 		} else {
 			d3State = d3;
-			// d3.selectAll('.x.axis').call(xAxis)
-			// 	.selectAll('text.axislabel').attr('transform', 'translate('+width/2+',40)');
-
-			// d3.selectAll('.y.axis.mem').call(yAxis).attr('transform', 'translate('+width+',0)');
-			// d3.selectAll('.y.axis.load').call(yAxisCPU);
 		}
 		d3State.selectAll('.x.axis').call(xAxis)
 			.selectAll('text.axislabel').attr('transform', 'translate('+width/2+',40)');
