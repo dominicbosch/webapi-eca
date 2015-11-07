@@ -156,7 +156,7 @@ function init() {
 			}
 			log.info('RS | Initializing http listener');
 			http.init(conf);
-			log.info('RS | Initialized http listener');
+			log.info('RS | Initializing Firebase');
 			fb.init(conf.firebase);
 
 			log.info('RS | All good so far, informing all modules about proper system initialization');
@@ -169,7 +169,7 @@ function init() {
 // Shuts down the server.
 function shutDown() {
 	log.warn('RS | Received shut down command!');
-	if(shutDown) db.shutDown();
+	if(db) db.shutDown();
 	if(engine) engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener

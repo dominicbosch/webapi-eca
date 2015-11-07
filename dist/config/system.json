@@ -4,13 +4,13 @@
 		"module": "postgres",
 		"host": "localhost",
 		"port": 5432,
-		"db": "[postgres-db]",
-		"user": "[postgres-user]",
-		"pass": "[postgres-pw]"
+		"db": "webapi-eca",
+		"user": "postgres",
+		"pass": "postgres"
 	},
 	"firebase": {
-		"app": "https://[your-app].firebaseio.com/",
-		"token": "[super-secret-string-goes-here]"
+		"app": "https://boiling-inferno-7829.firebaseio.com/",
+		"token": "2Jflsu4UNyuwB5E00sQwcCwd2RsMUuanRAKRbfj9"
 	},
 	"mode": "development",
 	"gc": "forced",

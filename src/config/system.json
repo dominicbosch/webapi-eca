@@ -4,9 +4,9 @@
 		"module": "postgres",
 		"host": "localhost",
 		"port": 5432,
-		"db": "[postgres-db]",
-		"user": "[postgres-user]",
-		"pass": "[postgres-pw]"
+		"db": "webapi-eca",
+		"user": "postgres",
+		"pass": "postgres"
 	},
 	"firebase": {
 		"app": "https://[your-app].firebaseio.com/",
