@@ -154,8 +154,9 @@ function init() {
 			for(let prop in dbMod) {
 				global.db[prop] = dbMod[prop]; // export DB properties
 			}
-			log.info('RS | Initialzing http listener');
+			log.info('RS | Initializing http listener');
 			http.init(conf);
+			log.info('RS | Initialized http listener');
 			fb.init(conf.firebase);
 
 			log.info('RS | All good so far, informing all modules about proper system initialization');

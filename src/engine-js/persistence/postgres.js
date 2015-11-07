@@ -27,14 +27,18 @@ var log = require('../logging'),
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
 exports.init = (oDB, cb) => {
 	var dbPort = parseInt(oDB.port) || 5432;
-	log.info('POSTGRES | Connecting module: ' + oDB.module + ', port: ' + dbPort + ', database: ' + oDB.db);
-	sequelize = new Sequelize('postgres://postgres:postgres@localhost:' + dbPort + '/' + oDB.db, {
+	log.info('POSTGRES | Connecting module: '+oDB.module+', host: '
+		+oDB.host+', port: '+dbPort+', username: '+oDB.user+', database: '+oDB.db);
+	sequelize = new Sequelize('postgres://'+oDB.user+':'+oDB.pass+'@'+oDB.host+':'+dbPort+'/'+oDB.db, {
 		// logging: false,
 		define: { timestamps: false }
 	});
 
 	// On success we call cb with nothing. if rejected an error is passed along:
-	sequelize.authenticate().then(initializeModels).then(() => cb(), cb);
+	sequelize.authenticate()
+		.then(initializeModels)
+		.then(() => cb())
+		.catch(cb);
 };
 
 // Initializes the Database model and returns also a promise
@@ -131,7 +135,7 @@ exports.getUserByName = (username, cb) => {
 };
 
 exports.storeUser = (oUser, cb) => {
-	log.info('POSTGRES | Storing new user ' + oUser.username);
+	log.info('POSTGRES | Storing new user '+oUser.username);
 	User.create(oUser).then((oNewUser) => {
 		return Worker.create({}).then((oWorker) => {
 			oNewUser.setWorker(oWorker).then(() => cb(null, oNewUser.toJSON()));
@@ -141,7 +145,7 @@ exports.storeUser = (oUser, cb) => {
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.updateUserAttribute = (uid, attr, val, cb) => {
-	log.info('POSTGRES | Updating user #' + uid);
+	log.info('POSTGRES | Updating user #'+uid);
 	User.findById(uid).then((oRecord) => {
 		if(oRecord) {
 			let oChg = {};
@@ -241,7 +245,7 @@ exports.getAllUserWebhooks = (uid, cb) => {
 };
 
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
-	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + uid);
+	log.info('POSTGRES | Storing new webhook '+hookname+' for user '+uid);
 	User.findById(uid).then((oUser) => {
 		return Webhook.create({
 			hookid: hookid,
