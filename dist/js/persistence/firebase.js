@@ -27,6 +27,10 @@ exports.init = (conf) => {
 			hostid = oToken.uid;
 			// fb.child(hostid).set(null);
 			geb.emit('firebase:init');
+
+			fb.onAuth((authData) => {
+				if(!authData) log.warn('FB | Authorization lost!');
+			});
 		}
 	});
 }

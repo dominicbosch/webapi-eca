@@ -3,6 +3,11 @@
 
 'use strict';
 
+// For all the human beings among us...
+process.on('unhandledRejection', function(err) {
+	console.error("UNHANDLED REJECTION", err.stack);
+});
+
 // >This is the main module that is used to run the whole application:
 // >
 // >     node webapi-eca [opt]
