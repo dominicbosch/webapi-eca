@@ -148,7 +148,10 @@ function init() {
 	// Init the database by using its promise, wau!
 	dbMod.init(conf.db, (err) => {
 		if(err) {
-			log.error('RS | No DB connection, shutting down system!');
+			log.error('RS | Error connecting DB!', err.toString(),
+				'You might want to change the configuration in config/system.json.',
+				'Shutting down system!'
+			);
 			shutDown();
 		} else {
 			for(let prop in dbMod) {
@@ -169,7 +172,7 @@ function init() {
 // Shuts down the server.
 function shutDown() {
 	log.warn('RS | Received shut down command!');
-	if(db) db.shutDown();
+	if(db.shutDown) db.shutDown();
 	if(engine) engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener

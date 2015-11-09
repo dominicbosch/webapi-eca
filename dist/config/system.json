@@ -5,12 +5,12 @@
 		"host": "localhost",
 		"port": 5432,
 		"db": "webapi-eca",
-		"user": "postgres",
-		"pass": "postgres"
+		"user": "[postgres-user]",
+		"pass": "[postgres-password]"
 	},
 	"firebase": {
-		"app": "https://boiling-inferno-7829.firebaseio.com/",
-		"token": "2Jflsu4UNyuwB5E00sQwcCwd2RsMUuanRAKRbfj9"
+		"app": "https://[your-app].firebaseio.com/",
+		"token": "[super-secret-string-goes-here]"
 	},
 	"mode": "development",
 	"gc": "forced",

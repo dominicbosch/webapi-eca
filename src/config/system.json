@@ -5,8 +5,8 @@
 		"host": "localhost",
 		"port": 5432,
 		"db": "webapi-eca",
-		"user": "postgres",
-		"pass": "postgres"
+		"user": "[postgres-user]",
+		"pass": "[postgres-password]"
 	},
 	"firebase": {
 		"app": "https://[your-app].firebaseio.com/",
