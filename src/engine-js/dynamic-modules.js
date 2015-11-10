@@ -22,21 +22,24 @@ var log = require('./logging'),
 	cs = require('coffee-script'),
 	//       [request](https://github.com/request/request)
 	request = require('request'),
-	geb = global.eventBackbone;
+	geb = global.eventBackbone,
+	oModules = {};
 	// oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
 
-// geb.addListener('system:modules', (msg) => {
-// 	// Replace the properties with the actual loaded modules
-// 	log.info('DM | Got new modules list: ' + Object.keys(oModules).join(', '));
-// 	for(let mod in oModules) {
-// 		try {
-// 			oModules[mod] = require(oModules[mod].module);
-// 			log.info('DM | Loaded module ' + mod);
-// 		} catch(err) {
-// 			log.error('DM | Module not found: ' + mod);
-// 		}
-// 	}
-// });
+geb.addListener('modules:list', (arrModules) => {
+	let arrAllowed = arrModules.filter((o) => o.allowed);
+	log.info('DM | Got new allowed modules list: ' + arrAllowed.map((o) => o.name).join(', '));
+	oModules = {};
+	for (var i = 0; i < arrAllowed.length; i++) {
+		try {
+			let oMod = arrAllowed[i];
+			oModules[oMod.name] = require(oMod.name);
+			log.info('DM | Loaded module ' + oMod.name);
+		} catch(err) {
+			log.error('DM | Module not found: ' + oMod.name);
+		}
+	}
+});
 
 let regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 function getFunctionArgumentsAsStringArray(func){	
@@ -67,21 +70,27 @@ function searchComment(lang, src) {
 // Attempt to run a JS module from a string, together with the
 // given parameters and arguments. If it is written in CoffeeScript we
 // compile it first into JS.
-exports.runStringAsModule = (moduleId, src, lang, oGlobalVars, logFunction, oUser, cb) => {
+// Options: id, globals, logger
+exports.runStringAsModule = (code, lang, username, opt, cb) => {
 	if(typeof cb !== 'function') return log.error('DM | No callback provided!');
 
-	if(!moduleId || !src || !lang || !oGlobalVars || !logFunction || !oUser) {
+	if(!code || !lang || !username) {
 		return cb({
-			code: 500,
-			message: 'Missing arguments!'
+			code: 400,
+			message: 'Missing parameters!'
 		});
 	}
+	opt = opt || {}; // In case user didn't pass this
+	if(!opt.id) opt.id = 'TMP|'+Math.random().toString(36).substring(2)+'.vm';
+	if(!opt.globals) opt.globals = {};
+	if(typeof opt.logger !== 'function') opt.logger = () => {};
 
 	if(lang === 'CoffeeScript') {
 		try {
-			log.info('DM | Compiling module "'+moduleId+'" for user "'+oUser.username);
-			src = cs.compile(src);
+			log.info('DM | Compiling module "'+opt.id+'" for user "'+username);
+			code = cs.compile(code);
 		} catch(err) {
+			log.error(err);
 			return cb({
 				code: 400,
 				message: 'Compilation of CoffeeScript failed at line '+err.location.first_line
@@ -90,18 +99,18 @@ exports.runStringAsModule = (moduleId, src, lang, oGlobalVars, logFunction, oUse
 	}
 
 	// Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
-	for(let prop in oGlobalVars) {
+	for(let prop in opt.globals) {
 		log.info('DM | Loading user defined global variable '+prop);
-		oGlobalVars[prop] = encryption.decrypt(oGlobalVars[prop].value);
+		opt.globals[prop] = encryption.decrypt(opt.globals[prop].value);
 	}
 
-	log.info('DM | Running module "'+moduleId+'" for user '+oUser.username);
+	log.info('DM | Running module "'+opt.id+'" for user '+username);
 	// The sandbox contains the objects that are accessible to the user.
 	// Eventually they need to be required from a vm themselves 
 	let sandbox = {
-		id: moduleId,
-		params: oGlobalVars,
-		log: logFunction,
+		id: opt.id,
+		params: opt.globals,
+		log: opt.logger,
 		exports: {},
 		sendEvent: (hook, evt) => {	
 			let options = {
@@ -112,7 +121,7 @@ exports.runStringAsModule = (moduleId, src, lang, oGlobalVars, logFunction, oUse
 			}
 			request(options, (err, res, body) => {
 				if(err || res.statusCode !== 200) 
-					logFunction('ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')');
+					opt.logger('ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')');
 			});
 		}
 	}
@@ -125,7 +134,7 @@ exports.runStringAsModule = (moduleId, src, lang, oGlobalVars, logFunction, oUse
 	// FIXME ENGINE BREAKS if non-existing module is used??? 
 	try {
 		// Finally the module is run in a VM
-		vm.runInNewContext(src, sandbox, sandbox.id);
+		vm.runInNewContext(code, sandbox, sandbox.id);
 	} catch(err) {
 		let oReply = {
 			code: 400,
@@ -135,16 +144,16 @@ exports.runStringAsModule = (moduleId, src, lang, oGlobalVars, logFunction, oUse
 		else oReply.message += 'Try to run the script locally to track the error!';
 		return cb(oReply);
 	}
-	log.info('DM | Module "'+moduleId+'" ran successfully for user '+oUser.username);
+	log.info('DM | Module "'+opt.id+'" ran successfully for user '+username);
 
 	// Now that the module ran successfully we can extract the argument names from all the exported functions
-	let oFunctionsArguments = {};
+	let oFunctions = {};
 	for(let func in sandbox.exports) {
-		oFunctionsArguments[func] = getFunctionArgumentsAsStringArray(sandbox.exports[func]);
+		oFunctions[func] = getFunctionArgumentsAsStringArray(sandbox.exports[func]);
 	}
 	cb(null, {
 		module: sandbox.exports,
-		comment: searchComment(lang, src),
-		functionArgs: oFunctionsArguments
+		comment: searchComment(lang, code),
+		functions: oFunctions
 	});
 }

@@ -13,7 +13,7 @@ fOnLoad = () ->
 	$('.moduletype').text modName
 	$('#linkMod').attr 'href', '/views/modules_create?m=' + oParams.m
 
-	req = $.post urlService + 'getall'
+	req = $.post urlService + 'get'
 	req.done ( arrModules ) ->
 		if arrModules.length is 0
 			$('#tableModules').html '<h3>No '+modName+'s available!'

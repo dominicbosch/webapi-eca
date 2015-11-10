@@ -137,10 +137,10 @@ exports.getUserByName = (username, cb) => {
 exports.storeUser = (oUser, cb) => {
 	log.info('POSTGRES | Storing new user '+oUser.username);
 	User.create(oUser).then((oNewUser) => {
-		return Worker.create({}).then((oWorker) => {
-			oNewUser.setWorker(oWorker).then(() => cb(null, oNewUser.toJSON()));
-		});
-	}, cb).catch(ec);
+		return oNewUser.createWorker({}).then(() => {
+			cb(null, oNewUser.toJSON())
+		}, cb);
+	}).catch(ec);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
@@ -205,24 +205,24 @@ exports.getWorker = (username, cb) => {
 };
 
 exports.setWorker = (uid, pid) => {
-	User.findById(uid).then((oUser) => {
-		if(oUser) return oUser.getWorker().then((oWorker) => {
-			return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
-		});
-	}).catch(ec);
+	User.findById(uid)
+		.then((oUser) => {
+			if(!oUser) throw new Error('User not found!');
+			return oUser.getWorker();
+		}).then((oWorker) => {
+			return oWorker.update({ pid: pid }, { fields: ['pid'] })
+		}).catch(ec);
 };
 
 
 // ##
 // ## WEBHOOKS
 // ##
-
 exports.getAllWebhooks = (cb) => {
 	Webhook.findAll()
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb)
 		.catch(ec);
 };
-
 exports.getAllUserWebhooks = (uid, cb) => {
 	var publicSearch = Webhook.findAll({ 
 		include: [ User ],
@@ -243,18 +243,16 @@ exports.getAllUserWebhooks = (uid, cb) => {
 			cb(null, arrResult);
 		}, cb).catch(ec);
 };
-
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 	log.info('POSTGRES | Storing new webhook '+hookname+' for user '+uid);
 	User.findById(uid).then((oUser) => {
-		return Webhook.create({
+		return oUser.createWebhook({
 			hookid: hookid,
 			hookname: hookname,
 			isPublic: isPublic
-		}).then((oWh) => oUser.addWebhook(oWh));
+		});
 	}).then(() => cb(), cb).catch(ec);
 };
-
 exports.deleteWebhook = (hookid, cb) => {
 	log.info('POSTGRES | Deleting webhook #'+hookid);
 	Webhook.findById(hookid).then((oRecord) => {
@@ -294,13 +292,30 @@ exports.getAllActionDispatchers = (uid, cb) => {
 	ActionDispatcher.findAll(query)
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
 };
-// exports.createActionDispatcher = (oAD, cb) => {
-// 	var query;
-// 	if(uid) query = { where: { UserId: uid } };
-// 	ActionDispatcher.findAll(query)
-// 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
-// 		.catch(cb);
-// };
+exports.getActionDispatcher = (uid, aid, cb) => {
+	var query = { where: {
+		id: aid,
+		UserId: uid
+	}};
+	ActionDispatcher.findOne(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+};
+exports.createActionDispatcher = (uid, oAD, cb) => {
+	User.findById(uid)
+		.then((oUser) => oUser.createActionDispatcher(oAD))
+		.then((oNewAD) => cb(null, oNewAD.toJSON()), cb)
+		.catch(ec);
+};
+exports.updateActionDispatcher = (uid, aid, oAd, cb) => {
+	User.findById(uid).then((oUser) => oUser.getActionDispatcher({ where: { id: aid }}))
+	// 	.then((oOldAd) => {
+	// 		console.log(Object.keys(oAd), Object.keys(oOldAd));
+	// 	})
+	// 	if(oUser) return oUser.getWorker().then((oWorker) => {
+	// 		return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
+	// 	});
+	// }).catch(ec);
+};
 exports.deleteActionDispatcher = (aid, cb) => {
 	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
 	ActionDispatcher.findById(aid).then((oRecord) => {

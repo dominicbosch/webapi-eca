@@ -1,7 +1,7 @@
 'use strict';
 
-if oParams.id
-	oParams.id = decodeURIComponent oParams.id
+moduleTypeName = if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
+moduleType = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 
 fErrHandler = (errMsg) ->
 	(err) ->
@@ -12,9 +12,8 @@ fErrHandler = (errMsg) ->
 
 fOnLoad = () ->
 # TODO first check whether oParams.m edit is a valid module before setting the title
-	moduleType =if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
 	title = if oParams.id then 'Edit ' else 'Create '
-	title += moduleType
+	title += moduleTypeName
 	$('#pagetitle').text title
 	
 	if oParams.m isnt 'ad'
@@ -40,11 +39,6 @@ fOnLoad = () ->
 	editor.getSession().on 'change', (el) ->
 		console.warn 'We should always search for export functions and provide means for ' +
 		'the user to enter a comment for each exported function'
-		# regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg
-		# function getFunctionArgumentsAsStringArray(func) {
-		# 	let fnStr = func.toString().replace(regexpComments, '');
-		# 	return fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(/([^\s,]+)/g) || [];
-		# }
 
 	$('#editor_mode').change (el) ->
 		if $(this).val() is 'CoffeeScript'
@@ -112,45 +106,34 @@ fOnLoad = () ->
 	# Add submit button logic
 	$('#but_submit').click () ->
 		if $('#input_id').val() is ''
-			alert "Please enter an #{moduleType} name!"
+			main.setInfo false, "Please enter an #{moduleTypeName} name!"
 		else
-			listParams = {}
-			$('#tableParams tr').each () ->
-				val =  $('input.textinput', this).val()
-				shld = $('input[type=checkbox]', this).is ':checked'
-				if val isnt ""
-					listParams[val] = shld
-				true
+			if !oParams.id or confirm 'Are you sure you want to overwrite the existing module?'
 
-			moduletype = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
-			obj =
-				id: $('#input_id').val()
-				lang: $('#editor_mode').val()
-				public: $('#is_public').is ':checked'
-				data: editor.getValue()
-				params: JSON.stringify listParams
-			fCheckOverwrite = (obj, moduletype) ->
-				(err) ->
-					if err.status is 409
-						if confirm 'Are you sure you want to overwrite the existing module?'
-							bod = JSON.parse obj.body
-							bod.overwrite = true
-							obj.body = JSON.stringify bod
-							$.post('/service/'+moduletype+'/store', obj)
-								.done (data) ->
-									$('#info').text data.message
-									$('#info').attr 'class', 'success'
-									alert "You need to update the rules that use this module in 
-													order for the changes to be applied to them!"
-								.fail fErrHandler "#{moduleType} not stored!"
-					else
-						fErrHandler("#{moduleType} not stored!") err
-			window.scrollTo 0, 0
-			$.post('/service/'+moduletype+'/store', obj)
-				.done (data) ->
-					$('#info').text data.message
-					$('#info').attr 'class', 'success'
-				.fail fCheckOverwrite obj, moduletype
+				listParams = {}
+				$('#tableParams tr').each () ->
+					val =  $('input.textinput', this).val()
+					shld = $('input[type=checkbox]', this).is ':checked'
+					if val isnt ""
+						listParams[val] = shld
+					true
+
+				obj =
+					id: oParams.id
+					name: $('#input_id').val()
+					lang: $('#editor_mode').val()
+					published: $('#is_public').is ':checked'
+					code: editor.getValue()
+					globals: listParams
+
+				action = if oParams.id then 'update' else 'create'
+				$.post('/service/'+moduleType+'/'+action, obj)
+					.done (data) ->
+						main.setInfo true, data.message
+						if oParams.id then alert "You need to update the rules that use this module in 
+										order for the changes to be applied to them!"
+
+					.fail fErrHandler '#{moduleTypeName} not stored!'
 	
 	# EDIT MODULES
 
@@ -177,7 +160,7 @@ fOnLoad = () ->
 					else 
 						editor.getSession().setMode "ace/mode/javascript"
 
-					if oMod.public is 'true' 
+					if oMod.published 
 						$('#is_public').prop 'checked', true
 					editor.setValue oMod.data
 					editor.moveCursorTo 0, 0

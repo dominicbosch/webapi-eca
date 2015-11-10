@@ -153,6 +153,7 @@ function init() {
 	// Init the database by using its promise, wau!
 	dbMod.init(conf.db, (err) => {
 		if(err) {
+			log.error(err);
 			log.error('RS | Error connecting DB!', err.toString(),
 				'You might want to change the configuration in config/system.json.',
 				'Shutting down system!'

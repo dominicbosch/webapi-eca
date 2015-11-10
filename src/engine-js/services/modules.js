@@ -70,6 +70,7 @@ function reloadModules(cb) {
 			let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 			log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
 			updateAllowedFlag(arrAllowed);
+			geb.emit('modules:list', arrModules);
 			cb(undefined, arrModules)
 		}
 	});
