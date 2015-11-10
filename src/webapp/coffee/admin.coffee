@@ -9,7 +9,7 @@ fOnLoad = () ->
 		main.setInfo false, err.responseText
 
 	updateUserList = () ->
-		$( '#users *' ).remove()
+		d3.selectAll('#users *').remove()
 		$.post( '/service/user/getall' )
 			.done ( arrUsers ) ->
 				for name, oUser of arrUsers
@@ -48,7 +48,35 @@ fOnLoad = () ->
 									main.setInfo true, msg
 								.fail failHandler
 
+	updateModuleList = () ->
+		dMods = d3.select '#modules'
+		dMods.selectAll('*').remove()
+		$.post( '/service/modules/get' )
+			.done ( arrModules ) ->
+				for name, oModule of arrModules
+					tr = dMods.append 'tr'
+					tr.append('td').append('input')
+						.attr('type', 'checkbox').attr('title', 'Allowed')
+						.attr('data-module', oModule.name).property 'checked', oModule.allowed
+
+					tr.append('td').classed('highlight', true).text oModule.name
+					tr.append('td').classed('highlight', true).text '('+oModule.version+')'
+					tr.append('td').text oModule.description
+
+				$( '#modules input' ).click () ->
+					dThis = d3.select this
+					strAllowed = if dThis.property('checked') then 'allow' else 'forbid'
+					if confirm 'Are you sure you want to ' + strAllowed + ' the module "' + dThis.attr('data-module')  + '"?' 
+						$.post('/service/modules/'+strAllowed,  module: dThis.attr('data-module'))
+							.done (msg) ->
+								main.setInfo true, msg
+								updateModuleList()
+							.fail (err) ->
+								dThis.property 'checked', not dThis.property 'checked'
+								failHandler(err)
+
 	updateUserList()
+	updateModuleList()
 
 	$( '#but_submit' ).click () ->
 		hp = CryptoJS.SHA3 $( '#pw' ).val(), outputLength: 512

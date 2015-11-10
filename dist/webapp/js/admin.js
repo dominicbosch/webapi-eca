@@ -2,7 +2,7 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  var failHandler, updateUserList;
+  var failHandler, updateModuleList, updateUserList;
   failHandler = function(err) {
     if (err.status === 401) {
       window.location.href = '/';
@@ -13,7 +13,7 @@ fOnLoad = function() {
     return main.setInfo(false, err.responseText);
   };
   updateUserList = function() {
-    $('#users *').remove();
+    d3.selectAll('#users *').remove();
     return $.post('/service/user/getall').done(function(arrUsers) {
       var name, oUser;
       for (name in arrUsers) {
@@ -52,7 +52,40 @@ fOnLoad = function() {
       });
     });
   };
+  updateModuleList = function() {
+    var dMods;
+    dMods = d3.select('#modules');
+    dMods.selectAll('*').remove();
+    return $.post('/service/modules/get').done(function(arrModules) {
+      var name, oModule, tr;
+      for (name in arrModules) {
+        oModule = arrModules[name];
+        tr = dMods.append('tr');
+        tr.append('td').append('input').attr('type', 'checkbox').attr('title', 'Allowed').attr('data-module', oModule.name).property('checked', oModule.allowed);
+        tr.append('td').classed('highlight', true).text(oModule.name);
+        tr.append('td').classed('highlight', true).text('(' + oModule.version + ')');
+        tr.append('td').text(oModule.description);
+      }
+      return $('#modules input').click(function() {
+        var dThis, strAllowed;
+        dThis = d3.select(this);
+        strAllowed = dThis.property('checked') ? 'allow' : 'forbid';
+        if (confirm('Are you sure you want to ' + strAllowed + ' the module "' + dThis.attr('data-module') + '"?')) {
+          return $.post('/service/modules/' + strAllowed, {
+            module: dThis.attr('data-module')
+          }).done(function(msg) {
+            main.setInfo(true, msg);
+            return updateModuleList();
+          }).fail(function(err) {
+            dThis.property('checked', !dThis.property('checked'));
+            return failHandler(err);
+          });
+        }
+      });
+    });
+  };
   updateUserList();
+  updateModuleList();
   return $('#but_submit').click(function() {
     var data, hp;
     hp = CryptoJS.SHA3($('#pw').val(), {
