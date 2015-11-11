@@ -3,6 +3,11 @@
 
 'use strict';
 
+// For all the human beings among us...
+process.on('unhandledRejection', function(err) {
+	console.error("UNHANDLED REJECTION", err.stack);
+});
+
 // >This is the main module that is used to run the whole application:
 // >
 // >     node webapi-eca [opt]
@@ -148,14 +153,19 @@ function init() {
 	// Init the database by using its promise, wau!
 	dbMod.init(conf.db, (err) => {
 		if(err) {
-			log.error('RS | No DB connection, shutting down system!');
+			log.error(err);
+			log.error('RS | Error connecting DB!', err.toString(),
+				'You might want to change the configuration in config/system.json.',
+				'Shutting down system!'
+			);
 			shutDown();
 		} else {
 			for(let prop in dbMod) {
 				global.db[prop] = dbMod[prop]; // export DB properties
 			}
-			log.info('RS | Initialzing http listener');
+			log.info('RS | Initializing http listener');
 			http.init(conf);
+			log.info('RS | Initializing Firebase');
 			fb.init(conf.firebase);
 
 			log.info('RS | All good so far, informing all modules about proper system initialization');
@@ -168,7 +178,7 @@ function init() {
 // Shuts down the server.
 function shutDown() {
 	log.warn('RS | Received shut down command!');
-	if(shutDown) db.shutDown();
+	if(db.shutDown) db.shutDown();
 	if(engine) engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener

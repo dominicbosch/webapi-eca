@@ -97,7 +97,7 @@ exports.startWorker = function(oUser, cb) {
 		if(typeof cb === 'function') cb(new Error('Process already running'))
 	} else {
 		fb.getLastIndex(oUser.username, (err, id) => {
-			let proc = cp.fork(path.resolve(__dirname, 'code-executor'), [], options);
+			let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
 			proc.send({
 				cmd: 'init',
 				startIndex: id

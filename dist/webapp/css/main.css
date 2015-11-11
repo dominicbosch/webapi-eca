@@ -243,6 +243,14 @@ img.del {
 	background-color: #FCB;
 }
 
+.spin {
+	animation: spin 1.5s infinite linear;
+}
+
+@keyframes spin {
+    0%   {transform: rotate(0deg)}
+    100% {transform: rotate(360deg)}
+}
 /*
 h4 {
 	margin-top: 5px;

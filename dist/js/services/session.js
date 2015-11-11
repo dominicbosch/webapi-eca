@@ -24,7 +24,10 @@ router.post('/login', (req, res) => {
 			// Tapping on fingers, at least in log...
 		if(err) log.warn('RH | AUTH-UH-OH ('+req.body.username+'): '+err.message);
 			// no error, so we can associate the user object from the DB to the session
-		else req.session.pub = oUser;
+		else {
+			req.session.pub = oUser;
+			// req.session.dbUser = oUser.dbUser; // Future performance improvement
+		}
 
 		if(req.session.pub) res.send('OK!');
 		else res.status(401).send('NO!');

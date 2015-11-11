@@ -14,7 +14,9 @@ Getting started
 
 **Prerequisites:**
 
- - `node.js` (v4.1.1) and `npm` (find it [here](http://nodejs.org/))
+ - `node.js` (v5.0.0) and `npm` (v3.3.12) (find it [here](http://nodejs.org/))
+ - Running [PostgreSQL](http://www.postgresql.org/) (update config/system.json)
+ - Running [Firebase](https://www.firebase.com/) (update config/system.json)
  - *(optional) Gulp if you want to use the implemented build tool:
     `sudo npm install -g gulp*
  - *(optional) Pygments if you want to generate the doc:
@@ -32,26 +34,9 @@ Download and install dependencies:
     cd webapi-eca
     npm install
     
-In case you receive an error containing 'WARN This failure might be due to the use of legacy binary "node"', try to solve it with nodejs-legacy: 
-
-    sudo apt-get install nodejs-legacy
-
-Get your [redis](http://redis.io/) instance up and running ( and find the port for the config file below ) or create your own `js/persistence.js`.
-
-> Checkout [their page](http://redis.io/), but for ubuntu it was fairly easy:
-
-    sudo apt-get update
-    sudo apt-get install build-essential
-    sudo apt-get install tcl8.5
-    wget http://download.redis.io/redis-stable.tar.gz
-    tar xvzf redis-stable.tar.gz
-    cd redis-stable
-    make
-    make test
-    sudo make install
-    cd utils
-    sudo ./install_server.sh
-
+> *In case you receive an error containing `WARN This failure might be due to the use of legacy binary "node"`, try to solve it with nodejs-legacy:* 
+> 
+>     sudo apt-get install nodejs-legacy
 
 Edit the system's configuration file:
 
@@ -60,23 +45,28 @@ Edit the system's configuration file:
 Apply your settings, for example (default values listed below):
 
     {
-      "http-port": 8125,                # The port on which the system listens for requests
-      "db-port": 6379,                  # The db-port where your redis instance is listening
-      "keygenpp": "[Something safe!]"   # The keygen passphrase for the private / public key pairs for secure user data
-      "log": {                          ### logging configurations
-        "mode": "productive",           # if set to productive no expensive origin lookup is performed and logged
-        "std-level": "info",            # the log-level for the std I/O stream
-        "file-level": "info",           # the log-level for the log file
-        "file-path": "server.log"       # log file path, relative to cwd
-        "nolog": "true"                 # Just skip this flag if you want to have a log
-      },
-      "usermodules": {                  # usermodules are the nodejs mpôdules that are available to the users in order to
-        "keen": {                       # use them in Event Triggers and Action Dispatchers
-            "module": "keen-js",
-            "description": "The client for posting events to keen.io"
+        "httpport": 8080,                   # port on which the system listens for requests
+        "db": {                             # main DB configuration
+            "module": "postgres",           # DB module to be used from the folder 'persistence'
+            "host": "localhost",            # host where the DB resides
+            "port": 5432,                   # port the DB listens on
+            "db": "webapi-eca",             # DB name
+            "user": "[postgres-user]",      # DB username
+            "pass": "[postgres-password]"   # DB password
         },
-        [ ... ]
-      }
+        "firebase": {                       # Firebase is used to monitor the user processes
+            "app": "https://[your-app].firebaseio.com/",
+            "token": "[super-secret-string-goes-here]"
+        },
+        "mode": "development",              # Safe haven, No crash and burn
+        "log": {
+            "stdlevel": "info",             # the log-level for the std I/O stream
+            "filelevel": "info",            # the log-level for the log file
+            "filepath": "logs/server.log",  # log file path, relative to cwd
+            "trace": "off",                  # if set to productive no expensive origin lookup is performed and logged
+            "nolog": "true"                 # Remove this flag if you want to have a log
+        },
+        "keygenpp": "[TODO this has to come from prompt when server is started!]"
     }
 
 Start the server:
@@ -90,11 +80,11 @@ Use Gulp
 --------
  
 We used [gulp](http://gulpjs.com/) as a building tool, hence you can just execute `gulp`
-in the root folder of this project and it will display all available gulp commands to you.
+in the root folder of this project (if you installed it...) and it will display all available gulp commands to you.
 
 The most relevant command for development will be:
 
-    gulp start --watch
+    gulp develop --watch
 
 This will start the system with a monitoring system ([nodemon](http://nodemon.io/)) and
 restart it whenever core files change.

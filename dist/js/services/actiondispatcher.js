@@ -14,7 +14,7 @@ var log = require('../logging'),
 	db = global.db,
 	router = module.exports = express.Router();
 
-router.post('/getall', (req, res) => {
+router.post('/get', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
 	db.getAllActionDispatchers(req.session.pub.id, (err, oADs) => {
 		if(err) res.status(500).send(err);
@@ -22,41 +22,61 @@ router.post('/getall', (req, res) => {
 	});
 });
 
-router.post('/store', (req, res) => {
-	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
+// router.post('/get/:id', (req, res) => {
+// 	log.info('SRVC | ACTION DISPATCHERS | Fetching one by id: ' + req.params.id);
+// 	db.getActionDispatcher(req.session.pub.id, req.params.id, (err, oADs) => {
+// 		if(err) res.status(500).send(err);
+// 		else res.send(oADs);
+// 	});
+// });
+
+router.post('/create', (req, res) => {
+	log.info('SRVC | ACTION DISPATCHERS | Create: ' + req.body.name);
 	db.getAllActionDispatchers(req.session.pub.id, (arr) => {
 		arr = arr || [];
 		let arrNames = arr.map((o) => o.name);
-		console.log('new module', req.id);
-		console.log('all actions: ', arrNames);
-		if(arrNames.indexOf(req.name) > -1) {
-			if(req.overwrite) storeModule(req.session.pub, req, res);
-			else req.status(409).send('Module name already existing: '+req.name);
+		if(arrNames.indexOf(req.body.name) > -1) {
+			req.status(409).send('Module name already existing: '+req.body.name);
 		} else {
-			if(req.overwrite) req.status(404).send('Module not found! Unable to overwrite '+req.name);
-			else storeModule(req.session.pub, req, res);
+			let args = {
+				username: req.session.pub.username,
+				body: req.body
+			};
+			storeModule(args, res);
 		}
 	});
 });
 
-function storeModule(oUser, oBody, res) {	
-	let oModule = {
-		src: oBody.data,			// code
-		lang: oBody.lang,			// script language
-		globVars: oBody.globVars	// global variables required from the user to run this module
-		// userId: oUser.id,			// userId
-	};
-	log.info('SRVC:AD | Running AD', Object.keys(oBody));
-	let mId = 'TMP|AD|'+Math.random().toString(36).substring(2)+'.vm';
-	// moduleId, src, lang, oGlobalVars, logFunction, oUser, cb
-	console.log(mId, oBody.data, oBody.lang, {}, () => {}, oUser);
-	dynmod.runStringAsModule(mId, oBody.data, oBody.lang, {}, () => {}, oUser, (err, oRunning) => {
+router.post('/update', (req, res) => {
+	log.info('SRVC | ACTION DISPATCHERS | UPDATE: ' + req.body.name);
+	db.getActionDispatcher(req.session.pub.id, req.body.id, (arr) => {
+		log.info('found single AD: ', arr);
+		arr = arr || [];
+		let arrNames = arr.map((o) => o.name);
+		if(arrNames.indexOf(req.body.name) > -1) {
+			let args = {
+				userid: req.session.pub.userid,
+				username: req.session.pub.username,
+				body: req.body,
+				id: req.body.id
+			};
+			storeModule(args, res);
+		} else {
+			req.status(409).send('Module not existing: '+req.body.name);
+		}
+	});
+});
+
+function storeModule(args, res) {
+	let options = { globals: args.body.globals };
+	log.info('SRVC:AD | Running AD ', args.body.name);
+	dynmod.runStringAsModule(args.body.code, args.body.lang, args.username, options, (err, oMod) => {
 		if(err) {
-			log.error('SRVC:AD | Error running string as module: '+err.message);
+			log.error('SRVC:AD | Error running string as module: ', err);
 			res.status(err.code).send(err.message);
 		} else {
-			log.info('CM | Storing new module with functions '+Object.keys(oRunning.functionArgs).join(', '));
-			db.createActionDispatcher(oUser.username, oBody, (err) => {
+			log.info('CM | Storing module "'+oMod.name+'" with functions '+Object.keys(oMod.functions).join(', '));
+			function fAnsw(err) {
 				if(err) {
 					log.warn('SRVC:AD | Unable to store Action Dispatcher', err);
 					res.status(500).send('Action Dispatcher not stored!')
@@ -64,8 +84,9 @@ function storeModule(oUser, oBody, res) {
 					log.info('SRVC:AD | Module stored');
 					res.send('Action Dispatcher stored!')
 				}
-				// answ.message = ' Module '+oBody.id+' successfully stored! Found following function(s): '+funcs;
-			});
+			};
+			if(args.id) db.updateActionDispatcher(args.userid, args.id, oMod, fAnsw);
+			else db.createActionDispatcher(args.userid, oMod, fAnsw);
 		}
 	});
 }

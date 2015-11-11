@@ -18,12 +18,19 @@ exports.init = (conf) => {
 	log.info('FB | Connecting to Firebase...');
 	fb.authWithCustomToken(conf.token, function(error, oToken) {
 		if (error) {
-			log.error("FB | Error creating user:", error);
+			log.error("FB | Error connecting to Firebase: ", 
+				error.toString(),
+				"You might want to change your configuration in config/system.json"
+			);
 		} else {
 			log.info("FB | Successfully connected to firebase with token id:", oToken.uid);
 			hostid = oToken.uid;
 			// fb.child(hostid).set(null);
 			geb.emit('firebase:init');
+
+			fb.onAuth((authData) => {
+				if(!authData) log.warn('FB | Authorization lost!');
+			});
 		}
 	});
 }

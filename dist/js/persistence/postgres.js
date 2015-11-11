@@ -27,14 +27,18 @@ var log = require('../logging'),
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
 exports.init = (oDB, cb) => {
 	var dbPort = parseInt(oDB.port) || 5432;
-	log.info('POSTGRES | Connecting module: ' + oDB.module + ', port: ' + dbPort + ', database: ' + oDB.db);
-	sequelize = new Sequelize('postgres://postgres:postgres@localhost:' + dbPort + '/' + oDB.db, {
+	log.info('POSTGRES | Connecting module: '+oDB.module+', host: '
+		+oDB.host+', port: '+dbPort+', username: '+oDB.user+', database: '+oDB.db);
+	sequelize = new Sequelize('postgres://'+oDB.user+':'+oDB.pass+'@'+oDB.host+':'+dbPort+'/'+oDB.db, {
 		// logging: false,
 		define: { timestamps: false }
 	});
 
 	// On success we call cb with nothing. if rejected an error is passed along:
-	sequelize.authenticate().then(initializeModels).then(() => cb(), cb);
+	sequelize.authenticate()
+		.then(initializeModels)
+		.then(() => cb())
+		.catch(cb);
 };
 
 // Initializes the Database model and returns also a promise
@@ -131,17 +135,17 @@ exports.getUserByName = (username, cb) => {
 };
 
 exports.storeUser = (oUser, cb) => {
-	log.info('POSTGRES | Storing new user ' + oUser.username);
+	log.info('POSTGRES | Storing new user '+oUser.username);
 	User.create(oUser).then((oNewUser) => {
-		return Worker.create({}).then((oWorker) => {
-			oNewUser.setWorker(oWorker).then(() => cb(null, oNewUser.toJSON()));
-		});
-	}, cb).catch(ec);
+		return oNewUser.createWorker({}).then(() => {
+			cb(null, oNewUser.toJSON())
+		}, cb);
+	}).catch(ec);
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.updateUserAttribute = (uid, attr, val, cb) => {
-	log.info('POSTGRES | Updating user #' + uid);
+	log.info('POSTGRES | Updating user #'+uid);
 	User.findById(uid).then((oRecord) => {
 		if(oRecord) {
 			let oChg = {};
@@ -201,24 +205,24 @@ exports.getWorker = (username, cb) => {
 };
 
 exports.setWorker = (uid, pid) => {
-	User.findById(uid).then((oUser) => {
-		if(oUser) return oUser.getWorker().then((oWorker) => {
-			return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
-		});
-	}).catch(ec);
+	User.findById(uid)
+		.then((oUser) => {
+			if(!oUser) throw new Error('User not found!');
+			return oUser.getWorker();
+		}).then((oWorker) => {
+			return oWorker.update({ pid: pid }, { fields: ['pid'] })
+		}).catch(ec);
 };
 
 
 // ##
 // ## WEBHOOKS
 // ##
-
 exports.getAllWebhooks = (cb) => {
 	Webhook.findAll()
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb)
 		.catch(ec);
 };
-
 exports.getAllUserWebhooks = (uid, cb) => {
 	var publicSearch = Webhook.findAll({ 
 		include: [ User ],
@@ -239,18 +243,16 @@ exports.getAllUserWebhooks = (uid, cb) => {
 			cb(null, arrResult);
 		}, cb).catch(ec);
 };
-
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
-	log.info('POSTGRES | Storing new webhook ' + hookname + ' for user ' + uid);
+	log.info('POSTGRES | Storing new webhook '+hookname+' for user '+uid);
 	User.findById(uid).then((oUser) => {
-		return Webhook.create({
+		return oUser.createWebhook({
 			hookid: hookid,
 			hookname: hookname,
 			isPublic: isPublic
-		}).then((oWh) => oUser.addWebhook(oWh));
+		});
 	}).then(() => cb(), cb).catch(ec);
 };
-
 exports.deleteWebhook = (hookid, cb) => {
 	log.info('POSTGRES | Deleting webhook #'+hookid);
 	Webhook.findById(hookid).then((oRecord) => {
@@ -290,13 +292,30 @@ exports.getAllActionDispatchers = (uid, cb) => {
 	ActionDispatcher.findAll(query)
 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
 };
-// exports.createActionDispatcher = (oAD, cb) => {
-// 	var query;
-// 	if(uid) query = { where: { UserId: uid } };
-// 	ActionDispatcher.findAll(query)
-// 		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)))
-// 		.catch(cb);
-// };
+exports.getActionDispatcher = (uid, aid, cb) => {
+	var query = { where: {
+		id: aid,
+		UserId: uid
+	}};
+	ActionDispatcher.findOne(query)
+		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+};
+exports.createActionDispatcher = (uid, oAD, cb) => {
+	User.findById(uid)
+		.then((oUser) => oUser.createActionDispatcher(oAD))
+		.then((oNewAD) => cb(null, oNewAD.toJSON()), cb)
+		.catch(ec);
+};
+exports.updateActionDispatcher = (uid, aid, oAd, cb) => {
+	User.findById(uid).then((oUser) => oUser.getActionDispatcher({ where: { id: aid }}))
+	// 	.then((oOldAd) => {
+	// 		console.log(Object.keys(oAd), Object.keys(oOldAd));
+	// 	})
+	// 	if(oUser) return oUser.getWorker().then((oWorker) => {
+	// 		return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
+	// 	});
+	// }).catch(ec);
+};
 exports.deleteActionDispatcher = (aid, cb) => {
 	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
 	ActionDispatcher.findById(aid).then((oRecord) => {

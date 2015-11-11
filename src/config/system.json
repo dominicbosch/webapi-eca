@@ -2,8 +2,11 @@
 	"httpport": 8080,
 	"db": {
 		"module": "postgres",
+		"host": "localhost",
 		"port": 5432,
-		"db": "webapi-eca"
+		"db": "webapi-eca",
+		"user": "[postgres-user]",
+		"pass": "[postgres-password]"
 	},
 	"firebase": {
 		"app": "https://[your-app].firebaseio.com/",

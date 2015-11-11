@@ -15,7 +15,7 @@ fOnLoad = function() {
   var req;
   $('.moduletype').text(modName);
   $('#linkMod').attr('href', '/views/modules_create?m=' + oParams.m);
-  req = $.post(urlService + 'getall');
+  req = $.post(urlService + 'get');
   req.done(function(arrModules) {
     var img, inp, results, tr;
     if (arrModules.length === 0) {

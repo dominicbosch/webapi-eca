@@ -1,9 +1,9 @@
 'use strict';
-var fErrHandler, fOnLoad;
+var fErrHandler, fOnLoad, moduleType, moduleTypeName;
 
-if (oParams.id) {
-  oParams.id = decodeURIComponent(oParams.id);
-}
+moduleTypeName = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
+
+moduleType = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
 
 fErrHandler = function(errMsg) {
   return function(err) {
@@ -16,10 +16,9 @@ fErrHandler = function(errMsg) {
 };
 
 fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, moduleType, obj, title;
-  moduleType = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
   title = oParams.id ? 'Edit ' : 'Create ';
-  title += moduleType;
+  title += moduleTypeName;
   $('#pagetitle').text(title);
   if (oParams.m !== 'ad') {
     main.registerHoverInfo($('#schedule > h2'), 'modules_schedule.html');
@@ -116,54 +115,37 @@ fOnLoad = function() {
   });
   fChangeInputVisibility();
   $('#but_submit').click(function() {
-    var fCheckOverwrite, listParams, moduletype, obj;
+    var action, listParams, obj;
     if ($('#input_id').val() === '') {
-      return alert("Please enter an " + moduleType + " name!");
+      return main.setInfo(false, "Please enter an " + moduleTypeName + " name!");
     } else {
-      listParams = {};
-      $('#tableParams tr').each(function() {
-        var shld, val;
-        val = $('input.textinput', this).val();
-        shld = $('input[type=checkbox]', this).is(':checked');
-        if (val !== "") {
-          listParams[val] = shld;
-        }
-        return true;
-      });
-      moduletype = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
-      obj = {
-        body: JSON.stringify({
-          id: $('#input_id').val(),
-          lang: $('#editor_mode').val(),
-          "public": $('#is_public').is(':checked'),
-          data: editor.getValue(),
-          params: JSON.stringify(listParams)
-        })
-      };
-      fCheckOverwrite = function(obj, moduletype) {
-        return function(err) {
-          var bod;
-          if (err.status === 409) {
-            if (confirm('Are you sure you want to overwrite the existing module?')) {
-              bod = JSON.parse(obj.body);
-              bod.overwrite = true;
-              obj.body = JSON.stringify(bod);
-              return $.post('/service/' + moduletype + '/store', obj).done(function(data) {
-                $('#info').text(data.message);
-                $('#info').attr('class', 'success');
-                return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
-              }).fail(fErrHandler(moduleType + " not stored!"));
-            }
-          } else {
-            return fErrHandler(moduleType + " not stored!")(err);
+      if (!oParams.id || confirm('Are you sure you want to overwrite the existing module?')) {
+        listParams = {};
+        $('#tableParams tr').each(function() {
+          var shld, val;
+          val = $('input.textinput', this).val();
+          shld = $('input[type=checkbox]', this).is(':checked');
+          if (val !== "") {
+            listParams[val] = shld;
           }
+          return true;
+        });
+        obj = {
+          id: oParams.id,
+          name: $('#input_id').val(),
+          lang: $('#editor_mode').val(),
+          published: $('#is_public').is(':checked'),
+          code: editor.getValue(),
+          globals: listParams
         };
-      };
-      window.scrollTo(0, 0);
-      return $.post('/service/' + moduletype + '/store', obj).done(function(data) {
-        $('#info').text(data.message);
-        return $('#info').attr('class', 'success');
-      }).fail(fCheckOverwrite(obj, moduletype));
+        action = oParams.id ? 'update' : 'create';
+        return $.post('/service/' + moduleType + '/' + action, obj).done(function(data) {
+          main.setInfo(true, data.message);
+          if (oParams.id) {
+            return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
+          }
+        }).fail(fErrHandler('#{moduleTypeName} not stored!'));
+      }
     }
   });
   fAddUserParam = function(param, shielded) {
@@ -196,7 +178,7 @@ fOnLoad = function() {
         } else {
           editor.getSession().setMode("ace/mode/javascript");
         }
-        if (oMod["public"] === 'true') {
+        if (oMod.published) {
           $('#is_public').prop('checked', true);
         }
         editor.setValue(oMod.data);
