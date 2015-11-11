@@ -32,36 +32,50 @@ $(document).ready(function() {
 });
 
 window.main = {
+  requestError: function(cb) {
+    return function(err) {
+      if (err.status === 401) {
+        return window.location.href = "/";
+      } else {
+        return cb(err);
+      }
+    };
+  },
   setInfo: function(isSuccess, msg) {
-    $('#skeletonTicker').text(msg);
-    $('#skeletonTicker').attr('class', isSuccess ? 'success' : 'error');
+    d3.select('#skeletonTicker').classed('success', isSuccess).classed('error', !isSuccess).text(msg);
     return window.scrollTo(0, 0);
   },
   clearInfo: function() {
-    $('#skeletonTicker').text('');
-    return $('#skeletonTicker').attr('class', '');
+    return d3.select('#skeletonTicker').classed('success', false).classed('error', false).text('');
   },
-  registerHoverInfo: function(el, file) {
+  registerHoverInfoHTML: function(d3El, html) {
     var hoverOut;
     hoverOut = function() {
       var checkHover;
-      $(this).removeClass('hovered');
+      d3.select(this).classed('hovered', false);
       checkHover = function() {
-        if (!$('#tooltip').hasClass('hovered') && !el.hasClass('hovered')) {
-          return $('#tooltip').fadeOut();
+        if (!d3.select('#tooltip').classed('hovered') && !d3El.classed('hovered')) {
+          return d3.select('#tooltip').transition().style('opacity', 0);
         }
       };
       return setTimeout(checkHover, 0);
     };
+    return d3El.append('img').classed('infoimg', true).on('mouseleave', hoverOut).on('mouseenter', function() {
+      var et;
+      et = d3.event.target.getBoundingClientRect();
+      d3.select(this).classed('hovered', true);
+      return d3.select('#tooltip').html(html).style({
+        top: (et.top + et.height - 20) + 'px',
+        left: (et.left + (et.width / 2) - 20) + 'px',
+        opacity: 1
+      }).on('mouseleave', hoverOut).on('mouseenter', function() {
+        return d3.select('#tooltip').classed('hovered', true);
+      }).transition().style('opacity', 1);
+    });
+  },
+  registerHoverInfo: function(el, file) {
     return $.get('/help/' + file, function(html) {
-      var info;
-      info = $('<img>').attr('class', 'infoimg').mouseleave(hoverOut).mouseenter(function(e) {
-        $(this).addClass('hovered');
-        return $('#tooltip').html(html).css('top', e.target.offsetTop + e.target.height - 20).css('left', e.target.offsetLeft + (e.target.width / 2) - 20).fadeIn().mouseleave(hoverOut).mouseenter(function() {
-          return $(this).addClass('hovered');
-        });
-      });
-      return el.append(info);
+      return main.registerHoverInfoHTML(el, html);
     });
   }
 };

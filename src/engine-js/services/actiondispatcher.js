@@ -16,77 +16,88 @@ var log = require('../logging'),
 
 router.post('/get', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
-	db.getAllActionDispatchers(req.session.pub.id, (err, oADs) => {
-		if(err) res.status(500).send(err);
+	db.getAllActionDispatchers(req.session.pub.id, (err, arr) => {
+		if(err) res.status(500).send(err.toString());
+		else res.send(arr);
+	});
+});
+
+router.post('/get/:id', (req, res) => {
+	log.info('SRVC | ACTION DISPATCHERS | Fetching one by id: ' + req.params.id);
+	db.getActionDispatcher(req.session.pub.id, req.params.id, (err, oADs) => {
+		if(err) res.status(500).send(err.toString());
 		else res.send(oADs);
 	});
 });
 
-// router.post('/get/:id', (req, res) => {
-// 	log.info('SRVC | ACTION DISPATCHERS | Fetching one by id: ' + req.params.id);
-// 	db.getActionDispatcher(req.session.pub.id, req.params.id, (err, oADs) => {
-// 		if(err) res.status(500).send(err);
-// 		else res.send(oADs);
-// 	});
-// });
-
 router.post('/create', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Create: ' + req.body.name);
-	db.getAllActionDispatchers(req.session.pub.id, (arr) => {
-		arr = arr || [];
-		let arrNames = arr.map((o) => o.name);
-		if(arrNames.indexOf(req.body.name) > -1) {
-			req.status(409).send('Module name already existing: '+req.body.name);
-		} else {
-			let args = {
-				username: req.session.pub.username,
-				body: req.body
-			};
-			storeModule(args, res);
-		}
-	});
+	let args = {
+		userid: req.session.pub.id,
+		username: req.session.pub.username,
+		body: req.body
+	};
+	storeModule(args, res);
 });
 
 router.post('/update', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | UPDATE: ' + req.body.name);
-	db.getActionDispatcher(req.session.pub.id, req.body.id, (arr) => {
-		log.info('found single AD: ', arr);
-		arr = arr || [];
-		let arrNames = arr.map((o) => o.name);
-		if(arrNames.indexOf(req.body.name) > -1) {
-			let args = {
-				userid: req.session.pub.userid,
-				username: req.session.pub.username,
-				body: req.body,
-				id: req.body.id
-			};
-			storeModule(args, res);
-		} else {
-			req.status(409).send('Module not existing: '+req.body.name);
-		}
-	});
+	let args = {
+		userid: req.session.pub.id,
+		username: req.session.pub.username,
+		body: req.body,
+		id: req.body.id
+	};
+	storeModule(args, res);
 });
 
 function storeModule(args, res) {
-	let options = { globals: args.body.globals };
-	log.info('SRVC:AD | Running AD ', args.body.name);
-	dynmod.runStringAsModule(args.body.code, args.body.lang, args.username, options, (err, oMod) => {
-		if(err) {
-			log.error('SRVC:AD | Error running string as module: ', err);
-			res.status(err.code).send(err.message);
+	db.getAllActionDispatchers(args.userid, (err, arr) => {
+		arr = arr || [];
+		if(args.id) arr = arr.filter((o) => o.id !== parseInt(args.id));
+		let arrNames = arr.map((o) => o.name);
+		if(arrNames.indexOf(args.body.name) > -1) {
+			res.status(409).send('Module name already existing: '+args.body.name);
 		} else {
-			log.info('CM | Storing module "'+oMod.name+'" with functions '+Object.keys(oMod.functions).join(', '));
-			function fAnsw(err) {
+
+			let options = { globals: args.body.globals };
+			log.info('SRVC:AD | Running AD ', args.body.name);
+			dynmod.runStringAsModule(args.body.code, args.body.lang, args.username, options, (err, oMod) => {
 				if(err) {
-					log.warn('SRVC:AD | Unable to store Action Dispatcher', err);
-					res.status(500).send('Action Dispatcher not stored!')
+					log.error('SRVC:AD | Error running string as module: ', err);
+					res.status(err.code).send(err.message);
 				} else {
-					log.info('SRVC:AD | Module stored');
-					res.send('Action Dispatcher stored!')
+					function fAnsw(err) {
+						if(err) {
+							log.warn('SRVC:AD | Unable to store Action Dispatcher', err);
+							res.status(err.code).send('Action Dispatcher not stored! ' + err.message)
+						} else {
+							log.info('SRVC:AD | Module stored');
+							res.send('Action Dispatcher stored!')
+						}
+					}
+					
+					log.info('CM | Storing module "'+args.body.name+'" with functions '+Object.keys(oMod.functions).join(', '));
+					let oModule = args.body;
+					delete oModule.id; // If the ID is set it is an update of an existing module
+					oModule.comment = oMod.comment;
+					oModule.functions = oMod.functions;
+					if(args.id) db.updateActionDispatcher(args.userid, args.id, oModule, fAnsw);
+					else db.createActionDispatcher(args.userid, oModule, fAnsw);
 				}
-			};
-			if(args.id) db.updateActionDispatcher(args.userid, args.id, oMod, fAnsw);
-			else db.createActionDispatcher(args.userid, oMod, fAnsw);
+			});
 		}
 	});
 }
+
+router.post('/delete', (req, res) => {
+	log.info('SRVC | ACTION DISPATCHERS | DELETE: #' + req.body.id);
+	db.deleteActionDispatcher(req.session.pub.id, req.body.id, (err, msg) => {
+		if(err) {
+			log.error(err);
+			res.status(400).send('Unable to delete Module #' + req.body.id);
+		} else {
+			res.send(msg);
+		}
+	});
+});

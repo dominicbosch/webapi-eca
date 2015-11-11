@@ -67,11 +67,21 @@ function initializeModels() {
 	});
 	EventTrigger = sequelize.define('EventTrigger', {
 		name: Sequelize.STRING,
-		code: Sequelize.STRING
+		lang: Sequelize.STRING,
+		code: Sequelize.STRING,
+		comment: Sequelize.STRING,
+		functions: Sequelize.JSON,
+		published: Sequelize.BOOLEAN,
+		globals: Sequelize.JSON
 	});
 	ActionDispatcher = sequelize.define('ActionDispatcher', {
 		name: Sequelize.STRING,
-		code: Sequelize.STRING
+		lang: Sequelize.STRING,
+		code: Sequelize.STRING,
+		comment: Sequelize.STRING,
+		functions: Sequelize.JSON,
+		published: Sequelize.BOOLEAN,
+		globals: Sequelize.JSON
 	});
 
 	// ### Define Relations
@@ -97,6 +107,7 @@ function ec(err) { log.error(err) }
 // After retrieving a plain array of sequelize records, this function transforms all
 // of the records (recursively since sequelize v3.10.0) into plain JSON objects
 function arrRecordsToJSON(arrRecords) {
+	if(!arrRecords) return arrRecords;
 	return arrRecords.map((o) => o.toJSON());
 }
 
@@ -210,7 +221,7 @@ exports.setWorker = (uid, pid) => {
 			if(!oUser) throw new Error('User not found!');
 			return oUser.getWorker();
 		}).then((oWorker) => {
-			return oWorker.update({ pid: pid }, { fields: ['pid'] })
+			return oWorker.update({ pid: pid }) //, { fields: ['pid'] })
 		}).catch(ec);
 };
 
@@ -287,18 +298,19 @@ exports.getAllRules = (uid, cb) => {
 // ##
 
 exports.getAllActionDispatchers = (uid, cb) => {
-	var query;
-	if(uid) query = { where: { UserId: uid } };
-	ActionDispatcher.findAll(query)
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+	User.findById(uid)
+		.then((oUser) => oUser.getActionDispatchers())
+		.then((arrAds) => cb(null, arrRecordsToJSON(arrAds)), cb)
+		.catch(ec);
 };
 exports.getActionDispatcher = (uid, aid, cb) => {
-	var query = { where: {
-		id: aid,
-		UserId: uid
-	}};
-	ActionDispatcher.findOne(query)
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+	User.findById(uid)
+		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
+		.then((arr) => {
+			if(arr.length === 0) cb(new Error('Action Dispatcher not found!'));
+			else cb(null, arr[0]);
+		}, cb)
+		.catch(ec);
 };
 exports.createActionDispatcher = (uid, oAD, cb) => {
 	User.findById(uid)
@@ -307,16 +319,15 @@ exports.createActionDispatcher = (uid, oAD, cb) => {
 		.catch(ec);
 };
 exports.updateActionDispatcher = (uid, aid, oAd, cb) => {
-	User.findById(uid).then((oUser) => oUser.getActionDispatcher({ where: { id: aid }}))
-	// 	.then((oOldAd) => {
-	// 		console.log(Object.keys(oAd), Object.keys(oOldAd));
-	// 	})
-	// 	if(oUser) return oUser.getWorker().then((oWorker) => {
-	// 		return oWorker.update({ pid: pid }, { fields: [ 'pid' ] })
-	// 	});
-	// }).catch(ec);
+	User.findById(uid)
+		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
+		.then((arrOldAd) => {
+			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd).then(() => cb(null));
+			else cb(new Error('Action Dispatcher not found!'))
+		}, cb)
+		.catch(ec);
 };
-exports.deleteActionDispatcher = (aid, cb) => {
+exports.deleteActionDispatcher = (uid, aid, cb) => {
 	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
 	ActionDispatcher.findById(aid).then((oRecord) => {
 		if(oRecord) oRecord.destroy().then(() => cb(null, 'ActionDispatcher deleted!'), cb).catch(ec);

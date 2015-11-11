@@ -239,6 +239,8 @@ $(document).ready(function() {
 					updateButton();
 					firsttime = false;
 				}
+				svg.style('visibility', 'visible');
+				d3.selectAll('.loading').style('visibility', 'hidden');
 			}
 		});
 	}

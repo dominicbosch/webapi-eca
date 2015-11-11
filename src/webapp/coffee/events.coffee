@@ -58,9 +58,9 @@ checkRuleExists = () ->
 			$('#but_emit').hide()
 
 fOnLoad = () ->
-	main.registerHoverInfo $('#eventbody'), 'events_info.html'
-	main.registerHoverInfo $('#info_webhook'), 'webhooks_info.html'
-	main.registerHoverInfo $('#info_rule'), 'rules_info.html'
+	main.registerHoverInfo d3.select('#eventbody'), 'events_info.html'
+	main.registerHoverInfo d3.select('#info_webhook'), 'webhooks_info.html'
+	main.registerHoverInfo d3.select('#info_rule'), 'rules_info.html'
 
 	editor = ace.edit 'editor'
 	editor.setTheme 'ace/theme/crimson_editor'

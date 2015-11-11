@@ -44,35 +44,30 @@ router.post('/reload', (req, res) => {
 
 function reloadModules(cb) {
 	log.info('SRVC:MODS | Fetching available modules and their version');
-	cp.exec('npm list --depth=0', function(err, stdout, stderr) {
-		if(err) {
-			log.error(err);
-			cb(err);
-		} else {
-			let arrLines = stdout.split('\n');
-			arrModules = [];
-			log.info('SRVC:MODS | Found '+(arrLines.length)+' available modules, Fetching their package information!');
-			for(let i = 0; i < arrLines.length; i++) {
-				let arrLine = arrLines[i].split(' ');
-				if(arrLine.length > 1) {
-					let arrMod = arrLine[1].split('@');
-					if(arrMod.length > 1) {
-						let m = require(arrMod[0]+'/package.json'); // Neat magic ;)
-						arrModules.push({
-							name: arrMod[0],
-							version: m.version,
-							description: m.description
-						});
-					}
+	cp.exec('npm list --depth=0', function(err, stdout) {
+		let arrLines = stdout.split('\n');
+		arrModules = [];
+		log.info('SRVC:MODS | Found '+(arrLines.length)+' available modules, Fetching their package information!');
+		for(let i = 0; i < arrLines.length; i++) {
+			let arrLine = arrLines[i].split(' ');
+			if(arrLine.length > 1) {
+				let arrMod = arrLine[1].split('@');
+				if(arrMod.length > 1) {
+					let m = require(arrMod[0]+'/package.json'); // Neat magic ;)
+					arrModules.push({
+						name: arrMod[0],
+						version: m.version,
+						description: m.description
+					});
 				}
 			}
-			log.info('SRVC:MODS | Descriptions for all modules loaded');
-			let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
-			log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
-			updateAllowedFlag(arrAllowed);
-			geb.emit('modules:list', arrModules);
-			cb(undefined, arrModules)
 		}
+		log.info('SRVC:MODS | Descriptions for all modules loaded');
+		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
+		log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
+		updateAllowedFlag(arrAllowed);
+		geb.emit('modules:list', arrModules);
+		cb(undefined, arrModules)
 	});
 }
 

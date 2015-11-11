@@ -16,12 +16,13 @@ fErrHandler = function(errMsg) {
 };
 
 fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, obj, title;
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, title;
   title = oParams.id ? 'Edit ' : 'Create ';
   title += moduleTypeName;
   $('#pagetitle').text(title);
+  main.registerHoverInfo(d3.select('#programcode'), 'modules_code.html');
   if (oParams.m !== 'ad') {
-    main.registerHoverInfo($('#schedule > h2'), 'modules_schedule.html');
+    main.registerHoverInfo(d3.select('#schedule > h2'), 'modules_schedule.html');
     $('#schedule').show();
     dateNow = new Date();
     $('#datetimePicker').datetimepicker({
@@ -80,6 +81,7 @@ fOnLoad = function() {
   };
   $('#tableParams').on('click', 'img', function() {
     var par;
+    main.clearInfo();
     par = $(this).closest('tr');
     if (!par.is(':last-child')) {
       par.remove();
@@ -99,7 +101,7 @@ fOnLoad = function() {
             return i++;
           }
         });
-        $(this).toggleClass('inputerror', i > 1);
+        $(this).toggleClass('error', i > 1);
         if (i > 1) {
           main.setInfo(false, 'User-specific properties can\'t have the same name!');
         } else {
@@ -139,12 +141,14 @@ fOnLoad = function() {
           globals: listParams
         };
         action = oParams.id ? 'update' : 'create';
-        return $.post('/service/' + moduleType + '/' + action, obj).done(function(data) {
-          main.setInfo(true, data.message);
+        return $.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
+          main.setInfo(true, msg);
           if (oParams.id) {
             return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
           }
-        }).fail(fErrHandler('#{moduleTypeName} not stored!'));
+        }).fail(function(err) {
+          return main.setInfo(false, err.responseText);
+        });
       }
     }
   });
@@ -157,21 +161,15 @@ fOnLoad = function() {
     }
   };
   if (oParams.id) {
-    obj = {
-      body: JSON.stringify({
-        id: oParams.id
-      })
-    };
-    return $.post('/usercommand/get_full_' + oParams.type, obj).done(function(data) {
-      var oMod, param, ref, shielded;
-      oMod = JSON.parse(data.message);
+    return $.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
+      var param, ref, shielded;
       if (oMod) {
-        ref = JSON.parse(oMod.params);
+        ref = oMod.globals;
         for (param in ref) {
           shielded = ref[param];
           fAddUserParam(param, shielded);
         }
-        $('#input_id').val(oMod.id);
+        $('#input_id').val(oMod.name);
         $('#editor_mode').val(oMod.lang);
         if (oMod.lang === 'CoffeeScript') {
           editor.getSession().setMode("ace/mode/coffee");
@@ -181,7 +179,7 @@ fOnLoad = function() {
         if (oMod.published) {
           $('#is_public').prop('checked', true);
         }
-        editor.setValue(oMod.data);
+        editor.setValue(oMod.code);
         editor.moveCursorTo(0, 0);
       }
       return fAddUserParam('', false);

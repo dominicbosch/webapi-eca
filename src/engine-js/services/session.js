@@ -11,7 +11,7 @@ var log = require('../logging'),
 	// - [Encryption](encryption.html)
 	encryption = require('../encryption'),
 	// - [Firebase](firebase.html)
-	fb = require('../persistenccde/firebase'),
+	fb = require('../persistence/firebase'),
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
 	db = global.db;

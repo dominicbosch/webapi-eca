@@ -22,40 +22,63 @@ $( document ).ready () ->
 			setTimeout redirect, 500
 
 window.main =
+	#  Needed to get thoroughly rid of jQuery... But it seems jQuery is convenient for ajax calls
+	# post: (url, obj, cb) ->
+	# 	d3.xhr(url)
+	# 		.header('Content-Type', 'application/json')
+	# 		.mimeType('application/json')
+	# 		.post(JSON.stringify(obj))
+	# 		.on 'load', (msg) -> cb(null, msg.responseText)
+	# 		.on 'error', (err) -> cb(err.responseText)
+
+
+	requestError: (cb) ->
+		(err) ->
+			if err.status is 401
+				window.location.href = "/"
+			else
+				cb(err)
+
 	setInfo: ( isSuccess, msg ) ->
-		# col = if isSuccess then 'rgba(20,80,0,1)' else 'rgba(150,50,50,1)'
-		# d3.select('#skeletonTicker').text(msg).transition().duration(300).style 'background-color', col
-		$( '#skeletonTicker' ).text msg
-		$( '#skeletonTicker' ).attr 'class', if isSuccess then 'success' else 'error'
+		d3.select('#skeletonTicker')
+			.classed 'success', isSuccess
+			.classed 'error', not isSuccess
+			.text msg
 		window.scrollTo 0, 0
 
 	clearInfo: () ->
-		$( '#skeletonTicker' ).text ''
-		$( '#skeletonTicker' ).attr 'class', ''
-		# d3.select('#skeletonTicker').text('').transition().duration(300).style 'background-color', 'rgba(0,0,0,0)'
+		d3.select('#skeletonTicker')
+			.classed 'success', false
+			.classed 'error', false
+			.text ''
+
+	registerHoverInfoHTML: ( d3El, html ) ->
+		hoverOut = () ->
+			d3.select(this).classed('hovered', false);
+			checkHover = () ->
+				if not d3.select('#tooltip').classed('hovered') and not d3El.classed('hovered')
+					d3.select('#tooltip').transition().style('opacity', 0)
+			setTimeout checkHover, 0
+		
+		d3El.append('img')
+			.classed('infoimg', true)
+			.on('mouseleave', hoverOut)
+			.on 'mouseenter', () ->
+				et = d3.event.target.getBoundingClientRect();
+				d3.select(this).classed('hovered', true);
+				d3.select('#tooltip').html(html)
+					.style({
+						top: (et.top+et.height-20)+'px',
+						left: (et.left+(et.width/2)-20)+'px',
+						opacity: 1
+					})
+					.on('mouseleave', hoverOut)
+					.on 'mouseenter', () ->
+						d3.select('#tooltip').classed 'hovered', true
+					.transition().style('opacity', 1)
 
 	registerHoverInfo: ( el, file ) ->
-		hoverOut = () ->
-			$( this ).removeClass 'hovered'
-			checkHover = () ->
-				if not $( '#tooltip' ).hasClass( 'hovered' ) and not el.hasClass 'hovered'
-					$( '#tooltip' ).fadeOut()
-			setTimeout checkHover, 0
-			
 		$.get '/help/' + file, (html) ->
-			info = $( '<img>' )
-				.attr( 'class', 'infoimg' )
-				.mouseleave hoverOut
-				.mouseenter ( e ) ->
-					$( this ).addClass 'hovered'
-					$( '#tooltip' ).html( html )
-						.css( 'top', e.target.offsetTop + e.target.height - 20 )
-						.css( 'left', e.target.offsetLeft + (e.target.width / 2) - 20 )
-						.fadeIn()
-						.mouseleave hoverOut
-						.mouseenter () ->
-							$( this ).addClass 'hovered'
-
-			el.append( info );
+			main.registerHoverInfoHTML(el, html)
 
 

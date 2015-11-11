@@ -15,10 +15,13 @@
 	</head>
 	<body>
 		<div class="container-fluid">
-			<div class="row">
-				<a href="/">
-					<img id="bannerimg" src="/images/unibas_hpwc.svg" class="img-responsive">
-				</a>
+			<div class="row bannerrow">
+				<div class="banner">
+					<a href="/">
+						<img id="bannerimg" src="/images/uni-basel-logo.svg" class="img-responsive">
+						<!-- <img id="bannerimg" src="/images/unibas_hpwc.svg" class="img-responsive"> -->
+					</a>
+				</div>
 			</div>
 		</div>
 		<nav class="navbar navbar-default">
@@ -55,7 +58,7 @@
 				</div>
 			</div>
 		</nav>
-		<div id="skeletonTicker"></div>
+		<div id="skeletonTicker" class="infoticker"></div>
 		<div id="mainbody">
 			<h1>{% block pagetitle %}{% endblock %}</h1>
 			{% block content %}{% endblock %}

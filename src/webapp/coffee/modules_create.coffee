@@ -15,9 +15,10 @@ fOnLoad = () ->
 	title = if oParams.id then 'Edit ' else 'Create '
 	title += moduleTypeName
 	$('#pagetitle').text title
+	main.registerHoverInfo d3.select('#programcode'), 'modules_code.html'
 	
 	if oParams.m isnt 'ad'
-		main.registerHoverInfo $('#schedule > h2'), 'modules_schedule.html'
+		main.registerHoverInfo d3.select('#schedule > h2'), 'modules_schedule.html'
 		$('#schedule').show()
 		# document.getElementById('datePicker').value = new Date().toDateInputValue();
 		dateNow = new Date()
@@ -75,6 +76,7 @@ fOnLoad = () ->
 		tr
 
 	$('#tableParams').on 'click', 'img', () ->
+		main.clearInfo()
 		par = $(this).closest 'tr' 
 		if not par.is ':last-child'
 			par.remove()
@@ -91,7 +93,7 @@ fOnLoad = () ->
 				$('#tableParams input.textinput').each () ->
 					i++ if myNewVal is $(this).val() 
 				
-				$(this).toggleClass 'inputerror', i > 1
+				$(this).toggleClass 'error', i > 1
 				if i > 1
 					main.setInfo false, 'User-specific properties can\'t have the same name!'
 				else 
@@ -128,12 +130,14 @@ fOnLoad = () ->
 
 				action = if oParams.id then 'update' else 'create'
 				$.post('/service/'+moduleType+'/'+action, obj)
-					.done (data) ->
-						main.setInfo true, data.message
+					.done (msg) ->
+						main.setInfo true, msg
 						if oParams.id then alert "You need to update the rules that use this module in 
 										order for the changes to be applied to them!"
 
-					.fail fErrHandler '#{moduleTypeName} not stored!'
+					.fail (err) ->
+						main.setInfo false, err.responseText
+
 	
 	# EDIT MODULES
 
@@ -144,16 +148,11 @@ fOnLoad = () ->
 			$('input[type=checkbox]', tr).prop 'checked', true
 
 	if oParams.id
-		obj =
-			body: JSON.stringify 
-				id: oParams.id
-
-		$.post('/usercommand/get_full_' + oParams.type, obj)
-			.done (data) ->
-				oMod = JSON.parse data.message
+		$.post('/service/'+moduleType+'/get/'+oParams.id)
+			.done (oMod) ->
 				if oMod
-					fAddUserParam param, shielded for param, shielded of JSON.parse oMod.params
-					$('#input_id').val oMod.id
+					fAddUserParam param, shielded for param, shielded of oMod.globals
+					$('#input_id').val oMod.name
 					$('#editor_mode').val oMod.lang
 					if oMod.lang is 'CoffeeScript'
 						editor.getSession().setMode "ace/mode/coffee"
@@ -162,7 +161,7 @@ fOnLoad = () ->
 
 					if oMod.published 
 						$('#is_public').prop 'checked', true
-					editor.setValue oMod.data
+					editor.setValue oMod.code
 					editor.moveCursorTo 0, 0
 				fAddUserParam '', false
 

@@ -9,123 +9,60 @@ else
 	urlService += 'eventtrigger/'
 	modName = 'Event Trigger'
 
-fOnLoad = () ->
-	$('.moduletype').text modName
-	$('#linkMod').attr 'href', '/views/modules_create?m=' + oParams.m
-
+updateModules = () ->
 	req = $.post urlService + 'get'
 	req.done ( arrModules ) ->
+		console.log(arrModules);
 		if arrModules.length is 0
 			$('#tableModules').html '<h3>No '+modName+'s available!'
 		else
-			for modName of arrModules
-				tr = $ '<tr>'
-				inp = $( '<div>' ).text modName
-				img = $( '<img>' ).attr( 'class', 'del' )
-					.attr( 'title', 'Delete Module' ).attr 'src', 'images/red_cross_small.png'
-				tr.append( $( '<td>' ).append img )
-				img = $( '<img>' ).attr( 'class', 'log' )
-					.attr( 'title', 'Edit Module' ).attr 'src', 'images/edit.png'
-				tr.append( $( '<td>' ).append img )
-				tr.append( $( '<td>' ).append inp )
-				$( '#tableModules' ).append tr
+			tr = d3.select('#tableModules').selectAll('tr')
+				.data(arrModules, (d) -> d.id);
+			tr.exit().remove();
+			trNew = tr.enter().append('tr');
+			trNew.append('td').classed('smallpadded', true)
+				.append('img')
+					.attr('class', 'del')
+					.attr('title', 'Delete Module')
+					.attr('src', '/images/red_cross_small.png')
+					.on('click', deleteModule);
+			trNew.append('td').classed('smallpadded', true)
+				.append('img')
+					.attr('class', 'log')
+					.attr('title', 'Edit Module')
+					.attr('src', '/images/edit.png')
+					.on('click', editModule);
+			trNew.append('td').classed('smallpadded', true)
+				.append('div').text((d) -> d.name)
+					.each (d) ->
+						if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
+
 	req.fail ( err ) ->
 		if err.status is 401
 			window.location.href = '/'
 		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
 
-	$( '#tableModules' ).on 'click', 'img.del', () ->
-		modName = $( 'div', $( this ).closest( 'tr' )).text()
-		if confirm  "Do you really want to delete the Module '#{ modName }'?
-				The module might still be active in some of your rules!"
-			if $( '#module_type' ).val() is 'Event Trigger'
-				cmd = 'delete_event_trigger'
-			else
-				cmd = 'delete_action_dispatcher'
-			data =
-				body: JSON.stringify
-					id: modName
-			$.post( '/usercommand/' + cmd, data )
-				.done fFetchModules
-				.fail fErrHandler 'Could not delete module! '
+deleteModule = (d) ->
+	if confirm 'Do you really want to delete the Module "'+d.name+'"?'
+		$.post(urlService+'delete', { id: d.id } )
+			.done updateModules
+			.fail main.requestError (err) ->
+				console.log(err)
 
-	$( '#tableModules' ).on 'click', 'img.log', () ->
-		modName = encodeURIComponent $( 'div', $( this ).closest( 'tr' )).text()
-		if $( '#module_type' ).val() is 'Event Trigger'
-			window.location.href = 'forge?page=forge_module&type=event_trigger&id=' + modName
-		else
-			window.location.href = 'forge?page=forge_module&type=action_dispatcher&id=' + modName
+editModule = (d) ->
+	if oParams.m is 'ad'
+		window.location.href = 'modules_create?m=ad&id='+d.id
+	else
+		window.location.href = 'modules_create?m=et&id='+d.id
+
+fOnLoad = () ->
+	$('.moduletype').text modName
+	$('#linkMod').attr 'href', '/views/modules_create?m=' + oParams.m
+
+	updateModules()
 
 window.addEventListener 'load', fOnLoad, true
 
-
-
-# # Convert a time string ( d h:m ) to a date
-# fConvertTimeToDate = ( str ) ->
-# 	if not str
-# 		dateConv = null
-# 	else
-# 		dateConv = new Date()
-# 		arrInp = str.split ':'
-# 		# There's only one string entered: hour
-# 		if arrInp.length is 1
-# 			txtHr = str
-# 			dateConv.setMinutes 0
-# 		else
-# 			txtHr = arrInp[ 0 ]
-# 			intMin = parseInt( arrInp[ 1 ] ) || 0
-# 			m = Math.max 0, Math.min intMin, 59
-# 			dateConv.setMinutes m
-	
-# 		intHour = parseInt( txtHr ) || 12
-# 		h = Math.max 0, Math.min intHour, 24
-# 		dateConv.setHours h
-
-# 		dateConv.setSeconds 0
-# 		dateConv.setMilliseconds 0
-# 		if dateConv < new Date()
-# 			dateConv.setDate dateConv.getDate() + 17
-# 	dateConv
-
-# # Convert a day hour string ( h:m ) to minutes
-# fConvertDayHourToMinutes = ( strDayHour ) ->
-# 	# Parse a time string
-# 	fParseTime = ( str, hasDay ) ->
-# 		arrTime = str.split ':'
-# 		# If there's only one entry, this is the amount of minutes
-# 		if hasDay
-# 			def = 0
-# 		else
-# 			def = 10
-# 		if arrTime.length is 1
-# 			time = parseInt( str ) || def
-# 			if hasDay
-# 				time * 60
-# 			else
-# 				time
-# 		else
-# 			h = parseInt( arrTime[ 0 ] ) || 0
-# 			if h > 0
-# 				def = 0
-# 			h * 60 + ( parseInt( arrTime[ 1 ] ) || def )
-
-# 	if not strDayHour
-# 		mins = 10
-# 	else
-# 		arrInp = strDayHour.split ' '
-# 		# There's only one string entered, either day or hour
-# 		if arrInp.length is 1
-# 			mins = fParseTime strDayHour
-# 		else
-# 			d = parseInt( arrInp[ 0 ] ) || 0
-# 			mins = d * 24 * 60 + fParseTime arrInp[ 1 ], true
-
-# 	# We have to limit this to 24 days because setTimeout only takes integer values
-# 	# until we implement a scheduler that deals with larger intervals
-# 	mins = Math.min mins, 35700
-# 	Math.max 1, mins
-
-# # Fetch the required Event Trigger parameters
 
 
 

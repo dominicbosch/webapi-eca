@@ -55,11 +55,11 @@ function searchComment(lang, src) {
 		let line = arrSrc[i].trim();
 		if(line !== '') {
 			if(lang === 'CoffeeScript') {
-				if(line.substring(0, 1) === '#' && line.substring(1, 3) !== '###')
-					comm += line.substring(1)+'\n';
+				if(line.substring(0, 1) === '#' && line.substring(0, 3) !== '###')
+					comm += line.substring(1).trim()+'\n';
 			} else {
 				if(line.substring(0, 2) === '//')
-					comm += line.substring(2)+'\n';
+					comm += line.substring(2).trim()+'\n';
 			}
 		}
 	}
@@ -72,6 +72,8 @@ function searchComment(lang, src) {
 // compile it first into JS.
 // Options: id, globals, logger
 exports.runStringAsModule = (code, lang, username, opt, cb) => {
+	var origCode = code;
+
 	if(typeof cb !== 'function') return log.error('DM | No callback provided!');
 
 	if(!code || !lang || !username) {
@@ -101,7 +103,9 @@ exports.runStringAsModule = (code, lang, username, opt, cb) => {
 	// Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
 	for(let prop in opt.globals) {
 		log.info('DM | Loading user defined global variable '+prop);
-		opt.globals[prop] = encryption.decrypt(opt.globals[prop].value);
+		// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
+		// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
+		opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
 	}
 
 	log.info('DM | Running module "'+opt.id+'" for user '+username);
@@ -126,12 +130,11 @@ exports.runStringAsModule = (code, lang, username, opt, cb) => {
 		}
 	}
 
-	// Attach all modules that are allowed for the coders, as defined in config/modules.json
+	// Attach all modules that are allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json
 	for(let mod in oModules) {
 		sandbox[mod] = oModules[mod];
 	}
 
-	// FIXME ENGINE BREAKS if non-existing module is used??? 
 	try {
 		// Finally the module is run in a VM
 		vm.runInNewContext(code, sandbox, sandbox.id);
@@ -153,7 +156,7 @@ exports.runStringAsModule = (code, lang, username, opt, cb) => {
 	}
 	cb(null, {
 		module: sandbox.exports,
-		comment: searchComment(lang, code),
+		comment: searchComment(lang, origCode),
 		functions: oFunctions
 	});
 }

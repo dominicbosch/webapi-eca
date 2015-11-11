@@ -21,7 +21,10 @@
 		<span class="legend rss">- Resident Set Size</span>
 		<span class="legend startup">| Worker Start</span>
 		<span class="legend shutdown">| Worker Shutdown</span>
-		<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}" style="width: 100%;height: 300px;"></svg>
+		<div class="monitor">
+			<div class="loading"><img src="/images/refresh.png"></div>
+			<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}" style="width: 100%;height: 300px;"></svg>
+		</div>
 		<button id="workerbutton" disabled>Stop Worker</button>
 	
 <div class="container-fluid">
