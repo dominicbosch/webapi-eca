@@ -39,17 +39,17 @@ router.post('/createuser', (req, res) => {
 				};
 				db.storeUser(oUser, (err) => {
 					if(err) {
-						log.error('Unable to create user!', err);
+						log.error('SRVC:ADMIN |Unable to create user!', err);
 						res.status(500).send('Unable to create user!');
 					} else {
-						log.info('User stored... starting up his dedicated process');
+						log.info('SRVC:ADMIN |User stored... starting up his dedicated process');
 						pm.startWorker(oUser, (err) => {
 							let msg = 'New user "'+oUser.username+'" created!';
 							if(err) {
-								log.warn('Starting of process for user "'+oUser.username+'" failed!');
+								log.warn('SRVC:ADMIN |Starting of process for user "'+oUser.username+'" failed!');
 								msg += ' But starting of process failed!';
 							}
-							log.info('New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
+							log.info('SRVC:ADMIN |New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
 							res.send(msg);
 							geb.emit('user:new', oUser);
 						});
@@ -71,7 +71,7 @@ router.post('/deleteuser', (req, res) => {
 				res.status(500).send('Can\'t delete user!');
 				log.error('SRVC:ADMIN | Can\'t delete user!', err);
 			} else {
-				log.info('User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
+				log.info('SRVC:ADMIN |User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
 				log.warn('SRVC:ADMIN | Remove all rules, all ADs and all ETs from user!');
 				res.send('User "'+req.body.username+'" deleted!');
 				// FIXME we also need to deactivate all running event pollers
