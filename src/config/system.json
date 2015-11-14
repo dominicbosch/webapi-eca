@@ -1,4 +1,5 @@
 {
+	"name": "[your-system-identifier]",
 	"httpport": 8080,
 	"db": {
 		"module": "postgres",
