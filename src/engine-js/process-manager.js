@@ -22,11 +22,10 @@ var log = require('./logging'),
 
 	geb = global.eventBackbone,
 	db = global.db,
-	oConf,
+	systemName = '➠ System',
 	oChildren = {};
 
-geb.addListener('firebase:init', (oc) => {
-	oConf = oc;
+geb.addListener('firebase:init', (oConf) => {
 	log.info('PM | Succcessfully connected to DB, Initialzing Users');
 	// Load the standard users from the user config file if they are not already existing
 	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
@@ -50,16 +49,17 @@ geb.addListener('firebase:init', (oc) => {
 			exports.startWorker(arrReply[i]);
 		}
 	});
-	fb.getLastIndex('webapi-eca-system', (err, id) => {
-		pl(registerProcessLogger(null, 'webapi-eca-system'), id);
+	fb.getLastIndex(systemName, (err, id) => {
+		pl(registerProcessLogger(null, systemName), id);
 	})
 });
 
 geb.addListener('system:shutdown', () => {
-	fb.logState('webapi-eca-system', 'shutdown', (new Date().getTime()))
+	fb.logState(systemName, 'shutdown', (new Date().getTime()))
 });
 
 function registerProcessLogger(uid, username) {
+	log.info('PM | Registered Process Logger (uid='+uid+', username='+username+')')
 	return (oMsg) => {
 		switch(oMsg.cmd) {
 			case 'log:debug': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(oMsg.data));

@@ -3,7 +3,7 @@
 {% block head %}
 <script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="/js/events.js"></script>
-<script type="text/template" id="eventSource">{"clickername": "{{username}}"}</script>
+<script type="text/template" id="eventSource">{"clickername": "{{user.username}}"}</script>
 {% endblock %}
 
 {% block pagetitle %}Emit Events{% endblock %}

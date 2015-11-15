@@ -166,7 +166,7 @@ function init() {
 			log.info('RS | Initializing http listener');
 			http.init(conf);
 			log.info('RS | Initializing Firebase');
-			fb.init(conf.firebase);
+			fb.init(conf);
 
 			log.info('RS | All good so far, informing all modules about proper system initialization');
 			geb.emit('system:init', conf);

@@ -9,7 +9,7 @@
 	<link rel="stylesheet" type="text/css" href="/css/process.css">
 {% endblock %}
 
-{% block pagetitle %}Profile '{{ username }}'{% endblock %}
+{% block pagetitle %}Profile '{{ user.username }}'{% endblock %}
 
 {% block content %}
 
@@ -23,7 +23,7 @@
 		<span class="legend shutdown">| Worker Shutdown</span>
 		<div class="monitor">
 			<div class="loading"><img src="/images/refresh.png"></div>
-			<svg id="processes-svg" data-admin="{{isAdmin}}" data-user="{{username}}" style="width: 100%;height: 300px;"></svg>
+			<svg id="processes-svg" data-admin="{{user.isAdmin}}" data-user="{{user.username}}" data-system="{{system.name}}" style="width: 100%;height: 300px;"></svg>
 		</div>
 		<button id="workerbutton" disabled>Stop Worker</button>
 	

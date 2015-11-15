@@ -40,6 +40,7 @@ $(document).ready(function() {
 
 	var username = svg.attr('data-user');
 	var isAdmin = svg.attr('data-admin') === 'true';
+	var systemname = svg.attr('data-system');
 
 
 	var formatMBs = function(d) { return d3.format(',.0f')(d/1024/1024) };
@@ -114,6 +115,7 @@ $(document).ready(function() {
 	gStates.append('g').attr('class', 'startup');
 
 	function displayUser(username) {
+		console.log(username, allData);
 		var oData = allData[username];
 		var arrData = oData.data;
 
@@ -218,8 +220,7 @@ $(document).ready(function() {
 	var fb = new Firebase('https://boiling-inferno-7829.firebaseio.com/');
 	function fetchData(firsttime) {
 		var firsttime = true;
-		fb.child('webapi-eca-laptop').on('value', function(snapshot) {
-		// fb.child('webapi-eca-laptop').once('value', function(snapshot) {
+		fb.child(systemname).on('value', function(snapshot) {
 			if(!suspendUpdates) {
 				allData = snapshot.val();
 				var sel = selectBox.node().value || username;
