@@ -115,7 +115,6 @@ $(document).ready(function() {
 	gStates.append('g').attr('class', 'startup');
 
 	function displayUser(username) {
-		console.log(username, allData);
 		var oData = allData[username];
 		var arrData = oData.data;
 
