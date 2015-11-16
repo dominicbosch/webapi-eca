@@ -52,30 +52,30 @@ window.main =
 			.classed 'error', false
 			.text ''
 
-	registerHoverInfoHTML: ( d3El, html ) ->
-		hoverOut = () ->
-			d3.select(this).classed('hovered', false);
-			checkHover = () ->
-				if not d3.select('#tooltip').classed('hovered') and not d3El.classed('hovered')
-					d3.select('#tooltip').transition().style('opacity', 0)
-			setTimeout checkHover, 0
-		
-		d3El.append('img')
+	registerHoverInfoHTML: (d3El, html) ->
+		checkLeave = () ->
+			if not d3Div.classed('hovered') and not d3Img.classed('hovered')
+				d3Div.transition().style('opacity', 0).each 'end', () ->
+					d3Div.style('visibility', 'hidden')
+
+		d3El.style('position', 'relative');
+		d3Img = d3El.append('img')
 			.classed('infoimg', true)
-			.on('mouseleave', hoverOut)
 			.on 'mouseenter', () ->
-				et = d3.event.target.getBoundingClientRect();
-				d3.select(this).classed('hovered', true);
-				d3.select('#tooltip').html(html)
-					.style({
-						top: (et.top+et.height-20)+'px',
-						left: (et.left+(et.width/2)-20)+'px',
-						opacity: 1
-					})
-					.on('mouseleave', hoverOut)
-					.on 'mouseenter', () ->
-						d3.select('#tooltip').classed 'hovered', true
+				d3Img.classed('hovered', true)
+				d3Div.style('visibility', 'visible')
 					.transition().style('opacity', 1)
+			.on 'mouseleave', () ->
+				d3Img.classed 'hovered', false
+				setTimeout checkLeave, 0
+
+		d3Div = d3El.append('span').classed('mytooltip', true).append('div')
+			.on 'mouseenter', () ->
+				d3Div.classed 'hovered', true
+			.on 'mouseleave', () -> 
+				d3Div.classed 'hovered', false
+				setTimeout checkLeave, 0
+			.html(html);
 
 	registerHoverInfo: ( el, file ) ->
 		$.get '/help/' + file, (html) ->

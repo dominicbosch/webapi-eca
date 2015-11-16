@@ -49,29 +49,28 @@ window.main = {
     return d3.select('#skeletonTicker').classed('success', false).classed('error', false).text('');
   },
   registerHoverInfoHTML: function(d3El, html) {
-    var hoverOut;
-    hoverOut = function() {
-      var checkHover;
-      d3.select(this).classed('hovered', false);
-      checkHover = function() {
-        if (!d3.select('#tooltip').classed('hovered') && !d3El.classed('hovered')) {
-          return d3.select('#tooltip').transition().style('opacity', 0);
-        }
-      };
-      return setTimeout(checkHover, 0);
+    var checkLeave, d3Div, d3Img;
+    checkLeave = function() {
+      if (!d3Div.classed('hovered') && !d3Img.classed('hovered')) {
+        return d3Div.transition().style('opacity', 0).each('end', function() {
+          return d3Div.style('visibility', 'hidden');
+        });
+      }
     };
-    return d3El.append('img').classed('infoimg', true).on('mouseleave', hoverOut).on('mouseenter', function() {
-      var et;
-      et = d3.event.target.getBoundingClientRect();
-      d3.select(this).classed('hovered', true);
-      return d3.select('#tooltip').html(html).style({
-        top: (et.top + et.height - 20) + 'px',
-        left: (et.left + (et.width / 2) - 20) + 'px',
-        opacity: 1
-      }).on('mouseleave', hoverOut).on('mouseenter', function() {
-        return d3.select('#tooltip').classed('hovered', true);
-      }).transition().style('opacity', 1);
+    d3El.style('position', 'relative');
+    d3Img = d3El.append('img').classed('infoimg', true).on('mouseenter', function() {
+      d3Img.classed('hovered', true);
+      return d3Div.style('visibility', 'visible').transition().style('opacity', 1);
+    }).on('mouseleave', function() {
+      d3Img.classed('hovered', false);
+      return setTimeout(checkLeave, 0);
     });
+    return d3Div = d3El.append('span').classed('mytooltip', true).append('div').on('mouseenter', function() {
+      return d3Div.classed('hovered', true);
+    }).on('mouseleave', function() {
+      d3Div.classed('hovered', false);
+      return setTimeout(checkLeave, 0);
+    }).html(html);
   },
   registerHoverInfo: function(el, file) {
     return $.get('/help/' + file, function(html) {

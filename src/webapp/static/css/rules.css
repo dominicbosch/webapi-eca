@@ -1,9 +1,5 @@
 
 
-#actionParameters {
-	display: none;
-}
-
 #divConditions {
     display: inline-block;
     width: 100%;
@@ -14,4 +10,8 @@
 	margin: auto;
 	height: 150px;
 	width: 500px;
+}
+
+#actionSection {
+	visibility: hidden;
 }

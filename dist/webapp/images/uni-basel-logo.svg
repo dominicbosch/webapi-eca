@@ -2,7 +2,12 @@
 <!-- Generator: Adobe Illustrator 15.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg version="1.1" id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="230px" height="75px" viewBox="0 0 230 75" enable-background="new 0 0 230 75" xml:space="preserve">
+	 width="700px" height="75px" viewBox="0 0 700 75" enable-background="new 0 0 700 75" xml:space="preserve">
+<defs>
+  <style type="text/css">@import url(https://fonts.googleapis.com/css?family=Droid+Serif);</style>
+</defs>
+  <text x="390" y="55" font-family="'Droid Serif', Georgia, Arial, Palatino, serif">High Performance and Web Computing</text>
+  <line x1="365" x2="365" y1="25" y2="75" style="stroke: black;stroke-width:2"></line>
 <g>
 	<path d="M195.145,51.995h-3.487V74.59h3.487V51.995z M178.396,65.214c0.061-0.44,0.119-0.882,0.265-1.319
 		c0.176-0.557,1.057-2.727,3.312-2.756c0.321,0,0.997,0.059,1.729,0.528c1.319,0.818,1.523,2.079,1.613,3.517L178.396,65.214z

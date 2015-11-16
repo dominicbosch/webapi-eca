@@ -103,7 +103,7 @@ exports.init = (conf) => {
 	app.use((err, req, res, next) => {
 		if(req.method === 'GET') {
 			res.status(404);
-			res.render('404');
+			res.render('404', serveSession(req));
 		} else {
 			log.error(err);
 			res.status(500).send('There was an error while processing your request!');

@@ -5,13 +5,8 @@ editor = null;
 
 strPublicKey = '';
 
-if (oParams.id) {
-  oParams.id = decodeURIComponent(oParams.id);
-}
-
 sendRequest = function(url, data, cb) {
   var req;
-  console.log('sending request to ' + url);
   main.clearInfo();
   req = $.post(url, data);
   return req.fail(function(err) {
@@ -58,10 +53,10 @@ fOnLoad = function() {
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
     if (prl + pul === 0) {
-      $('#selectWebhook').html('<h3 class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3>');
+      d3.select('#selectWebhook').append('h3').classed('empty', true).html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>');
       return setEditorReadOnly(true);
     } else {
-      domSelect = $('<select>').attr('class', 'mediummarged');
+      domSelect = $('<select>').attr('class', 'mediummarged smallfont');
       createWebhookRow = function(hookid, oHook, isMine) {
         var img, owner, selStr;
         img = oHook.isPublic === 'true' ? 'public' : 'private';
@@ -69,7 +64,7 @@ fOnLoad = function() {
         selStr = oParams.webhook && oParams.webhook === hookid ? 'selected' : '';
         return domSelect.append($("<option value=\"" + hookid + "\" " + selStr + ">" + oHook.hookname + " (" + owner + ")</option>"));
       };
-      $('#selectWebhook').append($('<h3>').text('Your available Webhooks:').append(domSelect));
+      $('#selectWebhook').append($('<h3>').text('Your Webhooks:').append(domSelect));
       ref = oHooks["private"];
       for (hookid in ref) {
         oHook = ref[hookid];
@@ -84,16 +79,38 @@ fOnLoad = function() {
       return results;
     }
   });
-  req = sendRequest('/service/actiondispatcher/getall');
+  req = sendRequest('/service/actiondispatcher/get');
   req.done(function(arrAD) {
+    var action, d3as, div, el, func, i, len, results, sel, trNew;
+    console.log(arrAD);
+    d3as = d3.select('#actionSection').style('visibility', 'visible');
     if (arrAD.length === 0) {
-      $('#actionSelection').html('<h3 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h3>');
+      d3as.selectAll('*').remove();
+      d3as.append('h3').classed('empty', true).html('No <b>Action Dispatchers</b> available! ').append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
       return setEditorReadOnly(true);
     } else {
-      return console.log('AWESOME', arrAD);
+      sel = d3as.select('table');
+      results = [];
+      for (i = 0, len = arrAD.length; i < len; i++) {
+        el = arrAD[i];
+        results.push((function() {
+          var results1;
+          results1 = [];
+          for (func in el.functions) {
+            action = el.name + ' -> ' + func;
+            trNew = sel.append('tr');
+            trNew.append('td').classed('smallpadded', true).append('button').attr('onclick', 'addAction(' + action + ')').text('add');
+            trNew.append('td').text(action);
+            div = trNew.append('td').classed('smallpadded', true).append('div');
+            results1.push(main.registerHoverInfoHTML(div, el.comment));
+          }
+          return results1;
+        })());
+      }
+      return results;
     }
   });
-  $('#select_actions').on('change', function() {
+  $('#actionSection select').on('change', function() {
     var opt;
     domSectionSelectedActions.show();
     opt = $('option:selected', this);
@@ -125,7 +142,7 @@ fOnLoad = function() {
       domSectionActionParameters.hide();
     }
     opt = $('<option>').text(act);
-    $('#select_actions').append(opt);
+    $('#actionSection select').append(opt);
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {

@@ -66,6 +66,9 @@ nav.navbar {
 .nav.navbar-nav>li:hover {
 	background: #FFF;
 }
+.nav.navbar-nav>li>a:focus {
+	color: #d20537;
+}
 /*.nav.navbar-nav>li.active>a {
 	background: #d20537;
 	color: #FFF;
@@ -147,8 +150,12 @@ table.padded .highlight {
 	width: 70%;
 }
 
+.mediumfont {
+	font-size: 0.85em;
+}
+
 .smallfont {
-	font-size: 0.8em;
+	font-size: 0.75em;
 }
 .nowrap {
 	white-space: nowrap;
@@ -184,26 +191,31 @@ table.padded .highlight {
 	padding: 3px 4px;
 }
 
-#tooltip {
+.mytooltip {
+	position: relative;
+}
+
+.mytooltip div {
+	visibility: hidden;
 	position: absolute;
-	top: 0px;
-	max-width: 300px;
-	overflow: hidden;
+	left: -7px;
+	top: 7px;
+	margin: 5px;
+	/*width: 100%;*/
 	font-size: 0.9em;
 	z-index: 20;
 	padding: 7px 14px;
-	margin: 20px;
 	background: #FFF;
 	border: 1px solid #666;
 	opacity: 0;
 }
 
-#tooltip .title {
+.mytooltip .title {
 	font-weight: bold;
 	font-size: 1.3em;
 }
 
-#tooltip kbd {
+.mytooltip kbd {
 	font-size: 0.8em;
 }
 
@@ -271,20 +283,7 @@ img.del, img.log {
     0%   {transform: rotate(0deg)}
     100% {transform: rotate(360deg)}
 }
-/*
-h4 {
-	margin-top: 5px;
-	margin-bottom: 5px;
-}
-*/
 
-/*#header {
-	width: 100%;
-	background: #fff;
-	border-bottom: 1px solid #666;
-}
-*/
-/*
 input[type=text],
 input[type=password] {
 	-webkit-transition: all 0.30s ease-in-out;
@@ -305,6 +304,7 @@ input[type=password]:focus {
 	border: 1px solid rgba(81, 203, 238, 1);
 }
 
+/*
 button {
 	font-size: 1.1em;
 }

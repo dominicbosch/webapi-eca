@@ -1,152 +1,15 @@
 'use strict';
 
-#
-# The module that helps creating the rules
-#
-
-# FIXME: notify of non existing Action dispatcher in the first place!
 editor = null
 strPublicKey = ''
-if oParams.id
-	oParams.id = decodeURIComponent oParams.id
 
 sendRequest = (url, data, cb) ->
-	console.log 'sending request to ' + url
 	main.clearInfo()
 	req = $.post url, data
-	req.fail ( err ) ->
+	req.fail (err) ->
 		if err.status is 401
 			window.location.href = '/views/login'
 		else cb? err
-
-# #
-# # ACTION Related Helper Functions
-# #
-# fAddSelectedAction = ( name ) ->
-# 	arrName = name.split ' -> '
-# 	arrEls = $( "#action_dispatcher_params div.modName" ).map( () ->
-# 		$( this ).text()
-# 	).get()
-# 	table = $( '#selected_actions' )
-# 	tr = $( '<tr>' ).appendTo table
-# 	img = $( '<img>' ).attr 'src', 'images/red_cross_small.png'
-# 	tr.append $( '<td>' ).css( 'width', '20px' ).append img
-# 	tr.append $( '<td>' ).attr( 'class', 'title').text name 
-# 	td = $( '<td>' ).attr( 'class', 'funcMappings').appendTo tr
-# 	fFetchActionFunctionArgs td, arrName
-# 	if arrName[ 0 ] not in arrEls
-# 		fFetchActionParams arrName[ 0 ]
-
-# 	$( "#select_actions option" ).each () ->
-# 		if $( this ).text() is name
-# 			$( this ).remove()
-# 	fDelayed = () ->
-# 		fFillActionFunction arrName[ 0 ]
-# 	setTimeout fDelayed, 300
-
-# fFetchActionParams = ( modName ) ->
-# 	sendRequest
-# 		command: 'get_action_dispatcher_params'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: modName
-# 		done: ( data ) ->
-# 			if data.message
-# 				oParams = JSON.parse data.message
-# 				if JSON.stringify( oParams ) isnt '{}'
-# 					domSectionActionParameters.show()
-# 					div = $( '<div>' ).appendTo $( '#action_dispatcher_params' )
-# 					subdiv = $( '<div> ').appendTo div 
-# 					subdiv.append $( '<div>' )
-# 						.attr( 'class', 'modName underlined' ).text modName
-
-# 					comment = $( '<div>' ).attr( 'class', 'comment indent20' ).appendTo div
-# 					sendRequest
-# 						command: 'get_action_dispatcher_comment'
-# 						data: 
-# 							body: JSON.stringify
-# 								id: modName
-# 						done: ( data ) ->
-# 							comment.html data.message.replace /\n/g, '<br>'
-# 						fail: console.log 'Error fetching Event Trigger comment'
-
-# 					table = $ '<table>'
-# 					div.append table
-# 					for name, shielded of oParams
-# 						tr = $( '<tr>' )
-# 						tr.append $( '<td>' ).css 'width', '20px'
-# 						tr.append $( '<td>' ).attr( 'class', 'key').text name
-# 						inp = $( '<input>' )
-# 						if shielded
-# 							inp.attr( 'type', 'password' )
-# 						else
-# 							inp.attr( 'type', 'text' )
-# 						tr.append $( '<td>' ).text(' : ').append inp
-# 						table.append tr
-
-# 		fail: console.log 'Error fetching action dispatcher params'
-
-# fFetchActionFunctionArgs = ( tag, arrName ) ->
-# 	sendRequest
-# 		command: 'get_action_dispatcher_function_arguments'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: arrName[ 0 ]
-# 		done: ( data ) ->
-# 			if data.message
-# 				oParams = JSON.parse data.message
-# 				if oParams[ arrName[ 1 ] ]
-# 					table = $( '<table>' ).appendTo tag
-# 					for functionArgument in oParams[ arrName[ 1 ] ]
-# 						tr = $( '<tr>' ).appendTo table
-# 						td = $( '<td>' ).appendTo tr
-# 						td.append $( '<div>' ).attr( 'class', 'funcarg' ).text functionArgument
-# 						tr.append td
-# 						td = $( '<td>' ).appendTo tr
-# 						td.append $( '<input>' ).attr 'type', 'text'
-# 						tr.append td
-# 		fail: console.log 'Error fetching action dispatcher function params'
-
-# fFillActionFunction = ( name ) ->
-# 	sendRequest
-# 		command: 'get_action_dispatcher_user_params'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: name
-# 		done: fAddActionUserParams name
-
-# 	sendRequest
-# 		command: 'get_action_dispatcher_user_arguments'
-# 		data:
-# 			body: JSON.stringify
-# 				ruleId: $( '#input_id' ).val()
-# 				moduleId: name
-# 		done: fAddActionUserArgs name
-
-# fAddActionUserParams = ( name ) ->
-# 	( data ) ->
-# 		oParams = JSON.parse data.message
-# 		domMod = $( "#action_dispatcher_params div" ).filter () ->
-# 			$( 'div.modName', this ).text() is name
-# 		for param, oParam of oParams
-# 			par = $( "tr", domMod ).filter () ->
-# 				$( 'td.key', this ).text() is param
-# 			$( 'input', par ).val oParam.value
-# 			$( 'input', par ).attr 'unchanged', 'true'
-# 			$( 'input', par ).change () ->
-# 				$( this ).attr 'unchanged', 'false'
-
-# fAddActionUserArgs = ( name ) ->
-# 	( data ) ->
-# 		for key, arrFuncs of data.message
-# 			par = $( "#selected_actions tr" ).filter () ->
-# 				$( 'td.title', this ).text() is "#{ name } -> #{ key }"
-# 			for oFunc in JSON.parse arrFuncs
-# 				tr = $( "tr", par ).filter () ->
-# 					$( '.funcarg', this ).text() is "#{ oFunc.argument }"
-# 				$( "input[type=text]", tr ).val oFunc.value
-# 				# $( "input[type=checkbox]", tr ).prop 'checked', oFunc.jsselector
-
 
 setEditorReadOnly = (isTrue) ->
 	editor.setReadOnly isTrue
@@ -161,23 +24,22 @@ fOnLoad = () ->
 	# Fetch the public key from the engine
 	req = sendRequest '/service/session/publickey', null, (err) ->
 		main.setInfo false, 'Error when fetching public key. Unable to send user specific parameters securely!'
-	req.done ( data ) ->
+	req.done (data) ->
 		strPublicKey = data
 
 	editor = ace.edit "divConditionsEditor"
-	# editor.setTheme "ace/theme/monokai"
 	editor.setTheme "ace/theme/crimson_editor"
 	editor.setFontSize "16px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
-	$( '#editor_theme' ).change ( el ) ->
-		editor.setTheme "ace/theme/" + $( this ).val()
+	$('#editor_theme').change (el) ->
+		editor.setTheme "ace/theme/" + $(this).val()
 		
-	$( '#editor_font' ).change ( el ) ->
-		editor.setFontSize $( this ).val()
+	$('#editor_font').change (el) ->
+		editor.setFontSize $(this).val()
 		
-	$( '#fill_example' ).click () ->
+	$('#fill_example').click () ->
 		editor.setValue """
 
 			[
@@ -189,59 +51,59 @@ fOnLoad = () ->
 				}
 			]
 			"""
-	$( '#input_id' ).focus()
+	$('#input_id').focus()
 
 
 # EVENT
 # -----
-
 	req = sendRequest '/service/webhooks/getall'
-	req.done ( oHooks ) ->
+	req.done (oHooks) ->
 		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
 		if prl + pul is 0
-			$('#selectWebhook').html('<h3 class="empty">No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a></h3>')
+			d3.select('#selectWebhook').append('h3').classed('empty', true)
+				.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
 			setEditorReadOnly true
 		else
 				
-			domSelect = $('<select>').attr('class','mediummarged')
+			domSelect = $('<select>').attr('class','mediummarged smallfont')
 			createWebhookRow = (hookid, oHook, isMine) ->
 				img = if oHook.isPublic is 'true' then 'public' else 'private'
 				owner = if isMine then 'yours' else oHook.username
 				selStr = if oParams.webhook and oParams.webhook is hookid then 'selected' else ''
 				domSelect.append $ "<option value=\"#{ hookid }\" #{ selStr }>#{ oHook.hookname } (#{ owner })</option>"
-			$('#selectWebhook').append $('<h3>').text('Your available Webhooks:').append(domSelect)
+			$('#selectWebhook').append $('<h3>').text('Your Webhooks:').append(domSelect)
 			createWebhookRow(hookid, oHook, true) for hookid, oHook of oHooks.private
 			createWebhookRow(hookid, oHook) for hookid, oHook of oHooks.public
-# FIXED -->
 
-	req = sendRequest '/service/actiondispatcher/getall'
-	req.done ( arrAD ) ->
+	req = sendRequest '/service/actiondispatcher/get'
+	req.done (arrAD) ->
+		console.log arrAD
+		d3as = d3.select('#actionSection').style('visibility', 'visible');
 		if(arrAD.length is 0)
-			$('#actionSelection').html('<h3 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h3>')
+			d3as.selectAll('*').remove();
+			d3as.append('h3').classed('empty', true)
+				.html('No <b>Action Dispatchers</b> available! ')
+				.append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
 			setEditorReadOnly true
 		else
-			console.log('AWESOME', arrAD)
-
-			# <select id="select_actions"><option></option></select>
-			# <br><br>
-			# <div id="actionParameters">
-			# 	<div>
-			# 		<b>Selected Actions:</b>
-			# 		<table id="selected_actions"></table>
-			# 	</div>
-			# 	<br>
-			# 	<div>
-			# 		<b>Required User-specific Data:</b>
-			# 		<div id="action_dispatcher_params"></div>
-			# 	</div>
-			# </div>
+			sel = d3as.select 'table'
+			for el in arrAD
+				for func of el.functions
+					action = el.name+' -> '+func
+					trNew = sel.append('tr')
+					trNew.append('td').classed('smallpadded', true)
+						.append('button').attr('onclick', 'addAction('+action+')')
+							.text('add')
+					trNew.append('td').text(action)
+					div = trNew.append('td').classed('smallpadded', true).append('div')
+					main.registerHoverInfoHTML div, el.comment
 
 
 # TODO fill action dispatchers
 	# sendRequest
 	# 	command: 'get_action_dispatchers'
-	# 	done: ( data ) ->
+	# 	done: (data) ->
 	# 		try
 	# 			oAis = JSON.parse data.message
 	# 		catch err
@@ -251,33 +113,33 @@ fOnLoad = () ->
 	# 		for module, actions of oAis
 	# 			for act in actions
 	# 				i++
-	# 				arrEls = $( "#action_dispatcher_params div" ).filter () ->
-	# 					$( this ).text() is "#{ module } -> #{ act }"
+	# 				arrEls = $("#action_dispatcher_params div").filter () ->
+	# 					$(this).text() is "#{ module } -> #{ act }"
 	# 				# It could have been loaded async before through the rules into the action params
 	# 				if arrEls.length is 0
-	# 					$( '#select_actions' ).append $( '<option>' ).text module + ' -> ' + act
+	# 					$('#actionSection select').append $('<option>').text module + ' -> ' + act
 	# 	fail: console.log 'Error fetching Action Dispatchers'
 
 
-	$( '#select_actions' ).on 'change', () ->
+	$('#actionSection select').on 'change', () ->
 		domSectionSelectedActions.show()
 		opt = $ 'option:selected', this
 		fAddSelectedAction opt.text()
 		
-	$( '#selected_actions' ).on 'click', 'img', () ->
-		act = $( this ).closest( 'td' ).siblings( '.title' ).text()
+	$('#selected_actions').on 'click', 'img', () ->
+		act = $(this).closest('td').siblings('.title').text()
 		arrName = act.split ' -> '
 
 		nMods = 0
 		# Check whether we're the only function left that was selected from this module
-		$( "#selected_actions td.title" ).each () ->
-			arrNm = $( this ).text().split ' -> '
+		$("#selected_actions td.title").each () ->
+			arrNm = $(this).text().split ' -> '
 			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
 
 		if nMods is 1
 			$('#action_dispatcher_params > div').each () ->
-				if $( this ).children( 'div.modName' ).text() is arrName[ 0 ]
-					$( this ).remove()
+				if $(this).children('div.modName').text() is arrName[ 0 ]
+					$(this).remove()
 
 		# Hide if nothing to show
 		if $('#selected_actions td.title').length is 0
@@ -286,44 +148,44 @@ fOnLoad = () ->
 		if $('#action_dispatcher_params > div').length is 0
 			domSectionActionParameters.hide()
 
-		opt = $( '<option>' ).text act
-		$( '#select_actions' ).append opt
-		$( this ).closest( 'tr' ).remove()
+		opt = $('<option>').text act
+		$('#actionSection select').append opt
+		$(this).closest('tr').remove()
 
 
 # SUBMIT
 
-	$( '#but_submit' ).click () ->
+	$('#but_submit').click () ->
 		window.scrollTo 0, 0
 
 		try
-			if $( '#input_id' ).val() is ''
-				$( '#input_id' ).focus()
+			if $('#input_id').val() is ''
+				$('#input_id').focus()
 				throw new Error 'Please enter a rule name!'
 
 			console.warn 'GONE!'
-			# eventtype = $( '#select_event_type' ).val()
+			# eventtype = $('#select_event_type').val()
 			# switch eventtype
 			# 	when ''
-			# 		$( '#select_event_type' ).focus()
+			# 		$('#select_event_type').focus()
 			# 		throw new Error 'Please choose an event type!'
 
 			# 	when 'Webhook'
-			# 		eventname = $( '#select_eventhook' ).val()
+			# 		eventname = $('#select_eventhook').val()
 
 			# 	when 'Event Trigger'
-			# 		eventname = $( '#select_eventtrigger' ).val()
+			# 		eventname = $('#select_eventtrigger').val()
 			# 		ep = {}
-			# 		$( "#event_trigger_params tr" ).each () ->
-			# 			key = $( this ).children( '.key' ).text()
-			# 			val = $( 'input', this ).val()
+			# 		$("#event_trigger_params tr").each () ->
+			# 			key = $(this).children('.key').text()
+			# 			val = $('input', this).val()
 			# 			if val is ''
-			# 				$( 'input', this ).focus()
+			# 				$('input', this).focus()
 			# 				throw new Error "Please enter a value for '#{ key }' in the event module!"
-			# 			shielded = $( 'input', this ).attr( 'type' ) is 'password'
+			# 			shielded = $('input', this).attr('type') is 'password'
 			# 			ep[ key ] =
 			# 				shielded: shielded
-			# 			if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
+			# 			if not shielded or $('input', this).attr('unchanged') isnt 'true'
 			# 				encryptedParam = cryptico.encrypt val, strPublicKey
 			# 				ep[ key ].value = encryptedParam.cipher 
 			# 			else
@@ -331,30 +193,30 @@ fOnLoad = () ->
 
 			# 		evtFuncs = {}
 			# 		evtFuncs[ eventname ] = []
-			# 		$( '#event_trigger_params tr.funcMappings' ).each () ->
+			# 		$('#event_trigger_params tr.funcMappings').each () ->
 			# 			evtFuncs[ eventname ].push
-			# 				argument: $( 'div.funcarg', this ).text()
-			# 				value: $( 'input[type=text]', this ).val()
+			# 				argument: $('div.funcarg', this).text()
+			# 				value: $('input[type=text]', this).val()
 
-			if $( '#selected_actions tr' ).length is 0
+			if $('#selected_actions tr').length is 0
 				throw new Error 'Please select at least one action or create one!'
 
 			# Store all selected action dispatchers
 			ap = {}
-			$( '> div', $( '#action_dispatcher_params' ) ).each () ->
-				modName = $( '.modName', this ).text()
+			$('> div', $('#action_dispatcher_params')).each () ->
+				modName = $('.modName', this).text()
 				params = {}
-				$( 'tr', this ).each () ->
-					key = $( '.key', this ).text()
-					val = $( 'input', this ).val()
-					shielded = $( 'input', this ).attr( 'type' ) is 'password'
+				$('tr', this).each () ->
+					key = $('.key', this).text()
+					val = $('input', this).val()
+					shielded = $('input', this).attr('type') is 'password'
 					if val is ''
-						$( 'input', this ).focus()
+						$('input', this).focus()
 						throw new Error "'#{ key }' missing for '#{ modName }'"
 					params[ key ] =
 						shielded: shielded
 
-					if not shielded or $( 'input', this ).attr( 'unchanged' ) isnt 'true'
+					if not shielded or $('input', this).attr('unchanged') isnt 'true'
 						encryptedParam = cryptico.encrypt val, strPublicKey
 						params[ key ].value = encryptedParam.cipher 
 					else
@@ -362,23 +224,23 @@ fOnLoad = () ->
 				ap[ modName ] = params
 			acts = []
 			actFuncs = {}
-			$( '#selected_actions td.title' ).each () ->
-				actionName = $( this ).text()
+			$('#selected_actions td.title').each () ->
+				actionName = $(this).text()
 				actFuncs[ actionName ] = []
 				acts.push actionName
-				par = $( this ).parent()
-				$( '.funcMappings tr', par ).each () ->
+				par = $(this).parent()
+				$('.funcMappings tr', par).each () ->
 					# No need to encrypt this, right?
 					# tmp =
-					# 	argument: $( 'div.funcarg', this ).val()
-					# 	value: $( 'input[type=text]', this ).val()
-					# 	regexp: $( 'input[type=checkbox]', this ).is( ':checked' )
-					# tmp = cryptico.encrypt JSON.stringify( tmp ), strPublicKey
+					# 	argument: $('div.funcarg', this).val()
+					# 	value: $('input[type=text]', this).val()
+					# 	regexp: $('input[type=checkbox]', this).is(':checked')
+					# tmp = cryptico.encrypt JSON.stringify(tmp), strPublicKey
 					# actFuncs[ actionName ] = tmp.cipher
 					actFuncs[ actionName ].push
-						argument: $( 'div.funcarg', this ).text()
-						value: $( 'input[type=text]', this ).val()
-						# jsselector: $( 'input[type=checkbox]', this ).is( ':checked' )
+						argument: $('div.funcarg', this).text()
+						value: $('input[type=text]', this).val()
+						# jsselector: $('input[type=checkbox]', this).is(':checked')
 			
 			try
 				conds = JSON.parse editor.getValue()
@@ -389,8 +251,8 @@ fOnLoad = () ->
 				throw new Error "Conditions Invalid! Needs to be an Array of Strings!"
 
 
-			fCheckOverwrite = ( obj ) ->
-				( err ) ->
+			fCheckOverwrite = (obj) ->
+				(err) ->
 					if err.status is 409
 						if confirm 'Are you sure you want to overwrite the existing rule?'
 							payl = JSON.parse obj.body
@@ -399,21 +261,21 @@ fOnLoad = () ->
 							sendRequest
 								command: obj.command
 								data: obj
-								done: ( data ) ->
-									$( '#info' ).text data.message
-									$( '#info' ).attr 'class', 'success'
+								done: (data) ->
+									$('#info').text data.message
+									$('#info').attr 'class', 'success'
 								fail: console.log "#{ obj.id } not stored!"
 					else
-						console.log( "#{ obj.id } not stored!" ) err
+						console.log("#{ obj.id } not stored!") err
 
 			console.warn 'GONE!'
-			# if $( '#select_event_type' ).val() is 'Event Trigger'
-			# 	start = fConvertTimeToDate( $( '#input_start' ).val() ).toISOString()
-			# 	mins = fConvertDayHourToMinutes $( '#input_interval' ).val()
+			# if $('#select_event_type').val() is 'Event Trigger'
+			# 	start = fConvertTimeToDate($('#input_start').val()).toISOString()
+			# 	mins = fConvertDayHourToMinutes $('#input_interval').val()
 
 			obj = 
 				body: JSON.stringify
-					id: $( '#input_id' ).val()
+					id: $('#input_id').val()
 					eventtype: eventtype
 					eventname: eventname
 					eventparams: ep
@@ -427,13 +289,13 @@ fOnLoad = () ->
 			sendRequest
 				command: 'forge_rule'
 				data: obj
-				done: ( data ) ->
-					$( '#info' ).text data.message
-					$( '#info' ).attr 'class', 'success'
+				done: (data) ->
+					$('#info').text data.message
+					$('#info').attr 'class', 'success'
 				fail: fCheckOverwrite obj
 		catch err
-			$( '#info' ).text 'Error in upload: ' + err.message
-			$( '#info' ).attr 'class', 'error'
+			$('#info').text 'Error in upload: ' + err.message
+			$('#info').attr 'class', 'error'
 			alert err.message
 
 # Preload editting of a Rule
@@ -444,38 +306,38 @@ fOnLoad = () ->
 			data: 
 				body: JSON.stringify
 					id: oParams.id
-			done: ( data ) ->
+			done: (data) ->
 				oRule = JSON.parse data.message
 				if oRule
-					$( '#input_id' ).val oRule.id
+					$('#input_id').val oRule.id
 					
 					# Event
 					fPrepareEventType oRule.eventtype, () ->
 
 						switch oRule.eventtype
 							when 'Event Trigger'
-								$( 'select', domSelectEventTrigger ).val oRule.eventname
-								if $( 'select', domSelectEventTrigger ).val() is oRule.eventname
+								$('select', domSelectEventTrigger).val oRule.eventname
+								if $('select', domSelectEventTrigger).val() is oRule.eventname
 									fFetchEventParams oRule.eventname
 									d = new Date oRule.eventstart 
 									mins = d.getMinutes()
 									if mins.toString().length is 1
 											mins = '0' + mins
-									$( '#input_start', domInputEventTiming ).val d.getHours() + ':' + mins
-									$( '#input_interval', domInputEventTiming ).val oRule.eventinterval
+									$('#input_start', domInputEventTiming).val d.getHours() + ':' + mins
+									$('#input_interval', domInputEventTiming).val oRule.eventinterval
 
 								else
 									window.scrollTo 0, 0
-									$( '#info' ).text 'Error loading Rule: Your Event Trigger does not exist anymore!'
-									$( '#info' ).attr 'class', 'error'
+									$('#info').text 'Error loading Rule: Your Event Trigger does not exist anymore!'
+									$('#info').attr 'class', 'error'
 
 							when 'Webhook'
-								$( 'select', domSelectWebhook ).val oRule.eventname
+								$('select', domSelectWebhook).val oRule.eventname
 
-								if $( 'select', domSelectWebhook ).val() is oRule.eventname
+								if $('select', domSelectWebhook).val() is oRule.eventname
 									window.scrollTo 0, 0
-									$( '#info' ).text 'Your Webhook does not exist anymore!'
-									$( '#info' ).attr 'class', 'error'
+									$('#info').text 'Your Webhook does not exist anymore!'
+									$('#info').attr 'class', 'error'
 
 						# Conditions
 						editor.setValue JSON.stringify oRule.conditions, undefined, 2
@@ -486,15 +348,144 @@ fOnLoad = () ->
 							arrName = action.split ' -> '
 							# FIXME we can only add this if the action is still existing! Therefore we should not allow to delete
 							# Actions and events but keep a version history and deprecate a module if really need be
-								# $( '#info' ).text 'Error loading Rule: Your Event Trigger does not exist anymore!'
+								# $('#info').text 'Error loading Rule: Your Event Trigger does not exist anymore!'
 							fAddSelectedAction action
 
-			fail: ( err ) ->
+			fail: (err) ->
 				if err.responseText is ''
 					msg = 'No Response from Server!'
 				else
 					try
-						msg = JSON.parse( err.responseText ).message
-				console.log( 'Error in upload: ' + msg ) err
+						msg = JSON.parse(err.responseText).message
+				console.log('Error in upload: ' + msg) err
+
+# #
+# # ACTION Related Helper Functions
+# #
+# fAddSelectedAction = (name) ->
+# 	arrName = name.split ' -> '
+# 	arrEls = $("#action_dispatcher_params div.modName").map(() ->
+# 		$(this).text()
+# 	).get()
+# 	table = $('#selected_actions')
+# 	tr = $('<tr>').appendTo table
+# 	img = $('<img>').attr 'src', 'images/red_cross_small.png'
+# 	tr.append $('<td>').css('width', '20px').append img
+# 	tr.append $('<td>').attr('class', 'title').text name 
+# 	td = $('<td>').attr('class', 'funcMappings').appendTo tr
+# 	fFetchActionFunctionArgs td, arrName
+# 	if arrName[ 0 ] not in arrEls
+# 		fFetchActionParams arrName[ 0 ]
+
+# 	$("#actionSection select option").each () ->
+# 		if $(this).text() is name
+# 			$(this).remove()
+# 	fDelayed = () ->
+# 		fFillActionFunction arrName[ 0 ]
+# 	setTimeout fDelayed, 300
+
+# fFetchActionParams = (modName) ->
+# 	sendRequest
+# 		command: 'get_action_dispatcher_params'
+# 		data: 
+# 			body: JSON.stringify
+# 				id: modName
+# 		done: (data) ->
+# 			if data.message
+# 				oParams = JSON.parse data.message
+# 				if JSON.stringify(oParams) isnt '{}'
+# 					domSectionActionParameters.show()
+# 					div = $('<div>').appendTo $('#action_dispatcher_params')
+# 					subdiv = $('<div> ').appendTo div 
+# 					subdiv.append $('<div>')
+# 						.attr('class', 'modName underlined').text modName
+
+# 					comment = $('<div>').attr('class', 'comment indent20').appendTo div
+# 					sendRequest
+# 						command: 'get_action_dispatcher_comment'
+# 						data: 
+# 							body: JSON.stringify
+# 								id: modName
+# 						done: (data) ->
+# 							comment.html data.message.replace /\n/g, '<br>'
+# 						fail: console.log 'Error fetching Event Trigger comment'
+
+# 					table = $ '<table>'
+# 					div.append table
+# 					for name, shielded of oParams
+# 						tr = $('<tr>')
+# 						tr.append $('<td>').css 'width', '20px'
+# 						tr.append $('<td>').attr('class', 'key').text name
+# 						inp = $('<input>')
+# 						if shielded
+# 							inp.attr('type', 'password')
+# 						else
+# 							inp.attr('type', 'text')
+# 						tr.append $('<td>').text(' : ').append inp
+# 						table.append tr
+
+# 		fail: console.log 'Error fetching action dispatcher params'
+
+# fFetchActionFunctionArgs = (tag, arrName) ->
+# 	sendRequest
+# 		command: 'get_action_dispatcher_function_arguments'
+# 		data: 
+# 			body: JSON.stringify
+# 				id: arrName[ 0 ]
+# 		done: (data) ->
+# 			if data.message
+# 				oParams = JSON.parse data.message
+# 				if oParams[ arrName[ 1 ] ]
+# 					table = $('<table>').appendTo tag
+# 					for functionArgument in oParams[ arrName[ 1 ] ]
+# 						tr = $('<tr>').appendTo table
+# 						td = $('<td>').appendTo tr
+# 						td.append $('<div>').attr('class', 'funcarg').text functionArgument
+# 						tr.append td
+# 						td = $('<td>').appendTo tr
+# 						td.append $('<input>').attr 'type', 'text'
+# 						tr.append td
+# 		fail: console.log 'Error fetching action dispatcher function params'
+
+# fFillActionFunction = (name) ->
+# 	sendRequest
+# 		command: 'get_action_dispatcher_user_params'
+# 		data: 
+# 			body: JSON.stringify
+# 				id: name
+# 		done: fAddActionUserParams name
+
+# 	sendRequest
+# 		command: 'get_action_dispatcher_user_arguments'
+# 		data:
+# 			body: JSON.stringify
+# 				ruleId: $('#input_id').val()
+# 				moduleId: name
+# 		done: fAddActionUserArgs name
+
+# fAddActionUserParams = (name) ->
+# 	(data) ->
+# 		oParams = JSON.parse data.message
+# 		domMod = $("#action_dispatcher_params div").filter () ->
+# 			$('div.modName', this).text() is name
+# 		for param, oParam of oParams
+# 			par = $("tr", domMod).filter () ->
+# 				$('td.key', this).text() is param
+# 			$('input', par).val oParam.value
+# 			$('input', par).attr 'unchanged', 'true'
+# 			$('input', par).change () ->
+# 				$(this).attr 'unchanged', 'false'
+
+# fAddActionUserArgs = (name) ->
+# 	(data) ->
+# 		for key, arrFuncs of data.message
+# 			par = $("#selected_actions tr").filter () ->
+# 				$('td.title', this).text() is "#{ name } -> #{ key }"
+# 			for oFunc in JSON.parse arrFuncs
+# 				tr = $("tr", par).filter () ->
+# 					$('.funcarg', this).text() is "#{ oFunc.argument }"
+# 				$("input[type=text]", tr).val oFunc.value
+# 				# $("input[type=checkbox]", tr).prop 'checked', oFunc.jsselector
+
 
 window.addEventListener 'load', fOnLoad, true
