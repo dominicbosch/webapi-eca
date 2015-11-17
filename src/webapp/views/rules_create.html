@@ -31,22 +31,26 @@
 </div>
 				</div>
 			</div>
-			<button class="outent20" id="fill_example">Fill with example condition</button>
 		</div>
 
 		<div class="row editorSettings">
+			<button id="fill_example">Fill with example condition</button>
+			
+			Theme:
 			<select id="editor_theme">
 				<option value="monokai">Monokai</option>
 				<option value="crimson_editor" selected>Crimson Editor</option>
 			</select>
+
+			Font Size: 
 			<select id="editor_font">
 				<option>10px</option>
 				<option>11px</option>
 				<option>12px</option>
 				<option>13px</option>
-				<option>14px</option>
+				<option selected>14px</option>
 				<option>15px</option>
-				<option selected>16px</option>
+				<option>16px</option>
 				<option>18px</option>
 				<option>20px</option>
 				<option>24px</option>
@@ -56,14 +60,13 @@
 		<div class="row">
 			<h2 class="capitalized">ACTIONS</h2>
 			<div id="actionSection">
-				<table></table>
-				<div class="selected">
+				<table><tr>
+					<th>Module</th>
+					<th>Action Function</th>
+				</tr></table>
+				<div id="selectedActions">
 					<b>Selected Actions:</b>
-					<table id="selected_actions"></table>
-				</div>
-				<div>
-					<b>Required User-specific Data:</b>
-					<div id="action_dispatcher_params"></div>
+					<table></table>
 				</div>
 			</div>
 

@@ -29,7 +29,7 @@ fOnLoad = () ->
 
 	editor = ace.edit "divConditionsEditor"
 	editor.setTheme "ace/theme/crimson_editor"
-	editor.setFontSize "16px"
+	editor.setFontSize "14px"
 	editor.getSession().setMode "ace/mode/json"
 	editor.setShowPrintMargin false
 
@@ -65,20 +65,18 @@ fOnLoad = () ->
 				.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
 			setEditorReadOnly true
 		else
-				
-			domSelect = $('<select>').attr('class','mediummarged smallfont')
-			createWebhookRow = (hookid, oHook, isMine) ->
-				img = if oHook.isPublic is 'true' then 'public' else 'private'
-				owner = if isMine then 'yours' else oHook.username
-				selStr = if oParams.webhook and oParams.webhook is hookid then 'selected' else ''
-				domSelect.append $ "<option value=\"#{ hookid }\" #{ selStr }>#{ oHook.hookname } (#{ owner })</option>"
-			$('#selectWebhook').append $('<h3>').text('Your Webhooks:').append(domSelect)
-			createWebhookRow(hookid, oHook, true) for hookid, oHook of oHooks.private
-			createWebhookRow(hookid, oHook) for hookid, oHook of oHooks.public
+			d3Sel = d3.select('#selectWebhook').append('h3').text('Your Webhooks:')
+				.append('select').attr('class','mediummarged smallfont')
+			createWebhookRow = (hookid, oHook, owner) ->
+				isSel = if oParams.webhook and oParams.webhook is hookid then true else null
+				d3Sel.append('option').attr('value', hookid).attr('selected', isSel)
+					.text oHook.hookname+' ('+owner+')'
+			createWebhookRow(hookid, oHook, 'yours') for hookid, oHook of oHooks.private
+			createWebhookRow(hookid, oHook, oHook.username) for hookid, oHook of oHooks.public
 
 	req = sendRequest '/service/actiondispatcher/get'
 	req.done (arrAD) ->
-		console.log arrAD
+		console.log(arrAD)
 		d3as = d3.select('#actionSection').style('visibility', 'visible');
 		if(arrAD.length is 0)
 			d3as.selectAll('*').remove();
@@ -87,39 +85,23 @@ fOnLoad = () ->
 				.append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
 			setEditorReadOnly true
 		else
-			sel = d3as.select 'table'
-			for el in arrAD
-				for func of el.functions
-					action = el.name+' -> '+func
-					trNew = sel.append('tr')
-					trNew.append('td').classed('smallpadded', true)
-						.append('button').attr('onclick', 'addAction('+action+')')
-							.text('add')
-					trNew.append('td').text(action)
-					div = trNew.append('td').classed('smallpadded', true).append('div')
-					main.registerHoverInfoHTML div, el.comment
+			d3as.select('table').selectAll('tr').data(arrAD, (d) -> d?.id)
+			.enter().append('tr').each (oMod) ->
+				d3This = d3.select(this)
+				main.registerHoverInfoHTML d3This.append('td').text(oMod.name), oMod.comment
+				list = d3This.append('td').append('table')
+				for func of oMod.functions
+					trNew = list.append('tr')
+					trNew.append('td').classed('bullet', true).text('•')
+					trNew.append('td').text(func)
+					trNew.append('td').append('button').text('add')
+						.attr('onclick', 'addAction('+oMod.id+', "'+func+'")')
 
 
-# TODO fill action dispatchers
-	# sendRequest
-	# 	command: 'get_action_dispatchers'
-	# 	done: (data) ->
-	# 		try
-	# 			oAis = JSON.parse data.message
-	# 		catch err
-	# 			console.error 'ERROR: non-object received from server: ' + data.message
-	# 			return
-	# 		i = 0
-	# 		for module, actions of oAis
-	# 			for act in actions
-	# 				i++
-	# 				arrEls = $("#action_dispatcher_params div").filter () ->
-	# 					$(this).text() is "#{ module } -> #{ act }"
-	# 				# It could have been loaded async before through the rules into the action params
-	# 				if arrEls.length is 0
-	# 					$('#actionSection select').append $('<option>').text module + ' -> ' + act
-	# 	fail: console.log 'Error fetching Action Dispatchers'
-
+			d3sel = d3.select('#actionSection table');
+			d3row = d3sel.selectAll('tr').data(arrAD).enter().append('tr')
+			d3row.append('td').text((d) -> d.name)
+			d3row.append('td')
 
 	$('#actionSection select').on 'change', () ->
 		domSectionSelectedActions.show()
@@ -362,27 +344,6 @@ fOnLoad = () ->
 # #
 # # ACTION Related Helper Functions
 # #
-# fAddSelectedAction = (name) ->
-# 	arrName = name.split ' -> '
-# 	arrEls = $("#action_dispatcher_params div.modName").map(() ->
-# 		$(this).text()
-# 	).get()
-# 	table = $('#selected_actions')
-# 	tr = $('<tr>').appendTo table
-# 	img = $('<img>').attr 'src', 'images/red_cross_small.png'
-# 	tr.append $('<td>').css('width', '20px').append img
-# 	tr.append $('<td>').attr('class', 'title').text name 
-# 	td = $('<td>').attr('class', 'funcMappings').appendTo tr
-# 	fFetchActionFunctionArgs td, arrName
-# 	if arrName[ 0 ] not in arrEls
-# 		fFetchActionParams arrName[ 0 ]
-
-# 	$("#actionSection select option").each () ->
-# 		if $(this).text() is name
-# 			$(this).remove()
-# 	fDelayed = () ->
-# 		fFillActionFunction arrName[ 0 ]
-# 	setTimeout fDelayed, 300
 
 # fFetchActionParams = (modName) ->
 # 	sendRequest
@@ -489,3 +450,30 @@ fOnLoad = () ->
 
 
 window.addEventListener 'load', fOnLoad, true
+
+addAction = (id, name) ->
+	console.log(id, name)
+	# oMod.id, func
+	d3List = d3.select('#selectedActions').style('visibility', 'visible')
+	# 	.select('table')
+
+	# arrName = name.split ' -> '
+	# arrEls = $("#action_dispatcher_params div.modName").map(() ->
+	# 	$(this).text()
+	# ).get()
+	# table = $('#selected_actions')
+	# tr = $('<tr>').appendTo table
+	# img = $('<img>').attr 'src', 'images/red_cross_small.png'
+	# tr.append $('<td>').css('width', '20px').append img
+	# tr.append $('<td>').attr('class', 'title').text name 
+	# td = $('<td>').attr('class', 'funcMappings').appendTo tr
+	# fFetchActionFunctionArgs td, arrName
+	# if arrName[ 0 ] not in arrEls
+	# 	fFetchActionParams arrName[ 0 ]
+
+	# $("#actionSection select option").each () ->
+	# 	if $(this).text() is name
+	# 		$(this).remove()
+	# fDelayed = () ->
+	# 	fFillActionFunction arrName[ 0 ]
+	# setTimeout fDelayed, 300

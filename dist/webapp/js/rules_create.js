@@ -1,5 +1,5 @@
 'use strict';
-var editor, fOnLoad, sendRequest, setEditorReadOnly, strPublicKey;
+var addAction, editor, fOnLoad, sendRequest, setEditorReadOnly, strPublicKey;
 
 editor = null;
 
@@ -34,7 +34,7 @@ fOnLoad = function() {
   });
   editor = ace.edit("divConditionsEditor");
   editor.setTheme("ace/theme/crimson_editor");
-  editor.setFontSize("16px");
+  editor.setFontSize("14px");
   editor.getSession().setMode("ace/mode/json");
   editor.setShowPrintMargin(false);
   $('#editor_theme').change(function(el) {
@@ -49,39 +49,36 @@ fOnLoad = function() {
   $('#input_id').focus();
   req = sendRequest('/service/webhooks/getall');
   req.done(function(oHooks) {
-    var createWebhookRow, domSelect, hookid, oHook, prl, pul, ref, ref1, results;
+    var createWebhookRow, d3Sel, hookid, oHook, prl, pul, ref, ref1, results;
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
     if (prl + pul === 0) {
       d3.select('#selectWebhook').append('h3').classed('empty', true).html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>');
       return setEditorReadOnly(true);
     } else {
-      domSelect = $('<select>').attr('class', 'mediummarged smallfont');
-      createWebhookRow = function(hookid, oHook, isMine) {
-        var img, owner, selStr;
-        img = oHook.isPublic === 'true' ? 'public' : 'private';
-        owner = isMine ? 'yours' : oHook.username;
-        selStr = oParams.webhook && oParams.webhook === hookid ? 'selected' : '';
-        return domSelect.append($("<option value=\"" + hookid + "\" " + selStr + ">" + oHook.hookname + " (" + owner + ")</option>"));
+      d3Sel = d3.select('#selectWebhook').append('h3').text('Your Webhooks:').append('select').attr('class', 'mediummarged smallfont');
+      createWebhookRow = function(hookid, oHook, owner) {
+        var isSel;
+        isSel = oParams.webhook && oParams.webhook === hookid ? true : null;
+        return d3Sel.append('option').attr('value', hookid).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
       };
-      $('#selectWebhook').append($('<h3>').text('Your Webhooks:').append(domSelect));
       ref = oHooks["private"];
       for (hookid in ref) {
         oHook = ref[hookid];
-        createWebhookRow(hookid, oHook, true);
+        createWebhookRow(hookid, oHook, 'yours');
       }
       ref1 = oHooks["public"];
       results = [];
       for (hookid in ref1) {
         oHook = ref1[hookid];
-        results.push(createWebhookRow(hookid, oHook));
+        results.push(createWebhookRow(hookid, oHook, oHook.username));
       }
       return results;
     }
   });
   req = sendRequest('/service/actiondispatcher/get');
   req.done(function(arrAD) {
-    var action, d3as, div, el, func, i, len, results, sel, trNew;
+    var d3as, d3row, d3sel;
     console.log(arrAD);
     d3as = d3.select('#actionSection').style('visibility', 'visible');
     if (arrAD.length === 0) {
@@ -89,25 +86,28 @@ fOnLoad = function() {
       d3as.append('h3').classed('empty', true).html('No <b>Action Dispatchers</b> available! ').append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
       return setEditorReadOnly(true);
     } else {
-      sel = d3as.select('table');
-      results = [];
-      for (i = 0, len = arrAD.length; i < len; i++) {
-        el = arrAD[i];
-        results.push((function() {
-          var results1;
-          results1 = [];
-          for (func in el.functions) {
-            action = el.name + ' -> ' + func;
-            trNew = sel.append('tr');
-            trNew.append('td').classed('smallpadded', true).append('button').attr('onclick', 'addAction(' + action + ')').text('add');
-            trNew.append('td').text(action);
-            div = trNew.append('td').classed('smallpadded', true).append('div');
-            results1.push(main.registerHoverInfoHTML(div, el.comment));
-          }
-          return results1;
-        })());
-      }
-      return results;
+      d3as.select('table').selectAll('tr').data(arrAD, function(d) {
+        return d != null ? d.id : void 0;
+      }).enter().append('tr').each(function(oMod) {
+        var d3This, func, list, results, trNew;
+        d3This = d3.select(this);
+        main.registerHoverInfoHTML(d3This.append('td').text(oMod.name), oMod.comment);
+        list = d3This.append('td').append('table');
+        results = [];
+        for (func in oMod.functions) {
+          trNew = list.append('tr');
+          trNew.append('td').classed('bullet', true).text('•');
+          trNew.append('td').text(func);
+          results.push(trNew.append('td').append('button').text('add').attr('onclick', 'addAction(' + oMod.id + ', "' + func + '")'));
+        }
+        return results;
+      });
+      d3sel = d3.select('#actionSection table');
+      d3row = d3sel.selectAll('tr').data(arrAD).enter().append('tr');
+      d3row.append('td').text(function(d) {
+        return d.name;
+      });
+      return d3row.append('td');
     }
   });
   $('#actionSection select').on('change', function() {
@@ -332,3 +332,9 @@ fOnLoad = function() {
 };
 
 window.addEventListener('load', fOnLoad, true);
+
+addAction = function(id, name) {
+  var d3List;
+  console.log(id, name);
+  return d3List = d3.select('#selectedActions').style('visibility', 'visible');
+};

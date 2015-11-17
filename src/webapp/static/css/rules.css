@@ -12,6 +12,22 @@
 	width: 500px;
 }
 
-#actionSection {
-	visibility: hidden;
+#actionSection { visibility: hidden }
+
+#actionSection td {
+	padding-left: 1px;
+	vertical-align: top;
 }
+
+#actionSection>table>tr:nth-child(even) { background: #EEE }
+#actionSection>table>tr:nth-child(odd) { background: #FFF }
+#actionSection>table>tr>td:first-child { padding-right: 8px }
+#actionSection .bullet { padding: 0px 8px 0px 8px }
+
+#actionSection button {
+	padding: 0px 1px;
+	margin: 1px 1px 1px 10px;
+	font-size: 0.75em;
+}
+
+#selectedActions { visibility: hidden }

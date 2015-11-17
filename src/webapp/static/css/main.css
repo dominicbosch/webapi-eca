@@ -51,24 +51,16 @@ nav.navbar {
 	min-height: 0;
 	margin-bottom: 0;
 }
-.nav.navbar-nav>li {
-	transition: .5s;
-}
+.nav.navbar-nav>li { transition: .5s }
 .nav.navbar-nav>li>a {
 	transition: .5s;
 	color: #FFF;
 	padding-top: 7px;
 	padding-bottom: 7px;
 }
-.nav.navbar-nav>li:hover>a {
-	color: #2D373C;
-}
-.nav.navbar-nav>li:hover {
-	background: #FFF;
-}
-.nav.navbar-nav>li>a:focus {
-	color: #d20537;
-}
+.nav.navbar-nav>li:hover>a { color: #2D373C }
+.nav.navbar-nav>li:hover { background: #FFF }
+.nav.navbar-nav>li>a:focus { color: #d20537 }
 /*.nav.navbar-nav>li.active>a {
 	background: #d20537;
 	color: #FFF;
@@ -110,31 +102,18 @@ nav.navbar {
 	padding-bottom: 10px;
 }
 
-.smallpadded {
-	padding: 3px;
-}
-.mediummarged {
-	margin: 6px;
-}
-.bigmargeleft {
-	margin-left: 20px;
-}
-.smallmarged {
-	margin: 3px;
-}
+.smallpadded { padding: 3px }
+.mediummarged { margin: 6px }
+.bigmargeleft { margin-left: 20px }
+.smallmarged { margin: 3px }
 
 input.consoled {
 	margin: 6px 4px;
 	font-family: "Lucida Console", Monaco, monospace;
 }
 
-table .centered {
-	text-align: center;
-}
-
-table.padded td {
-	padding: 2px;
-}
+table .centered { text-align: center }
+table.padded td { padding: 2px }
 
 table.padded .highlight {
 	font-weight: bold;
@@ -142,24 +121,11 @@ table.padded .highlight {
 	padding-right: 20px;
 }
 
-.hundredwide {
-	width: 100%;
-}
-
-.seventywide {
-	width: 70%;
-}
-
-.mediumfont {
-	font-size: 0.85em;
-}
-
-.smallfont {
-	font-size: 0.75em;
-}
-.nowrap {
-	white-space: nowrap;
-}
+.hundredwide { width: 100% }
+.seventywide { width: 70% }
+.mediumfont { font-size: 0.85em }
+.smallfont { font-size: 0.75em }
+.nowrap { white-space: nowrap }
 
 #mainbody {
 	padding-left: 2%;
@@ -170,15 +136,18 @@ table.padded .highlight {
 	padding-left: 20px;
 	font-size: 0.8em;
 }
+.editorSettings button, .editorSettings select {
+	border: 1px solid #999;
+	border-radius: 1px;
+	padding: 2px;
+}
 
 #editor {
 	border: 1px solid lightgray;
 	width: 100%;
 }
 
-#editor.modules {
-	height: 400px;
-}
+#editor.modules { height: 400px }
 
 #loginTable {
 	float: left;
@@ -187,27 +156,26 @@ table.padded .highlight {
 	margin-left: 50px;
 }
 
-#loginTable td {
-	padding: 3px 4px;
-}
+#loginTable td { padding: 3px 4px }
+.mytooltip { position: relative }
 
-.mytooltip {
-	position: relative;
-}
-
-.mytooltip div {
+.mytooltip > div {
 	visibility: hidden;
 	position: absolute;
 	left: -7px;
 	top: 7px;
+	min-width: 300px;
+	max-width: 600px;
+	overflow: hidden;
+	font-size: 12px;
 	margin: 5px;
-	/*width: 100%;*/
-	font-size: 0.9em;
-	z-index: 20;
 	padding: 7px 14px;
 	background: #FFF;
 	border: 1px solid #666;
+	border-radius: 3px;
+	box-shadow: 0 0 5px #a5d7d2;
 	opacity: 0;
+	z-index: 20;
 }
 
 .mytooltip .title {
@@ -229,55 +197,31 @@ table.padded .highlight {
 	padding-top: 5px;
 }
 
-#tabletl button {
-	width: 120px;
-}
+#tabletl button { width: 120px }
 
-.float-div {
-	float: left;
-	/*margin: 10px;*/
-}
-
-.thirtyhigh {
-	height: 30px;
-}
+.float-div { float: left }
+.thirtyhigh { height: 30px }
 
 .twohundred-wide {
 	height: 40px;
 	width: 220px;
 }
 
-img.tl.red {
-	content: url( "/images/tl_red.png" );
-}
+img.tl.red { content: url( "/images/tl_red.png" ) }
+img.tl.green { content: url( "/images/tl_green.png" ) }
 
-img.tl.green {
-	content: url( "/images/tl_green.png" );
-}
+img.del, img.log { cursor: pointer }
+#tls select, #tls input { margin: 3px }
+#tls select { margin-top: 6px }
 
-img.del, img.log {
-	cursor: pointer;
-}
-#tls select, #tls input {
-	margin: 3px;
-}
-
-#tls select {
-	margin-top: 6px;
-}
-
-#but_rule {
-	margin-left: 3px;
-}
+#but_rule { margin-left: 3px }
 
 .empty {
 	padding: 30px;
 	background-color: #FCB;
 }
 
-.spin {
-	animation: spin 1.5s infinite linear;
-}
+.spin { animation: spin 1.5s infinite linear }
 
 @keyframes spin {
     0%   {transform: rotate(0deg)}
@@ -304,125 +248,6 @@ input[type=password]:focus {
 	border: 1px solid rgba(81, 203, 238, 1);
 }
 
-/*
-button {
-	font-size: 1.1em;
-}
-
-.indent20 {
-	padding-left: 20px;
-}
-
-.outent20 {
-	margin-left: 20px;
-}
-
-#mobile {
-	margin: 10px 20px 10px 20px;
-}
-
-#menubar {
-	font-weight: bold;
-	padding: 0px;
-	width: 100%;
-	background-color: #DDD;
-}
-
-#menubar td {
-	float: left;
-}
-
-#menubar a {
-	text-decoration: none;
-	color: #333;
-	margin: 0px 5px 0px 5px;
-	padding: 0px 10px 2px 10px;
-	cursor: pointer;
-	-moz-border-radius: 5px;
-	border-radius: 10px;
-	-webkit-transition: all 0.30s ease-in-out;
-	-moz-transition: all 0.30s ease-in-out;
-	-ms-transition: all 0.30s ease-in-out;
-	-o-transition: all 0.30s ease-in-out;
-}
-
-#menubar a:hover {
-	background-color: #AAA;
-}
-
-.neutral {
-	background-color: #EEF;
-	color: #050;
-}
-
-.success {
-	background-color: #CFC;
-	color: #050;
-}
-
-.error {
-	background-color: #FCC;
-	color: #800;
-}
-
-.comment {
-	font-style: italic;
-	font-size: 0.75em;
-	max-width: 500px;
-}
-
-
-
-#select_event_type {
-	font-size: 1em;
-}
-
-#event_type,
-#event_parameters,
-#conditions,
-#action_parameters {
-	margin-left: 20px;
-}
-
-#event_trigger_params {
-	padding-top: 10px;
-}
-
-#input_id {
-	font-size: 1em;
-}
-
-#params_col {
-	padding-top: 15px;
-	padding-left: 15px;
-}
-
-
-#selected_actions td {
-	vertical-align: top;
-}
-
-#selected_actions .title {
-	font-size: 0.9em;
-	font-weight: bold;
-}
-
-.funcMappings {
-	padding-left: 20px;
-	font-size: 0.75em;
-}
-
-#tableRules tr {
-	margin-bottom: 10px;
-}
-
-.underlined {
-	padding-left: 10px;
-	font-style: italic;
-	font-weight: bold;
-	text-decoration: underline;
-}
-*/
 .dialog {
 	visibility: hidden;
 	position: absolute;
@@ -444,6 +269,4 @@ button {
 	padding: 20px;
 }
 
-.window h3 {
-	margin: 5px 0px 5px 0px;
-}
+.window h3 { margin: 5px 0px 5px 0px }
