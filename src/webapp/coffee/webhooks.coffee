@@ -22,7 +22,7 @@ updateWebhookList = () ->
 					tit = if oHook.isPublic then 'Public' else 'Private'
 					table.append $ """
 						<tr>
-							<td>#{if isMine then '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' else '' }</td>
+							<td>#{if isMine then '<div class="img del" title="Delete Webhook" data-id="'+oHook.id+'"></div>' else '' }</td>
 							<td style="white-space: nowrap"><kbd>#{oHook.hookname}</kbd></td>
 							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.User.username}</td>
 							<td class="centered" title="#{tit}">
@@ -76,11 +76,9 @@ fOnLoad = () ->
 					else
 						failedRequest( 'Unable to create Webhook! ' + err.message ) err
 	
-	$( '#table_webhooks' ).on 'click', 'img', () ->
+	$( '#table_webhooks' ).on 'click', '.del', () ->
 		if confirm  "Do you really want to delete this webhook?"
-			url = $( 'input', $( this ).closest( 'tr' ) ).val()
-			arrUrl = url.split '/'
-			$.post( '/service/webhooks/delete/' + arrUrl[ arrUrl.length - 1 ] )
+			$.post( '/service/webhooks/delete/'+$(this).attr('data-id') )
 				.done () ->
 					$( '#display_hookurl *' ).remove()
 					main.setInfo true, 'Webhook deleted!'

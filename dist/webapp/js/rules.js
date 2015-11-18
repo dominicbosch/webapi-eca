@@ -24,13 +24,13 @@ fOnLoad = function() {
       results = [];
       for (i = 0, len = data.length; i < len; i++) {
         ruleName = data[i];
-        results.push($('#tableRules').append($("<tr>\n	<td><img class=\"del\" title=\"Delete Rule\" src=\"images/red_cross_small.png\"></td>\n	<td><img class=\"edit\" title=\"Edit Rule\" src=\"images/edit.png\"></td>\n	<td><img class=\"log\" title=\"Show Rule Log\" src=\"images/logicon.png\"></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
+        results.push($('#tableRules').append($("<tr>\n	<td><div class=\"img del\" title=\"Delete Rule\"></div></td>\n	<td><div class=\"img edit\" title=\"Edit Rule\"></div></td>\n	<td><div class=\"img log\" title=\"Show Rule Log\"></div></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
       }
       return results;
     }
   };
   fFetchRules();
-  $('#tableRules').on('click', 'img.del', function() {
+  $('#tableRules').on('click', '.del', function() {
     var data, ruleName;
     ruleName = $('div', $(this).closest('tr')).text();
     if (confirm("Do you really want to delete the rule '" + ruleName + "'?")) {
@@ -43,12 +43,12 @@ fOnLoad = function() {
       return $.post('/usercommand/delete_rule', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
     }
   });
-  $('#tableRules').on('click', 'img.edit', function() {
+  $('#tableRules').on('click', '.edit', function() {
     var ruleName;
     ruleName = $('div', $(this).closest('tr')).text();
     return window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent(ruleName);
   });
-  return $('#tableRules').on('click', 'img.log', function() {
+  return $('#tableRules').on('click', '.log', function() {
     var data, ruleName;
     console.warn('TODO open div over whole page with log in editor');
     ruleName = $('div', $(this).closest('tr')).text();

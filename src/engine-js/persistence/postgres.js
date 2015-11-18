@@ -272,11 +272,14 @@ exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 		});
 	}).then(() => cb(), cb).catch(ec);
 };
-exports.deleteWebhook = (hookid, cb) => {
+exports.deleteWebhook = (uid, hookid, cb) => {
 	log.info('POSTGRES | Deleting webhook #'+hookid);
 	Webhook.findById(hookid).then((oRecord) => {
-		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!'), cb).catch(ec);
-		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
+		if(oRecord) {
+			if(oRecord.get('UserId') === uid) {
+				oRecord.destroy().then(() => cb(null, 'Webhook deleted!'), cb).catch(ec);
+			} else cb(new Error('You are not the owner of this webhook!'));
+		} else cb(new Error('Webhook with ID #'+hookid+' not found!'));
 	}, cb).catch(ec)
 };
 

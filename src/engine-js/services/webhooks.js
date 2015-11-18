@@ -11,6 +11,7 @@ var log = require('../logging'),
 
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
+	crypto = require('crypto-js'),
 
 	allowedHooks = {},
 	db = global.db,
@@ -38,15 +39,14 @@ router.post('/getall', (req, res) => {
 });
 
 function genHookID(arrExisting) {
-	var hid = '';
-	for(let i = 0; i < 2; i++) {
-		hid += Math.random().toString(36).substring(2);
-	}
-	if(arrExisting.indexOf(hid) > -1) hid = genHookID(arrExisting);
-	return hid;
+	var hash = crypto.MD5(Math.random()+(new Date)).toString(crypto.enc.Hex);
+	if(arrExisting.indexOf(hash) > -1) hash = genHookID(arrExisting);
+	return hash;
 }
 
 // User wants to create a new webhook
+
+// Beautiful example for why promises should be used!
 router.post('/create', (req, res) => {
 	if (!req.body.hookname) res.status(400).send('Please provide a hook name');
 	else {
@@ -58,23 +58,28 @@ router.post('/create', (req, res) => {
 			}
 			if(hookExists) res.status(409).send('Webhook already existing: '+req.body.hookname);
 			else {
-				let hookid = genHookID(Object.keys(oHooks || {}));
-				db.createWebhook(userId, hookid, req.body.hookname, (req.body.isPublic==='true'), (err) => {
-					if(err) {
-						log.error(err);
-						res.status(500).send('Unable to create Webhook!');
-					} else {
-						log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
-						allowedHooks[hookid] = {
-							hookname: req.body.hookname,
-							userid: userId
-						}
-						res.status(200).send({
-							hookid: hookid,
-							hookname: req.body.hookname
+				db.getAllWebhooks((err, arrAllHooks) => {
+					if(err) res.status(500).send('Unable to fetch all Webhooks');
+					else {
+						let hookid = genHookID(arrAllHooks.map((o) => o.hookid));
+						db.createWebhook(userId, hookid, req.body.hookname, (req.body.isPublic==='true'), (err) => {
+							if(err) {
+								log.error(err);
+								res.status(500).send('Unable to create Webhook!');
+							} else {
+								log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
+								allowedHooks[hookid] = {
+									hookname: req.body.hookname,
+									userid: userId
+								}
+								res.status(200).send({
+									hookid: hookid,
+									hookname: req.body.hookname
+								});
+							}
 						});
 					}
-				});
+				})
 			}
 		});
 	}
@@ -88,7 +93,7 @@ router.post('/delete/:id', (req, res) => {
 		if(!err) {
 			delete allowedHooks[hookid];
 			res.send('OK!');
-		} else res.status(400).send(err);
+		} else res.status(400).send(err.toString());
 	})
 })
 

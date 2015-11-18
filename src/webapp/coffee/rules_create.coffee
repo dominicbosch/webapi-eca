@@ -96,10 +96,10 @@ fOnLoad = () ->
 				list = d3This.append('td').append('table')
 				for func of oMod.functions
 					trNew = list.append('tr')
-					trNew.append('td').classed('bullet', true).text('•')
-					trNew.append('td').text(func)
+					# trNew.append('td').classed('bullet', true).text('•')
 					trNew.append('td').append('button').text('add')
 						.attr('onclick', 'addAction('+oMod.id+', "'+func+'")')
+					trNew.append('td').text(func)
 
 
 			d3sel = d3.select('#actionSection table');
@@ -520,9 +520,11 @@ updateParameterList = () ->
 
 	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr)
 	funcs.exit().remove()
-	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-4')
-	newFuncs.append('h5').text((d) -> d.name)
-	newFuncs.append('div').attr('class', 'row').selectAll('div').data((d) -> d.functions)
-		.enter().append('div').attr('class', 'col-sm-6 params').text((d) -> d)
+	newModules = funcs.enter().append('div').attr('class', 'actions col-sm-4')
+	newModules.append('span').text((d) -> d.name)
+	newFuncs = newModules.append('div').attr('class', 'row').selectAll('div').data((d) -> d.functions)
+		.enter().append('div').attr('class', 'col-sm-6 params')
+	newFuncs.append('div').attr('class', 'img del')
+	newFuncs.append('span').text((d) -> d)
 
 

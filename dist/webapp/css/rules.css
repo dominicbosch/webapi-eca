@@ -14,6 +14,7 @@
 
 #actionSection { visibility: hidden }
 
+#actionSection > table { width: 100% }
 #actionSection td {
 	padding-left: 1px;
 	vertical-align: top;
@@ -30,19 +31,28 @@
 	font-size: 0.75em;
 }
 
-#selectedActions { visibility: hidden }
+#selectedActions { 
+	font-size: 0.8em;
+	visibility: hidden
+}
 #selectedActions h4, #selectedActions h5 { 
 	font-weight: bold;
-	padding-top: 5px
+	margin-top: 5px
 }
 #selectedActions input { width: 100% }
 
 .firstlevel { padding: 2px }
+.firstlevel .row { padding: 1px }
 .firstlevel:nth-child(even) { background: #EDF }
 .firstlevel:nth-child(even) .actions { border: 1px solid #EDF }
 .firstlevel:nth-child(odd) { background: #DFD }
 .firstlevel:nth-child(odd) .actions { border: 1px solid #DFD }
+/*
 .firstlevel:nth-child(even) .actions:nth-child(even) { background: #1DD }
 .firstlevel:nth-child(even) .actions:nth-child(odd) { background: #A1A }
 .firstlevel:nth-child(odd) .actions:nth-child(even) { background: #DD1 }
 .firstlevel:nth-child(odd) .actions:nth-child(odd) { background: #A8A }
+*/
+.actions:nth-child(even) { background: rgba(0,0,0,0.1) }
+.actions:nth-child(odd) { background: rgba(0,0,0,0.3) }
+

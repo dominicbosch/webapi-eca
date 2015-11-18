@@ -25,8 +25,8 @@ updateModules = function() {
       });
       tr.exit().remove();
       trNew = tr.enter().append('tr');
-      trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'del').attr('title', 'Delete Module').attr('src', '/images/red_cross_small.png').on('click', deleteModule);
-      trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'log').attr('title', 'Edit Module').attr('src', '/images/edit.png').on('click', editModule);
+      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'del').attr('title', 'Delete Module').on('click', deleteModule);
+      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'edit').attr('title', 'Edit Module').on('click', editModule);
       return trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
         return d.name;
       }).each(function(d) {

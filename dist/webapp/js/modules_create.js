@@ -69,7 +69,7 @@ fOnLoad = function() {
   fAddInputRow = function(tag) {
     var cb, img, inp, tr;
     tr = $('<tr>');
-    img = $('<img>').attr('title', 'Remove?').attr('src', '/images/red_cross_small.png');
+    img = $('<div>').attr('title', 'Remove?').attr('class', 'del');
     cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
     inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
     tr.append($('<td>').append(img));

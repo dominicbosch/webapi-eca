@@ -25,7 +25,7 @@ updateWebhookList = function() {
         var img, tit;
         img = oHook.isPublic ? 'public' : 'private';
         tit = oHook.isPublic ? 'Public' : 'Private';
-        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="del" title="Delete Webhook" src="/images/red_cross_small.png">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<div class="img del" title="Delete Webhook" data-id="' + oHook.id + '"></div>' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
       table = $('<table>').attr('class', 'seventywide').appendTo($('#table_webhooks'));
@@ -83,12 +83,9 @@ fOnLoad = function() {
       });
     }
   });
-  return $('#table_webhooks').on('click', 'img', function() {
-    var arrUrl, url;
+  return $('#table_webhooks').on('click', '.del', function() {
     if (confirm("Do you really want to delete this webhook?")) {
-      url = $('input', $(this).closest('tr')).val();
-      arrUrl = url.split('/');
-      return $.post('/service/webhooks/delete/' + arrUrl[arrUrl.length - 1]).done(function() {
+      return $.post('/service/webhooks/delete/' + $(this).attr('data-id')).done(function() {
         $('#display_hookurl *').remove();
         main.setInfo(true, 'Webhook deleted!');
         return updateWebhookList();

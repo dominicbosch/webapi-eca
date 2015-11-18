@@ -20,15 +20,15 @@ fOnLoad = () ->
 		else
 			for ruleName in data
 				$('#tableRules').append  $ """<tr>
-					<td><img class="del" title="Delete Rule" src="images/red_cross_small.png"></td>
-					<td><img class="edit" title="Edit Rule" src="images/edit.png"></td>
-					<td><img class="log" title="Show Rule Log" src="images/logicon.png"></td>
+					<td><div class="img del" title="Delete Rule"></div></td>
+					<td><div class="img edit" title="Edit Rule"></div></td>
+					<td><div class="img log" title="Show Rule Log"></div></td>
 					<td><div>#{ ruleName }</div></td>
 				</tr>"""
 
 	fFetchRules()
 
-	$('#tableRules').on 'click', 'img.del', () ->
+	$('#tableRules').on 'click', '.del', () ->
 		ruleName = $('div', $(this).closest('tr')).text()
 		if confirm  "Do you really want to delete the rule '#{ ruleName }'?"
 			$('#log_col').text ""
@@ -39,11 +39,11 @@ fOnLoad = () ->
 				.done fFetchRules
 				.fail fErrHandler 'Could not delete rule! '
 
-	$('#tableRules').on 'click', 'img.edit', () ->
+	$('#tableRules').on 'click', '.edit', () ->
 		ruleName = $('div', $(this).closest('tr')).text()
 		window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent ruleName
 
-	$('#tableRules').on 'click', 'img.log', () ->
+	$('#tableRules').on 'click', '.log', () ->
 		console.warn 'TODO open div over whole page with log in editor'
 		ruleName = $('div', $(this).closest('tr')).text()
 		data =

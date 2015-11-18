@@ -29,6 +29,11 @@ h4 {
 	padding-top: 10px;
 }
 
+h5 {
+	font-size: 1.1em;
+	padding-top: 7px;
+}
+
 th {
 	white-space: nowrap;
 	padding-right: 10px;
@@ -194,9 +199,15 @@ table.padded .highlight {
 	width: 220px;
 }
 
-img.tl.red { content: url( "/images/tl_red.png" ) }
-img.tl.green { content: url( "/images/tl_green.png" ) }
-img.del, img.log { cursor: pointer }
+div.img {
+	float: left;
+	padding: 0px 4px
+}
+.img.tl.red { content: url( "/images/tl_red.png" ) }
+.img.tl.green { content: url( "/images/tl_green.png" ) }
+.img.del, .img.log { cursor: pointer }
+.img.del { content: url("/images/red_cross_small.png") }
+.img.edit { content: url("/images/edit.png") }
 
 #tls select, #tls input { margin: 3px }
 #tls select { margin-top: 6px }

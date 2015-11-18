@@ -102,9 +102,8 @@ fOnLoad = function() {
         results = [];
         for (func in oMod.functions) {
           trNew = list.append('tr');
-          trNew.append('td').classed('bullet', true).text('•');
-          trNew.append('td').text(func);
-          results.push(trNew.append('td').append('button').text('add').attr('onclick', 'addAction(' + oMod.id + ', "' + func + '")'));
+          trNew.append('td').append('button').text('add').attr('onclick', 'addAction(' + oMod.id + ', "' + func + '")');
+          results.push(trNew.append('td').text(func));
         }
         return results;
       });
@@ -369,7 +368,7 @@ removeAction = function(arrActions, id, name) {
 };
 
 updateParameterList = function() {
-  var d3New, d3Rows, dModule, funcs, newFuncs, visibility;
+  var d3New, d3Rows, dModule, funcs, newFuncs, newModules, visibility;
   console.log(arrSelectedActions);
   visibility = arrSelectedActions.length > 0 ? 'visible' : 'hidden';
   d3.select('#selectedActions').style('visibility', visibility);
@@ -398,13 +397,15 @@ updateParameterList = function() {
     return d.arr;
   });
   funcs.exit().remove();
-  newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-4');
-  newFuncs.append('h5').text(function(d) {
+  newModules = funcs.enter().append('div').attr('class', 'actions col-sm-4');
+  newModules.append('span').text(function(d) {
     return d.name;
   });
-  return newFuncs.append('div').attr('class', 'row').selectAll('div').data(function(d) {
+  newFuncs = newModules.append('div').attr('class', 'row').selectAll('div').data(function(d) {
     return d.functions;
-  }).enter().append('div').attr('class', 'col-sm-6 params').text(function(d) {
+  }).enter().append('div').attr('class', 'col-sm-6 params');
+  newFuncs.append('div').attr('class', 'img del');
+  return newFuncs.append('span').text(function(d) {
     return d;
   });
 };
