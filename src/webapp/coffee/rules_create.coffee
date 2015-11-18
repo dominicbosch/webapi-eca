@@ -79,17 +79,13 @@ fOnLoad = () ->
 
 	req = sendRequest '/service/actiondispatcher/get'
 	req.done (arrAD) ->
-		console.log(arrAD)
 		arrAllActions = arrAD
-		d3as = d3.select('#actionSection').style('visibility', 'visible');
 		if(arrAD.length is 0)
-			d3as.selectAll('*').remove();
-			d3as.append('h3').classed('empty', true)
-				.html('No <b>Action Dispatchers</b> available! ')
-				.append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
 			setEditorReadOnly true
 		else
-			d3as.select('table').selectAll('tr').data(arrAD, (d) -> d?.id)
+			d3.select('#actionEmpty').style('display', 'none');
+			d3.select('#actionSection').style('visibility', 'visible')
+			.select('table').selectAll('tr').data(arrAD, (d) -> d?.id)
 			.enter().append('tr').each (oMod) ->
 				d3This = d3.select(this)
 				main.registerHoverInfoHTML d3This.append('td').text(oMod.name), oMod.comment
@@ -148,41 +144,6 @@ fOnLoad = () ->
 			if $('#input_id').val() is ''
 				$('#input_id').focus()
 				throw new Error 'Please enter a rule name!'
-
-			console.warn 'GONE!'
-			# eventtype = $('#select_event_type').val()
-			# switch eventtype
-			# 	when ''
-			# 		$('#select_event_type').focus()
-			# 		throw new Error 'Please choose an event type!'
-
-			# 	when 'Webhook'
-			# 		eventname = $('#select_eventhook').val()
-
-			# 	when 'Event Trigger'
-			# 		eventname = $('#select_eventtrigger').val()
-			# 		ep = {}
-			# 		$("#event_trigger_params tr").each () ->
-			# 			key = $(this).children('.key').text()
-			# 			val = $('input', this).val()
-			# 			if val is ''
-			# 				$('input', this).focus()
-			# 				throw new Error "Please enter a value for '#{ key }' in the event module!"
-			# 			shielded = $('input', this).attr('type') is 'password'
-			# 			ep[ key ] =
-			# 				shielded: shielded
-			# 			if not shielded or $('input', this).attr('unchanged') isnt 'true'
-			# 				encryptedParam = cryptico.encrypt val, strPublicKey
-			# 				ep[ key ].value = encryptedParam.cipher 
-			# 			else
-			# 				ep[ key ].value = val
-
-			# 		evtFuncs = {}
-			# 		evtFuncs[ eventname ] = []
-			# 		$('#event_trigger_params tr.funcMappings').each () ->
-			# 			evtFuncs[ eventname ].push
-			# 				argument: $('div.funcarg', this).text()
-			# 				value: $('input[type=text]', this).val()
 
 			if $('#selected_actions tr').length is 0
 				throw new Error 'Please select at least one action or create one!'
@@ -509,22 +470,26 @@ updateParameterList = () ->
 	d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel')
 
 	# The main module container
-	dModule = d3New.append('div').attr('class', 'col-sm-4')
+	dModule = d3New.append('div').attr('class', 'col-sm-6')
 	dModule.append('h4').text((d) -> d.name)
 	dModule.each (d) -> 
 		for k, v of d.globals
 			nd = d3.select(this).append('div').attr('class', 'row')
-			nd.append('div').attr('class', 'col-xs-4').text(k)
-			nd.append('div').attr('class', 'col-xs-8')
+			nd.append('div').attr('class', 'col-xs-3').text(k)
+			nd.append('div').attr('class', 'col-xs-9')
 				.append('input').attr('type', if v is 'true' then 'password' else 'text')
 
-	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr)
-	funcs.exit().remove()
-	newModules = funcs.enter().append('div').attr('class', 'actions col-sm-4')
-	newModules.append('span').text((d) -> d.name)
-	newFuncs = newModules.append('div').attr('class', 'row').selectAll('div').data((d) -> d.functions)
-		.enter().append('div').attr('class', 'col-sm-6 params')
-	newFuncs.append('div').attr('class', 'img del')
-	newFuncs.append('span').text((d) -> d)
+	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr);
+	funcs.exit().remove();
+	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6')
+		.append('div').attr('class', 'row')
+	title = newFuncs.append('div').attr('class', 'col-sm-12')
+	title.append('div').attr('class', 'img del')
+	title.append('span').text((d) -> d.name)
+	funcParams = newFuncs.selectAll('.params').data((d) -> d.functions)
+		.enter().append('div').attr('class', 'col-sm-12 params')
+		.append('div').attr('class', 'row')
+	funcParams.append('div').attr('class', 'col-xs-3 params').text((d) -> d)
+	funcParams.append('div').attr('class', 'col-xs-9 params').append('input').attr('type', 'text')
 
 

@@ -28,7 +28,7 @@ updateWebhookList = function() {
         return table.append($("<tr>\n	<td>" + (isMine ? '<div class="img del" title="Delete Webhook" data-id="' + oHook.id + '"></div>' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
-      table = $('<table>').attr('class', 'seventywide').appendTo($('#table_webhooks'));
+      table = $('<table>').attr('class', 'hundredywide').appendTo($('#table_webhooks'));
       table.append('<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>');
       ref = oHooks["private"];
       for (hookid in ref) {

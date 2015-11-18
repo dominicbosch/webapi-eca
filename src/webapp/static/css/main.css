@@ -206,7 +206,10 @@ div.img {
 .img.tl.red { content: url( "/images/tl_red.png" ) }
 .img.tl.green { content: url( "/images/tl_green.png" ) }
 .img.del, .img.log { cursor: pointer }
-.img.del { content: url("/images/red_cross_small.png") }
+.img.del { 
+	margin-top: 3px;
+	content: url("/images/red_cross_small.png")
+}
 .img.edit { content: url("/images/edit.png") }
 
 #tls select, #tls input { margin: 3px }

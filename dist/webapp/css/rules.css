@@ -20,8 +20,10 @@
 	vertical-align: top;
 }
 
-#actionSection>table>tr:nth-child(even) { background: #EDF }
-#actionSection>table>tr:nth-child(odd) { background: #DFD }
+/*#actionSection>table>tr:nth-child(even) { background: #E6FFFD }*/
+/*#actionSection>table>tr:nth-child(even) { background: #F2F9F9 }*/
+#actionSection>table>tr { border-top: 1px solid #DDD }
+#actionSection>table>tr:nth-child(even) { background: #F8F8F8 }
 #actionSection>table>tr>td:first-child { padding-right: 8px }
 #actionSection .bullet { padding: 0px 8px 0px 8px }
 
@@ -31,28 +33,37 @@
 	font-size: 0.75em;
 }
 
-#selectedActions { 
-	font-size: 0.8em;
-	visibility: hidden
-}
+#selectedActions { visibility: hidden }
+#selectedActions div { overflow: hidden }
+#selectedActions > div { font-size: 0.8em }
+
 #selectedActions h4, #selectedActions h5 { 
 	font-weight: bold;
-	margin-top: 5px
+	margin-top: 5px;
+	padding-top: 0px;
 }
 #selectedActions input { width: 100% }
 
-.firstlevel { padding: 2px }
+.firstlevel {
+	padding: 2px;
+	border: 1px solid #DDD;
+}
 .firstlevel .row { padding: 1px }
-.firstlevel:nth-child(even) { background: #EDF }
-.firstlevel:nth-child(even) .actions { border: 1px solid #EDF }
-.firstlevel:nth-child(odd) { background: #DFD }
-.firstlevel:nth-child(odd) .actions { border: 1px solid #DFD }
-/*
-.firstlevel:nth-child(even) .actions:nth-child(even) { background: #1DD }
-.firstlevel:nth-child(even) .actions:nth-child(odd) { background: #A1A }
-.firstlevel:nth-child(odd) .actions:nth-child(even) { background: #DD1 }
-.firstlevel:nth-child(odd) .actions:nth-child(odd) { background: #A8A }
-*/
-.actions:nth-child(even) { background: rgba(0,0,0,0.1) }
-.actions:nth-child(odd) { background: rgba(0,0,0,0.3) }
+.firstlevel:nth-child(even) { background: #F8F8F8 }
+/*.firstlevel:nth-child(even) .actions { border: 1px solid #F2F9F9 }*/
+.firstlevel:nth-child(odd) { background: #FFF }
+/*.firstlevel:nth-child(odd) .actions { border: 1px solid #FFF }*/
 
+.actions { 
+	border: 1px solid rgba(0,0,0,0.1);
+	background: rgba(0,0,0,0.05);
+}
+/*
+.actions:nth-child(even) { background: rgba(0,0,0,0.05) }
+.actions:nth-child(odd) { background: rgba(0,0,0,0.1) }
+*/
+.col-xs-3, .col-xs-9,
+.col-sm-3, .col-sm-4,
+.col-sm-9, .col-sm-12 {
+	padding: 0px 12px;
+}

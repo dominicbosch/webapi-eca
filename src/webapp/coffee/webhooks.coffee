@@ -31,7 +31,7 @@ updateWebhookList = () ->
 						</tr>
 					"""
 				$('#table_webhooks').append $('<h2>').text 'Available Webhooks'
-				table = $('<table>').attr('class', 'seventywide').appendTo $ '#table_webhooks'
+				table = $('<table>').attr('class', 'hundredywide').appendTo $ '#table_webhooks'
 				table.append '<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>'
 				createWebhookRow(oHook, true) for hookid, oHook of oHooks.private
 				createWebhookRow(oHook) for hookid, oHook of oHooks.public

@@ -15,18 +15,20 @@ updateModules = function() {
   var req;
   req = $.post(urlService + 'get');
   req.done(function(arrModules) {
-    var tr, trNew;
+    var parent, tr, trNew;
     console.log(arrModules);
     if (arrModules.length === 0) {
-      return $('#tableModules').html('<h3>No ' + modName + 's available!');
+      parent = $('#tableModules').parent();
+      $('#tableModules').remove();
+      return parent.append($("<h3 class=\"empty\">No " + modName + "s available! <a href=\"/views/modules_create?m=" + oParams.m + "\">Create One first!</a></h3>"));
     } else {
       tr = d3.select('#tableModules').selectAll('tr').data(arrModules, function(d) {
         return d.id;
       });
       tr.exit().remove();
       trNew = tr.enter().append('tr');
-      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'del').attr('title', 'Delete Module').on('click', deleteModule);
-      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'edit').attr('title', 'Edit Module').on('click', editModule);
+      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'img del').attr('title', 'Delete Module').on('click', deleteModule);
+      trNew.append('td').classed('smallpadded', true).append('div').attr('class', 'img edit').attr('title', 'Edit Module').on('click', editModule);
       return trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
         return d.name;
       }).each(function(d) {

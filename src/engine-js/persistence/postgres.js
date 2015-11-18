@@ -115,7 +115,7 @@ function ec(err) { log.error(err) }
 // After retrieving a plain array of sequelize records, this function transforms all
 // of the records (recursively since sequelize v3.10.0) into plain JSON objects
 function arrRecordsToJSON(arrRecords) {
-	if(!arrRecords) return arrRecords;
+	if(!arrRecords) return [];
 	return arrRecords.map((o) => o.toJSON());
 }
 

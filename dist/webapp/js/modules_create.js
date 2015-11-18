@@ -58,10 +58,10 @@ fOnLoad = function() {
   fChangeInputVisibility = function() {
     return $('#tableParams tr').each(function(id) {
       if ($(this).is(':last-child' || $(this).is(':only-child'))) {
-        $('img', this).hide();
+        $('div.img', this).hide();
         return $('input[type=checkbox]', this).hide();
       } else {
-        $('img', this).show();
+        $('div.img', this).show();
         return $('input[type=checkbox]', this).show();
       }
     });
@@ -69,7 +69,7 @@ fOnLoad = function() {
   fAddInputRow = function(tag) {
     var cb, img, inp, tr;
     tr = $('<tr>');
-    img = $('<div>').attr('title', 'Remove?').attr('class', 'del');
+    img = $('<div>').attr('title', 'Remove?').attr('class', 'img del');
     cb = $('<input>').attr('type', 'checkbox').attr('title', 'Password shielded input?');
     inp = $('<input>').attr('type', 'text').attr('class', 'textinput');
     tr.append($('<td>').append(img));
@@ -79,7 +79,7 @@ fOnLoad = function() {
     fChangeInputVisibility();
     return tr;
   };
-  $('#tableParams').on('click', 'img', function() {
+  $('#tableParams').on('click', '.img', function() {
     var par;
     main.clearInfo();
     par = $(this).closest('tr');

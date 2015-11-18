@@ -14,10 +14,13 @@ var log = require('../logging'),
 
 var router = module.exports = express.Router();
 
-router.post('/getall', (req, res) => {
+router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
 	db.getAllRules(req.session.pub.id, (err, arr) => {
-		if(err) res.status(500).send('Fetching all rules failed');
+		if(err) {
+			log.error(err);
+			res.status(500).send('Fetching all rules failed');
+		}
 		else res.send(arr);
 	});
 })

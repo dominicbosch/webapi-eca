@@ -57,15 +57,15 @@ fOnLoad = () ->
 	fChangeInputVisibility = () ->
 		$('#tableParams tr').each (id) ->
 			if $(this).is ':last-child' or $(this).is ':only-child'
-				$('img', this).hide()
+				$('div.img', this).hide()
 				$('input[type=checkbox]', this).hide()
 			else
-				$('img', this).show()
+				$('div.img', this).show()
 				$('input[type=checkbox]', this).show()
 
 	fAddInputRow = (tag) ->
 		tr = $ '<tr>'
-		img = $('<div>').attr('title', 'Remove?').attr 'class', 'del'
+		img = $('<div>').attr('title', 'Remove?').attr 'class', 'img del'
 		cb = $('<input>').attr('type', 'checkbox').attr 'title', 'Password shielded input?'
 		inp = $('<input>').attr('type', 'text').attr 'class', 'textinput'
 		tr.append $('<td>').append img
@@ -75,7 +75,7 @@ fOnLoad = () ->
 		fChangeInputVisibility()
 		tr
 
-	$('#tableParams').on 'click', 'img', () ->
+	$('#tableParams').on 'click', '.img', () ->
 		main.clearInfo()
 		par = $(this).closest 'tr' 
 		if not par.is ':last-child'

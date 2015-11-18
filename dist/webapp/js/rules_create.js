@@ -83,16 +83,13 @@ fOnLoad = function() {
   });
   req = sendRequest('/service/actiondispatcher/get');
   req.done(function(arrAD) {
-    var d3as, d3row, d3sel;
-    console.log(arrAD);
+    var d3row, d3sel;
     arrAllActions = arrAD;
-    d3as = d3.select('#actionSection').style('visibility', 'visible');
     if (arrAD.length === 0) {
-      d3as.selectAll('*').remove();
-      d3as.append('h3').classed('empty', true).html('No <b>Action Dispatchers</b> available! ').append('a').attr('href', '/views/modules_create?m=ad').text('Create one first!');
       return setEditorReadOnly(true);
     } else {
-      d3as.select('table').selectAll('tr').data(arrAD, function(d) {
+      d3.select('#actionEmpty').style('display', 'none');
+      d3.select('#actionSection').style('visibility', 'visible').select('table').selectAll('tr').data(arrAD, function(d) {
         return d != null ? d.id : void 0;
       }).enter().append('tr').each(function(oMod) {
         var d3This, func, list, results, trNew;
@@ -158,7 +155,6 @@ fOnLoad = function() {
         $('#input_id').focus();
         throw new Error('Please enter a rule name!');
       }
-      console.warn('GONE!');
       if ($('#selected_actions tr').length === 0) {
         throw new Error('Please select at least one action or create one!');
       }
@@ -368,7 +364,7 @@ removeAction = function(arrActions, id, name) {
 };
 
 updateParameterList = function() {
-  var d3New, d3Rows, dModule, funcs, newFuncs, newModules, visibility;
+  var d3New, d3Rows, dModule, funcParams, funcs, newFuncs, title, visibility;
   console.log(arrSelectedActions);
   visibility = arrSelectedActions.length > 0 ? 'visible' : 'hidden';
   d3.select('#selectedActions').style('visibility', visibility);
@@ -377,7 +373,7 @@ updateParameterList = function() {
   });
   d3Rows.exit().remove();
   d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel');
-  dModule = d3New.append('div').attr('class', 'col-sm-4');
+  dModule = d3New.append('div').attr('class', 'col-sm-6');
   dModule.append('h4').text(function(d) {
     return d.name;
   });
@@ -388,8 +384,8 @@ updateParameterList = function() {
     for (k in ref) {
       v = ref[k];
       nd = d3.select(this).append('div').attr('class', 'row');
-      nd.append('div').attr('class', 'col-xs-4').text(k);
-      results.push(nd.append('div').attr('class', 'col-xs-8').append('input').attr('type', v === 'true' ? 'password' : 'text'));
+      nd.append('div').attr('class', 'col-xs-3').text(k);
+      results.push(nd.append('div').attr('class', 'col-xs-9').append('input').attr('type', v === 'true' ? 'password' : 'text'));
     }
     return results;
   });
@@ -397,15 +393,17 @@ updateParameterList = function() {
     return d.arr;
   });
   funcs.exit().remove();
-  newModules = funcs.enter().append('div').attr('class', 'actions col-sm-4');
-  newModules.append('span').text(function(d) {
+  newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6').append('div').attr('class', 'row');
+  title = newFuncs.append('div').attr('class', 'col-sm-12');
+  title.append('div').attr('class', 'img del');
+  title.append('span').text(function(d) {
     return d.name;
   });
-  newFuncs = newModules.append('div').attr('class', 'row').selectAll('div').data(function(d) {
+  funcParams = newFuncs.selectAll('.params').data(function(d) {
     return d.functions;
-  }).enter().append('div').attr('class', 'col-sm-6 params');
-  newFuncs.append('div').attr('class', 'img del');
-  return newFuncs.append('span').text(function(d) {
+  }).enter().append('div').attr('class', 'col-sm-12 params').append('div').attr('class', 'row');
+  funcParams.append('div').attr('class', 'col-xs-3 params').text(function(d) {
     return d;
   });
+  return funcParams.append('div').attr('class', 'col-xs-9 params').append('input').attr('type', 'text');
 };

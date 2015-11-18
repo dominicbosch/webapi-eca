@@ -6,17 +6,21 @@ fOnLoad = () ->
 			if err.status is 401
 				window.location.href = '/'
 			else
+				console.error(err)
 				console.log('WHOOPS')
 
 	fFetchRules = () ->
-		$.post('/service/rules/getall')
+		$.post('/service/rules/get')
 			.done fUpdateRuleList
 			.fail fErrHandler 'Did not retrieve rules! '
 
 	fUpdateRuleList = (data) ->
 		$('#tableRules tr').remove()
 		if data.length is 0
-			$('#tableRules').html '<tr><td><h3>You don\'t have any rules!</h3></td></tr>'
+			parent = $('#tableRules').parent()
+			$('#tableRules').remove()
+			parent.append $ "<h3 class=\"empty\">You don't have any rules! 
+				<a href=\"/views/rules_create\">Create One first!</a></h3>"
 		else
 			for ruleName in data
 				$('#tableRules').append  $ """<tr>

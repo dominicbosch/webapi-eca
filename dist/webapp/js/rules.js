@@ -8,18 +8,21 @@ fOnLoad = function() {
       if (err.status === 401) {
         return window.location.href = '/';
       } else {
+        console.error(err);
         return console.log('WHOOPS');
       }
     };
   };
   fFetchRules = function() {
-    return $.post('/service/rules/getall').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
+    return $.post('/service/rules/get').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateRuleList = function(data) {
-    var i, len, results, ruleName;
+    var i, len, parent, results, ruleName;
     $('#tableRules tr').remove();
     if (data.length === 0) {
-      return $('#tableRules').html('<tr><td><h3>You don\'t have any rules!</h3></td></tr>');
+      parent = $('#tableRules').parent();
+      $('#tableRules').remove();
+      return parent.append($("<h3 class=\"empty\">You don't have any rules! <a href=\"/views/rules_create\">Create One first!</a></h3>"));
     } else {
       results = [];
       for (i = 0, len = data.length; i < len; i++) {

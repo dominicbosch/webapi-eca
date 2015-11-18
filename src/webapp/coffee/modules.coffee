@@ -14,7 +14,10 @@ updateModules = () ->
 	req.done ( arrModules ) ->
 		console.log(arrModules);
 		if arrModules.length is 0
-			$('#tableModules').html '<h3>No '+modName+'s available!'
+			parent = $('#tableModules').parent()
+			$('#tableModules').remove()
+			parent.append $ "<h3 class=\"empty\">No "+modName+"s available!
+				<a href=\"/views/modules_create?m="+oParams.m+"\">Create One first!</a></h3>"
 		else
 			tr = d3.select('#tableModules').selectAll('tr')
 				.data(arrModules, (d) -> d.id);
@@ -22,12 +25,12 @@ updateModules = () ->
 			trNew = tr.enter().append('tr');
 			trNew.append('td').classed('smallpadded', true)
 				.append('div')
-					.attr('class', 'del')
+					.attr('class', 'img del')
 					.attr('title', 'Delete Module')
 					.on('click', deleteModule);
 			trNew.append('td').classed('smallpadded', true)
 				.append('div')
-					.attr('class', 'edit')
+					.attr('class', 'img edit')
 					.attr('title', 'Edit Module')
 					.on('click', editModule);
 			trNew.append('td').classed('smallpadded', true)

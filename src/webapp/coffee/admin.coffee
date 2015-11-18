@@ -15,7 +15,7 @@ fOnLoad = () ->
 				for name, oUser of arrUsers
 					$( '#users' ).append $ """
 						<tr>
-							<td><div class="del" title="Delete User" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"></div></td>
+							<td><div class="img del" title="Delete User" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"></div></td>
 							<td>#{ if oUser.isAdmin then '<img title="Administrator"
 								src="/images/admin.png">' else '' }</td>
 							<td class="highlight">#{ oUser.username }</td>
