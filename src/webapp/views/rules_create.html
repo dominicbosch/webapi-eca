@@ -10,20 +10,26 @@
 {% block content %}
 	<div class="container-fluid">
 		<div class="row">
-			<h3>Rule Name : <input id="input_id" type="text" value="My new Rule"></h3>
+			<div class="col-xs-12">
+				<h3>Rule Name : <input id="input_id" type="text" value="My new Rule"></h3>
+			</div>
 		</div>
 
 		<div class="row">
-			<h2 class="capitalized">EVENT</h2>
-			<div id="selectWebhook"></div>
+			<div class="col-xs-12">
+				<h2 class="capitalized">EVENT</h2>
+				<div id="selectWebhook"></div>
+			</div>
 		</div>
 
 		<div class="row">
-			<h2 class="capitalized">CONDITIONS</h2>
+			<div class="col-xs-12">
+				<h2 class="capitalized">CONDITIONS</h2>
+			</div>
 		</div>
 		
 		<div class="row">
-			<div>
+			<div class="col-xs-12">
 			Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors">js-select selectors</a> for valid selectors!<br>
 				<div id="divConditions">
 					<div id="divConditionsEditor">
@@ -34,46 +40,52 @@
 		</div>
 
 		<div class="row editorSettings">
-			<button id="fill_example">Fill with example condition</button>
-			
-			Theme:
-			<select id="editor_theme">
-				<option value="monokai">Monokai</option>
-				<option value="crimson_editor" selected>Crimson Editor</option>
-			</select>
+			<div class="col-xs-12">
+				<button id="fill_example">Fill with example condition</button>
+				
+				Theme:
+				<select id="editor_theme">
+					<option value="monokai">Monokai</option>
+					<option value="crimson_editor" selected>Crimson Editor</option>
+				</select>
 
-			Font Size: 
-			<select id="editor_font">
-				<option>10px</option>
-				<option>11px</option>
-				<option>12px</option>
-				<option>13px</option>
-				<option selected>14px</option>
-				<option>15px</option>
-				<option>16px</option>
-				<option>18px</option>
-				<option>20px</option>
-				<option>24px</option>
-			</select>
+				Font Size: 
+				<select id="editor_font">
+					<option>10px</option>
+					<option>11px</option>
+					<option>12px</option>
+					<option>13px</option>
+					<option selected>14px</option>
+					<option>15px</option>
+					<option>16px</option>
+					<option>18px</option>
+					<option>20px</option>
+					<option>24px</option>
+				</select>
+			</div>
 		</div>
 
 		<div class="row">
-			<h2 class="capitalized">ACTIONS</h2>
-			<div id="actionSection">
+			<div class="col-xs-12">
+				<h2 class="capitalized">ACTIONS</h2>
+			</div>
+
+			<div class="col-md-4" id="actionSection">
+				<h3>Available Actions</h3>
 				<table><tr>
 					<th>Module</th>
 					<th>Action Function</th>
 				</tr></table>
-				<div id="selectedActions">
-					<b>Selected Actions:</b>
-					<table></table>
-				</div>
 			</div>
-
+			<div class="col-md-8" id="selectedActions">
+				<h3>Selected Actions</h3>
+			</div>
 		</div>
 
 		<div class="row">
-			<button id="but_submit">Save Rule</button>
+			<div class="col-xs-12">
+				<button id="but_submit">Save Rule</button>
+			</div>
 		</div>
 	</div>
 

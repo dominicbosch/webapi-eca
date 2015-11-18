@@ -98,9 +98,7 @@ nav.navbar {
 	content: url("/images/info.png")
 }
 
-.row {
-	padding-bottom: 10px;
-}
+.row { padding-bottom: 10px }
 
 .smallpadded { padding: 3px }
 .mediummarged { margin: 6px }
@@ -114,7 +112,6 @@ input.consoled {
 
 table .centered { text-align: center }
 table.padded td { padding: 2px }
-
 table.padded .highlight {
 	font-weight: bold;
 	font-family: "Lucida Console", Monaco, monospace;
@@ -141,12 +138,10 @@ table.padded .highlight {
 	border-radius: 1px;
 	padding: 2px;
 }
-
 #editor {
 	border: 1px solid lightgray;
 	width: 100%;
 }
-
 #editor.modules { height: 400px }
 
 #loginTable {
@@ -155,10 +150,9 @@ table.padded .highlight {
 	margin-top: 15px;
 	margin-left: 50px;
 }
-
 #loginTable td { padding: 3px 4px }
-.mytooltip { position: relative }
 
+.mytooltip { position: relative }
 .mytooltip > div {
 	visibility: hidden;
 	position: absolute;
@@ -177,27 +171,20 @@ table.padded .highlight {
 	opacity: 0;
 	z-index: 20;
 }
-
 .mytooltip .title {
 	font-weight: bold;
 	font-size: 1.3em;
 }
+.mytooltip kbd { font-size: 0.8em }
 
-.mytooltip kbd {
-	font-size: 0.8em;
-}
+#table_webhooks td { padding-right: 10px }
 
-#table_webhooks td {
-	padding-right: 10px;
-}
-
+#tabletl button { width: 120px }
 #tabletl td {
 	font-size: 0.9em;
 	padding-left: 15px;
 	padding-top: 5px;
 }
-
-#tabletl button { width: 120px }
 
 .float-div { float: left }
 .thirtyhigh { height: 30px }
@@ -209,8 +196,8 @@ table.padded .highlight {
 
 img.tl.red { content: url( "/images/tl_red.png" ) }
 img.tl.green { content: url( "/images/tl_green.png" ) }
-
 img.del, img.log { cursor: pointer }
+
 #tls select, #tls input { margin: 3px }
 #tls select { margin-top: 6px }
 
@@ -230,16 +217,12 @@ img.del, img.log { cursor: pointer }
 
 input[type=text],
 input[type=password] {
-	-webkit-transition: all 0.30s ease-in-out;
-	-moz-transition: all 0.30s ease-in-out;
-	-ms-transition: all 0.30s ease-in-out;
-	-o-transition: all 0.30s ease-in-out;
+	transition: all 0.30s ease-in-out;
 	outline: none;
 	padding: 2px 0px 2px 3px;
 	margin: 2px 1px 2px 0px;
 	border: 1px solid #DDDDDD;
 }
- 
 input[type=text]:focus,
 input[type=password]:focus {
 	box-shadow: 0 0 5px rgba(81, 203, 238, 1);
@@ -268,5 +251,4 @@ input[type=password]:focus {
 	border-radius: 10px;
 	padding: 20px;
 }
-
 .window h3 { margin: 5px 0px 5px 0px }

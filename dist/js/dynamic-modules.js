@@ -100,13 +100,14 @@ exports.runStringAsModule = (code, lang, username, opt, cb) => {
 		}
 	}
 
-	// Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
-	for(let prop in opt.globals) {
-		log.info('DM | Loading user defined global variable '+prop);
-		// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
-		// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
-		opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
-	}
+	// TODO decrypting of user parameters has to happen before we runstringasmodule
+	// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
+	// for(let prop in opt.globals) {
+	// 	log.info('DM | Loading user defined global variable '+prop);
+	// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
+	// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
+	// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
+	// }
 
 	log.info('DM | Running module "'+opt.id+'" for user '+username);
 	// The sandbox contains the objects that are accessible to the user.

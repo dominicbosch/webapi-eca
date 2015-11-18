@@ -2,6 +2,8 @@
 
 editor = null
 strPublicKey = ''
+arrAllActions = null
+arrSelectedActions = []
 
 sendRequest = (url, data, cb) ->
 	main.clearInfo()
@@ -51,6 +53,7 @@ fOnLoad = () ->
 				}
 			]
 			"""
+		editor.gotoLine(1, 1);
 	$('#input_id').focus()
 
 
@@ -77,6 +80,7 @@ fOnLoad = () ->
 	req = sendRequest '/service/actiondispatcher/get'
 	req.done (arrAD) ->
 		console.log(arrAD)
+		arrAllActions = arrAD
 		d3as = d3.select('#actionSection').style('visibility', 'visible');
 		if(arrAD.length is 0)
 			d3as.selectAll('*').remove();
@@ -452,9 +456,20 @@ fOnLoad = () ->
 window.addEventListener 'load', fOnLoad, true
 
 addAction = (id, name) ->
-	console.log(id, name)
-	# oMod.id, func
-	d3List = d3.select('#selectedActions').style('visibility', 'visible')
+	oSelMod = arrSelectedActions.filter((o) -> o.id is id)[0]
+	if not oSelMod
+		oAd = arrAllActions.filter((d) -> d.id is id)[0]
+		oSelMod = 
+			id: oAd.id
+			name: oAd.name
+			globals: oAd.globals
+			functions: oAd.functions
+			arr: []
+		arrSelectedActions.push(oSelMod)
+	oSelMod.arr.push
+		name: name
+		functions: oSelMod.functions[name]
+	updateParameterList()
 	# 	.select('table')
 
 	# arrName = name.split ' -> '
@@ -477,3 +492,37 @@ addAction = (id, name) ->
 	# fDelayed = () ->
 	# 	fFillActionFunction arrName[ 0 ]
 	# setTimeout fDelayed, 300
+
+
+removeAction = (arrActions, id, name) ->
+	updateParameterList()
+
+updateParameterList = () ->
+	console.log(arrSelectedActions)
+	visibility = if arrSelectedActions.length > 0 then 'visible' else 'hidden'
+	d3.select('#selectedActions').style('visibility', visibility)
+	
+	d3Rows = d3.select('#selectedActions')
+		.selectAll('.firstlevel').data(arrSelectedActions, (d) -> d.id)
+
+	d3Rows.exit().remove()
+	d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel')
+
+	# The main module container
+	dModule = d3New.append('div').attr('class', 'col-sm-4')
+	dModule.append('h4').text((d) -> d.name)
+	dModule.each (d) -> 
+		for k, v of d.globals
+			nd = d3.select(this).append('div').attr('class', 'row')
+			nd.append('div').attr('class', 'col-xs-4').text(k)
+			nd.append('div').attr('class', 'col-xs-8')
+				.append('input').attr('type', if v is 'true' then 'password' else 'text')
+
+	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr)
+	funcs.exit().remove()
+	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-4')
+	newFuncs.append('h5').text((d) -> d.name)
+	newFuncs.append('div').attr('class', 'row').selectAll('div').data((d) -> d.functions)
+		.enter().append('div').attr('class', 'col-sm-6 params').text((d) -> d)
+
+

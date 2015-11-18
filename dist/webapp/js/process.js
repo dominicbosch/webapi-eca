@@ -123,8 +123,9 @@ $(document).ready(function() {
 		var arrShutdowns = Object.keys(oData.shutdown || [])
 			.map(function(key) { return oData.shutdown[key] });
 		var arrTs = arrData.map(function(d) { return d.timestamp })
-			.concat(arrStartups)
-			.concat(arrShutdowns);
+			// .concat(arrStartups)
+			// .concat(arrShutdowns)
+			;
 		// arrTs.push((new Date()).getTime());
 
 		memMax = d3.max(

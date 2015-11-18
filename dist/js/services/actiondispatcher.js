@@ -37,6 +37,7 @@ router.post('/create', (req, res) => {
 		username: req.session.pub.username,
 		body: req.body
 	};
+	console.log('GOT globals', req.body.globals);
 	storeModule(args, res);
 });
 
@@ -59,18 +60,18 @@ function storeModule(args, res) {
 		if(arrNames.indexOf(args.body.name) > -1) {
 			res.status(409).send('Module name already existing: '+args.body.name);
 		} else {
-
-			let options = { globals: args.body.globals };
+			let options = { globals: {} };
+			for(let el in args.body.globals) options.globals[el] = 'dummy';
 			log.info('SRVC:AD | Running AD ', args.body.name);
 			dynmod.runStringAsModule(args.body.code, args.body.lang, args.username, options, (err, oMod) => {
 				if(err) {
 					log.error('SRVC:AD | Error running string as module: ', err);
 					res.status(err.code).send(err.message);
 				} else {
-					function fAnsw(err) {
+					function fAnsw(err, ad) {
 						if(err) {
-							log.warn('SRVC:AD | Unable to store Action Dispatcher', err);
-							res.status(err.code).send('Action Dispatcher not stored! ' + err.message)
+							log.warn('SRVC:AD | Unable to store Action Dispatcher', err.toString());
+							res.status(500).send('Action Dispatcher not stored! ' + err.toString())
 						} else {
 							log.info('SRVC:AD | Module stored');
 							res.send('Action Dispatcher stored!')

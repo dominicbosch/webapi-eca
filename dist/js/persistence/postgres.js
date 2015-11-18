@@ -20,7 +20,8 @@ var log = require('../logging'),
 	Rule,
 	Webhook,
 	EventTrigger,
-	ActionDispatcher;
+	ActionDispatcher,
+	ADGlobal;
 
 // ## DB Connection
 
@@ -56,8 +57,9 @@ function initializeModels() {
 		activeCodes: Sequelize.ARRAY(Sequelize.STRING)
 	});
 	Rule = sequelize.define('Rule', {
+		name: { type: Sequelize.STRING, unique: true },
 		event: Sequelize.STRING,
-		conditions: Sequelize.JSON,
+		conditions: Sequelize.TEXT,
 		actions: Sequelize.JSON
 	});
 	Webhook = sequelize.define('Webhook', {
@@ -66,22 +68,26 @@ function initializeModels() {
 		isPublic: Sequelize.BOOLEAN
 	});
 	EventTrigger = sequelize.define('EventTrigger', {
-		name: Sequelize.STRING,
+		name: { type: Sequelize.STRING, unique: true },
 		lang: Sequelize.STRING,
-		code: Sequelize.STRING,
-		comment: Sequelize.STRING,
+		code: Sequelize.TEXT,
+		comment: Sequelize.TEXT,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
 		globals: Sequelize.JSON
 	});
 	ActionDispatcher = sequelize.define('ActionDispatcher', {
-		name: Sequelize.STRING,
+		name: { type: Sequelize.STRING, unique: true },
 		lang: Sequelize.STRING,
-		code: Sequelize.STRING,
-		comment: Sequelize.STRING,
+		code: Sequelize.TEXT,
+		comment: Sequelize.TEXT,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
 		globals: Sequelize.JSON
+	});
+	ADGlobal = sequelize.define('ADGlobal', {
+		name: Sequelize.STRING,
+		value: Sequelize.STRING
 	});
 
 	// ### Define Relations
@@ -91,11 +97,13 @@ function initializeModels() {
 	Webhook.belongsTo(User);
 	EventTrigger.belongsTo(User);
 	ActionDispatcher.belongsTo(User);
+	ADGlobal.belongsTo(User);
 	User.hasOne(Worker, { onDelete: 'cascade' });
 	User.hasMany(Rule, { onDelete: 'cascade' });
 	User.hasMany(Webhook, { onDelete: 'cascade' });
 	User.hasMany(EventTrigger, { onDelete: 'cascade' });
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
+	User.hasMany(ADGlobal, { onDelete: 'cascade' });
 	
 	// Return a promise
 	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));

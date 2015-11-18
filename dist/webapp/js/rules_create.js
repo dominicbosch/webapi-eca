@@ -1,9 +1,13 @@
 'use strict';
-var addAction, editor, fOnLoad, sendRequest, setEditorReadOnly, strPublicKey;
+var addAction, arrAllActions, arrSelectedActions, editor, fOnLoad, removeAction, sendRequest, setEditorReadOnly, strPublicKey, updateParameterList;
 
 editor = null;
 
 strPublicKey = '';
+
+arrAllActions = null;
+
+arrSelectedActions = [];
 
 sendRequest = function(url, data, cb) {
   var req;
@@ -44,7 +48,8 @@ fOnLoad = function() {
     return editor.setFontSize($(this).val());
   });
   $('#fill_example').click(function() {
-    return editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
+    editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
+    return editor.gotoLine(1, 1);
   });
   $('#input_id').focus();
   req = sendRequest('/service/webhooks/getall');
@@ -80,6 +85,7 @@ fOnLoad = function() {
   req.done(function(arrAD) {
     var d3as, d3row, d3sel;
     console.log(arrAD);
+    arrAllActions = arrAD;
     d3as = d3.select('#actionSection').style('visibility', 'visible');
     if (arrAD.length === 0) {
       d3as.selectAll('*').remove();
@@ -334,7 +340,71 @@ fOnLoad = function() {
 window.addEventListener('load', fOnLoad, true);
 
 addAction = function(id, name) {
-  var d3List;
-  console.log(id, name);
-  return d3List = d3.select('#selectedActions').style('visibility', 'visible');
+  var oAd, oSelMod;
+  oSelMod = arrSelectedActions.filter(function(o) {
+    return o.id === id;
+  })[0];
+  if (!oSelMod) {
+    oAd = arrAllActions.filter(function(d) {
+      return d.id === id;
+    })[0];
+    oSelMod = {
+      id: oAd.id,
+      name: oAd.name,
+      globals: oAd.globals,
+      functions: oAd.functions,
+      arr: []
+    };
+    arrSelectedActions.push(oSelMod);
+  }
+  oSelMod.arr.push({
+    name: name,
+    functions: oSelMod.functions[name]
+  });
+  return updateParameterList();
+};
+
+removeAction = function(arrActions, id, name) {
+  return updateParameterList();
+};
+
+updateParameterList = function() {
+  var d3New, d3Rows, dModule, funcs, newFuncs, visibility;
+  console.log(arrSelectedActions);
+  visibility = arrSelectedActions.length > 0 ? 'visible' : 'hidden';
+  d3.select('#selectedActions').style('visibility', visibility);
+  d3Rows = d3.select('#selectedActions').selectAll('.firstlevel').data(arrSelectedActions, function(d) {
+    return d.id;
+  });
+  d3Rows.exit().remove();
+  d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel');
+  dModule = d3New.append('div').attr('class', 'col-sm-4');
+  dModule.append('h4').text(function(d) {
+    return d.name;
+  });
+  dModule.each(function(d) {
+    var k, nd, ref, results, v;
+    ref = d.globals;
+    results = [];
+    for (k in ref) {
+      v = ref[k];
+      nd = d3.select(this).append('div').attr('class', 'row');
+      nd.append('div').attr('class', 'col-xs-4').text(k);
+      results.push(nd.append('div').attr('class', 'col-xs-8').append('input').attr('type', v === 'true' ? 'password' : 'text'));
+    }
+    return results;
+  });
+  funcs = d3Rows.selectAll('.actions').data(function(d) {
+    return d.arr;
+  });
+  funcs.exit().remove();
+  newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-4');
+  newFuncs.append('h5').text(function(d) {
+    return d.name;
+  });
+  return newFuncs.append('div').attr('class', 'row').selectAll('div').data(function(d) {
+    return d.functions;
+  }).enter().append('div').attr('class', 'col-sm-6 params').text(function(d) {
+    return d;
+  });
 };
