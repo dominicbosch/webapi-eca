@@ -12,7 +12,7 @@ createWebhookList = () ->
 	list = $ '#sel_webh'
 	$('*', list).remove()
 	list.append $ '<option>[ create new webhook with name: ]</option>'
-	$.post '/service/webhooks/getall', (oHooks) ->
+	$.post '/service/webhooks/get', (oHooks) ->
 		createRow = (hook, isMine) ->
 			owner = if isMine then 'yours' else hook.User.username+'\'s'
 			elm = $ '<option value="'+hook.hookid+'">'+hook.hookname+' ('+owner+')</option>'
@@ -30,7 +30,6 @@ createWebhookList = () ->
 			else
 
 updateWebhookSelection = () ->
-	console.log $(':selected', this).index()
 	if $(':selected', this).index() is 0
 		$('#tlwebh').removeClass('green').addClass('red').attr('src', '/images/tl_red.png')
 		$('#inp_webh').show()

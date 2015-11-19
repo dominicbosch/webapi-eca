@@ -58,7 +58,7 @@ window.main =
 				d3Div.transition().style('opacity', 0).each 'end', () ->
 					d3Div.style('visibility', 'hidden')
 
-		d3El.style('position', 'relative');
+		# d3El.style('position', 'relative');
 		d3Img = d3El.append('img')
 			.classed('info icon', true)
 			.attr('src', '/images/info.png')

@@ -1,12 +1,16 @@
 
-h1 {
-	margin-top: 5px;
-	font-size: 2.1em;
+h1, h2, h3, h4, h5, h6 {
+	margin: 5px 1px;
+	padding: 5px 1px;
 }
 
+h1 { font-size: 2.1em }
+h2 { font-size: 1.8em }
+h3 { font-size: 1.5em }
+h4 { font-size: 1.2em }
+h5 { font-size: 1.1em }
+
 h2 {
-	font-size: 1.8em;
-	margin-top: 10px;
 	margin-left: -10px;
 	padding: 5px;
 	background: #e7e7e7;
@@ -17,21 +21,6 @@ h2 {
 h2.capitalized::first-letter {
 	font-size: 1.5em;
 	font-weight: bold;
-}
-
-h3 {
-	font-size: 1.5em;
-	padding-top: 10px;
-}
-
-h4 {
-	font-size: 1.2em;
-	padding-top: 10px;
-}
-
-h5 {
-	font-size: 1.1em;
-	padding-top: 7px;
 }
 
 th {
@@ -155,7 +144,7 @@ table.padded .highlight {
 	position: absolute;
 	left: -7px;
 	top: 7px;
-	min-width: 300px;
+	min-width: 400px;
 	max-width: 600px;
 	overflow: hidden;
 	font-size: 12px;
@@ -172,7 +161,11 @@ table.padded .highlight {
 	font-weight: bold;
 	font-size: 1.3em;
 }
-.mytooltip kbd { font-size: 0.8em }
+.mytooltip kbd { 
+	white-space: nowrap;
+	font-size: 0.8em;
+	padding: 1px 3px;
+}
 
 #table_webhooks td { padding-right: 10px }
 
@@ -193,12 +186,7 @@ table.padded .highlight {
 
 .icon.info { margin-left: 10px }
 .icon.info, .icon.edit, .icon.del, .icon.log { cursor: pointer }
-/*
-.attr('src', '/images/tl_red.png')
-.attr('src', '/images/tl_green.png')
-.attr('src', '/images/edit.png')
-.attr('src', '/images/del.png')
-*/
+
 #tls select, #tls input { margin: 3px }
 #tls select { margin-top: 6px }
 
@@ -252,7 +240,6 @@ input[type=password]:focus {
 	border-radius: 10px;
 	padding: 20px;
 }
-.window h3 { margin: 5px 0px 5px 0px }
 
 .carousel {	background: #2D373C }
 .carousel .item img {

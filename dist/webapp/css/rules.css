@@ -39,8 +39,6 @@
 
 #selectedActions h4, #selectedActions h5 { 
 	font-weight: bold;
-	margin-top: 5px;
-	padding-top: 0px;
 }
 #selectedActions input { width: 100% }
 

@@ -11,15 +11,13 @@ failedRequest = ( msg ) ->
 
 updateWebhookList = () ->
 	main.clearInfo()
-	$.post('/service/webhooks/getall')
+	$.post('/service/webhooks/get')
 		.done ( oHooks ) ->
 			$('#table_webhooks *').remove()
 			prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 			pul = if oHooks.public then Object.keys(oHooks.public).length else 0
-			console.log oHooks
 			if prl + pul > 0
 				createWebhookRow = (oHook, isMine) ->
-					console.log oHook
 					img = if oHook.isPublic then 'public' else 'private'
 					tit = if oHook.isPublic then 'Public' else 'Private'
 					table.append $ """

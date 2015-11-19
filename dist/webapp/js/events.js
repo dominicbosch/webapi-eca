@@ -14,7 +14,7 @@ createWebhookList = function() {
   list = $('#sel_webh');
   $('*', list).remove();
   list.append($('<option>[ create new webhook with name: ]</option>'));
-  return $.post('/service/webhooks/getall', function(oHooks) {
+  return $.post('/service/webhooks/get', function(oHooks) {
     var createRow, hook, id, ref, ref1, selEl;
     createRow = function(hook, isMine) {
       var elm, owner;
@@ -45,7 +45,6 @@ createWebhookList = function() {
 };
 
 updateWebhookSelection = function() {
-  console.log($(':selected', this).index());
   if ($(':selected', this).index() === 0) {
     $('#tlwebh').removeClass('green').addClass('red').attr('src', '/images/tl_red.png');
     $('#inp_webh').show();

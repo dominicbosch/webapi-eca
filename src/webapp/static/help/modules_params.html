@@ -1,0 +1,7 @@
+<div class="title">Code Modules Parameters</div>
+Code modules (Event Triggers &amp; Action Dispatchers) have two <b>optional</b> levels of parameters:
+<ol>
+	<li>The first level are parameters on <kbd>module level</kbd>. These parameters are global and could be password shielded. Password shielded parameters are encrypted before stored in the database. The <kbd>module level</kbd> can be thought of user credentials to a certain webservice.</li>
+	<li>The second level are paremeters on <kbd>function level</kbd>. They are the arguments that are passed to the (Action Dispatcher or Event Trigger) function when it gets called. The <kbd>function level</kbd> can be thought of one of several possibilities to access a certain webservice.</li>
+</ol>
+Paremeters on <kbd>function level</kbd> can also be passed as properties of the event which can be accessed by the <a href="https://github.com/harthur/js-select#selectors" target="_blank">js-select selectors</a>, e.g. <kbd>#{ .title }</kbd> would pass all existing title properties within the event's JSON data structure.

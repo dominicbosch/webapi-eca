@@ -2,9 +2,7 @@
 
 {% block pagetitle %}Welcome to the WebAPI ECA-Engine!{% endblock %}
 
-
 {% block carousel %}
-	<!-- <img src="/images/intro1.png" /> -->
 	<div id="myCarousel" class="carousel slide" data-ride="carousel" data-interval="10000">
 		<!-- Indicators -->
 		<ol class="carousel-indicators">
@@ -20,19 +18,16 @@
 				<!-- <div class="text-top-image">Caption</div> -->
 				<img src="/images/intro3.png">
 			</div>
-
 			<div class="item">
 				<!-- <div class="text-top-image">Caption</div> -->
-				<img src="/images/intro1.png">
+				<img src="/images/intro2.png">
 			</div>
-
+			<div class="item">
+				<img src="/images/intro1.png">
+				<!-- <div class="text-top-image">Caption</div> -->
+			</div>
 			<div class="item">
 				<img src="/images/intro4.png">
-				<!-- <div class="text-top-image">Caption</div> -->
-			</div>
-
-			<div class="item">
-				<img src="/images/intro2.png">
 			</div>
 		</div>
 
@@ -50,7 +45,6 @@
 
 
 {% block content %}
-
 	{% if user.username %}
 		<p>
 		Activate your Web by creating your own ECA rules, together with powerful Web Accessors!
@@ -66,5 +60,4 @@
 		</ul>
 		</p>
 	{% endif %}
-
 {% endblock %}

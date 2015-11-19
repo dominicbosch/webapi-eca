@@ -51,8 +51,8 @@ fOnLoad = function() {
     editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
     return editor.gotoLine(1, 1);
   });
-  $('#input_id').focus();
-  req = sendRequest('/service/webhooks/getall');
+  $('#input_name').focus();
+  req = sendRequest('/service/webhooks/get');
   req.done(function(oHooks) {
     var createWebhookRow, d3Sel, hookid, oHook, prl, pul, ref, ref1, results;
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
@@ -81,6 +81,7 @@ fOnLoad = function() {
       return results;
     }
   });
+  main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
   req = sendRequest('/service/actiondispatcher/get');
   req.done(function(arrAD) {
     var d3row, d3sel;
@@ -148,119 +149,99 @@ fOnLoad = function() {
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {
-    var actFuncs, acts, ap, conds, err, error, error1, fCheckOverwrite, obj;
+    var arrActions, arrConditions, el, err, error, error1, j, len, obj;
     window.scrollTo(0, 0);
+    main.clearInfo();
     try {
-      if ($('#input_id').val() === '') {
-        $('#input_id').focus();
+      if ($('#input_name').val() === '') {
+        $('#input_name').focus();
         throw new Error('Please enter a rule name!');
       }
-      if ($('#selected_actions tr').length === 0) {
+      if (arrSelectedActions.length === 0) {
         throw new Error('Please select at least one action or create one!');
       }
-      ap = {};
-      $('> div', $('#action_dispatcher_params')).each(function() {
-        var modName, params;
-        modName = $('.modName', this).text();
-        params = {};
-        $('tr', this).each(function() {
-          var encryptedParam, key, shielded, val;
-          key = $('.key', this).text();
-          val = $('input', this).val();
-          shielded = $('input', this).attr('type') === 'password';
+      arrActions = [];
+      d3.selectAll('.firstlevel').each(function(oModule) {
+        var d3module, oAction;
+        oAction = {
+          id: oModule.id,
+          globals: {},
+          functions: {}
+        };
+        d3module = d3.select(this);
+        d3module.selectAll('.glob').each(function() {
+          var d3t, d3val, key, val;
+          d3t = d3.select(this);
+          key = d3t.select('.key').text();
+          d3val = d3t.select('.val input');
+          val = d3val.node().value;
           if (val === '') {
-            $('input', this).focus();
-            throw new Error("'" + key + "' missing for '" + modName + "'");
+            d3val.node().focus();
+            throw new Error('Please enter a value in all requested fields!');
           }
-          params[key] = {
-            shielded: shielded
-          };
-          if (!shielded || $('input', this).attr('unchanged') !== 'true') {
-            encryptedParam = cryptico.encrypt(val, strPublicKey);
-            return params[key].value = encryptedParam.cipher;
-          } else {
-            return params[key].value = val;
+          if (oAction.globals[key] === 'true' && d3val.attr('changed') === 'yes') {
+            val = cryptico.encrypt(val, strPublicKey).cipher;
           }
+          return oAction.globals[key] = val;
         });
-        return ap[modName] = params;
-      });
-      acts = [];
-      actFuncs = {};
-      $('#selected_actions td.title').each(function() {
-        var actionName, par;
-        actionName = $(this).text();
-        actFuncs[actionName] = [];
-        acts.push(actionName);
-        par = $(this).parent();
-        return $('.funcMappings tr', par).each(function() {
-          return actFuncs[actionName].push({
-            argument: $('div.funcarg', this).text(),
-            value: $('input[type=text]', this).val()
+        d3module.selectAll('.actions').each(function(dFunc) {
+          var d3arg;
+          oAction.functions[dFunc.name] = {};
+          return d3arg = d3.select(this).selectAll('.arg').each(function(d) {
+            var val;
+            d3arg = d3.select(this);
+            val = d3arg.select('.val input').node().value;
+            if (val === '') {
+              d3arg.node().focus();
+              throw new Error('Please enter a value in all requested fields!');
+            }
+            return oAction.functions[dFunc.name][d] = val;
           });
         });
+        return arrActions.push(oAction);
       });
       try {
-        conds = JSON.parse(editor.getValue());
+        arrConditions = JSON.parse(editor.getValue());
       } catch (error) {
         err = error;
         throw new Error("Parsing of your conditions failed! Needs to be an Array of Strings!");
       }
-      if (!(conds instanceof Array)) {
-        throw new Error("Conditions Invalid! Needs to be an Array of Strings!");
+      if (!(arrConditions instanceof Array)) {
+        throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
       }
-      fCheckOverwrite = function(obj) {
-        return function(err) {
-          var payl;
-          if (err.status === 409) {
-            if (confirm('Are you sure you want to overwrite the existing rule?')) {
-              payl = JSON.parse(obj.body);
-              payl.overwrite = true;
-              obj.body = JSON.stringify(payl);
-              return sendRequest({
-                command: obj.command,
-                data: obj,
-                done: function(data) {
-                  $('#info').text(data.message);
-                  return $('#info').attr('class', 'success');
-                },
-                fail: console.log(obj.id + " not stored!")
-              });
-            }
-          } else {
-            return console.log(obj.id + " not stored!")(err);
-          }
-        };
-      };
-      console.warn('GONE!');
+      for (j = 0, len = arrConditions.length; j < len; j++) {
+        el = arrConditions[j];
+        if (!(el instanceof Object)) {
+          throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
+        }
+      }
       obj = {
-        body: JSON.stringify({
-          id: $('#input_id').val(),
-          eventtype: eventtype,
-          eventname: eventname,
-          eventparams: ep,
-          eventstart: start,
-          eventinterval: mins,
-          eventfunctions: evtFuncs,
-          conditions: conds,
-          actions: acts,
-          actionparams: ap,
-          actionfunctions: actFuncs
-        })
+        name: $('#input_name').val(),
+        webhookid: $('#selectWebhook select').val(),
+        conditions: arrConditions,
+        actions: arrActions
       };
-      return sendRequest({
-        command: 'forge_rule',
-        data: obj,
-        done: function(data) {
-          $('#info').text(data.message);
-          return $('#info').attr('class', 'success');
-        },
-        fail: fCheckOverwrite(obj)
+      req = sendRequest('service/rules/store', obj, function(err) {
+        if (err.status === 409) {
+          if (confirm('Are you sure you want to overwrite the existing rule?')) {
+            obj.overwrite = true;
+            req = sendRequest('service/rules/store', obj, function() {
+              return main.setInfo(false, 'Rule not stored!');
+            });
+            return req.done(function(data) {
+              return main.setInfo(true, data.message);
+            });
+          }
+        } else {
+          return main.setInfo(false, 'Rule not stored!');
+        }
+      });
+      return req.done(function(data) {
+        return main.setInfo(true, data.message);
       });
     } catch (error1) {
       err = error1;
-      $('#info').text('Error in upload: ' + err.message);
-      $('#info').attr('class', 'error');
-      return alert(err.message);
+      return main.setInfo(false, 'Error in upload: ' + err.message);
     }
   });
   if (oParams.id) {
@@ -275,9 +256,9 @@ fOnLoad = function() {
         var oRule;
         oRule = JSON.parse(data.message);
         if (oRule) {
-          $('#input_id').val(oRule.id);
+          $('#input_name').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, i, len, mins, ref, results;
+            var action, arrName, d, j, len, mins, ref, results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -308,8 +289,8 @@ fOnLoad = function() {
             domSectionSelectedActions.show();
             ref = oRule.actions;
             results = [];
-            for (i = 0, len = ref.length; i < len; i++) {
-              action = ref[i];
+            for (j = 0, len = ref.length; j < len; j++) {
+              action = ref[j];
               arrName = action.split(' -> ');
               results.push(fAddSelectedAction(action));
             }
@@ -345,6 +326,7 @@ addAction = function(id, name) {
     })[0];
     oSelMod = {
       id: oAd.id,
+      currid: 0,
       name: oAd.name,
       globals: oAd.globals,
       functions: oAd.functions,
@@ -354,18 +336,41 @@ addAction = function(id, name) {
   }
   oSelMod.arr.push({
     name: name,
+    modid: oSelMod.id,
+    funcid: oSelMod.currid++,
     functions: oSelMod.functions[name]
   });
   return updateParameterList();
 };
 
-removeAction = function(arrActions, id, name) {
+removeAction = function(d) {
+  var arrSel, d3t, el, i, j, l, len, len1, ref;
+  d3t = d3.select(this);
+  arrSel = arrSelectedActions.filter(function(o) {
+    return o.id === d.modid;
+  })[0];
+  ref = arrSel.arr;
+  for (i = j = 0, len = ref.length; j < len; i = ++j) {
+    el = ref[i];
+    if (el.funcid === d.funcid) {
+      arrSel.arr.splice(i, 1);
+    }
+  }
+  console.log(arrSel.arr, arrSelectedActions);
+  if (arrSel.arr.length === 0) {
+    for (i = l = 0, len1 = arrSelectedActions.length; l < len1; i = ++l) {
+      el = arrSelectedActions[i];
+      console.log(el, i);
+      if (el.id === d.modid) {
+        arrSelectedActions.splice(i, 1);
+      }
+    }
+  }
   return updateParameterList();
 };
 
 updateParameterList = function() {
   var d3New, d3Rows, dModule, funcParams, funcs, newFuncs, title, visibility;
-  console.log(arrSelectedActions);
   visibility = arrSelectedActions.length > 0 ? 'visible' : 'hidden';
   d3.select('#selectedActions').style('visibility', visibility);
   d3Rows = d3.select('#selectedActions').selectAll('.firstlevel').data(arrSelectedActions, function(d) {
@@ -383,9 +388,11 @@ updateParameterList = function() {
     results = [];
     for (k in ref) {
       v = ref[k];
-      nd = d3.select(this).append('div').attr('class', 'row');
-      nd.append('div').attr('class', 'col-xs-3').text(k);
-      results.push(nd.append('div').attr('class', 'col-xs-9').append('input').attr('type', v === 'true' ? 'password' : 'text'));
+      nd = d3.select(this).append('div').attr('class', 'row glob');
+      nd.append('div').attr('class', 'col-xs-3 key').text(k);
+      results.push(nd.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', v === 'true' ? 'password' : 'text').on('change', function() {
+        return d3.select(this).attr('changed', 'yes');
+      }));
     }
     return results;
   });
@@ -395,15 +402,15 @@ updateParameterList = function() {
   funcs.exit().remove();
   newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6').append('div').attr('class', 'row');
   title = newFuncs.append('div').attr('class', 'col-sm-12');
-  title.append('img').attr('src', '/images/del.png').attr('class', 'icon del');
+  title.append('img').attr('src', '/images/del.png').attr('class', 'icon del').on('click', removeAction);
   title.append('span').text(function(d) {
     return d.name;
   });
-  funcParams = newFuncs.selectAll('.params').data(function(d) {
+  funcParams = newFuncs.selectAll('.notexisting').data(function(d) {
     return d.functions;
-  }).enter().append('div').attr('class', 'col-sm-12 params').append('div').attr('class', 'row');
-  funcParams.append('div').attr('class', 'col-xs-3 params').text(function(d) {
+  }).enter().append('div').attr('class', 'col-sm-12 arg').append('div').attr('class', 'row');
+  funcParams.append('div').attr('class', 'col-xs-3 key').text(function(d) {
     return d;
   });
-  return funcParams.append('div').attr('class', 'col-xs-9 params').append('input').attr('type', 'text');
+  return funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text');
 };

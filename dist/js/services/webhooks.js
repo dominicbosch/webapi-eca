@@ -28,7 +28,7 @@ geb.addListener('system:init', (msg) => {
 });
 
 // User fetches all his existing webhooks
-router.post('/getall', (req, res) => {
+router.post('/get', (req, res) => {
 	log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
 	db.getAllUserWebhooks(req.session.pub.id, (err, arr) => {
 		if(err) {

@@ -252,6 +252,7 @@ exports.processEvent = ( evt ) =>
 				log.info "EN | #{ funcName } executes..."
 				arrArgs = []
 				if node.funcArgs[ funcName ]
+					# TODO do this on initiaisation and not each time an event is received
 					for oArg in node.funcArgs[ funcName ]
 						arrSelectors = oArg.value.match /#\{(.*?)\}/g
 						argument = oArg.value

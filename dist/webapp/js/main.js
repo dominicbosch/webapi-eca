@@ -57,7 +57,6 @@ window.main = {
         });
       }
     };
-    d3El.style('position', 'relative');
     d3Img = d3El.append('img').classed('info icon', true).attr('src', '/images/info.png').on('mouseenter', function() {
       d3Img.classed('hovered', true);
       return d3Div.style('visibility', 'visible').transition().style('opacity', 1);

@@ -54,12 +54,12 @@ fOnLoad = () ->
 			]
 			"""
 		editor.gotoLine(1, 1);
-	$('#input_id').focus()
+	$('#input_name').focus()
 
 
 # EVENT
 # -----
-	req = sendRequest '/service/webhooks/getall'
+	req = sendRequest '/service/webhooks/get'
 	req.done (oHooks) ->
 		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
@@ -77,6 +77,10 @@ fOnLoad = () ->
 			createWebhookRow(hookid, oHook, 'yours') for hookid, oHook of oHooks.private
 			createWebhookRow(hookid, oHook, oHook.username) for hookid, oHook of oHooks.public
 
+
+# ACTIONS
+# -------
+	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
 	req = sendRequest '/service/actiondispatcher/get'
 	req.done (arrAD) ->
 		arrAllActions = arrAD
@@ -139,111 +143,78 @@ fOnLoad = () ->
 
 	$('#but_submit').click () ->
 		window.scrollTo 0, 0
-
+		main.clearInfo()
 		try
-			if $('#input_id').val() is ''
-				$('#input_id').focus()
+			if $('#input_name').val() is ''
+				$('#input_name').focus()
 				throw new Error 'Please enter a rule name!'
 
-			if $('#selected_actions tr').length is 0
+			if arrSelectedActions.length is 0
 				throw new Error 'Please select at least one action or create one!'
 
 			# Store all selected action dispatchers
-			ap = {}
-			$('> div', $('#action_dispatcher_params')).each () ->
-				modName = $('.modName', this).text()
-				params = {}
-				$('tr', this).each () ->
-					key = $('.key', this).text()
-					val = $('input', this).val()
-					shielded = $('input', this).attr('type') is 'password'
+			arrActions = []
+			d3.selectAll('.firstlevel').each (oModule) ->
+				oAction = {
+					id: oModule.id,
+					globals: {},
+					functions: {}
+				}
+				d3module = d3.select(this);
+				d3module.selectAll('.glob').each () ->
+					d3t = d3.select(this);
+					key = d3t.select('.key').text();
+					d3val = d3t.select('.val input');
+					val = d3val.node().value;
 					if val is ''
-						$('input', this).focus()
-						throw new Error "'#{ key }' missing for '#{ modName }'"
-					params[ key ] =
-						shielded: shielded
+						d3val.node().focus()
+						throw new Error('Please enter a value in all requested fields!')
+					if oAction.globals[key] == 'true' && d3val.attr('changed') == 'yes'
+						val = cryptico.encrypt(val, strPublicKey).cipher
+					oAction.globals[key] = val
 
-					if not shielded or $('input', this).attr('unchanged') isnt 'true'
-						encryptedParam = cryptico.encrypt val, strPublicKey
-						params[ key ].value = encryptedParam.cipher 
-					else
-						params[ key ].value = val
-				ap[ modName ] = params
-			acts = []
-			actFuncs = {}
-			$('#selected_actions td.title').each () ->
-				actionName = $(this).text()
-				actFuncs[ actionName ] = []
-				acts.push actionName
-				par = $(this).parent()
-				$('.funcMappings tr', par).each () ->
-					# No need to encrypt this, right?
-					# tmp =
-					# 	argument: $('div.funcarg', this).val()
-					# 	value: $('input[type=text]', this).val()
-					# 	regexp: $('input[type=checkbox]', this).is(':checked')
-					# tmp = cryptico.encrypt JSON.stringify(tmp), strPublicKey
-					# actFuncs[ actionName ] = tmp.cipher
-					actFuncs[ actionName ].push
-						argument: $('div.funcarg', this).text()
-						value: $('input[type=text]', this).val()
-						# jsselector: $('input[type=checkbox]', this).is(':checked')
+				d3module.selectAll('.actions').each (dFunc) ->
+					oAction.functions[dFunc.name] = {}
+
+					d3arg = d3.select(this).selectAll('.arg').each (d) ->
+						d3arg = d3.select(this)
+						val = d3arg.select('.val input').node().value
+						if val is ''
+							d3arg.node().focus()
+							throw new Error('Please enter a value in all requested fields!')
+						oAction.functions[dFunc.name][d] = val;
+
+				arrActions.push(oAction);
 			
 			try
-				conds = JSON.parse editor.getValue()
+				arrConditions = JSON.parse editor.getValue()
 			catch err
 				throw new Error "Parsing of your conditions failed! Needs to be an Array of Strings!"
 			
-			if conds not instanceof Array
-				throw new Error "Conditions Invalid! Needs to be an Array of Strings!"
-
-
-			fCheckOverwrite = (obj) ->
-				(err) ->
-					if err.status is 409
-						if confirm 'Are you sure you want to overwrite the existing rule?'
-							payl = JSON.parse obj.body
-							payl.overwrite = true
-							obj.body = JSON.stringify payl
-							sendRequest
-								command: obj.command
-								data: obj
-								done: (data) ->
-									$('#info').text data.message
-									$('#info').attr 'class', 'success'
-								fail: console.log "#{ obj.id } not stored!"
-					else
-						console.log("#{ obj.id } not stored!") err
-
-			console.warn 'GONE!'
-			# if $('#select_event_type').val() is 'Event Trigger'
-			# 	start = fConvertTimeToDate($('#input_start').val()).toISOString()
-			# 	mins = fConvertDayHourToMinutes $('#input_interval').val()
+			if arrConditions not instanceof Array
+				throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
+			for el in arrConditions
+				if el not instanceof Object then throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
 
 			obj = 
-				body: JSON.stringify
-					id: $('#input_id').val()
-					eventtype: eventtype
-					eventname: eventname
-					eventparams: ep
-					eventstart: start
-					eventinterval: mins
-					eventfunctions: evtFuncs
-					conditions: conds
-					actions: acts
-					actionparams: ap
-					actionfunctions: actFuncs
-			sendRequest
-				command: 'forge_rule'
-				data: obj
-				done: (data) ->
-					$('#info').text data.message
-					$('#info').attr 'class', 'success'
-				fail: fCheckOverwrite obj
+				name: $('#input_name').val()
+				webhookid: $('#selectWebhook select').val()
+				conditions: arrConditions
+				actions: arrActions
+
+			req = sendRequest 'service/rules/store', obj, (err) ->
+				if err.status is 409
+					if confirm 'Are you sure you want to overwrite the existing rule?'
+						obj.overwrite = true
+						req = sendRequest 'service/rules/store', obj, () ->
+							main.setInfo false, 'Rule not stored!'
+						req.done (data) -> main.setInfo true, data.message
+				else
+					main.setInfo false, 'Rule not stored!'
+			req.done (data) -> main.setInfo true, data.message
+
 		catch err
-			$('#info').text 'Error in upload: ' + err.message
-			$('#info').attr 'class', 'error'
-			alert err.message
+			main.setInfo false, 'Error in upload: ' + err.message
 
 # Preload editting of a Rule
 # -----------
@@ -256,7 +227,7 @@ fOnLoad = () ->
 			done: (data) ->
 				oRule = JSON.parse data.message
 				if oRule
-					$('#input_id').val oRule.id
+					$('#input_name').val oRule.id
 					
 					# Event
 					fPrepareEventType oRule.eventtype, () ->
@@ -385,7 +356,7 @@ fOnLoad = () ->
 # 		command: 'get_action_dispatcher_user_arguments'
 # 		data:
 # 			body: JSON.stringify
-# 				ruleId: $('#input_id').val()
+# 				ruleId: $('#input_name').val()
 # 				moduleId: name
 # 		done: fAddActionUserArgs name
 
@@ -422,6 +393,7 @@ addAction = (id, name) ->
 		oAd = arrAllActions.filter((d) -> d.id is id)[0]
 		oSelMod = 
 			id: oAd.id
+			currid: 0
 			name: oAd.name
 			globals: oAd.globals
 			functions: oAd.functions
@@ -429,37 +401,27 @@ addAction = (id, name) ->
 		arrSelectedActions.push(oSelMod)
 	oSelMod.arr.push
 		name: name
+		modid: oSelMod.id
+		funcid: oSelMod.currid++
 		functions: oSelMod.functions[name]
 	updateParameterList()
-	# 	.select('table')
 
-	# arrName = name.split ' -> '
-	# arrEls = $("#action_dispatcher_params div.modName").map(() ->
-	# 	$(this).text()
-	# ).get()
-	# table = $('#selected_actions')
-	# tr = $('<tr>').appendTo table
-	# img = $('<img>').attr 'src', 'images/red_cross_small.png'
-	# tr.append $('<td>').css('width', '20px').append img
-	# tr.append $('<td>').attr('class', 'title').text name 
-	# td = $('<td>').attr('class', 'funcMappings').appendTo tr
-	# fFetchActionFunctionArgs td, arrName
-	# if arrName[ 0 ] not in arrEls
-	# 	fFetchActionParams arrName[ 0 ]
+removeAction = (d) ->
+	d3t = d3.select(this);
+	arrSel = arrSelectedActions.filter((o) -> o.id is d.modid)[0]
+	for el, i in arrSel.arr
+		if el.funcid is d.funcid 
+			arrSel.arr.splice i, 1
 
-	# $("#actionSection select option").each () ->
-	# 	if $(this).text() is name
-	# 		$(this).remove()
-	# fDelayed = () ->
-	# 	fFillActionFunction arrName[ 0 ]
-	# setTimeout fDelayed, 300
+	console.log arrSel.arr, arrSelectedActions
+	if arrSel.arr.length is 0
+		for el, i in arrSelectedActions
+			console.log el, i
+			if el.id is d.modid then arrSelectedActions.splice i, 1
 
-
-removeAction = (arrActions, id, name) ->
 	updateParameterList()
 
 updateParameterList = () ->
-	console.log(arrSelectedActions)
 	visibility = if arrSelectedActions.length > 0 then 'visible' else 'hidden'
 	d3.select('#selectedActions').style('visibility', visibility)
 	
@@ -474,10 +436,11 @@ updateParameterList = () ->
 	dModule.append('h4').text((d) -> d.name)
 	dModule.each (d) -> 
 		for k, v of d.globals
-			nd = d3.select(this).append('div').attr('class', 'row')
-			nd.append('div').attr('class', 'col-xs-3').text(k)
-			nd.append('div').attr('class', 'col-xs-9')
+			nd = d3.select(this).append('div').attr('class', 'row glob')
+			nd.append('div').attr('class', 'col-xs-3 key').text(k)
+			nd.append('div').attr('class', 'col-xs-9 val')
 				.append('input').attr('type', if v is 'true' then 'password' else 'text')
+				.on 'change', () -> d3.select(this).attr('changed', 'yes')
 
 	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr);
 	funcs.exit().remove();
@@ -485,11 +448,11 @@ updateParameterList = () ->
 		.append('div').attr('class', 'row')
 	title = newFuncs.append('div').attr('class', 'col-sm-12')
 	title.append('img').attr('src', '/images/del.png').attr('class', 'icon del')
+		.on 'click', removeAction
 	title.append('span').text((d) -> d.name)
-	funcParams = newFuncs.selectAll('.params').data((d) -> d.functions)
-		.enter().append('div').attr('class', 'col-sm-12 params')
+	funcParams = newFuncs.selectAll('.notexisting').data((d) -> d.functions)
+		.enter().append('div').attr('class', 'col-sm-12 arg')
 		.append('div').attr('class', 'row')
-	funcParams.append('div').attr('class', 'col-xs-3 params').text((d) -> d)
-	funcParams.append('div').attr('class', 'col-xs-9 params').append('input').attr('type', 'text')
-
+	funcParams.append('div').attr('class', 'col-xs-3 key').text((d) -> d)
+	funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text')
 
