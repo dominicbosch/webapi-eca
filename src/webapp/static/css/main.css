@@ -254,11 +254,7 @@ input[type=password]:focus {
 }
 .window h3 { margin: 5px 0px 5px 0px }
 
-.carousel {
-	/*height: 300px;*/
-	background: #2D373C;
-}
-
+.carousel {	background: #2D373C }
 .carousel .item img {
 	width: auto;
 	overflow: hidden;
@@ -274,9 +270,5 @@ input[type=password]:focus {
 	color: #FFF;
 	z-index: 100;
 }
-.carousel-indicators li {
-	background-color: rgba(45, 55, 60, 0.6);
-}
-.carousel-indicators li.active {
-	background-color: rgba(210, 5, 55, 0.6);
-}
+.carousel-indicators li { background-color: rgba(45, 55, 60, 0.6) }
+.carousel-indicators li.active { background-color: rgba(210, 5, 55, 0.6) }
