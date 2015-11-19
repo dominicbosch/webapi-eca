@@ -45,13 +45,14 @@ createWebhookList = function() {
 };
 
 updateWebhookSelection = function() {
+  console.log($(':selected', this).index());
   if ($(':selected', this).index() === 0) {
-    $('#tlwebh').removeClass('green').addClass('red');
+    $('#tlwebh').removeClass('green').addClass('red').attr('src', '/images/tl_red.png');
     $('#inp_webh').show();
     $('#but_webh').show();
     return $('#but_rule').hide();
   } else {
-    $('#tlwebh').removeClass('red').addClass('green');
+    $('#tlwebh').removeClass('red').addClass('green').attr('src', '/images/tl_green.png');
     $('#inp_webh').hide();
     $('#but_webh').hide();
     return checkRuleExists();
@@ -59,7 +60,7 @@ updateWebhookSelection = function() {
 };
 
 checkRuleExists = function() {
-  return $.post('/service/rules/getall', function(oRules) {
+  return $.post('/service/rules/get', function(oRules) {
     var exists, i, len, prop, rule;
     exists = false;
     for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
@@ -69,12 +70,12 @@ checkRuleExists = function() {
       }
     }
     if (exists) {
-      $('#tlrule').removeClass('red').addClass('green');
+      $('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png');
       $('#but_rule').hide();
       $('#but_emit').show();
       return main.setInfo(true, 'Webhook valid and Rule is setup for your events! Go on and push your event!');
     } else {
-      $('#tlrule').removeClass('green').addClass('red');
+      $('#tlrule').removeClass('green').addClass('red').attr('src', '/images/tl_red.png');
       $('#but_rule').show();
       return $('#but_emit').hide();
     }

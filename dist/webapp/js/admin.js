@@ -18,7 +18,7 @@ fOnLoad = function() {
       var name, oUser;
       for (name in arrUsers) {
         oUser = arrUsers[name];
-        $('#users').append($("<tr>\n	<td><div class=\"img del\" title=\"Delete User\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"></div></td>\n	<td>" + (oUser.isAdmin ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"highlight\">" + oUser.username + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"></td>\n</tr>"));
+        $('#users').append($("<tr>\n	<td><img src=\"/images/del.png\" class=\"icon del\" alt=\"Delete User\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"/></td>\n	<td>" + (oUser.isAdmin ? '<img title="Administrator" src="/images/admin.png">' : '') + "</td>\n	<td class=\"highlight\">" + oUser.username + "</td>\n	<td>Change Password:</td>\n	<td><input type=\"password\" data-userid=\"" + oUser.id + "\" data-username=\"" + oUser.username + "\"></td>\n</tr>"));
       }
       $('#users .del').click(function() {
         var data;
@@ -64,7 +64,7 @@ fOnLoad = function() {
       tr = dMods.append('tr');
       tr.append('td').append('input').attr('type', 'checkbox').attr('title', 'Allowed').attr('data-module', oModule.name).property('checked', oModule.allowed);
       tr.append('td').classed('highlight', true).text(oModule.name);
-      tr.append('td').classed('highlight', true).text('(' + oModule.version + ')');
+      tr.append('td').classed('highlight', true).text('(v' + oModule.version + ')');
       tr.append('td').text(oModule.description);
     }
     return $('#modules input').click(function() {

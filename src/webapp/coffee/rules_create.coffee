@@ -484,7 +484,7 @@ updateParameterList = () ->
 	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6')
 		.append('div').attr('class', 'row')
 	title = newFuncs.append('div').attr('class', 'col-sm-12')
-	title.append('div').attr('class', 'img del')
+	title.append('img').attr('src', '/images/del.png').attr('class', 'icon del')
 	title.append('span').text((d) -> d.name)
 	funcParams = newFuncs.selectAll('.params').data((d) -> d.functions)
 		.enter().append('div').attr('class', 'col-sm-12 params')

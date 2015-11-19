@@ -60,7 +60,8 @@ window.main =
 
 		d3El.style('position', 'relative');
 		d3Img = d3El.append('img')
-			.classed('infoimg', true)
+			.classed('info icon', true)
+			.attr('src', '/images/info.png')
 			.on 'mouseenter', () ->
 				d3Img.classed('hovered', true)
 				d3Div.style('visibility', 'visible')

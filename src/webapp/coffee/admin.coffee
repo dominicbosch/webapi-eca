@@ -15,7 +15,7 @@ fOnLoad = () ->
 				for name, oUser of arrUsers
 					$( '#users' ).append $ """
 						<tr>
-							<td><div class="img del" title="Delete User" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"></div></td>
+							<td><img src="/images/del.png" class="icon del" alt="Delete User" data-userid="#{ oUser.id }" data-username="#{ oUser.username }"/></td>
 							<td>#{ if oUser.isAdmin then '<img title="Administrator"
 								src="/images/admin.png">' else '' }</td>
 							<td class="highlight">#{ oUser.username }</td>
@@ -61,7 +61,7 @@ fOnLoad = () ->
 				.attr('data-module', oModule.name).property 'checked', oModule.allowed
 
 			tr.append('td').classed('highlight', true).text oModule.name
-			tr.append('td').classed('highlight', true).text '('+oModule.version+')'
+			tr.append('td').classed('highlight', true).text '(v'+oModule.version+')'
 			tr.append('td').text oModule.description
 
 		$( '#modules input' ).click () ->

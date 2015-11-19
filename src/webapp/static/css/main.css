@@ -95,14 +95,6 @@ nav.navbar {
 	color: #2D373C;
 }
 
-.infoimg {
-	cursor: pointer;
-	margin-left: 10px;
-	width: 17px;
-	height: auto;
-	content: url("/images/info.png")
-}
-
 .row { padding-bottom: 10px }
 
 .smallpadded { padding: 3px }
@@ -199,19 +191,14 @@ table.padded .highlight {
 	width: 220px;
 }
 
-div.img {
-	float: left;
-	padding: 0px 4px
-}
-.img.tl.red { content: url( "/images/tl_red.png" ) }
-.img.tl.green { content: url( "/images/tl_green.png" ) }
-.img.del, .img.log { cursor: pointer }
-.img.del { 
-	margin-top: 3px;
-	content: url("/images/red_cross_small.png")
-}
-.img.edit { content: url("/images/edit.png") }
-
+.icon.info { margin-left: 10px }
+.icon.info, .icon.edit, .icon.del, .icon.log { cursor: pointer }
+/*
+.attr('src', '/images/tl_red.png')
+.attr('src', '/images/tl_green.png')
+.attr('src', '/images/edit.png')
+.attr('src', '/images/del.png')
+*/
 #tls select, #tls input { margin: 3px }
 #tls select { margin-top: 6px }
 
@@ -266,3 +253,30 @@ input[type=password]:focus {
 	padding: 20px;
 }
 .window h3 { margin: 5px 0px 5px 0px }
+
+.carousel {
+	/*height: 300px;*/
+	background: #2D373C;
+}
+
+.carousel .item img {
+	width: auto;
+	overflow: hidden;
+	margin: 0 auto;
+}
+.text-top-image {
+	font-size: 2em;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+	margin: 0 auto;
+	color: #FFF;
+	z-index: 100;
+}
+.carousel-indicators li {
+	background-color: rgba(45, 55, 60, 0.6);
+}
+.carousel-indicators li.active {
+	background-color: rgba(210, 5, 55, 0.6);
+}

@@ -58,11 +58,15 @@
 				</div>
 			</div>
 		</nav>
+
+		{% block carousel %}{% endblock %}
+		
 		<div id="skeletonTicker" class="infoticker"></div>
 		<div id="mainbody">
 			<h1>{% block pagetitle %}{% endblock %}</h1>
 			{% block content %}{% endblock %}
 		</div>
+
 		<div class="dialog">
 			<div class="window">
 				<h3>Welcome!</h3>

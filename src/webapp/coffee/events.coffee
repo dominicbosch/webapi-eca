@@ -30,30 +30,31 @@ createWebhookList = () ->
 			else
 
 updateWebhookSelection = () ->
+	console.log $(':selected', this).index()
 	if $(':selected', this).index() is 0
-		$('#tlwebh').removeClass('green').addClass 'red'
+		$('#tlwebh').removeClass('green').addClass('red').attr('src', '/images/tl_red.png')
 		$('#inp_webh').show()
 		$('#but_webh').show()
 		$('#but_rule').hide()
 	else
-		$('#tlwebh').removeClass('red').addClass 'green'
+		$('#tlwebh').removeClass('red').addClass('green').attr('src', '/images/tl_green.png')
 		$('#inp_webh').hide()
 		$('#but_webh').hide()
 		checkRuleExists()
 
 checkRuleExists = () ->
-	$.post '/service/rules/getall', (oRules) ->
+	$.post '/service/rules/get', (oRules) ->
 		exists = false
 		for prop, rule in oRules
 			if rule.eventtype is 'Webhook' and rule.eventname is name
 				exists = true
 		if exists
-			$('#tlrule').removeClass('red').addClass 'green'
+			$('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png')
 			$('#but_rule').hide()
 			$('#but_emit').show()
 			main.setInfo true, 'Webhook valid and Rule is setup for your events! Go on and push your event!'
 		else
-			$('#tlrule').removeClass('green').addClass 'red'
+			$('#tlrule').removeClass('green').addClass('red').attr('src', '/images/tl_red.png')
 			$('#but_rule').show()
 			$('#but_emit').hide()
 

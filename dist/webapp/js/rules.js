@@ -27,7 +27,7 @@ fOnLoad = function() {
       results = [];
       for (i = 0, len = data.length; i < len; i++) {
         ruleName = data[i];
-        results.push($('#tableRules').append($("<tr>\n	<td><div class=\"img del\" title=\"Delete Rule\"></div></td>\n	<td><div class=\"img edit\" title=\"Edit Rule\"></div></td>\n	<td><div class=\"img log\" title=\"Show Rule Log\"></div></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
+        results.push($('#tableRules').append($("<tr>\n	<td><img class=\"icon del\" src=\"/images/del.png\" title=\"Delete Rule\"></td>\n	<td><img class=\"icon edit\" src=\"/images/edit.png\" title=\"Edit Rule\"></td>\n	<td><img class=\"icon log\" src=\"/images/log.png\" title=\"Show Rule Log\"></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
       }
       return results;
     }

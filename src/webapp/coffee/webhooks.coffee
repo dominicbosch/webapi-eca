@@ -16,13 +16,15 @@ updateWebhookList = () ->
 			$('#table_webhooks *').remove()
 			prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 			pul = if oHooks.public then Object.keys(oHooks.public).length else 0
+			console.log oHooks
 			if prl + pul > 0
 				createWebhookRow = (oHook, isMine) ->
+					console.log oHook
 					img = if oHook.isPublic then 'public' else 'private'
 					tit = if oHook.isPublic then 'Public' else 'Private'
 					table.append $ """
 						<tr>
-							<td>#{if isMine then '<div class="img del" title="Delete Webhook" data-id="'+oHook.id+'"></div>' else '' }</td>
+							<td>#{if isMine then '<img class="icon del" src="/images/del.png" title="Delete Webhook" data-id="'+oHook.id+'">' else '' }</td>
 							<td style="white-space: nowrap"><kbd>#{oHook.hookname}</kbd></td>
 							<td style="white-space: nowrap">#{if isMine then '(you)' else oHook.User.username}</td>
 							<td class="centered" title="#{tit}">

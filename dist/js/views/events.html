@@ -15,14 +15,23 @@
 		Before emitting an event, be sure:
 	</div>
 	<div id="tls" class="row">
-
-		<div class="float-div twohundred-wide"><div id="tlwebh" class="img tl red"></div> Webhook exists <span id="info_webhook"></span></div>
-		<div class="float-div bigmargeleft"><select id="sel_webh"></select></div>
-		<div class="float-div bigmargeleft"><input id="inp_webh" class="consoled" /><button id="but_webh">Create Webhook</button></div>
+		<div class="col-xs-12">
+			<img id="tlwebh" src="/images/tl_red.png" class="icon tl red">
+			 A Webhook listens for your event<span id="info_webhook"></span>
+		</div>
+		<div class="col-xs-11 col-xs-offset-1">
+			<div class="row">
+				<div class="col-sm-5"><select id="sel_webh"></select></div>
+				<div class="col-sm-7">
+					<input id="inp_webh" class="consoled" /><button id="but_webh">Create Webhook</button>
+				</div>
+			</div>
+		</div>
 	</div>
 	<div class="row">
-		<div class="twohundred-wide float-div"><div id="tlrule" class="img tl red"></div> Rule exists for Webhooks <span id="info_rule"></span></div>
-		<div class="bigmargeleft float-div"><button id="but_rule">Create Rule</button></div>
+		<div class="col-xs-12">
+			<img id="tlrule" src="/images/tl_red.png" class="icon tl red"> A Rule is setup on this webhook <span id="info_rule"></span> <button id="but_rule">Create Rule</button>
+		</div>
 	</div>
 	<div class="row">
 		<h2 id="eventbody">Event Body:</h2>

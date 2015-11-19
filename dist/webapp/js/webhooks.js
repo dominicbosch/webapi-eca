@@ -20,12 +20,14 @@ updateWebhookList = function() {
     $('#table_webhooks *').remove();
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
+    console.log(oHooks);
     if (prl + pul > 0) {
       createWebhookRow = function(oHook, isMine) {
         var img, tit;
+        console.log(oHook);
         img = oHook.isPublic ? 'public' : 'private';
         tit = oHook.isPublic ? 'Public' : 'Private';
-        return table.append($("<tr>\n	<td>" + (isMine ? '<div class="img del" title="Delete Webhook" data-id="' + oHook.id + '"></div>' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="icon del" src="/images/del.png" title="Delete Webhook" data-id="' + oHook.id + '">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
       table = $('<table>').attr('class', 'hundredywide').appendTo($('#table_webhooks'));

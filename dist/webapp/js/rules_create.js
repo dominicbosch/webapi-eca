@@ -395,7 +395,7 @@ updateParameterList = function() {
   funcs.exit().remove();
   newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6').append('div').attr('class', 'row');
   title = newFuncs.append('div').attr('class', 'col-sm-12');
-  title.append('div').attr('class', 'img del');
+  title.append('img').attr('src', '/images/del.png').attr('class', 'icon del');
   title.append('span').text(function(d) {
     return d.name;
   });

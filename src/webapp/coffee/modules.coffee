@@ -24,13 +24,15 @@ updateModules = () ->
 			tr.exit().remove();
 			trNew = tr.enter().append('tr');
 			trNew.append('td').classed('smallpadded', true)
-				.append('div')
-					.attr('class', 'img del')
+				.append('img')
+					.attr('class', 'icon del')
+					.attr('src', '/images/del.png')
 					.attr('title', 'Delete Module')
 					.on('click', deleteModule);
 			trNew.append('td').classed('smallpadded', true)
-				.append('div')
-					.attr('class', 'img edit')
+				.append('img')
+					.attr('class', 'icon edit')
+					.attr('src', '/images/edit.png')
 					.attr('title', 'Edit Module')
 					.on('click', editModule);
 			trNew.append('td').classed('smallpadded', true)

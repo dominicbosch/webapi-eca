@@ -24,9 +24,9 @@ fOnLoad = () ->
 		else
 			for ruleName in data
 				$('#tableRules').append  $ """<tr>
-					<td><div class="img del" title="Delete Rule"></div></td>
-					<td><div class="img edit" title="Edit Rule"></div></td>
-					<td><div class="img log" title="Show Rule Log"></div></td>
+					<td><img class="icon del" src="/images/del.png" title="Delete Rule"></td>
+					<td><img class="icon edit" src="/images/edit.png" title="Edit Rule"></td>
+					<td><img class="icon log" src="/images/log.png" title="Show Rule Log"></td>
 					<td><div>#{ ruleName }</div></td>
 				</tr>"""
 
