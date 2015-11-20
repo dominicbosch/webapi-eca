@@ -13,7 +13,7 @@ if (oParams.m === 'ad') {
 
 updateModules = function() {
   var req;
-  req = $.post(urlService + 'get');
+  req = main.post(urlService + 'get');
   req.done(function(arrModules) {
     var parent, tr, trNew;
     console.log(arrModules);
@@ -48,7 +48,7 @@ updateModules = function() {
 
 deleteModule = function(d) {
   if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
-    return $.post(urlService + 'delete', {
+    return main.post(urlService + 'delete', {
       id: d.id
     }).done(updateModules).fail(main.requestError(function(err) {
       return console.log(err);

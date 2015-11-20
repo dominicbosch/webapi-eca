@@ -20,7 +20,7 @@ $(document).ready(function() {
   elSelected = $('<span>').attr('class', 'sr-only').text('(current)');
   els.append(elSelected).parent().addClass('active');
   return $('#skeletonLogout').click(function() {
-    return $.post('/service/session/logout', function() {
+    return main.post('/service/session/logout').done(function() {
       var redirect;
       main.setInfo(true, 'Goodbye!');
       redirect = function() {
@@ -32,6 +32,15 @@ $(document).ready(function() {
 });
 
 window.main = {
+  post: function(url, obj) {
+    obj = obj ? JSON.stringify(obj) : void 0;
+    return $.ajax({
+      type: 'POST',
+      url: url,
+      data: obj,
+      contentType: 'application/json'
+    });
+  },
   requestError: function(cb) {
     return function(err) {
       if (err.status === 401) {

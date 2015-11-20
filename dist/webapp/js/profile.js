@@ -23,7 +23,7 @@ fOnLoad = function() {
         oldpassword: op.toString(),
         newpassword: np.toString()
       };
-      return $.post('/service/user/passwordchange', data).done(function(data) {
+      return main.post('/service/user/passwordchange', data).done(function(data) {
         return main.setInfo(true, data);
       }).fail(function(err) {
         return main.setInfo(false, err.responseText);

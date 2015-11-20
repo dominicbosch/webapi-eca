@@ -141,7 +141,7 @@ fOnLoad = function() {
           globals: listParams
         };
         action = oParams.id ? 'update' : 'create';
-        return $.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
+        return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
           main.setInfo(true, msg);
           if (oParams.id) {
             return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
@@ -161,7 +161,7 @@ fOnLoad = function() {
     }
   };
   if (oParams.id) {
-    return $.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
+    return main.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
       var param, ref, shielded;
       if (oMod) {
         ref = oMod.globals;

@@ -44,8 +44,11 @@
 
 .firstlevel {
 	padding: 2px;
-	border: 1px solid #DDD;
+	border-top: 1px solid #DDD;
+	border-left: 1px solid #DDD;
+	border-right: 1px solid #DDD;
 }
+.firstlevel:last-child { border-bottom: 1px solid #DDD }
 .firstlevel .row { padding: 1px }
 .firstlevel:nth-child(even) { background: #F8F8F8 }
 /*.firstlevel:nth-child(even) .actions { border: 1px solid #F2F9F9 }*/
@@ -56,6 +59,7 @@
 	border: 1px solid rgba(0,0,0,0.1);
 	background: rgba(0,0,0,0.05);
 }
+.actions span { font-weight: bold }
 /*
 .actions:nth-child(even) { background: rgba(0,0,0,0.05) }
 .actions:nth-child(odd) { background: rgba(0,0,0,0.1) }

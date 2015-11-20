@@ -129,7 +129,7 @@ fOnLoad = () ->
 					globals: listParams
 
 				action = if oParams.id then 'update' else 'create'
-				$.post('/service/'+moduleType+'/'+action, obj)
+				main.post('/service/'+moduleType+'/'+action, obj)
 					.done (msg) ->
 						main.setInfo true, msg
 						if oParams.id then alert "You need to update the rules that use this module in 
@@ -148,7 +148,7 @@ fOnLoad = () ->
 			$('input[type=checkbox]', tr).prop 'checked', true
 
 	if oParams.id
-		$.post('/service/'+moduleType+'/get/'+oParams.id)
+		main.post('/service/'+moduleType+'/get/'+oParams.id)
 			.done (oMod) ->
 				if oMod
 					fAddUserParam param, shielded for param, shielded of oMod.globals

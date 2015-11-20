@@ -1,7 +1,8 @@
 'use strict';
 
 fOnLoad = () ->
-	failHandler = ( err ) ->
+	failHandler = (err) ->
+		console.error(err)
 		if err.status is 401
 			window.location.href = '/'
 		if err.responseText is ''
@@ -10,7 +11,7 @@ fOnLoad = () ->
 
 	updateUserList = () ->
 		d3.selectAll('#users *').remove()
-		$.post( '/service/user/getall' )
+		main.post('/service/user/getall')
 			.done ( arrUsers ) ->
 				for name, oUser of arrUsers
 					$( '#users' ).append $ """
@@ -29,8 +30,8 @@ fOnLoad = () ->
 						data = 
 							userid: $(this).attr('data-userid')
 							username: $(this).attr('data-username')
-						$.post( '/service/admin/deleteuser', data )
-							.done ( msg ) ->
+						main.post('/service/admin/deleteuser', data)
+							.done (msg) ->
 								main.setInfo true, msg
 								updateUserList()
 							.fail failHandler
@@ -42,13 +43,13 @@ fOnLoad = () ->
 							data = 
 								userid: $(this).attr('data-userid')
 								newpassword: hp.toString()
-							$.post( '/service/user/forcepasswordchange', data )
+							main.post('/service/user/forcepasswordchange', data)
 								.done ( msg ) ->
 									main.setInfo true, msg
 								.fail failHandler
 
 	requestModuleList = () ->
-		$.post( '/service/modules/get' )
+		main.post('/service/modules/get')
 			.done updateModuleList
 
 	updateModuleList = ( arrModules ) ->
@@ -68,7 +69,7 @@ fOnLoad = () ->
 			dThis = d3.select this
 			strAllowed = if dThis.property('checked') then 'allow' else 'forbid'
 			if confirm 'Are you sure you want to ' + strAllowed + ' the module "' + dThis.attr('data-module')  + '"?' 
-				$.post('/service/modules/'+strAllowed,  module: dThis.attr('data-module'))
+				main.post('/service/modules/'+strAllowed,  module: dThis.attr('data-module'))
 					.done (msg) ->
 						main.setInfo true, msg
 						requestModuleList()
@@ -87,8 +88,9 @@ fOnLoad = () ->
 			password: hp.toString()
 			isAdmin: $( '#admin' ).is ':checked'
 
-		$.post( '/service/admin/createuser', data )
-			.done ( msg ) ->
+		main.post('/service/admin/createuser', data)
+			.done (msg) ->
+				console.log('SUCCESS', msg)
 				main.setInfo true, msg
 				updateUserList()
 			.fail failHandler
@@ -96,7 +98,7 @@ fOnLoad = () ->
 	$('#refresh').click () ->
 		d3.select('#refresh').classed 'spin', true
 
-		$.post('/service/modules/reload')
+		main.post('/service/modules/reload')
 			.done ( arrModules ) ->
 				updateModuleList arrModules
 				main.setInfo true, 'Allowed Modules list updated!'

@@ -20,7 +20,7 @@ fSubmit = function() {
     username: $('#username').val(),
     password: hp.toString()
   };
-  return $.post('/service/session/login', data).done(function(data) {
+  return main.post('/service/session/login', data).done(function(data) {
     var redirect;
     main.setInfo(true, 'Authentication successful!');
     redirect = function() {

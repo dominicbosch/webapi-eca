@@ -12,7 +12,7 @@ createWebhookList = () ->
 	list = $ '#sel_webh'
 	$('*', list).remove()
 	list.append $ '<option>[ create new webhook with name: ]</option>'
-	$.post '/service/webhooks/get', (oHooks) ->
+	main.post('/service/webhooks/get').done (oHooks) ->
 		createRow = (hook, isMine) ->
 			owner = if isMine then 'yours' else hook.User.username+'\'s'
 			elm = $ '<option value="'+hook.hookid+'">'+hook.hookname+' ('+owner+')</option>'
@@ -42,7 +42,7 @@ updateWebhookSelection = () ->
 		checkRuleExists()
 
 checkRuleExists = () ->
-	$.post '/service/rules/get', (oRules) ->
+	main.post('/service/rules/get').done (oRules) ->
 		exists = false
 		for prop, rule in oRules
 			if rule.eventtype is 'Webhook' and rule.eventname is name
@@ -101,10 +101,10 @@ fOnLoad = () ->
 		selectedHook = $('#sel_webh').val()
 		if obj
 			console.log 'posting to ' + '/service/webhooks/event/' + selectedHook
-			$.post('/service/webhooks/event/' + selectedHook, obj )
-				.done ( data ) ->
+			main.post('/service/webhooks/event/' + selectedHook, obj)
+				.done (data) ->
 					main.setInfo true, data.message
-				.fail ( err ) ->
+				.fail (err) ->
 					if err.status is 401
 						window.location.href = '/'
 					main.setInfo false, 'Error in upload: ' + err.responseText

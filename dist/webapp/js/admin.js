@@ -4,6 +4,7 @@ var fOnLoad;
 fOnLoad = function() {
   var failHandler, requestModuleList, updateModuleList, updateUserList;
   failHandler = function(err) {
+    console.error(err);
     if (err.status === 401) {
       window.location.href = '/';
     }
@@ -14,7 +15,7 @@ fOnLoad = function() {
   };
   updateUserList = function() {
     d3.selectAll('#users *').remove();
-    return $.post('/service/user/getall').done(function(arrUsers) {
+    return main.post('/service/user/getall').done(function(arrUsers) {
       var name, oUser;
       for (name in arrUsers) {
         oUser = arrUsers[name];
@@ -27,7 +28,7 @@ fOnLoad = function() {
             userid: $(this).attr('data-userid'),
             username: $(this).attr('data-username')
           };
-          return $.post('/service/admin/deleteuser', data).done(function(msg) {
+          return main.post('/service/admin/deleteuser', data).done(function(msg) {
             main.setInfo(true, msg);
             return updateUserList();
           }).fail(failHandler);
@@ -44,7 +45,7 @@ fOnLoad = function() {
               userid: $(this).attr('data-userid'),
               newpassword: hp.toString()
             };
-            return $.post('/service/user/forcepasswordchange', data).done(function(msg) {
+            return main.post('/service/user/forcepasswordchange', data).done(function(msg) {
               return main.setInfo(true, msg);
             }).fail(failHandler);
           }
@@ -53,7 +54,7 @@ fOnLoad = function() {
     });
   };
   requestModuleList = function() {
-    return $.post('/service/modules/get').done(updateModuleList);
+    return main.post('/service/modules/get').done(updateModuleList);
   };
   updateModuleList = function(arrModules) {
     var dMods, name, oModule, tr;
@@ -72,7 +73,7 @@ fOnLoad = function() {
       dThis = d3.select(this);
       strAllowed = dThis.property('checked') ? 'allow' : 'forbid';
       if (confirm('Are you sure you want to ' + strAllowed + ' the module "' + dThis.attr('data-module') + '"?')) {
-        return $.post('/service/modules/' + strAllowed, {
+        return main.post('/service/modules/' + strAllowed, {
           module: dThis.attr('data-module')
         }).done(function(msg) {
           main.setInfo(true, msg);
@@ -96,14 +97,15 @@ fOnLoad = function() {
       password: hp.toString(),
       isAdmin: $('#admin').is(':checked')
     };
-    return $.post('/service/admin/createuser', data).done(function(msg) {
+    return main.post('/service/admin/createuser', data).done(function(msg) {
+      console.log('SUCCESS', msg);
       main.setInfo(true, msg);
       return updateUserList();
     }).fail(failHandler);
   });
   return $('#refresh').click(function() {
     d3.select('#refresh').classed('spin', true);
-    return $.post('/service/modules/reload').done(function(arrModules) {
+    return main.post('/service/modules/reload').done(function(arrModules) {
       updateModuleList(arrModules);
       main.setInfo(true, 'Allowed Modules list updated!');
       return d3.select('#refresh').classed('spin', false);

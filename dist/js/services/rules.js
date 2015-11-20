@@ -23,6 +23,10 @@ router.post('/get', (req, res) => {
 		}
 		else res.send(arr);
 	});
+});
+router.post('/store', (req, res) => {
+	log.info('SRVC | RULES | Storing new Rule');
+	res.status(500).send('Not yet implemented!')
 })
 
 

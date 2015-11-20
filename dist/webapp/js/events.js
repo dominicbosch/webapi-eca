@@ -14,7 +14,7 @@ createWebhookList = function() {
   list = $('#sel_webh');
   $('*', list).remove();
   list.append($('<option>[ create new webhook with name: ]</option>'));
-  return $.post('/service/webhooks/get', function(oHooks) {
+  return main.post('/service/webhooks/get').done(function(oHooks) {
     var createRow, hook, id, ref, ref1, selEl;
     createRow = function(hook, isMine) {
       var elm, owner;
@@ -59,7 +59,7 @@ updateWebhookSelection = function() {
 };
 
 checkRuleExists = function() {
-  return $.post('/service/rules/get', function(oRules) {
+  return main.post('/service/rules/get').done(function(oRules) {
     var exists, i, len, prop, rule;
     exists = false;
     for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
@@ -125,7 +125,7 @@ fOnLoad = function() {
     selectedHook = $('#sel_webh').val();
     if (obj) {
       console.log('posting to ' + '/service/webhooks/event/' + selectedHook);
-      return $.post('/service/webhooks/event/' + selectedHook, obj).done(function(data) {
+      return main.post('/service/webhooks/event/' + selectedHook, obj).done(function(data) {
         return main.setInfo(true, data.message);
       }).fail(function(err) {
         if (err.status === 401) {

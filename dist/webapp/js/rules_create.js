@@ -12,7 +12,7 @@ arrSelectedActions = [];
 sendRequest = function(url, data, cb) {
   var req;
   main.clearInfo();
-  req = $.post(url, data);
+  req = main.post(url, data);
   return req.fail(function(err) {
     if (err.status === 401) {
       return window.location.href = '/views/login';
@@ -149,7 +149,7 @@ fOnLoad = function() {
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {
-    var arrActions, arrConditions, el, err, error, error1, j, len, obj;
+    var arrActions, arrConditions, el, err, error, error1, i, len, obj;
     window.scrollTo(0, 0);
     main.clearInfo();
     try {
@@ -209,8 +209,8 @@ fOnLoad = function() {
       if (!(arrConditions instanceof Array)) {
         throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
       }
-      for (j = 0, len = arrConditions.length; j < len; j++) {
-        el = arrConditions[j];
+      for (i = 0, len = arrConditions.length; i < len; i++) {
+        el = arrConditions[i];
         if (!(el instanceof Object)) {
           throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
         }
@@ -221,7 +221,7 @@ fOnLoad = function() {
         conditions: arrConditions,
         actions: arrActions
       };
-      req = sendRequest('service/rules/store', obj, function(err) {
+      req = sendRequest('/service/rules/store', obj, function(err) {
         if (err.status === 409) {
           if (confirm('Are you sure you want to overwrite the existing rule?')) {
             obj.overwrite = true;
@@ -258,7 +258,7 @@ fOnLoad = function() {
         if (oRule) {
           $('#input_name').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, j, len, mins, ref, results;
+            var action, arrName, d, i, len, mins, ref, results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -289,8 +289,8 @@ fOnLoad = function() {
             domSectionSelectedActions.show();
             ref = oRule.actions;
             results = [];
-            for (j = 0, len = ref.length; j < len; j++) {
-              action = ref[j];
+            for (i = 0, len = ref.length; i < len; i++) {
+              action = ref[i];
               arrName = action.split(' -> ');
               results.push(fAddSelectedAction(action));
             }
@@ -338,33 +338,26 @@ addAction = function(id, name) {
     name: name,
     modid: oSelMod.id,
     funcid: oSelMod.currid++,
-    functions: oSelMod.functions[name]
+    args: oSelMod.functions[name]
   });
   return updateParameterList();
 };
 
 removeAction = function(d) {
-  var arrSel, d3t, el, i, j, l, len, len1, ref;
+  var arrSel, d3t, id;
   d3t = d3.select(this);
   arrSel = arrSelectedActions.filter(function(o) {
     return o.id === d.modid;
   })[0];
-  ref = arrSel.arr;
-  for (i = j = 0, len = ref.length; j < len; i = ++j) {
-    el = ref[i];
-    if (el.funcid === d.funcid) {
-      arrSel.arr.splice(i, 1);
-    }
-  }
-  console.log(arrSel.arr, arrSelectedActions);
+  id = arrSel.arr.map(function(o) {
+    return o.funcid;
+  }).indexOf(d.funcid);
+  arrSel.arr.splice(id, 1);
   if (arrSel.arr.length === 0) {
-    for (i = l = 0, len1 = arrSelectedActions.length; l < len1; i = ++l) {
-      el = arrSelectedActions[i];
-      console.log(el, i);
-      if (el.id === d.modid) {
-        arrSelectedActions.splice(i, 1);
-      }
-    }
+    id = arrSelectedActions.map(function(o) {
+      return o.id;
+    }).indexOf(d.modid);
+    arrSelectedActions.splice(id, 1);
   }
   return updateParameterList();
 };
@@ -376,7 +369,7 @@ updateParameterList = function() {
   d3Rows = d3.select('#selectedActions').selectAll('.firstlevel').data(arrSelectedActions, function(d) {
     return d.id;
   });
-  d3Rows.exit().remove();
+  d3Rows.exit().transition().style('opacity', 0).remove();
   d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel');
   dModule = d3New.append('div').attr('class', 'col-sm-6');
   dModule.append('h4').text(function(d) {
@@ -399,7 +392,7 @@ updateParameterList = function() {
   funcs = d3Rows.selectAll('.actions').data(function(d) {
     return d.arr;
   });
-  funcs.exit().remove();
+  funcs.exit().transition().style('opacity', 0).remove();
   newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6').append('div').attr('class', 'row');
   title = newFuncs.append('div').attr('class', 'col-sm-12');
   title.append('img').attr('src', '/images/del.png').attr('class', 'icon del').on('click', removeAction);
@@ -407,7 +400,7 @@ updateParameterList = function() {
     return d.name;
   });
   funcParams = newFuncs.selectAll('.notexisting').data(function(d) {
-    return d.functions;
+    return d.args;
   }).enter().append('div').attr('class', 'col-sm-12 arg').append('div').attr('class', 'row');
   funcParams.append('div').attr('class', 'col-xs-3 key').text(function(d) {
     return d;

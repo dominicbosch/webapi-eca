@@ -10,7 +10,7 @@ fOnLoad = () ->
 				console.log('WHOOPS')
 
 	fFetchRules = () ->
-		$.post('/service/rules/get')
+		main.post('/service/rules/get')
 			.done fUpdateRuleList
 			.fail fErrHandler 'Did not retrieve rules! '
 
@@ -39,7 +39,7 @@ fOnLoad = () ->
 			data =
 				body: JSON.stringify
 					id: ruleName
-			$.post('/usercommand/delete_rule', data)
+			main.post('/usercommand/delete_rule', data)
 				.done fFetchRules
 				.fail fErrHandler 'Could not delete rule! '
 
@@ -53,7 +53,7 @@ fOnLoad = () ->
 		data =
 			body: JSON.stringify
 				id: ruleName
-		$.post('/usercommand/get_rule_log', data)
+		main.post('/usercommand/get_rule_log', data)
 			.done (data) ->
 				ts = (new Date()).toISOString()
 				log = data.message.replace new RegExp("\n", 'g'), "<br>"

@@ -15,7 +15,7 @@ failedRequest = function(msg) {
 
 updateWebhookList = function() {
   main.clearInfo();
-  return $.post('/service/webhooks/get').done(function(oHooks) {
+  return main.post('/service/webhooks/get').done(function(oHooks) {
     var createWebhookRow, hookid, oHook, prl, pul, ref, ref1, results, table;
     $('#table_webhooks *').remove();
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
@@ -71,7 +71,7 @@ fOnLoad = function() {
         hookname: hookname,
         isPublic: $('#inp_public').is(':checked')
       };
-      return $.post('/service/webhooks/create', data).done(function(data) {
+      return main.post('/service/webhooks/create', data).done(function(data) {
         updateWebhookList();
         return fShowWebhookUsage(data.hookid, data.hookname);
       }).fail(function(err) {
@@ -85,7 +85,7 @@ fOnLoad = function() {
   });
   return $('#table_webhooks').on('click', '.del', function() {
     if (confirm("Do you really want to delete this webhook?")) {
-      return $.post('/service/webhooks/delete/' + $(this).attr('data-id')).done(function() {
+      return main.post('/service/webhooks/delete/' + $(this).attr('data-id')).done(function() {
         $('#display_hookurl *').remove();
         main.setInfo(true, 'Webhook deleted!');
         return updateWebhookList();

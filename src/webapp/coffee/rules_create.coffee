@@ -7,7 +7,7 @@ arrSelectedActions = []
 
 sendRequest = (url, data, cb) ->
 	main.clearInfo()
-	req = $.post url, data
+	req = main.post url, data
 	req.fail (err) ->
 		if err.status is 401
 			window.location.href = '/views/login'
@@ -202,7 +202,7 @@ fOnLoad = () ->
 				conditions: arrConditions
 				actions: arrActions
 
-			req = sendRequest 'service/rules/store', obj, (err) ->
+			req = sendRequest '/service/rules/store', obj, (err) ->
 				if err.status is 409
 					if confirm 'Are you sure you want to overwrite the existing rule?'
 						obj.overwrite = true
@@ -403,21 +403,20 @@ addAction = (id, name) ->
 		name: name
 		modid: oSelMod.id
 		funcid: oSelMod.currid++
-		functions: oSelMod.functions[name]
+		args: oSelMod.functions[name]
 	updateParameterList()
 
 removeAction = (d) ->
 	d3t = d3.select(this);
+	# Find module from which to delete the action
 	arrSel = arrSelectedActions.filter((o) -> o.id is d.modid)[0]
-	for el, i in arrSel.arr
-		if el.funcid is d.funcid 
-			arrSel.arr.splice i, 1
+	id = arrSel.arr.map((o) -> o.funcid).indexOf(d.funcid);
+	arrSel.arr.splice id, 1
 
-	console.log arrSel.arr, arrSelectedActions
 	if arrSel.arr.length is 0
-		for el, i in arrSelectedActions
-			console.log el, i
-			if el.id is d.modid then arrSelectedActions.splice i, 1
+		# module empty, find and delete it
+		id = arrSelectedActions.map((o) -> o.id).indexOf(d.modid);
+		arrSelectedActions.splice id, 1
 
 	updateParameterList()
 
@@ -428,7 +427,7 @@ updateParameterList = () ->
 	d3Rows = d3.select('#selectedActions')
 		.selectAll('.firstlevel').data(arrSelectedActions, (d) -> d.id)
 
-	d3Rows.exit().remove()
+	d3Rows.exit().transition().style('opacity', 0).remove()
 	d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel')
 
 	# The main module container
@@ -443,14 +442,14 @@ updateParameterList = () ->
 				.on 'change', () -> d3.select(this).attr('changed', 'yes')
 
 	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr);
-	funcs.exit().remove();
+	funcs.exit().transition().style('opacity', 0).remove();
 	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6')
 		.append('div').attr('class', 'row')
 	title = newFuncs.append('div').attr('class', 'col-sm-12')
 	title.append('img').attr('src', '/images/del.png').attr('class', 'icon del')
 		.on 'click', removeAction
 	title.append('span').text((d) -> d.name)
-	funcParams = newFuncs.selectAll('.notexisting').data((d) -> d.functions)
+	funcParams = newFuncs.selectAll('.notexisting').data((d) -> d.args)
 		.enter().append('div').attr('class', 'col-sm-12 arg')
 		.append('div').attr('class', 'row')
 	funcParams.append('div').attr('class', 'col-xs-3 key').text((d) -> d)

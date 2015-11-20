@@ -15,7 +15,7 @@ $( document ).ready () ->
 	els.append( elSelected ).parent().addClass 'active'
 
 	$( '#skeletonLogout' ).click () ->
-		$.post '/service/session/logout', () ->
+		main.post('/service/session/logout').done () ->
 			main.setInfo true, 'Goodbye!'
 			redirect = () ->
 				window.location.href = '/'
@@ -23,13 +23,20 @@ $( document ).ready () ->
 
 window.main =
 	#  Needed to get thoroughly rid of jQuery... But it seems jQuery is convenient for ajax calls
-	# post: (url, obj, cb) ->
-	# 	d3.xhr(url)
-	# 		.header('Content-Type', 'application/json')
-	# 		.mimeType('application/json')
-	# 		.post(JSON.stringify(obj))
-	# 		.on 'load', (msg) -> cb(null, msg.responseText)
-	# 		.on 'error', (err) -> cb(err.responseText)
+	post: (url, obj) ->
+		obj = if obj then JSON.stringify(obj)
+		$.ajax
+			type: 'POST'
+			url: url
+			data: obj
+			contentType: 'application/json'
+			# dataType: 'json'
+		# d3.xhr(url)
+		# 	.header('Content-Type', 'application/json')
+		# 	.mimeType('application/json')
+		# 	.post(JSON.stringify(obj))
+		# 	.on 'load', (msg) -> cb(null, msg.responseText)
+		# 	.on 'error', (err) -> cb(err.responseText)
 
 
 	requestError: (cb) ->

@@ -10,7 +10,7 @@ else
 	modName = 'Event Trigger'
 
 updateModules = () ->
-	req = $.post urlService + 'get'
+	req = main.post(urlService+'get')
 	req.done ( arrModules ) ->
 		console.log(arrModules);
 		if arrModules.length is 0
@@ -47,7 +47,7 @@ updateModules = () ->
 
 deleteModule = (d) ->
 	if confirm 'Do you really want to delete the Module "'+d.name+'"?'
-		$.post(urlService+'delete', { id: d.id } )
+		main.post(urlService+'delete', { id: d.id })
 			.done updateModules
 			.fail main.requestError (err) ->
 				console.log(err)

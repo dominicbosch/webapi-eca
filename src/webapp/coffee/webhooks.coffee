@@ -2,8 +2,8 @@
 
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
-failedRequest = ( msg ) ->
-	( err ) ->
+failedRequest = (msg) ->
+	(err) ->
 		if err.status is 401
 			window.location.href = '/'
 		else
@@ -11,8 +11,8 @@ failedRequest = ( msg ) ->
 
 updateWebhookList = () ->
 	main.clearInfo()
-	$.post('/service/webhooks/get')
-		.done ( oHooks ) ->
+	main.post('/service/webhooks/get')
+		.done (oHooks) ->
 			$('#table_webhooks *').remove()
 			prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 			pul = if oHooks.public then Object.keys(oHooks.public).length else 0
@@ -39,7 +39,7 @@ updateWebhookList = () ->
 				$('#table_webhooks').append $('<div>').attr('id', 'listhooks').text 'There are no webhooks available for you!'
 		.fail failedRequest 'Unable to get Webhook list'
 
-fShowWebhookUsage = ( hookid, hookname ) ->
+fShowWebhookUsage = (hookid, hookname) ->
 	$('#display_hookurl *').remove()
 	if hookid
 		main.setInfo true, 'Webhook created!'
@@ -58,29 +58,29 @@ fOnLoad = () ->
 	$('#but_submit').click ->
 		main.clearInfo()
 
-		hookname = $( '#inp_hookname' ).val()
+		hookname = $('#inp_hookname').val()
 		if hookname is ''
 			main.setInfo false, 'Please provide an Event Name for your new Webhook!'
 
 		else
 			data = 
 				hookname: hookname
-				isPublic: $( '#inp_public' ).is( ':checked' )
-			$.post '/service/webhooks/create', data
-				.done ( data ) ->
+				isPublic: $('#inp_public').is(':checked')
+			main.post '/service/webhooks/create', data
+				.done (data) ->
 					updateWebhookList()
 					fShowWebhookUsage data.hookid, data.hookname
-				.fail ( err ) ->
+				.fail (err) ->
 					if err.status is 409
-						failedRequest( 'Webhook Event Name already existing!' ) err
+						failedRequest('Webhook Event Name already existing!') err
 					else
-						failedRequest( 'Unable to create Webhook! ' + err.message ) err
+						failedRequest('Unable to create Webhook! ' + err.message) err
 	
-	$( '#table_webhooks' ).on 'click', '.del', () ->
+	$('#table_webhooks').on 'click', '.del', () ->
 		if confirm  "Do you really want to delete this webhook?"
-			$.post( '/service/webhooks/delete/'+$(this).attr('data-id') )
+			main.post('/service/webhooks/delete/'+$(this).attr('data-id'))
 				.done () ->
-					$( '#display_hookurl *' ).remove()
+					$('#display_hookurl *').remove()
 					main.setInfo true, 'Webhook deleted!'
 					updateWebhookList()
 				.fail (err) ->

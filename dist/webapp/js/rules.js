@@ -14,7 +14,7 @@ fOnLoad = function() {
     };
   };
   fFetchRules = function() {
-    return $.post('/service/rules/get').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
+    return main.post('/service/rules/get').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
   };
   fUpdateRuleList = function(data) {
     var i, len, parent, results, ruleName;
@@ -43,7 +43,7 @@ fOnLoad = function() {
           id: ruleName
         })
       };
-      return $.post('/usercommand/delete_rule', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
+      return main.post('/usercommand/delete_rule', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
     }
   });
   $('#tableRules').on('click', '.edit', function() {
@@ -60,7 +60,7 @@ fOnLoad = function() {
         id: ruleName
       })
     };
-    return $.post('/usercommand/get_rule_log', data).done(function(data) {
+    return main.post('/usercommand/get_rule_log', data).done(function(data) {
       var log, ts;
       ts = (new Date()).toISOString();
       log = data.message.replace(new RegExp("\n", 'g'), "<br>");

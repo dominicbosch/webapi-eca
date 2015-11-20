@@ -23,7 +23,7 @@ $(document).ready(function() {
 		var cmd = (button.text() === 'Stop Worker') ? 'kill' : 'start'
 		if(cmd==='start' || confirm('Do you really want to kill this process?')) {
 			button.attr('disabled', 'disabled');
-			$.post('/service/user/worker/state/'+cmd, { username: selectBox.node().value })
+			main.post('/service/user/worker/state/'+cmd, { username: selectBox.node().value })
 				.done(updateButton)
 				.fail(function(err) {
 					alert(err.responseText);
@@ -166,7 +166,7 @@ $(document).ready(function() {
 	}
 	
 	function updateButton() {
-		$.post('/service/user/worker/get', { username: selectBox.node().value })
+		main.post('/service/user/worker/get', { username: selectBox.node().value })
 			.done(function(oWorker) {
 				if(oWorker) {
 					button.text((!oWorker.pid) ? 'Start Worker' : 'Stop Worker');
