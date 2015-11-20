@@ -33,22 +33,18 @@ $(document).ready(function() {
 
 window.main = {
   post: function(url, obj) {
+    main.clearInfo();
     obj = obj ? JSON.stringify(obj) : void 0;
     return $.ajax({
       type: 'POST',
       url: url,
       data: obj,
       contentType: 'application/json'
-    });
-  },
-  requestError: function(cb) {
-    return function(err) {
+    }).fail(function(err) {
       if (err.status === 401) {
-        return window.location.href = "/";
-      } else {
-        return cb(err);
+        return window.location.href = '/views/login';
       }
-    };
+    });
   },
   setInfo: function(isSuccess, msg) {
     d3.select('#skeletonTicker').classed('success', isSuccess).classed('error', !isSuccess).text(msg);

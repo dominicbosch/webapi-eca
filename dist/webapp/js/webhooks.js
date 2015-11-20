@@ -1,20 +1,9 @@
 'use strict';
-var fOnLoad, fShowWebhookUsage, failedRequest, hostUrl, updateWebhookList;
+var fOnLoad, fShowWebhookUsage, hostUrl, updateWebhookList;
 
 hostUrl = [location.protocol, '//', location.host].join('');
 
-failedRequest = function(msg) {
-  return function(err) {
-    if (err.status === 401) {
-      return window.location.href = '/';
-    } else {
-      return main.setInfo(false, msg);
-    }
-  };
-};
-
 updateWebhookList = function() {
-  main.clearInfo();
   return main.post('/service/webhooks/get').done(function(oHooks) {
     var createWebhookRow, hookid, oHook, prl, pul, ref, ref1, results, table;
     $('#table_webhooks *').remove();
@@ -45,7 +34,9 @@ updateWebhookList = function() {
     } else {
       return $('#table_webhooks').append($('<div>').attr('id', 'listhooks').text('There are no webhooks available for you!'));
     }
-  }).fail(failedRequest('Unable to get Webhook list'));
+  }).fail(function(err) {
+    return main.setInfo(false, 'Unable to get Webhook list: ' + err.responseText);
+  });
 };
 
 fShowWebhookUsage = function(hookid, hookname) {
@@ -62,7 +53,6 @@ fOnLoad = function() {
   $('#inp_hookname').val(oParams.id);
   $('#but_submit').click(function() {
     var data, hookname;
-    main.clearInfo();
     hookname = $('#inp_hookname').val();
     if (hookname === '') {
       return main.setInfo(false, 'Please provide an Event Name for your new Webhook!');
@@ -76,9 +66,9 @@ fOnLoad = function() {
         return fShowWebhookUsage(data.hookid, data.hookname);
       }).fail(function(err) {
         if (err.status === 409) {
-          return failedRequest('Webhook Event Name already existing!')(err);
+          return main.setInfo(false, 'Webhook Event Name already existing!');
         } else {
-          return failedRequest('Unable to create Webhook! ' + err.message)(err);
+          return main.setInfo(false, 'Unable to create Webhook! ' + err.responseText);
         }
       });
     }
@@ -90,7 +80,7 @@ fOnLoad = function() {
         main.setInfo(true, 'Webhook deleted!');
         return updateWebhookList();
       }).fail(function(err) {
-        return failedRequest(err.responseText)(err);
+        return main.setInfo(false, err.responseText);
       });
     }
   });

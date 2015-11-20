@@ -111,7 +111,7 @@ fOnLoad = function() {
     }
   });
   $('#but_rule').on('click', function() {
-    return window.open('rules_create?webhook=' + $('#sel_webh').val(), '_blank');
+    return window.location.href = 'rules_create?webhook=' + $('#sel_webh').val();
   });
   $('#but_emit').click(function() {
     var err, error, obj, selectedHook;
@@ -128,9 +128,6 @@ fOnLoad = function() {
       return main.post('/service/webhooks/event/' + selectedHook, obj).done(function(data) {
         return main.setInfo(true, data.message);
       }).fail(function(err) {
-        if (err.status === 401) {
-          window.location.href = '/';
-        }
         return main.setInfo(false, 'Error in upload: ' + err.responseText);
       });
     }

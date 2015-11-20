@@ -9,7 +9,6 @@ fOnLoad = () ->
 	$('#loginButton').click fSubmit
 
 fSubmit = () ->
-	main.clearInfo()
 	hp = CryptoJS.SHA3 $('#password').val(),
 		outputLength: 512
 	data =

@@ -2,9 +2,6 @@
 
 fOnLoad = () ->
 	failHandler = (err) ->
-		console.error(err)
-		if err.status is 401
-			window.location.href = '/'
 		if err.responseText is ''
 			err.responseText = 'No Response from Server!'
 		main.setInfo false, err.responseText

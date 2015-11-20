@@ -5,14 +5,6 @@ strPublicKey = ''
 arrAllActions = null
 arrSelectedActions = []
 
-sendRequest = (url, data, cb) ->
-	main.clearInfo()
-	req = main.post url, data
-	req.fail (err) ->
-		if err.status is 401
-			window.location.href = '/views/login'
-		else cb? err
-
 setEditorReadOnly = (isTrue) ->
 	editor.setReadOnly isTrue
 	$('.ace_content').css 'background', if isTrue then '#BBB' else '#FFF'
@@ -24,10 +16,11 @@ setEditorReadOnly = (isTrue) ->
 # When the document has loaded we really start to execute some logic
 fOnLoad = () ->
 	# Fetch the public key from the engine
-	req = sendRequest '/service/session/publickey', null, (err) ->
-		main.setInfo false, 'Error when fetching public key. Unable to send user specific parameters securely!'
-	req.done (data) ->
-		strPublicKey = data
+	main.post('/service/session/publickey')
+		.done (data) ->
+			strPublicKey = data
+		.fail (err) ->
+			main.setInfo false, 'Error when fetching public key. Unable to send user specific parameters securely!'
 
 	editor = ace.edit "divConditionsEditor"
 	editor.setTheme "ace/theme/crimson_editor"
@@ -59,8 +52,7 @@ fOnLoad = () ->
 
 # EVENT
 # -----
-	req = sendRequest '/service/webhooks/get'
-	req.done (oHooks) ->
+	main.post('/service/webhooks/get').done (oHooks) ->
 		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
 		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
 		if prl + pul is 0
@@ -68,21 +60,20 @@ fOnLoad = () ->
 				.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
 			setEditorReadOnly true
 		else
-			d3Sel = d3.select('#selectWebhook').append('h3').text('Your Webhooks:')
+			d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
 				.append('select').attr('class','mediummarged smallfont')
-			createWebhookRow = (hookid, oHook, owner) ->
-				isSel = if oParams.webhook and oParams.webhook is hookid then true else null
-				d3Sel.append('option').attr('value', hookid).attr('selected', isSel)
+			createWebhookRow = (oHook, owner) ->
+				isSel = if oParams.webhook and oParams.webhook is oHook.id then true else null
+				d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
 					.text oHook.hookname+' ('+owner+')'
-			createWebhookRow(hookid, oHook, 'yours') for hookid, oHook of oHooks.private
-			createWebhookRow(hookid, oHook, oHook.username) for hookid, oHook of oHooks.public
+			createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
+			createWebhookRow(oHook, oHook.username) for i, oHook of oHooks.public
 
 
 # ACTIONS
 # -------
 	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
-	req = sendRequest '/service/actiondispatcher/get'
-	req.done (arrAD) ->
+	main.post('/service/actiondispatcher/get').done (arrAD) ->
 		arrAllActions = arrAD
 		if(arrAD.length is 0)
 			setEditorReadOnly true
@@ -198,20 +189,21 @@ fOnLoad = () ->
 
 			obj = 
 				name: $('#input_name').val()
-				webhookid: $('#selectWebhook select').val()
+				hookid: $('#selectWebhook select').val()
 				conditions: arrConditions
 				actions: arrActions
 
-			req = sendRequest '/service/rules/store', obj, (err) ->
-				if err.status is 409
-					if confirm 'Are you sure you want to overwrite the existing rule?'
-						obj.overwrite = true
-						req = sendRequest 'service/rules/store', obj, () ->
-							main.setInfo false, 'Rule not stored!'
-						req.done (data) -> main.setInfo true, data.message
-				else
-					main.setInfo false, 'Rule not stored!'
-			req.done (data) -> main.setInfo true, data.message
+			main.post('/service/rules/store', obj)
+				.done (msg) -> main.setInfo true, msg
+				.fail (err) ->
+					if err.status is 409
+						if confirm 'Are you sure you want to overwrite the existing rule?'
+							obj.overwrite = true
+							main.post('service/rules/store', obj)
+								.done (msg) -> main.setInfo true, msg
+								.fail (err) -> main.setInfo false, err.responseText
+					else
+						main.setInfo false, err.responseText
 
 		catch err
 			main.setInfo false, 'Error in upload: ' + err.message
@@ -219,7 +211,7 @@ fOnLoad = () ->
 # Preload editting of a Rule
 # -----------
 	if oParams.id
-		sendRequest
+		main.post 
 			command: 'get_rule'
 			data: 
 				body: JSON.stringify
@@ -282,7 +274,7 @@ fOnLoad = () ->
 # #
 
 # fFetchActionParams = (modName) ->
-# 	sendRequest
+# 	main.post 
 # 		command: 'get_action_dispatcher_params'
 # 		data: 
 # 			body: JSON.stringify
@@ -298,7 +290,7 @@ fOnLoad = () ->
 # 						.attr('class', 'modName underlined').text modName
 
 # 					comment = $('<div>').attr('class', 'comment indent20').appendTo div
-# 					sendRequest
+# 					main.post 
 # 						command: 'get_action_dispatcher_comment'
 # 						data: 
 # 							body: JSON.stringify
@@ -324,7 +316,7 @@ fOnLoad = () ->
 # 		fail: console.log 'Error fetching action dispatcher params'
 
 # fFetchActionFunctionArgs = (tag, arrName) ->
-# 	sendRequest
+# 	main.post 
 # 		command: 'get_action_dispatcher_function_arguments'
 # 		data: 
 # 			body: JSON.stringify
@@ -345,14 +337,14 @@ fOnLoad = () ->
 # 		fail: console.log 'Error fetching action dispatcher function params'
 
 # fFillActionFunction = (name) ->
-# 	sendRequest
+# 	main.post 
 # 		command: 'get_action_dispatcher_user_params'
 # 		data: 
 # 			body: JSON.stringify
 # 				id: name
 # 		done: fAddActionUserParams name
 
-# 	sendRequest
+# 	main.post 
 # 		command: 'get_action_dispatcher_user_arguments'
 # 		data:
 # 			body: JSON.stringify

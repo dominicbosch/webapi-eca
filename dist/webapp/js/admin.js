@@ -4,10 +4,6 @@ var fOnLoad;
 fOnLoad = function() {
   var failHandler, requestModuleList, updateModuleList, updateUserList;
   failHandler = function(err) {
-    console.error(err);
-    if (err.status === 401) {
-      window.location.href = '/';
-    }
     if (err.responseText === '') {
       err.responseText = 'No Response from Server!';
     }

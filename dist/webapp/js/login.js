@@ -12,7 +12,6 @@ fOnLoad = function() {
 
 fSubmit = function() {
   var data, hp;
-  main.clearInfo();
   hp = CryptoJS.SHA3($('#password').val(), {
     outputLength: 512
   });

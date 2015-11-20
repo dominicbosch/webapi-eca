@@ -14,19 +14,28 @@ var log = require('../logging'),
 
 var router = module.exports = express.Router();
 
+var errHandler = (res) => (err) => {
+	log.error(err);
+	res.status(err.statusCode || 500);
+	res.send(err.message);
+}
+
 router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
-	db.getAllRules(req.session.pub.id, (err, arr) => {
-		if(err) {
-			log.error(err);
-			res.status(500).send('Fetching all rules failed');
-		}
-		else res.send(arr);
-	});
+	db.getAllRules(req.session.pub.id)
+		.then((arr) => res.send(arr))
+		.catch(errHandler(res));
 });
 router.post('/store', (req, res) => {
 	log.info('SRVC | RULES | Storing new Rule');
-	res.status(500).send('Not yet implemented!')
+	let oRule = {
+		name: req.body.name,
+		conditions: req.body.conditions,
+		actions: req.body.actions
+	}
+	db.storeRule(req.session.pub.id, oRule, req.body.hookid)
+		.then(() => res.send('Rule stored!'))
+		.catch(errHandler(res))
 })
 
 

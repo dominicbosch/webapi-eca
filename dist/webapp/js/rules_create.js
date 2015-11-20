@@ -1,5 +1,5 @@
 'use strict';
-var addAction, arrAllActions, arrSelectedActions, editor, fOnLoad, removeAction, sendRequest, setEditorReadOnly, strPublicKey, updateParameterList;
+var addAction, arrAllActions, arrSelectedActions, editor, fOnLoad, removeAction, setEditorReadOnly, strPublicKey, updateParameterList;
 
 editor = null;
 
@@ -9,19 +9,6 @@ arrAllActions = null;
 
 arrSelectedActions = [];
 
-sendRequest = function(url, data, cb) {
-  var req;
-  main.clearInfo();
-  req = main.post(url, data);
-  return req.fail(function(err) {
-    if (err.status === 401) {
-      return window.location.href = '/views/login';
-    } else {
-      return typeof cb === "function" ? cb(err) : void 0;
-    }
-  });
-};
-
 setEditorReadOnly = function(isTrue) {
   editor.setReadOnly(isTrue);
   $('.ace_content').css('background', isTrue ? '#BBB' : '#FFF');
@@ -29,12 +16,10 @@ setEditorReadOnly = function(isTrue) {
 };
 
 fOnLoad = function() {
-  var req;
-  req = sendRequest('/service/session/publickey', null, function(err) {
-    return main.setInfo(false, 'Error when fetching public key. Unable to send user specific parameters securely!');
-  });
-  req.done(function(data) {
+  main.post('/service/session/publickey').done(function(data) {
     return strPublicKey = data;
+  }).fail(function(err) {
+    return main.setInfo(false, 'Error when fetching public key. Unable to send user specific parameters securely!');
   });
   editor = ace.edit("divConditionsEditor");
   editor.setTheme("ace/theme/crimson_editor");
@@ -52,38 +37,36 @@ fOnLoad = function() {
     return editor.gotoLine(1, 1);
   });
   $('#input_name').focus();
-  req = sendRequest('/service/webhooks/get');
-  req.done(function(oHooks) {
-    var createWebhookRow, d3Sel, hookid, oHook, prl, pul, ref, ref1, results;
+  main.post('/service/webhooks/get').done(function(oHooks) {
+    var createWebhookRow, d3Sel, i, oHook, prl, pul, ref, ref1, results;
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
     if (prl + pul === 0) {
       d3.select('#selectWebhook').append('h3').classed('empty', true).html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>');
       return setEditorReadOnly(true);
     } else {
-      d3Sel = d3.select('#selectWebhook').append('h3').text('Your Webhooks:').append('select').attr('class', 'mediummarged smallfont');
-      createWebhookRow = function(hookid, oHook, owner) {
+      d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:').append('select').attr('class', 'mediummarged smallfont');
+      createWebhookRow = function(oHook, owner) {
         var isSel;
-        isSel = oParams.webhook && oParams.webhook === hookid ? true : null;
-        return d3Sel.append('option').attr('value', hookid).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
+        isSel = oParams.webhook && oParams.webhook === oHook.id ? true : null;
+        return d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
       };
       ref = oHooks["private"];
-      for (hookid in ref) {
-        oHook = ref[hookid];
-        createWebhookRow(hookid, oHook, 'yours');
+      for (i in ref) {
+        oHook = ref[i];
+        createWebhookRow(oHook, 'yours');
       }
       ref1 = oHooks["public"];
       results = [];
-      for (hookid in ref1) {
-        oHook = ref1[hookid];
-        results.push(createWebhookRow(hookid, oHook, oHook.username));
+      for (i in ref1) {
+        oHook = ref1[i];
+        results.push(createWebhookRow(oHook, oHook.username));
       }
       return results;
     }
   });
   main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
-  req = sendRequest('/service/actiondispatcher/get');
-  req.done(function(arrAD) {
+  main.post('/service/actiondispatcher/get').done(function(arrAD) {
     var d3row, d3sel;
     arrAllActions = arrAD;
     if (arrAD.length === 0) {
@@ -149,7 +132,7 @@ fOnLoad = function() {
     return $(this).closest('tr').remove();
   });
   $('#but_submit').click(function() {
-    var arrActions, arrConditions, el, err, error, error1, i, len, obj;
+    var arrActions, arrConditions, el, err, error, error1, j, len, obj;
     window.scrollTo(0, 0);
     main.clearInfo();
     try {
@@ -209,35 +192,33 @@ fOnLoad = function() {
       if (!(arrConditions instanceof Array)) {
         throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
       }
-      for (i = 0, len = arrConditions.length; i < len; i++) {
-        el = arrConditions[i];
+      for (j = 0, len = arrConditions.length; j < len; j++) {
+        el = arrConditions[j];
         if (!(el instanceof Object)) {
           throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
         }
       }
       obj = {
         name: $('#input_name').val(),
-        webhookid: $('#selectWebhook select').val(),
+        hookid: $('#selectWebhook select').val(),
         conditions: arrConditions,
         actions: arrActions
       };
-      req = sendRequest('/service/rules/store', obj, function(err) {
+      return main.post('/service/rules/store', obj).done(function(msg) {
+        return main.setInfo(true, msg);
+      }).fail(function(err) {
         if (err.status === 409) {
           if (confirm('Are you sure you want to overwrite the existing rule?')) {
             obj.overwrite = true;
-            req = sendRequest('service/rules/store', obj, function() {
-              return main.setInfo(false, 'Rule not stored!');
-            });
-            return req.done(function(data) {
-              return main.setInfo(true, data.message);
+            return main.post('service/rules/store', obj).done(function(msg) {
+              return main.setInfo(true, msg);
+            }).fail(function(err) {
+              return main.setInfo(false, err.responseText);
             });
           }
         } else {
-          return main.setInfo(false, 'Rule not stored!');
+          return main.setInfo(false, err.responseText);
         }
-      });
-      return req.done(function(data) {
-        return main.setInfo(true, data.message);
       });
     } catch (error1) {
       err = error1;
@@ -245,7 +226,7 @@ fOnLoad = function() {
     }
   });
   if (oParams.id) {
-    return sendRequest({
+    return main.post({
       command: 'get_rule',
       data: {
         body: JSON.stringify({
@@ -258,7 +239,7 @@ fOnLoad = function() {
         if (oRule) {
           $('#input_name').val(oRule.id);
           return fPrepareEventType(oRule.eventtype, function() {
-            var action, arrName, d, i, len, mins, ref, results;
+            var action, arrName, d, j, len, mins, ref, results;
             switch (oRule.eventtype) {
               case 'Event Trigger':
                 $('select', domSelectEventTrigger).val(oRule.eventname);
@@ -289,8 +270,8 @@ fOnLoad = function() {
             domSectionSelectedActions.show();
             ref = oRule.actions;
             results = [];
-            for (i = 0, len = ref.length; i < len; i++) {
-              action = ref[i];
+            for (j = 0, len = ref.length; j < len; j++) {
+              action = ref[j];
               arrName = action.split(' -> ');
               results.push(fAddSelectedAction(action));
             }

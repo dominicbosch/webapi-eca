@@ -30,7 +30,7 @@ router.post('/login', (req, res) => {
 		}
 
 		if(req.session.pub) res.send('OK!');
-		else res.status(401).send('NO!');
+		else res.status(404).send('NO!');
 	});
 });
 

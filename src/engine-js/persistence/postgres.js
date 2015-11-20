@@ -15,13 +15,13 @@ var log = require('../logging'),
 	sequelize,
 
 // DB Models:
-	User,
-	Worker,
-	Rule,
-	Webhook,
-	EventTrigger,
-	ActionDispatcher,
-	ADGlobal;
+	User
+	, Worker
+	, Rule
+	, Webhook
+	, EventTrigger
+	, ActionDispatcher
+	;
 
 // ## DB Connection
 
@@ -57,9 +57,8 @@ function initializeModels() {
 		activeCodes: Sequelize.ARRAY(Sequelize.STRING)
 	});
 	Rule = sequelize.define('Rule', {
-		name: { type: Sequelize.STRING, unique: true },
-		event: Sequelize.STRING,
-		conditions: Sequelize.TEXT,
+		name: Sequelize.STRING,
+		conditions: Sequelize.JSON,
 		actions: Sequelize.JSON
 	});
 	Webhook = sequelize.define('Webhook', {
@@ -68,7 +67,7 @@ function initializeModels() {
 		isPublic: Sequelize.BOOLEAN
 	});
 	EventTrigger = sequelize.define('EventTrigger', {
-		name: { type: Sequelize.STRING, unique: true },
+		name: Sequelize.STRING,
 		lang: Sequelize.STRING,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
@@ -77,17 +76,13 @@ function initializeModels() {
 		globals: Sequelize.JSON
 	});
 	ActionDispatcher = sequelize.define('ActionDispatcher', {
-		name: { type: Sequelize.STRING, unique: true },
+		name: Sequelize.STRING,
 		lang: Sequelize.STRING,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
 		globals: Sequelize.JSON
-	});
-	ADGlobal = sequelize.define('ADGlobal', {
-		name: Sequelize.STRING,
-		value: Sequelize.STRING
 	});
 
 	// ### Define Relations
@@ -97,13 +92,12 @@ function initializeModels() {
 	Webhook.belongsTo(User);
 	EventTrigger.belongsTo(User);
 	ActionDispatcher.belongsTo(User);
-	ADGlobal.belongsTo(User);
 	User.hasOne(Worker, { onDelete: 'cascade' });
 	User.hasMany(Rule, { onDelete: 'cascade' });
 	User.hasMany(Webhook, { onDelete: 'cascade' });
 	User.hasMany(EventTrigger, { onDelete: 'cascade' });
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
-	User.hasMany(ADGlobal, { onDelete: 'cascade' });
+	Rule.hasOne(Webhook);
 	
 	// Return a promise
 	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
@@ -111,6 +105,12 @@ function initializeModels() {
 }
 
 function ec(err) { log.error(err) }
+
+function throwStatusCode(code, msg) {
+	let e = new Error(msg);
+	e.statusCode = code;
+	throw e;
+}
 
 // After retrieving a plain array of sequelize records, this function transforms all
 // of the records (recursively since sequelize v3.10.0) into plain JSON objects
@@ -178,8 +178,11 @@ exports.updateUserAttribute = (uid, attr, val, cb) => {
 exports.deleteUser = (uid, cb) => {
 	log.info('POSTGRES | Deleting user #'+uid);
 	User.findById(uid).then((oRecord) => {
-		if(oRecord) oRecord.destroy().then(() => cb(null, 'User deleted!'), cb).catch(ec);
-		else cb(new Error('User with ID #'+uid+' not found!'));
+		if(oRecord) {
+			oRecord.destroy()
+				.then(() => cb(null, 'User deleted!'), cb)
+				.catch(ec);
+		} else cb(new Error('User with ID #'+uid+' not found!'));
 	}, cb).catch(ec)
 };
 
@@ -287,22 +290,49 @@ exports.deleteWebhook = (uid, hookid, cb) => {
 // ##
 // ## RULES
 // ##
-
-exports.getAllRules = (uid, cb) => {
-	var query;
-	if(uid) query = { where: { UserId: uid } };
-	Rule.findAll(query)
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+exports.getAllRules = (uid) => {
+	var query = { include: [ Webhook ] };
+	if(uid) query.where = { UserId: uid };
+	return Rule
+	.findAll(query)
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
-// exports.deleteWebhook = (hookid, cb) => {
-// 	log.info('POSTGRES | Deleting webhook #'+hookid);
-// 	Webhook.findById(hookid).then((oRecord) => {
-// 		if(oRecord) oRecord.destroy().then(() => cb(null, 'Webhook deleted!')).catch(cb);
-// 		else cb(new Error('Webhook with ID #'+hookid+' not found!'));
-// 	})
-// };
+exports.storeRule = (uid, oRule, hookid) => {
+	return User.findById(uid)
+		.then((oUser) => {
+			if(!oUser) throwStatusCode(404, 'You do not exist!?');
 
+			return oUser.getRules({ where: { name: oRule.name }})
+				.then((arrExisting) => {
+					if(arrExisting.length === 0) return oUser;
+					else throwStatusCode(409, 'Rule name already existing!');
+				})
+		})
+		.then((oUser) => {
+			return Webhook.findById(hookid)
+				.then((oWebhook) => {
+					if(oWebhook) return { user: oUser, hook: oWebhook };
+					else throwStatusCode(404, 'Webhook not existing!');
+				})
+		})
+		.then((o) => {
+			return o.user.createRule(oRule)
+				.then((oRule) => oRule.setWebhook(o.hook));
+		})
+}
+
+// Returns a promise
+exports.deleteRule = (uid, rid) => {
+	log.info('POSTGRES | Deleting Rule #'+rid);
+	return Rule.findById(rid)
+		.then((oRecord) => {
+			if(oRecord) {
+				if(oRecord.get('UserId') === uid) return oRecord.destroy();
+				else throwStatusCode(403, 'You are not the owner of this Rule!');
+			} else throwStatusCode(404, 'Rule doesn\'t exist!');
+		})
+};
 
 // ##
 // ## ACTION DISPATCHERS

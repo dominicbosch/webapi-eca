@@ -2,22 +2,15 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  var fErrHandler, fFetchRules, fUpdateRuleList;
-  fErrHandler = function(errMsg) {
-    return function(err) {
-      if (err.status === 401) {
-        return window.location.href = '/';
-      } else {
-        console.error(err);
-        return console.log('WHOOPS');
-      }
-    };
-  };
-  fFetchRules = function() {
-    return main.post('/service/rules/get').done(fUpdateRuleList).fail(fErrHandler('Did not retrieve rules! '));
+  var fUpdateRuleList, fetchRules;
+  fetchRules = function() {
+    return main.post('/service/rules/get').done(fUpdateRuleList).fail(function(err) {
+      return main.setInfo(false, 'Did not retrieve rules: ' + err.responseText);
+    });
   };
   fUpdateRuleList = function(data) {
     var i, len, parent, results, ruleName;
+    console.log(data);
     $('#tableRules tr').remove();
     if (data.length === 0) {
       parent = $('#tableRules').parent();
@@ -32,7 +25,7 @@ fOnLoad = function() {
       return results;
     }
   };
-  fFetchRules();
+  fetchRules();
   $('#tableRules').on('click', '.del', function() {
     var data, ruleName;
     ruleName = $('div', $(this).closest('tr')).text();
@@ -43,7 +36,9 @@ fOnLoad = function() {
           id: ruleName
         })
       };
-      return main.post('/usercommand/delete_rule', data).done(fFetchRules).fail(fErrHandler('Could not delete rule! '));
+      return main.post('/usercommand/delete_rule', data).done(fetchRules).fail(function(err) {
+        return main.setInfo(false, 'Could not delete rule: ' + err.responseText);
+      });
     }
   });
   $('#tableRules').on('click', '.edit', function() {
@@ -65,7 +60,9 @@ fOnLoad = function() {
       ts = (new Date()).toISOString();
       log = data.message.replace(new RegExp("\n", 'g'), "<br>");
       return $('#log_col').html("<h3>" + ruleName + " Log:</h3> <i>(updated UTC|" + ts + ")</i><br/><br/>" + log);
-    }).fail(fErrHandler('Could not get rule log! '));
+    }).fail(function(err) {
+      return main.setInfo(false, 'Could not get rule log: ' + err.responseText);
+    });
   });
 };
 

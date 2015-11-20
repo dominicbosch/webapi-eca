@@ -88,8 +88,8 @@ fOnLoad = () ->
 			window.location.href = '/views/webhooks?id='+$('#inp_webh').val()
 		 
 	$('#but_rule').on 'click', () ->
-		# window.location.href = 'rules_create?webhook='+$('#sel_webh').val()
-		window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
+		window.location.href = 'rules_create?webhook='+$('#sel_webh').val()
+		# window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
 
 	$('#but_emit').click () ->
 		window.scrollTo 0, 0
@@ -105,8 +105,6 @@ fOnLoad = () ->
 				.done (data) ->
 					main.setInfo true, data.message
 				.fail (err) ->
-					if err.status is 401
-						window.location.href = '/'
 					main.setInfo false, 'Error in upload: ' + err.responseText
 
 	createWebhookList()

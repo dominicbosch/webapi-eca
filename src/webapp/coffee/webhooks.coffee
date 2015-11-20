@@ -2,15 +2,7 @@
 
 hostUrl = [ location.protocol, '//', location.host ].join ''
 
-failedRequest = (msg) ->
-	(err) ->
-		if err.status is 401
-			window.location.href = '/'
-		else
-			main.setInfo false, msg
-
 updateWebhookList = () ->
-	main.clearInfo()
 	main.post('/service/webhooks/get')
 		.done (oHooks) ->
 			$('#table_webhooks *').remove()
@@ -37,7 +29,7 @@ updateWebhookList = () ->
 				createWebhookRow(oHook) for hookid, oHook of oHooks.public
 			else
 				$('#table_webhooks').append $('<div>').attr('id', 'listhooks').text 'There are no webhooks available for you!'
-		.fail failedRequest 'Unable to get Webhook list'
+		.fail (err) -> main.setInfo false, 'Unable to get Webhook list: '+err.responseText
 
 fShowWebhookUsage = (hookid, hookname) ->
 	$('#display_hookurl *').remove()
@@ -56,8 +48,6 @@ fOnLoad = () ->
 
 	$('#inp_hookname').val oParams.id
 	$('#but_submit').click ->
-		main.clearInfo()
-
 		hookname = $('#inp_hookname').val()
 		if hookname is ''
 			main.setInfo false, 'Please provide an Event Name for your new Webhook!'
@@ -72,9 +62,9 @@ fOnLoad = () ->
 					fShowWebhookUsage data.hookid, data.hookname
 				.fail (err) ->
 					if err.status is 409
-						failedRequest('Webhook Event Name already existing!') err
+						main.setInfo false, 'Webhook Event Name already existing!'
 					else
-						failedRequest('Unable to create Webhook! ' + err.message) err
+						main.setInfo false, 'Unable to create Webhook! '+err.responseText
 	
 	$('#table_webhooks').on 'click', '.del', () ->
 		if confirm  "Do you really want to delete this webhook?"
@@ -83,7 +73,6 @@ fOnLoad = () ->
 					$('#display_hookurl *').remove()
 					main.setInfo true, 'Webhook deleted!'
 					updateWebhookList()
-				.fail (err) ->
-					failedRequest(err.responseText) err
+				.fail (err) -> main.setInfo false, err.responseText
 
 window.addEventListener 'load', fOnLoad, true

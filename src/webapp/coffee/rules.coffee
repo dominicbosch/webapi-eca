@@ -1,20 +1,14 @@
 'use strict';
 
 fOnLoad = () ->
-	fErrHandler = (errMsg) ->
-		(err) ->
-			if err.status is 401
-				window.location.href = '/'
-			else
-				console.error(err)
-				console.log('WHOOPS')
-
-	fFetchRules = () ->
+	fetchRules = () ->
 		main.post('/service/rules/get')
 			.done fUpdateRuleList
-			.fail fErrHandler 'Did not retrieve rules! '
+			.fail (err) ->
+				main.setInfo false, 'Did not retrieve rules: '+err.responseText
 
 	fUpdateRuleList = (data) ->
+		console.log(data);
 		$('#tableRules tr').remove()
 		if data.length is 0
 			parent = $('#tableRules').parent()
@@ -30,7 +24,7 @@ fOnLoad = () ->
 					<td><div>#{ ruleName }</div></td>
 				</tr>"""
 
-	fFetchRules()
+	fetchRules()
 
 	$('#tableRules').on 'click', '.del', () ->
 		ruleName = $('div', $(this).closest('tr')).text()
@@ -40,8 +34,9 @@ fOnLoad = () ->
 				body: JSON.stringify
 					id: ruleName
 			main.post('/usercommand/delete_rule', data)
-				.done fFetchRules
-				.fail fErrHandler 'Could not delete rule! '
+				.done fetchRules
+				.fail (err) ->
+					main.setInfo false, 'Could not delete rule: '+err.responseText
 
 	$('#tableRules').on 'click', '.edit', () ->
 		ruleName = $('div', $(this).closest('tr')).text()
@@ -58,6 +53,7 @@ fOnLoad = () ->
 				ts = (new Date()).toISOString()
 				log = data.message.replace new RegExp("\n", 'g'), "<br>"
 				$('#log_col').html "<h3>#{ ruleName } Log:</h3> <i>(updated UTC|#{ ts })</i><br/><br/>#{ log }"
-			.fail fErrHandler 'Could not get rule log! '
+			.fail (err) ->
+				main.setInfo false, 'Could not get rule log: '+err.responseText
 
 window.addEventListener 'load', fOnLoad, true

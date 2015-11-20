@@ -3,13 +3,6 @@
 moduleTypeName = if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
 moduleType = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 
-fErrHandler = (errMsg) ->
-	(err) ->
-		if err.status is 401
-			window.location.href = "/"
-		else
-			main.setInfo false, errMsg
-
 fOnLoad = () ->
 # TODO first check whether oParams.m edit is a valid module before setting the title
 	title = if oParams.id then 'Edit ' else 'Create '
@@ -165,7 +158,8 @@ fOnLoad = () ->
 					editor.moveCursorTo 0, 0
 				fAddUserParam '', false
 
-			.fail fErrHandler "Could not get module #{ oParams.id }!"
+			.fail (err) ->
+				main.setInfo false, 'Could not get module '+oParams.id+': '+ err.responseText
 
 	else
 		# We add the standard template, params and names

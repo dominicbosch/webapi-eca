@@ -1,19 +1,9 @@
 'use strict';
-var fErrHandler, fOnLoad, moduleType, moduleTypeName;
+var fOnLoad, moduleType, moduleTypeName;
 
 moduleTypeName = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
 
 moduleType = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
-
-fErrHandler = function(errMsg) {
-  return function(err) {
-    if (err.status === 401) {
-      return window.location.href = "/";
-    } else {
-      return main.setInfo(false, errMsg);
-    }
-  };
-};
 
 fOnLoad = function() {
   var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, title;
@@ -183,7 +173,9 @@ fOnLoad = function() {
         editor.moveCursorTo(0, 0);
       }
       return fAddUserParam('', false);
-    }).fail(fErrHandler("Could not get module " + oParams.id + "!"));
+    }).fail(function(err) {
+      return main.setInfo(false, 'Could not get module ' + oParams.id + ': ' + err.responseText);
+    });
   } else {
     $('#input_id').val('Hello World');
     if (oParams.m === 'ad') {

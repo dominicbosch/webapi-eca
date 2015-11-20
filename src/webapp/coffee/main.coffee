@@ -24,6 +24,7 @@ $( document ).ready () ->
 window.main =
 	#  Needed to get thoroughly rid of jQuery... But it seems jQuery is convenient for ajax calls
 	post: (url, obj) ->
+		main.clearInfo()
 		obj = if obj then JSON.stringify(obj)
 		$.ajax
 			type: 'POST'
@@ -31,20 +32,18 @@ window.main =
 			data: obj
 			contentType: 'application/json'
 			# dataType: 'json'
+
+		# General redirection handler in case user was not logged in
+		.fail (err) -> 
+			if err.status is 401
+				window.location.href = '/views/login'
+
 		# d3.xhr(url)
 		# 	.header('Content-Type', 'application/json')
 		# 	.mimeType('application/json')
 		# 	.post(JSON.stringify(obj))
 		# 	.on 'load', (msg) -> cb(null, msg.responseText)
 		# 	.on 'error', (err) -> cb(err.responseText)
-
-
-	requestError: (cb) ->
-		(err) ->
-			if err.status is 401
-				window.location.href = "/"
-			else
-				cb(err)
 
 	setInfo: ( isSuccess, msg ) ->
 		d3.select('#skeletonTicker')

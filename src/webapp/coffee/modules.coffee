@@ -41,16 +41,14 @@ updateModules = () ->
 						if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
 
 	req.fail ( err ) ->
-		if err.status is 401
-			window.location.href = '/'
 		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
 
 deleteModule = (d) ->
 	if confirm 'Do you really want to delete the Module "'+d.name+'"?'
 		main.post(urlService+'delete', { id: d.id })
 			.done updateModules
-			.fail main.requestError (err) ->
-				console.log(err)
+			.fail (err) ->
+				main.setInfo false, err.responseText 
 
 editModule = (d) ->
 	if oParams.m is 'ad'

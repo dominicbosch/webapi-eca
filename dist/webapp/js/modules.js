@@ -39,9 +39,6 @@ updateModules = function() {
     }
   });
   return req.fail(function(err) {
-    if (err.status === 401) {
-      window.location.href = '/';
-    }
     return main.setInfo(false, 'Error in fetching all Modules: ' + err.responseText);
   });
 };
@@ -50,9 +47,9 @@ deleteModule = function(d) {
   if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
     return main.post(urlService + 'delete', {
       id: d.id
-    }).done(updateModules).fail(main.requestError(function(err) {
-      return console.log(err);
-    }));
+    }).done(updateModules).fail(function(err) {
+      return main.setInfo(false, err.responseText);
+    });
   }
 };
 
