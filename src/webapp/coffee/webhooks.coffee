@@ -28,7 +28,7 @@ updateWebhookList = () ->
 				createWebhookRow(oHook, true) for hookid, oHook of oHooks.private
 				createWebhookRow(oHook) for hookid, oHook of oHooks.public
 			else
-				$('#table_webhooks').append $('<div>').attr('id', 'listhooks').text 'There are no webhooks available for you!'
+				$('#table_webhooks').append $('<h3>').attr('class', 'empty').text 'You don\'t have any active Webhooks!'
 		.fail (err) -> main.setInfo false, 'Unable to get Webhook list: '+err.responseText
 
 fShowWebhookUsage = (hookid, hookname) ->

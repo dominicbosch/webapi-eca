@@ -32,7 +32,7 @@ updateWebhookList = function() {
       }
       return results;
     } else {
-      return $('#table_webhooks').append($('<div>').attr('id', 'listhooks').text('There are no webhooks available for you!'));
+      return $('#table_webhooks').append($('<h3>').attr('class', 'empty').text('You don\'t have any active Webhooks!'));
     }
   }).fail(function(err) {
     return main.setInfo(false, 'Unable to get Webhook list: ' + err.responseText);

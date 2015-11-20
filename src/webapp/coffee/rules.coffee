@@ -8,47 +8,48 @@ fOnLoad = () ->
 				main.setInfo false, 'Did not retrieve rules: '+err.responseText
 
 	fUpdateRuleList = (data) ->
-		console.log(data);
-		$('#tableRules tr').remove()
+		d3div = d3.select('#tableRules');
 		if data.length is 0
-			parent = $('#tableRules').parent()
-			$('#tableRules').remove()
-			parent.append $ "<h3 class=\"empty\">You don't have any rules! 
-				<a href=\"/views/rules_create\">Create One first!</a></h3>"
+			d3div.selectAll('table').remove()
+			d3div.append('h3').classed('empty', true).html "You don't have any rules! 
+				<a href=\"/views/rules_create\">Create One first!</a>"
 		else
-			for ruleName in data
-				$('#tableRules').append  $ """<tr>
-					<td><img class="icon del" src="/images/del.png" title="Delete Rule"></td>
-					<td><img class="icon edit" src="/images/edit.png" title="Edit Rule"></td>
-					<td><img class="icon log" src="/images/log.png" title="Show Rule Log"></td>
-					<td><div>#{ ruleName }</div></td>
-				</tr>"""
+			d3div.selectAll('h3').remove();
+			d3tr = d3div.select('table').selectAll('tr').data(data, (d) -> d.id);
+			d3tr.exit().transition().style('opacity', 0).remove();
+			d3newTrs = d3tr.enter().append('tr');
+			d3newTrs.append('td').append('img')
+				.attr('class', 'icon del')
+				.attr('src', '/images/del.png')
+				.attr('title', 'Delete Rule')
+				.on('click', deleteRule);
+			d3newTrs.append('td').append('img')
+				.attr('class', 'icon edit')
+				.attr('src', '/images/edit.png')
+				.attr('title', 'Edit Rule')
+				.on('click', editRule);
+			d3newTrs.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/log.png')
+				.attr('title', 'Show Rule Log')
+				.on('click', showLog);
+			d3newTrs.append('td').text (d) -> d.name 
 
 	fetchRules()
 
-	$('#tableRules').on 'click', '.del', () ->
-		ruleName = $('div', $(this).closest('tr')).text()
-		if confirm  "Do you really want to delete the rule '#{ ruleName }'?"
-			$('#log_col').text ""
-			data =
-				body: JSON.stringify
-					id: ruleName
-			main.post('/usercommand/delete_rule', data)
+	deleteRule = (d) ->
+		if confirm  "Do you really want to delete the rule '#{ d.name }'?"
+			main.post('/service/rules/delete', { id: d.id })
 				.done fetchRules
 				.fail (err) ->
 					main.setInfo false, 'Could not delete rule: '+err.responseText
 
-	$('#tableRules').on 'click', '.edit', () ->
-		ruleName = $('div', $(this).closest('tr')).text()
-		window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent ruleName
+	editRule = (d) ->
+		window.location.href = 'rules_create?id='+d.id
 
-	$('#tableRules').on 'click', '.log', () ->
+	showLog = (d) ->
 		console.warn 'TODO open div over whole page with log in editor'
-		ruleName = $('div', $(this).closest('tr')).text()
-		data =
-			body: JSON.stringify
-				id: ruleName
-		main.post('/usercommand/get_rule_log', data)
+		main.post('/service/rules/getlog', { id: d.id })
 			.done (data) ->
 				ts = (new Date()).toISOString()
 				log = data.message.replace new RegExp("\n", 'g'), "<br>"

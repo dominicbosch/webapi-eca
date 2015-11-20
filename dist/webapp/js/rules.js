@@ -2,60 +2,51 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  var fUpdateRuleList, fetchRules;
+  var deleteRule, editRule, fUpdateRuleList, fetchRules, showLog;
   fetchRules = function() {
     return main.post('/service/rules/get').done(fUpdateRuleList).fail(function(err) {
       return main.setInfo(false, 'Did not retrieve rules: ' + err.responseText);
     });
   };
   fUpdateRuleList = function(data) {
-    var i, len, parent, results, ruleName;
-    console.log(data);
-    $('#tableRules tr').remove();
+    var d3div, d3newTrs, d3tr;
+    d3div = d3.select('#tableRules');
     if (data.length === 0) {
-      parent = $('#tableRules').parent();
-      $('#tableRules').remove();
-      return parent.append($("<h3 class=\"empty\">You don't have any rules! <a href=\"/views/rules_create\">Create One first!</a></h3>"));
+      d3div.selectAll('table').remove();
+      return d3div.append('h3').classed('empty', true).html("You don't have any rules! <a href=\"/views/rules_create\">Create One first!</a>");
     } else {
-      results = [];
-      for (i = 0, len = data.length; i < len; i++) {
-        ruleName = data[i];
-        results.push($('#tableRules').append($("<tr>\n	<td><img class=\"icon del\" src=\"/images/del.png\" title=\"Delete Rule\"></td>\n	<td><img class=\"icon edit\" src=\"/images/edit.png\" title=\"Edit Rule\"></td>\n	<td><img class=\"icon log\" src=\"/images/log.png\" title=\"Show Rule Log\"></td>\n	<td><div>" + ruleName + "</div></td>\n</tr>")));
-      }
-      return results;
+      d3div.selectAll('h3').remove();
+      d3tr = d3div.select('table').selectAll('tr').data(data, function(d) {
+        return d.id;
+      });
+      d3tr.exit().transition().style('opacity', 0).remove();
+      d3newTrs = d3tr.enter().append('tr');
+      d3newTrs.append('td').append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Rule').on('click', deleteRule);
+      d3newTrs.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Rule').on('click', editRule);
+      d3newTrs.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);
+      return d3newTrs.append('td').text(function(d) {
+        return d.name;
+      });
     }
   };
   fetchRules();
-  $('#tableRules').on('click', '.del', function() {
-    var data, ruleName;
-    ruleName = $('div', $(this).closest('tr')).text();
-    if (confirm("Do you really want to delete the rule '" + ruleName + "'?")) {
-      $('#log_col').text("");
-      data = {
-        body: JSON.stringify({
-          id: ruleName
-        })
-      };
-      return main.post('/usercommand/delete_rule', data).done(fetchRules).fail(function(err) {
+  deleteRule = function(d) {
+    if (confirm("Do you really want to delete the rule '" + d.name + "'?")) {
+      return main.post('/service/rules/delete', {
+        id: d.id
+      }).done(fetchRules).fail(function(err) {
         return main.setInfo(false, 'Could not delete rule: ' + err.responseText);
       });
     }
-  });
-  $('#tableRules').on('click', '.edit', function() {
-    var ruleName;
-    ruleName = $('div', $(this).closest('tr')).text();
-    return window.location.href = 'forge?page=forge_rule&id=' + encodeURIComponent(ruleName);
-  });
-  return $('#tableRules').on('click', '.log', function() {
-    var data, ruleName;
+  };
+  editRule = function(d) {
+    return window.location.href = 'rules_create?id=' + d.id;
+  };
+  return showLog = function(d) {
     console.warn('TODO open div over whole page with log in editor');
-    ruleName = $('div', $(this).closest('tr')).text();
-    data = {
-      body: JSON.stringify({
-        id: ruleName
-      })
-    };
-    return main.post('/usercommand/get_rule_log', data).done(function(data) {
+    return main.post('/service/rules/getlog', {
+      id: d.id
+    }).done(function(data) {
       var log, ts;
       ts = (new Date()).toISOString();
       log = data.message.replace(new RegExp("\n", 'g'), "<br>");
@@ -63,7 +54,7 @@ fOnLoad = function() {
     }).fail(function(err) {
       return main.setInfo(false, 'Could not get rule log: ' + err.responseText);
     });
-  });
+  };
 };
 
 window.addEventListener('load', fOnLoad, true);

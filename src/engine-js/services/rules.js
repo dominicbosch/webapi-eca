@@ -26,6 +26,7 @@ router.post('/get', (req, res) => {
 		.then((arr) => res.send(arr))
 		.catch(errHandler(res));
 });
+
 router.post('/store', (req, res) => {
 	log.info('SRVC | RULES | Storing new Rule');
 	let oRule = {
@@ -36,7 +37,14 @@ router.post('/store', (req, res) => {
 	db.storeRule(req.session.pub.id, oRule, req.body.hookid)
 		.then(() => res.send('Rule stored!'))
 		.catch(errHandler(res))
-})
+});
+
+router.post('/delete', (req, res) => {
+	log.info('SRVC | RULES | Deleting Rule #' +req.body.id);
+	db.deleteRule(req.session.pub.id, req.body.id)
+		.then(() => res.send('Rule deleted!'))
+		.catch(errHandler(res))
+});
 
 
 // # Store a rule and inform everybody about it

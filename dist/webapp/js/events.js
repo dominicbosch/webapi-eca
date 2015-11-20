@@ -59,16 +59,12 @@ updateWebhookSelection = function() {
 };
 
 checkRuleExists = function() {
-  return main.post('/service/rules/get').done(function(oRules) {
-    var exists, i, len, prop, rule;
-    exists = false;
-    for (rule = i = 0, len = oRules.length; i < len; rule = ++i) {
-      prop = oRules[rule];
-      if (rule.eventtype === 'Webhook' && rule.eventname === name) {
-        exists = true;
-      }
-    }
-    if (exists) {
+  return main.post('/service/rules/get').done(function(arrRules) {
+    var arrListeners;
+    arrListeners = arrRules.filter(function(o) {
+      return o.Webhook && o.Webhook.id;
+    });
+    if (arrListeners.length > 0) {
       $('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png');
       $('#but_rule').hide();
       $('#but_emit').show();

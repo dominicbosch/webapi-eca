@@ -42,12 +42,9 @@ updateWebhookSelection = () ->
 		checkRuleExists()
 
 checkRuleExists = () ->
-	main.post('/service/rules/get').done (oRules) ->
-		exists = false
-		for prop, rule in oRules
-			if rule.eventtype is 'Webhook' and rule.eventname is name
-				exists = true
-		if exists
+	main.post('/service/rules/get').done (arrRules) ->
+		arrListeners = arrRules.filter((o) -> o.Webhook && o.Webhook.id);
+		if arrListeners.length > 0
 			$('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png')
 			$('#but_rule').hide()
 			$('#but_emit').show()

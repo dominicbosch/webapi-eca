@@ -240,12 +240,12 @@ exports.setWorker = (uid, pid) => {
 // ##
 // ## WEBHOOKS
 // ##
-exports.getAllWebhooks = (cb) => {
-	Webhook.findAll()
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb)
-		.catch(ec);
+exports.getAllWebhooks = () => {
+	return Webhook.findAll()
+		.then((arr) => arrRecordsToJSON(arr))
 };
-exports.getAllUserWebhooks = (uid, cb) => {
+
+exports.getAllUserWebhooks = (uid) => {
 	var publicSearch = Webhook.findAll({ 
 		include: [ User ],
 		where: {
@@ -254,26 +254,28 @@ exports.getAllUserWebhooks = (uid, cb) => {
 		}
 	});
 
-	var privateSearch = User.findById(uid).then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
+	var privateSearch = User.findById(uid)
+		.then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
 
-	publicSearch.then(() => privateSearch)
+	return publicSearch
+		.then(() => privateSearch)
 		.then((arrRecords) => {
-			let arrResult = {
+			return {
 				private: arrRecordsToJSON(arrRecords),
 				public: arrRecordsToJSON(publicSearch.value())
-			};
-			cb(null, arrResult);
-		}, cb).catch(ec);
+			}
+		});
 };
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 	log.info('POSTGRES | Storing new webhook '+hookname+' for user '+uid);
-	User.findById(uid).then((oUser) => {
-		return oUser.createWebhook({
-			hookid: hookid,
-			hookname: hookname,
-			isPublic: isPublic
+	return User.findById(uid)
+		.then((oUser) => {
+			return oUser.createWebhook({
+				hookid: hookid,
+				hookname: hookname,
+				isPublic: isPublic
+			});
 		});
-	}).then(() => cb(), cb).catch(ec);
 };
 exports.deleteWebhook = (uid, hookid, cb) => {
 	log.info('POSTGRES | Deleting webhook #'+hookid);
