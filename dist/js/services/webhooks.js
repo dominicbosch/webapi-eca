@@ -18,12 +18,6 @@ var log = require('../logging'),
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
 
-var errHandler = (res) => (err) => {
-	log.error(err);
-	res.status(err.statusCode || 500);
-	res.send(err.message);
-}
-
 geb.addListener('system:init', (msg) => {
 	db.getAllWebhooks().then((arrHooks) => {
 		log.info('SRVC | WEBHOOKS | Initializing '+arrHooks.length+' Webhooks');
@@ -39,7 +33,7 @@ router.post('/get', (req, res) => {
 	log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
 	db.getAllUserWebhooks(req.session.pub.id)
 		.then((arr) => res.send(arr))
-		.catch(errHandler(res));
+		.catch(db.errHandler(res));
 });
 
 function genHookID(arrExisting) {
@@ -53,31 +47,26 @@ function genHookID(arrExisting) {
 // Beautiful example for why promises should be used!
 router.post('/create', (req, res) => {
 	let userId = req.session.pub.id;
+	let rb = req.body;
 	db.getAllUserWebhooks(userId)
 		.then((oHooks) => {
 			let arrHookNames = oHooks.private.map((o) => o.hookname);
-			if(arrHookNames.indexOf(req.body.hookname) > -1) {
-				let e = new Error('Webhook already existing: '+req.body.hookname);
+			if(arrHookNames.indexOf(rb.hookname) > -1) {
+				let e = new Error('Webhook already existing: '+rb.hookname);
 				e.statusCode = 409;
 				throw e;
 			}
 		})
 		.then(() => db.getAllWebhooks())
 		.then((arrAllHooks) => genHookID(arrAllHooks.map((o) => o.hookid)))
-		.then((newHookId) => {
-			let isPublic = (req.body.isPublic==='true');
-			return db.createWebhook(userId, newHookId, req.body.hookname, isPublic)
-				.then(() => newHookId);
+		.then((hid) => db.createWebhook(userId, hid, rb.hookname, rb.isPublic))
+		.then((oHook) => {
+			log.info('SRVC | WEBHOOKS | Webhook "'+oHook.name
+				+'" created with ID "'+oHook.id+'" and activated');
+			activeHooks[oHook.id] = oHook;
+			res.send(oHook);
 		})
-		.then((hookid) => {
-			log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
-			activeHooks[hookid] = {
-				hookname: req.body.hookname,
-				userid: userId
-			}
-			res.send('Webhook created!');
-		})
-		.catch(errHandler(res));
+		.catch(db.errHandler(res));
 })
 
 // User wants to delete a webhook
@@ -98,16 +87,13 @@ router.post('/event/:id', (req, res) => {
 	if(oHook) {
 		let now = new Date();
 		req.body.engineReceivedTime = now.getTime();
+		req.body.origin = req.ip;
 		let obj = {
 			hookid: oHook.id,
 			eventname: oHook.hookname,
 			body: req.body
 		};
-		console.log('GOT EVENT', obj);
-		console.log('req.hostname', req.hostname)
-		console.log('req.ip', req.ip)
-		console.log('req.ips', req.ips)
-		geb.emit('webhook:event', obj)
+		geb.emit('event:'+obj.hookid, obj)
 		res.send('Thank you for the event on: "'+oHook.hookname+'" at ' + now);
 	} else res.status(404).send('Webhook not existing!');
 });

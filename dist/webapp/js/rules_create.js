@@ -73,12 +73,15 @@ fOnLoad = function() {
       return setEditorReadOnly(true);
     } else {
       d3.select('#actionEmpty').style('display', 'none');
-      d3.select('#actionSection').style('visibility', 'visible').select('table').selectAll('tr').data(arrAD, function(d) {
+      d3.select('#actionSection').style('visibility', 'visible').select('tbody').selectAll('tr').data(arrAD, function(d) {
         return d != null ? d.id : void 0;
       }).enter().append('tr').each(function(oMod) {
         var d3This, func, list, results, trNew;
         d3This = d3.select(this);
         main.registerHoverInfoHTML(d3This.append('td').text(oMod.name), oMod.comment);
+        d3This.append('td').text(function(d) {
+          return d.User.username;
+        });
         list = d3This.append('td').append('table');
         results = [];
         for (func in oMod.functions) {
@@ -161,7 +164,7 @@ fOnLoad = function() {
             d3val.node().focus();
             throw new Error('Please enter a value in all requested fields!');
           }
-          if (oAction.globals[key] === 'true' && d3val.attr('changed') === 'yes') {
+          if (oModule.globals[key] && d3val.attr('changed') === 'yes') {
             val = cryptico.encrypt(val, strPublicKey).cipher;
           }
           return oAction.globals[key] = val;
@@ -224,6 +227,7 @@ fOnLoad = function() {
       return main.setInfo(false, 'Error in upload: ' + err.message);
     }
   });
+  console.warn('TODO implement edit rules');
   if (oParams.id) {
     return main.post({
       command: 'get_rule',
@@ -356,14 +360,14 @@ updateParameterList = function() {
     return d.name;
   });
   dModule.each(function(d) {
-    var k, nd, ref, results, v;
+    var encrypted, key, nd, ref, results;
     ref = d.globals;
     results = [];
-    for (k in ref) {
-      v = ref[k];
+    for (key in ref) {
+      encrypted = ref[key];
       nd = d3.select(this).append('div').attr('class', 'row glob');
-      nd.append('div').attr('class', 'col-xs-3 key').text(k);
-      results.push(nd.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', v === 'true' ? 'password' : 'text').on('change', function() {
+      nd.append('div').attr('class', 'col-xs-3 key').text(key);
+      results.push(nd.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', encrypted ? 'password' : 'text').on('change', function() {
         return d3.select(this).attr('changed', 'yes');
       }));
     }

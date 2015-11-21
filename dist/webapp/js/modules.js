@@ -11,7 +11,7 @@ if (oParams.m === 'ad') {
   modName = 'Event Trigger';
 }
 
-updateModules = function() {
+updateModules = function(uid) {
   var req;
   req = main.post(urlService + 'get');
   req.done(function(arrModules) {
@@ -22,19 +22,26 @@ updateModules = function() {
       $('#tableModules').remove();
       return parent.append($("<h3 class=\"empty\">No " + modName + "s available! <a href=\"/views/modules_create?m=" + oParams.m + "\">Create One first!</a></h3>"));
     } else {
-      tr = d3.select('#tableModules').selectAll('tr').data(arrModules, function(d) {
+      tr = d3.select('#tableModules tbody').selectAll('tr').data(arrModules, function(d) {
         return d.id;
       });
       tr.exit().remove();
       trNew = tr.enter().append('tr');
-      trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
+      trNew.append('td').classed('smallpadded', true).each(function(d) {
+        if (d.UserId === uid) {
+          return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
+        }
+      });
       trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', editModule);
-      return trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
+      trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
         return d.name;
       }).each(function(d) {
         if (d.comment) {
           return main.registerHoverInfoHTML(d3.select(this), d.comment);
         }
+      });
+      return trNew.append('td').text(function(d) {
+        return d.User.username;
       });
     }
   });
@@ -47,7 +54,10 @@ deleteModule = function(d) {
   if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
     return main.post(urlService + 'delete', {
       id: d.id
-    }).done(updateModules).fail(function(err) {
+    }).done(function() {
+      main.setInfo(true, 'Action Dispatcher deleted!', true);
+      return updateModules();
+    }).fail(function(err) {
       return main.setInfo(false, err.responseText);
     });
   }
@@ -64,7 +74,7 @@ editModule = function(d) {
 fOnLoad = function() {
   $('.moduletype').text(modName);
   $('#linkMod').attr('href', '/views/modules_create?m=' + oParams.m);
-  return updateModules();
+  return updateModules(parseInt(d3.select('body').attr('data-uid')));
 };
 
 window.addEventListener('load', fOnLoad, true);

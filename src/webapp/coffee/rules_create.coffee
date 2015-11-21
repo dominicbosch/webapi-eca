@@ -80,10 +80,11 @@ fOnLoad = () ->
 		else
 			d3.select('#actionEmpty').style('display', 'none');
 			d3.select('#actionSection').style('visibility', 'visible')
-			.select('table').selectAll('tr').data(arrAD, (d) -> d?.id)
+				.select('tbody').selectAll('tr').data(arrAD, (d) -> d?.id)
 			.enter().append('tr').each (oMod) ->
 				d3This = d3.select(this)
 				main.registerHoverInfoHTML d3This.append('td').text(oMod.name), oMod.comment
+				d3This.append('td').text((d) -> d.User.username)
 				list = d3This.append('td').append('table')
 				for func of oMod.functions
 					trNew = list.append('tr')
@@ -159,7 +160,7 @@ fOnLoad = () ->
 					if val is ''
 						d3val.node().focus()
 						throw new Error('Please enter a value in all requested fields!')
-					if oAction.globals[key] == 'true' && d3val.attr('changed') == 'yes'
+					if oModule.globals[key] && d3val.attr('changed') == 'yes'
 						val = cryptico.encrypt(val, strPublicKey).cipher
 					oAction.globals[key] = val
 
@@ -209,6 +210,7 @@ fOnLoad = () ->
 
 # Preload editting of a Rule
 # -----------
+	console.warn('TODO implement edit rules')
 	if oParams.id
 		main.post 
 			command: 'get_rule'
@@ -425,11 +427,11 @@ updateParameterList = () ->
 	dModule = d3New.append('div').attr('class', 'col-sm-6')
 	dModule.append('h4').text((d) -> d.name)
 	dModule.each (d) -> 
-		for k, v of d.globals
+		for key, encrypted of d.globals
 			nd = d3.select(this).append('div').attr('class', 'row glob')
-			nd.append('div').attr('class', 'col-xs-3 key').text(k)
+			nd.append('div').attr('class', 'col-xs-3 key').text(key)
 			nd.append('div').attr('class', 'col-xs-9 val')
-				.append('input').attr('type', if v is 'true' then 'password' else 'text')
+				.append('input').attr('type', if encrypted then 'password' else 'text')
 				.on 'change', () -> d3.select(this).attr('changed', 'yes')
 
 	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr);

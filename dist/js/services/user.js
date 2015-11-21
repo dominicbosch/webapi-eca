@@ -19,42 +19,40 @@ var log = require('../logging'),
 	router = module.exports = express.Router();
 
 router.post('/passwordchange', (req, res) => {
-	db.getUser(req.session.pub.id, (err, oUser) => {
-		if(req.body.oldpassword === oUser.password) {
-			db.updateUserAttribute(req.session.pub.id, 'password', req.body.newpassword, (err) => {
-				if(err) {
-					log.error('Unable to change user password!', err);
-					res.status(401).send('Password changing failed!');
-				} else {
-					log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
-					res.send('Password changed!');
-				}
-			});
-		} else res.status(409).send('Wrong password!');
-	});
+	let uid = req.session.pub.id;
+	db.getUser(uid)
+		.then((oUser) => {
+			if(req.body.oldpassword !== oUser.password) {
+				db.throwStatusCode(409, 'Wrong Password!');
+			}
+			return oUser;
+		})
+		.then(() => db.updateUserAttribute(uid, 'password', req.body.newpassword))
+		.then(() => {
+			log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
+			res.send('Password changed!');
+		})
+		.catch(db.errHandler(res));
 });
 
 router.post('/forcepasswordchange', (req, res) => {
+	let rb = req.body;
 	if(!req.session.pub.isAdmin) {
 		res.status(401).send('You are not allowed to do this!');
 	} else {
-		db.updateUserAttribute(req.body.userid, 'password', req.body.newpassword, (err) => {
-			if(err) {
-				log.error('Unable to change user password!', err);
-				res.status(401).send('Password changing failed!');
-			} else {
-				log.info('SRVC | USER | Password changed for (#'+req.body.userid+')');
+		db.updateUserAttribute(rb.userid, 'password', rb.newpassword)
+			.then(() => {
+				log.info('SRVC | USER | Password changed for (#'+rb.userid+')');
 				res.send('Password changed!');
-			}
-		});
+			})
+			.catch(db.errHandler(res));
 	}
 });
 
 router.post('/getall', (req, res) => {
-	db.getAllUsers((err, arrUsers) => {
-		if(err) res.status(500).send('Unable to fetch users!');
-		else res.send(arrUsers);
-	});
+	db.getAllUsers()
+		.then((arrUsers) => res.send(arrUsers))
+		.catch(db.errHandler(res));
 });
 
 router.post('/worker/state/start', (req, res) => {
@@ -63,8 +61,8 @@ router.post('/worker/state/start', (req, res) => {
 	if(arrLastStart[uname] && arrLastStart[uname] > (now - 60*1000)) {
 		res.status(400).send('You can\'t start your worker all the time. Please wait at least one minute!');
 	} else {
-		db.getUserByName(req.body.username, (err, oUser) => {
-			if(oUser) {
+		db.getUserByName(req.body.username)
+			.then((oUser) => {
 				pm.startWorker(oUser, (err) => {
 					if(err) res.status(400).send(err);
 					else {
@@ -72,20 +70,20 @@ router.post('/worker/state/start', (req, res) => {
 						arrLastStart[uname] = now;
 					}					
 				});
-			} else res.status(404).send('User not found!')
-		});
+			})
+			.catch(db.errHandler(res));
 	}
 });
 
 router.post('/worker/state/kill', (req, res) => {
-	db.getUserByName(req.body.username, (err, oUser) => {
-		if(oUser) {
-			pm.killWorker(oUser, (err) => {
+	db.getUserByName(req.body.username)
+		.then((oUser) => {
+			pm.killWorker(oUser.id, oUser.username, (err) => {
 				if(err) res.status(400).send(err);
 				else res.send('Done');
 			});
-		} else res.status(404).send('User not found!')
-	});
+		})
+		.catch(db.errHandler(res));
 });
 
 

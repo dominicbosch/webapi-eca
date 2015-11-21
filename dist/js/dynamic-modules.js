@@ -26,6 +26,12 @@ var log = require('./logging'),
 	oModules = {};
 	// oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
 
+function throwStatusCode(code, msg) {
+	let e = new Error(msg);
+	e.statusCode = code;
+	throw e;
+}
+
 geb.addListener('modules:list', (arrModules) => {
 	let arrAllowed = arrModules.filter((o) => o.allowed);
 	log.info('DM | Got new allowed modules list: ' + arrAllowed.map((o) => o.name).join(', '));
@@ -66,98 +72,88 @@ function searchComment(lang, src) {
 	return comm;
 }
 
-
 // Attempt to run a JS module from a string, together with the
 // given parameters and arguments. If it is written in CoffeeScript we
 // compile it first into JS.
 // Options: id, globals, logger
-exports.runStringAsModule = (code, lang, username, opt, cb) => {
-	var origCode = code;
+exports.runStringAsModule = (code, lang, username, opt) => {
+	return new Promise((resolve) => {
+		var origCode = code;
 
-	if(typeof cb !== 'function') return log.error('DM | No callback provided!');
-
-	if(!code || !lang || !username) {
-		return cb({
-			code: 400,
-			message: 'Missing parameters!'
-		});
-	}
-	opt = opt || {}; // In case user didn't pass this
-	if(!opt.id) opt.id = 'TMP|'+Math.random().toString(36).substring(2)+'.vm';
-	if(!opt.globals) opt.globals = {};
-	if(typeof opt.logger !== 'function') opt.logger = () => {};
-
-	if(lang === 'CoffeeScript') {
-		try {
-			log.info('DM | Compiling module "'+opt.id+'" for user "'+username);
-			code = cs.compile(code);
-		} catch(err) {
-			log.error(err);
-			return cb({
-				code: 400,
-				message: 'Compilation of CoffeeScript failed at line '+err.location.first_line
-			});
+		if(!code || !lang || !username) {
+			throwStatusCode(400, 'Missing parameters!');
 		}
-	}
 
-	// TODO decrypting of user parameters has to happen before we runstringasmodule
-	// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
-	// for(let prop in opt.globals) {
-	// 	log.info('DM | Loading user defined global variable '+prop);
-	// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
-	// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
-	// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
-	// }
+		opt = opt || {}; // In case user didn't pass this
+		if(!opt.id) opt.id = 'TMP|'+Math.random().toString(36).substring(2)+'.vm';
+		if(!opt.globals) opt.globals = {};
+		if(typeof opt.logger !== 'function') opt.logger = () => {};
 
-	log.info('DM | Running module "'+opt.id+'" for user '+username);
-	// The sandbox contains the objects that are accessible to the user.
-	// Eventually they need to be required from a vm themselves 
-	let sandbox = {
-		id: opt.id,
-		params: opt.globals,
-		log: opt.logger,
-		exports: {},
-		sendEvent: (hook, evt) => {	
-			let options = {
-				uri: hook,
-				method: 'POST',
-				json: true ,
-				body: evt
+		if(lang === 'CoffeeScript') {
+			try {
+				log.info('DM | Compiling module "'+opt.id+'" for user "'+username);
+				code = cs.compile(code);
+			} catch(err) {
+				throwStatusCode(400, 'Compilation of CoffeeScript failed at line '+err.location.first_line);
 			}
-			request(options, (err, res, body) => {
-				if(err || res.statusCode !== 200) 
-					opt.logger('ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')');
-			});
 		}
-	}
 
-	// Attach all modules that are allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json
-	for(let mod in oModules) {
-		sandbox[mod] = oModules[mod];
-	}
+		// TODO decrypting of user parameters has to happen before we runstringasmodule
+		// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
+		// for(let prop in opt.globals) {
+		// 	log.info('DM | Loading user defined global variable '+prop);
+		// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
+		// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
+		// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
+		// }
 
-	try {
-		// Finally the module is run in a VM
-		vm.runInNewContext(code, sandbox, sandbox.id);
-	} catch(err) {
-		let oReply = {
-			code: 400,
-			message: 'Loading Module failed: '
-		};
-		if(err.message) oReply.message += err.message;
-		else oReply.message += 'Try to run the script locally to track the error!';
-		return cb(oReply);
-	}
-	log.info('DM | Module "'+opt.id+'" ran successfully for user '+username);
+		log.info('DM | Running module "'+opt.id+'" for user '+username);
+		// The sandbox contains the objects that are accessible to the user.
+		// Eventually they need to be required from a vm themselves 
+		let sandbox = {
+			id: opt.id,
+			params: opt.globals,
+			log: opt.logger,
+			exports: {},
+			sendEvent: (hook, evt) => {	
+				let options = {
+					uri: hook,
+					method: 'POST',
+					json: true ,
+					body: evt
+				}
+				request(options, (err, res, body) => {
+					if(err || res.statusCode !== 200) 
+						opt.logger('ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')');
+				});
+			}
+		}
 
-	// Now that the module ran successfully we can extract the argument names from all the exported functions
-	let oFunctions = {};
-	for(let func in sandbox.exports) {
-		oFunctions[func] = getFunctionArgumentsAsStringArray(sandbox.exports[func]);
-	}
-	cb(null, {
-		module: sandbox.exports,
-		comment: searchComment(lang, origCode),
-		functions: oFunctions
+		// Attach all modules that are allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json
+		for(let mod in oModules) {
+			sandbox[mod] = oModules[mod];
+		}
+
+		try {
+			// Finally the module is run in a VM
+			vm.runInNewContext(code, sandbox, sandbox.id);
+		} catch(err) {
+			let msg = 'Loading Module failed: '
+			if(err.message) msg += err.message;
+			else msg += 'Try to run the script locally to track the error!';
+			throwStatusCode(400, msg);
+		}
+		log.info('DM | Module "'+opt.id+'" ran successfully for user '+username);
+
+		// Now that the module ran successfully we can extract the argument names from all the exported functions
+		let oFunctions = {};
+		for(let func in sandbox.exports) {
+			oFunctions[func] = getFunctionArgumentsAsStringArray(sandbox.exports[func]);
+		}
+		resolve({
+			module: sandbox.exports,
+			comment: searchComment(lang, origCode),
+			functions: oFunctions
+		});
 	});
 }

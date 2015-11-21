@@ -104,6 +104,11 @@ table.padded .highlight {
 	padding-right: 20px;
 }
 
+table.mystyle>tbody>tr { border-top: 1px solid #DDD }
+table.mystyle>tbody>tr:nth-child(even) { background: #F8F8F8 }
+table.mystyle>tbody>tr>td:first-child { padding-right: 8px }
+table.mystyle td { padding-right: 8px }
+
 .hundredwide { width: 100% }
 .seventywide { width: 70% }
 .mediumfont { font-size: 0.85em }
@@ -129,6 +134,10 @@ table.padded .highlight {
 	width: 100%;
 }
 #editor.modules { height: 400px }
+#editor.readonly {
+	background: #eeeeee;
+	opacity: 0.5;
+}
 
 #loginTable {
 	float: left;
@@ -203,7 +212,10 @@ table.padded .highlight {
     0%   {transform: rotate(0deg)}
     100% {transform: rotate(360deg)}
 }
-
+input.readonly {
+	color: #888;
+	background: #eeeeee
+}
 input[type=text],
 input[type=password] {
 	transition: all 0.30s ease-in-out;

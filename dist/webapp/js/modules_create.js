@@ -132,12 +132,12 @@ fOnLoad = function() {
         };
         action = oParams.id ? 'update' : 'create';
         return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
-          main.setInfo(true, msg);
+          main.setInfo(true, msg, true);
           if (oParams.id) {
             return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
           }
         }).fail(function(err) {
-          return main.setInfo(false, err.responseText);
+          return main.setInfo(false, err.responseText, true);
         });
       }
     }
@@ -152,14 +152,26 @@ fOnLoad = function() {
   };
   if (oParams.id) {
     return main.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
-      var param, ref, shielded;
+      var param, ref, shielded, uid;
       if (oMod) {
+        uid = parseInt(d3.select('body').attr('data-uid'));
         ref = oMod.globals;
         for (param in ref) {
           shielded = ref[param];
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.name);
+        if (uid === oMod.UserId) {
+          fAddUserParam('', false);
+        } else {
+          $('#input_id').addClass('readonly').attr('readonly', true);
+          editor.setReadOnly(true);
+          $('#editor').addClass('readonly');
+          $('#editor_mode').hide();
+          $('#but_submit').hide();
+          $('#tableParams img').remove();
+          $('#tableParams input').addClass('readonly').attr('readonly', true).attr('disabled', true);
+        }
         $('#editor_mode').val(oMod.lang);
         if (oMod.lang === 'CoffeeScript') {
           editor.getSession().setMode("ace/mode/coffee");
@@ -170,10 +182,10 @@ fOnLoad = function() {
           $('#is_public').prop('checked', true);
         }
         editor.setValue(oMod.code);
-        editor.moveCursorTo(0, 0);
+        return editor.moveCursorTo(0, 0);
       }
-      return fAddUserParam('', false);
     }).fail(function(err) {
+      fAddUserParam('', false);
       return main.setInfo(false, 'Could not get module ' + oParams.id + ': ' + err.responseText);
     });
   } else {

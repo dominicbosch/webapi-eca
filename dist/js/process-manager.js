@@ -29,26 +29,26 @@ geb.addListener('firebase:init', (oConf) => {
 	log.info('PM | Succcessfully connected to DB, Initialzing Users');
 	// Load the standard users from the user config file if they are not already existing
 	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-	let arrUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUsers((err, arrReply) => {
-		if(err) {
-			log.error(err);
-			arrReply = [];
-		}
-		let arrUsernames = arrReply.map((o) => o.username);
-		for(let username in arrUsers) {
-			if(arrUsernames.indexOf(username) === -1) {
-				arrUsers[username].username = username;
-				db.storeUser(arrUsers[username], (err, oUser) => {
-					log.info('PM | User '+oUser.username+' successfully stored with ID#'+oUser.id);
-					exports.startWorker(oUser);
-				});
+	let oUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+	db.getUsers()
+		.then((arrUsers) => {
+			let arrUsernames = arrUsers.map((o) => o.username);
+			for(let username in oUsers) {
+				if(arrUsernames.indexOf(username) === -1) {
+					oUsers[username].username = username;
+					db.storeUser(oUsers[username]).then((oUser) => {
+						log.info('PM | User '+oUser.username+' successfully stored with ID#'+oUser.id);
+						exports.startWorker(oUser);
+					})
+					.catch((err) => log.error(err));
+				}
 			}
-		}
-		for(let i = 0; i < arrReply.length; i++) {
-			exports.startWorker(arrReply[i]);
-		}
-	});
+			for(let i = 0; i < arrUsers.length; i++) {
+				exports.startWorker(arrUsers[i]);
+			}
+		})
+		.catch((err) => log.error(err));
+
 	fb.getLastIndex(systemName, (err, id) => {
 		pl(registerProcessLogger(null, systemName), id);
 	})
@@ -56,6 +56,14 @@ geb.addListener('firebase:init', (oConf) => {
 
 geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
+});
+
+geb.addListener('rule:new', (oRule) => {
+	console.log('process manager got event about rule', oRule);
+	let oChild = oChildren[oRule.UserId];
+	if(oChild) {
+		oChild.send(oRule);
+	} else log.warn('PM | Got new rule for inactive Worker')
 });
 
 function registerProcessLogger(uid, username) {
@@ -74,17 +82,6 @@ function registerProcessLogger(uid, username) {
 			default: log.warn('PM | Got unknown command:' + oMsg.comd);
 		}
 	}
-}
-
-exports.killWorker = function(oUser, cb) {
-	if(oChildren[oUser.id]) {
-		oChildren[oUser.id].kill('SIGINT');
-		log.warn('PM | Killed user process for user ID#'+oUser.id);
-		fb.logState(oUser.username, 'shutdown', (new Date().getTime()))
-		db.setWorker(oUser.id, null)
-		oChildren[oUser.id] = null;
-		cb(null);
-	} else cb(new Error('Process not running!'))
 }
 
 exports.startWorker = function(oUser, cb) {
@@ -109,5 +106,16 @@ exports.startWorker = function(oUser, cb) {
 			if(typeof cb === 'function') cb(null);
 		});
 	}
+}
+
+exports.killWorker = function(uid, uname, cb) {
+	if(oChildren[uid]) {
+		oChildren[uid].kill('SIGINT');
+		log.warn('PM | Killed user process for user ID#'+uid);
+		fb.logState(uname, 'shutdown', (new Date().getTime()))
+		db.setWorker(uid, null)
+		oChildren[uid] = null;
+		cb(null);
+	} else cb(new Error('Process not running!'))
 }
 

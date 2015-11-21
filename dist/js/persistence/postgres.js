@@ -87,16 +87,16 @@ function initializeModels() {
 
 	// ### Define Relations
 	// If a user gets deleted, we delete all his realted data too (cascade) 
-	Worker.belongsTo(User);
-	Rule.belongsTo(User);
-	Webhook.belongsTo(User);
-	EventTrigger.belongsTo(User);
-	ActionDispatcher.belongsTo(User);
-	User.hasOne(Worker, { onDelete: 'cascade' });
-	User.hasMany(Rule, { onDelete: 'cascade' });
-	User.hasMany(Webhook, { onDelete: 'cascade' });
-	User.hasMany(EventTrigger, { onDelete: 'cascade' });
-	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
+	Worker.belongsTo(User, { onDelete: 'cascade' });
+	Rule.belongsTo(User, { onDelete: 'cascade' });
+	Webhook.belongsTo(User, { onDelete: 'cascade' });
+	EventTrigger.belongsTo(User, { onDelete: 'cascade' });
+	ActionDispatcher.belongsTo(User, { onDelete: 'cascade' });
+	User.hasOne(Worker);
+	User.hasMany(Rule);
+	User.hasMany(Webhook);
+	User.hasMany(EventTrigger);
+	User.hasMany(ActionDispatcher);
 	Rule.belongsTo(Webhook);
 	
 	// Return a promise
@@ -110,6 +110,13 @@ function throwStatusCode(code, msg) {
 	let e = new Error(msg);
 	e.statusCode = code;
 	throw e;
+}
+exports.throwStatusCode = throwStatusCode;
+
+exports.errHandler = (res) => (err) => {
+	log.error(err);
+	res.status(err.statusCode || 500);
+	res.send(err.message);
 }
 
 // After retrieving a plain array of sequelize records, this function transforms all
@@ -132,58 +139,56 @@ exports.shutDown = (cb) => {
 // ##
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.getUsers = (cb) => {
-	User.findAll().then((arrRecords) => {
-		cb(null, arrRecords.map((o) => o.toJSON()));
-	}, cb).catch(ec);
+exports.getUsers = () => {
+	return User.findAll().then((arr) => arrRecordsToJSON(arr))
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.getUser = (uid, cb) => {
-	User.findById(uid).then((oRecord) => {
-		if(oRecord) cb(null, oRecord.toJSON());
-		else cb(new Error('User not found!'));
-	}, cb).catch(ec);
+exports.getUser = (uid) => {
+	return User.findById(uid)
+		.then((oRecord) => {
+			if(oRecord) return oRecord.toJSON();
+			else throwStatusCode(404, 'User not found!');
+		});
 };
 
-exports.getUserByName = (username, cb) => {
-	User.findOne({ where: { username: username } }).then((oRecord) => {
-		if(oRecord) cb(null, oRecord.toJSON());
-		else cb(new Error('User not found!'));
-	}, cb).catch(ec);
+exports.getUserByName = (username) => {
+	return User.findOne({ where: { username: username } })
+		.then((oRecord) => {
+			if(oRecord) return oRecord.toJSON();
+			else throwStatusCode(404, 'User not found!');
+		});
 };
 
-exports.storeUser = (oUser, cb) => {
+exports.storeUser = (oUser) => {
 	log.info('POSTGRES | Storing new user '+oUser.username);
-	User.create(oUser).then((oNewUser) => {
-		return oNewUser.createWorker({}).then(() => {
-			cb(null, oNewUser.toJSON())
-		}, cb);
-	}).catch(ec);
+	return User.create(oUser)
+		.then((oNewUser) => {
+			return oNewUser.createWorker({}).then(() => oNewUser)
+		})
+		.then((oNewUser) => oNewUser.toJSON())
 };
 
 // Fetch all user IDs and pass them to cb(err, obj).
-exports.updateUserAttribute = (uid, attr, val, cb) => {
+exports.updateUserAttribute = (uid, attr, val) => {
 	log.info('POSTGRES | Updating user #'+uid);
-	User.findById(uid).then((oRecord) => {
-		if(oRecord) {
-			let oChg = {};
-			oChg[attr] = val;
-			oRecord.update(oChg, { fields: [ attr ] })
-				.then(() => cb(), cb).catch(ec)
-		} else cb(new Error('User not found!'));
-	}, cb).catch(ec);
+	return User.findById(uid)
+		.then((oRecord) => {
+			if(oRecord) {
+				let oChg = {};
+				oChg[attr] = val;
+				return oRecord.update(oChg, { fields: [ attr ] });
+			} else throwStatusCode(404, 'User not found!');
+		})
 };
 
-exports.deleteUser = (uid, cb) => {
+exports.deleteUser = (uid) => {
 	log.info('POSTGRES | Deleting user #'+uid);
-	User.findById(uid).then((oRecord) => {
-		if(oRecord) {
-			oRecord.destroy()
-				.then(() => cb(null, 'User deleted!'), cb)
-				.catch(ec);
-		} else cb(new Error('User with ID #'+uid+' not found!'));
-	}, cb).catch(ec)
+	return User.findById(uid)
+		.then((oRecord) => {
+			if(oRecord) return oRecord.destroy();
+			else throwStatusCode(404, 'User with ID #'+uid+' not found!');
+		});
 };
 
 // Checks the credentials and on success returns the user object to the
@@ -201,8 +206,8 @@ exports.loginUser = (username, password, cb) => {
 	}, cb).catch(ec);
 };
 
-exports.getAllUsers = (cb) => {
-	User.findAll().then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+exports.getAllUsers = () => {
+	return User.findAll().then((arr) => arrRecordsToJSON(arr));
 };
 
 
@@ -247,7 +252,7 @@ exports.getAllWebhooks = () => {
 
 exports.getAllUserWebhooks = (uid) => {
 	var publicSearch = Webhook.findAll({ 
-		include: [ User ],
+		include: [{ model: User, attributes: [ 'username' ]}],
 		where: {
 			isPublic: true,
 			UserId: { $ne: uid }
@@ -255,7 +260,8 @@ exports.getAllUserWebhooks = (uid) => {
 	});
 
 	var privateSearch = User.findById(uid)
-		.then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
+		.then((oRecord) => oRecord.getWebhooks());
+		// .then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
 
 	return publicSearch
 		.then(() => privateSearch)
@@ -314,8 +320,11 @@ exports.storeRule = (uid, oRule, hookid) => {
 		.then((oUser) => {
 			return Webhook.findById(hookid)
 				.then((oWebhook) => {
-					if(oWebhook) return { user: oUser, hook: oWebhook };
-					else throwStatusCode(404, 'Webhook not existing!');
+					if(oWebhook) {
+						if(oWebhook.isPublic || oWebhook.UserId===uid) {
+							return { user: oUser, hook: oWebhook };
+						} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
+					} else throwStatusCode(404, 'Webhook not existing!');
 				})
 		})
 		.then((o) => {
@@ -340,42 +349,47 @@ exports.deleteRule = (uid, rid) => {
 // ## ACTION DISPATCHERS
 // ##
 
-exports.getAllActionDispatchers = (uid, cb) => {
-	User.findById(uid)
-		.then((oUser) => oUser.getActionDispatchers())
-		.then((arrAds) => cb(null, arrRecordsToJSON(arrAds)), cb)
-		.catch(ec);
+exports.getAllActionDispatchers = (uid) => {
+	var query = { include: [{ model: User, attributes: [ 'username' ]}] };
+	if(uid) query.where = { UserId: uid };
+	return ActionDispatcher.findAll(query)
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
-exports.getActionDispatcher = (uid, aid, cb) => {
-	User.findById(uid)
-		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
-		.then((arr) => {
-			if(arr.length === 0) cb(new Error('Action Dispatcher not found!'));
-			else cb(null, arr[0]);
-		}, cb)
-		.catch(ec);
+exports.getActionDispatcher = (aid) => {
+	return ActionDispatcher.findOne({
+			where: { id: aid },
+			include: [{ model: User, attributes: [ 'username' ]}]
+		})
+		.then((oAd) => {
+			if(oAd) return oAd;
+			else throwStatusCode(404, 'Action Dispatcher does not exist!')
+		});
 };
-exports.createActionDispatcher = (uid, oAD, cb) => {
-	User.findById(uid)
+exports.createActionDispatcher = (uid, oAD) => {
+	return User.findById(uid)
 		.then((oUser) => oUser.createActionDispatcher(oAD))
-		.then((oNewAD) => cb(null, oNewAD.toJSON()), cb)
-		.catch(ec);
+		.then((oNewAD) => oNewAD.toJSON())
 };
-exports.updateActionDispatcher = (uid, aid, oAd, cb) => {
-	User.findById(uid)
+exports.updateActionDispatcher = (uid, aid, oAd) => {
+	return User.findById(uid)
 		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
 		.then((arrOldAd) => {
-			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd).then(() => cb(null));
-			else cb(new Error('Action Dispatcher not found!'))
-		}, cb)
-		.catch(ec);
+			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd)
+			else throwStatusCode(404, 'Action Dispatcher not found!');
+		})
 };
-exports.deleteActionDispatcher = (uid, aid, cb) => {
+exports.deleteActionDispatcher = (uid, aid) => {
 	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
-	ActionDispatcher.findById(aid).then((oRecord) => {
-		if(oRecord) oRecord.destroy().then(() => cb(null, 'ActionDispatcher deleted!'), cb).catch(ec);
-		else cb(new Error('ActionDispatcher with ID #'+aid+' not found!'));
-	}, cb).catch(ec);
+	return User.findById(uid)
+		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
+		.then((arrOldAd) => {
+			if(arrOldAd.length > 0) return arrOldAd[0].destroy();
+			else {
+				let e = new Error('No Action Dispatcher found to delete!');
+				e.statusCode = 404;
+				throw e;
+			}
+		});
 };
 
 

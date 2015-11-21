@@ -22,9 +22,6 @@
 
 /*#actionSection>table>tr:nth-child(even) { background: #E6FFFD }*/
 /*#actionSection>table>tr:nth-child(even) { background: #F2F9F9 }*/
-#actionSection>table>tr { border-top: 1px solid #DDD }
-#actionSection>table>tr:nth-child(even) { background: #F8F8F8 }
-#actionSection>table>tr>td:first-child { padding-right: 8px }
 #actionSection .bullet { padding: 0px 8px 0px 8px }
 
 #actionSection button {

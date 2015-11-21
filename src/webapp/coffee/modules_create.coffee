@@ -124,12 +124,12 @@ fOnLoad = () ->
 				action = if oParams.id then 'update' else 'create'
 				main.post('/service/'+moduleType+'/'+action, obj)
 					.done (msg) ->
-						main.setInfo true, msg
+						main.setInfo true, msg, true
 						if oParams.id then alert "You need to update the rules that use this module in 
 										order for the changes to be applied to them!"
 
 					.fail (err) ->
-						main.setInfo false, err.responseText
+						main.setInfo false, err.responseText, true
 
 	
 	# EDIT MODULES
@@ -144,8 +144,19 @@ fOnLoad = () ->
 		main.post('/service/'+moduleType+'/get/'+oParams.id)
 			.done (oMod) ->
 				if oMod
+					uid = parseInt d3.select('body').attr('data-uid')
 					fAddUserParam param, shielded for param, shielded of oMod.globals
-					$('#input_id').val oMod.name
+					$('#input_id').val(oMod.name)
+					if uid is oMod.UserId 
+						fAddUserParam '', false
+					else
+						$('#input_id').addClass('readonly').attr('readonly', true)
+						editor.setReadOnly true
+						$('#editor').addClass 'readonly'
+						$('#editor_mode').hide()
+						$('#but_submit').hide()
+						$('#tableParams img').remove()
+						$('#tableParams input').addClass('readonly').attr('readonly', true).attr('disabled', true)
 					$('#editor_mode').val oMod.lang
 					if oMod.lang is 'CoffeeScript'
 						editor.getSession().setMode "ace/mode/coffee"
@@ -156,9 +167,9 @@ fOnLoad = () ->
 						$('#is_public').prop 'checked', true
 					editor.setValue oMod.code
 					editor.moveCursorTo 0, 0
-				fAddUserParam '', false
 
 			.fail (err) ->
+				fAddUserParam '', false
 				main.setInfo false, 'Could not get module '+oParams.id+': '+ err.responseText
 
 	else

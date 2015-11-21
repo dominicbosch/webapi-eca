@@ -16,20 +16,19 @@ var log = require('../logging'),
 
 router.post('/get', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching all');
-	db.getAllActionDispatchers(req.session.pub.id, (err, arr) => {
-		if(err) res.status(500).send(err.toString());
-		else res.send(arr);
-	});
+	db.getAllActionDispatchers()
+		.then((arr) => res.send(arr))
+		.catch(db.errHandler(res));
 });
 
 router.post('/get/:id', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Fetching one by id: ' + req.params.id);
-	db.getActionDispatcher(req.session.pub.id, req.params.id, (err, oADs) => {
-		if(err) res.status(500).send(err.toString());
-		else res.send(oADs);
-	});
+	db.getActionDispatcher(req.params.id)
+		.then((oADs) => res.send(oADs))
+		.catch(db.errHandler(res));
 });
 
+// TODO IMPLEMENT
 router.post('/create', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | Create: ' + req.body.name);
 	let args = {
@@ -53,52 +52,42 @@ router.post('/update', (req, res) => {
 });
 
 function storeModule(args, res) {
-	db.getAllActionDispatchers(args.userid, (err, arr) => {
-		arr = arr || [];
-		if(args.id) arr = arr.filter((o) => o.id !== parseInt(args.id));
-		let arrNames = arr.map((o) => o.name);
-		if(arrNames.indexOf(args.body.name) > -1) {
-			res.status(409).send('Module name already existing: '+args.body.name);
-		} else {
+	let ab = args.body;
+	db.getAllActionDispatchers(args.userid)
+		.then((arr) => {
+			arr = arr || [];
+			if(args.id) arr = arr.filter((o) => o.id !== parseInt(args.id));
+			let arrNames = arr.map((o) => o.name);
+			if(arrNames.indexOf(ab.name) > -1) {
+				db.throwStatusCode(409, 'Module name already existing: '+ab.name);
+			}
+		})
+		.then(() => {
 			let options = { globals: {} };
-			for(let el in args.body.globals) options.globals[el] = 'dummy';
-			log.info('SRVC:AD | Running AD ', args.body.name);
-			dynmod.runStringAsModule(args.body.code, args.body.lang, args.username, options, (err, oMod) => {
-				if(err) {
-					log.error('SRVC:AD | Error running string as module: ', err);
-					res.status(err.code).send(err.message);
-				} else {
-					function fAnsw(err, ad) {
-						if(err) {
-							log.warn('SRVC:AD | Unable to store Action Dispatcher', err.toString());
-							res.status(500).send('Action Dispatcher not stored! ' + err.toString())
-						} else {
-							log.info('SRVC:AD | Module stored');
-							res.send('Action Dispatcher stored!')
-						}
-					}
-					
-					log.info('CM | Storing module "'+args.body.name+'" with functions '+Object.keys(oMod.functions).join(', '));
-					let oModule = args.body;
-					delete oModule.id; // If the ID is set it is an update of an existing module
-					oModule.comment = oMod.comment;
-					oModule.functions = oMod.functions;
-					if(args.id) db.updateActionDispatcher(args.userid, args.id, oModule, fAnsw);
-					else db.createActionDispatcher(args.userid, oModule, fAnsw);
-				}
-			});
-		}
-	});
+			for(let el in ab.globals) options.globals[el] = 'dummy';
+			log.info('SRVC:AD | Running AD ', ab.name);
+			return dynmod.runStringAsModule(ab.code, ab.lang, args.username, options)
+		})
+		.then((oMod) => {
+			log.info('CM | Storing module "'+ab.name+'" with functions '+Object.keys(oMod.functions).join(', '));
+			let oModule = ab;
+			delete oModule.id; // If the ID is set it is an update of an existing module
+			oModule.comment = oMod.comment;
+			oModule.functions = oMod.functions;
+
+			if(args.id) return db.updateActionDispatcher(args.userid, args.id, oModule);
+			else return db.createActionDispatcher(args.userid, oModule);
+		})
+		.then((ad) => {
+			log.info('SRVC:AD | Module stored');
+			res.send('Action Dispatcher stored!')
+		})	
+		.catch(db.errHandler(res));
 }
 
 router.post('/delete', (req, res) => {
 	log.info('SRVC | ACTION DISPATCHERS | DELETE: #' + req.body.id);
-	db.deleteActionDispatcher(req.session.pub.id, req.body.id, (err, msg) => {
-		if(err) {
-			log.error(err);
-			res.status(400).send('Unable to delete Module #' + req.body.id);
-		} else {
-			res.send(msg);
-		}
-	});
+	db.deleteActionDispatcher(req.session.pub.id, req.body.id)
+		.then(() => res.send('Deleted!'))
+		.catch(db.errHandler(res));
 });
