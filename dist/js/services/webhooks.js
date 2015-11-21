@@ -40,7 +40,7 @@ router.post('/get', (req, res) => {
 	log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
 	db.getAllUserWebhooks(req.session.pub.id)
 		.then((arr) => res.send(arr))
-		.catch(errHandler);
+		.catch(errHandler(res));
 });
 
 function genHookID(arrExisting) {
@@ -67,9 +67,10 @@ router.post('/create', (req, res) => {
 		.then((arrAllHooks) => genHookID(arrAllHooks.map((o) => o.hookid)))
 		.then((newHookId) => {
 			let isPublic = (req.body.isPublic==='true');
-			return db.createWebhook(userId, newHookId, req.body.hookname, isPublic);
+			return db.createWebhook(userId, newHookId, req.body.hookname, isPublic)
+				.then(() => newHookId);
 		})
-		.then(() => {
+		.then((hookid) => {
 			log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
 			allowedHooks[hookid] = {
 				hookname: req.body.hookname,
@@ -77,7 +78,7 @@ router.post('/create', (req, res) => {
 			}
 			res.send('Webhook created!');
 		})
-		.catch(errHandler);
+		.catch(errHandler(res));
 })
 
 // User wants to delete a webhook

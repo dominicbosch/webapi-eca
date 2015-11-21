@@ -97,11 +97,11 @@ function initializeModels() {
 	User.hasMany(Webhook, { onDelete: 'cascade' });
 	User.hasMany(EventTrigger, { onDelete: 'cascade' });
 	User.hasMany(ActionDispatcher, { onDelete: 'cascade' });
-	Rule.hasOne(Webhook);
+	Rule.belongsTo(Webhook);
 	
 	// Return a promise
-	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
-	// return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	// return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
+	return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
 }
 
 function ec(err) { log.error(err) }
