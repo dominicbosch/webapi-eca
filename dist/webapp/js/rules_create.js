@@ -133,8 +133,7 @@ fOnLoad = function() {
   });
   $('#but_submit').click(function() {
     var arrActions, arrConditions, el, err, error, error1, j, len, obj;
-    window.scrollTo(0, 0);
-    main.clearInfo();
+    main.clearInfo(true);
     try {
       if ($('#input_name').val() === '') {
         $('#input_name').focus();

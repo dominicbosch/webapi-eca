@@ -111,20 +111,18 @@ fOnLoad = function() {
   });
   $('#but_emit').click(function() {
     var err, error, obj, selectedHook;
-    window.scrollTo(0, 0);
     try {
       obj = JSON.parse(editor.getValue());
     } catch (error) {
       err = error;
-      main.setInfo(false, 'You have errors in your JSON object! ' + err);
+      main.setInfo(false, 'You have errors in your JSON object! ' + err, true);
     }
     selectedHook = $('#sel_webh').val();
     if (obj) {
-      console.log('posting to ' + '/service/webhooks/event/' + selectedHook);
-      return main.post('/service/webhooks/event/' + selectedHook, obj).done(function(data) {
-        return main.setInfo(true, data.message);
+      return main.post('/service/webhooks/event/' + selectedHook, obj).done(function(msg) {
+        return main.setInfo(true, msg);
       }).fail(function(err) {
-        return main.setInfo(false, 'Error in upload: ' + err.responseText);
+        return main.setInfo(false, 'Error in upload: ' + err.responseText, true);
       });
     }
   });

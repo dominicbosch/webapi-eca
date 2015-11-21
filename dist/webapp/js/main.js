@@ -33,7 +33,6 @@ $(document).ready(function() {
 
 window.main = {
   post: function(url, obj) {
-    main.clearInfo();
     obj = obj ? JSON.stringify(obj) : void 0;
     return $.ajax({
       type: 'POST',
@@ -46,12 +45,17 @@ window.main = {
       }
     });
   },
-  setInfo: function(isSuccess, msg) {
+  setInfo: function(isSuccess, msg, goTop) {
     d3.select('#skeletonTicker').classed('success', isSuccess).classed('error', !isSuccess).text(msg);
-    return window.scrollTo(0, 0);
+    if (goTop) {
+      return window.scrollTo(0, 0);
+    }
   },
-  clearInfo: function() {
-    return d3.select('#skeletonTicker').classed('success', false).classed('error', false).text('');
+  clearInfo: function(goTop) {
+    d3.select('#skeletonTicker').classed('success', false).classed('error', false).text('');
+    if (goTop) {
+      return window.scrollTo(0, 0);
+    }
   },
   registerHoverInfoHTML: function(d3El, html) {
     var checkLeave, d3Div, d3Img;

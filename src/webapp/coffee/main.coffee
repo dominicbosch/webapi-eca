@@ -24,7 +24,6 @@ $( document ).ready () ->
 window.main =
 	#  Needed to get thoroughly rid of jQuery... But it seems jQuery is convenient for ajax calls
 	post: (url, obj) ->
-		main.clearInfo()
 		obj = if obj then JSON.stringify(obj)
 		$.ajax
 			type: 'POST'
@@ -45,18 +44,20 @@ window.main =
 		# 	.on 'load', (msg) -> cb(null, msg.responseText)
 		# 	.on 'error', (err) -> cb(err.responseText)
 
-	setInfo: ( isSuccess, msg ) ->
+	setInfo: ( isSuccess, msg, goTop ) ->
 		d3.select('#skeletonTicker')
 			.classed 'success', isSuccess
 			.classed 'error', not isSuccess
 			.text msg
-		window.scrollTo 0, 0
+		if goTop then window.scrollTo 0, 0
 
-	clearInfo: () ->
+	clearInfo: (goTop) ->
 		d3.select('#skeletonTicker')
 			.classed 'success', false
 			.classed 'error', false
 			.text ''
+		if goTop then window.scrollTo 0, 0
+
 
 	registerHoverInfoHTML: (d3El, html) ->
 		checkLeave = () ->

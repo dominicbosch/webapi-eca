@@ -188,7 +188,7 @@ table.padded .highlight {
 .icon.del { margin: 0px 3px }
 .icon.info, .icon.edit, .icon.del, .icon.log { cursor: pointer }
 #tls select, #tls input { margin: 3px }
-#tls select { margin-top: 6px }
+#tls select { margin: 10px 5px }
 
 #but_rule { margin-left: 3px }
 

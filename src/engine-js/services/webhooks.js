@@ -13,7 +13,7 @@ var log = require('../logging'),
 	express = require('express'),
 	crypto = require('crypto-js'),
 
-	allowedHooks = {},
+	activeHooks = {},
 	db = global.db,
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
@@ -29,9 +29,8 @@ geb.addListener('system:init', (msg) => {
 		log.info('SRVC | WEBHOOKS | Initializing '+arrHooks.length+' Webhooks');
 		for (let i = 0; i < arrHooks.length; i++) {
 			let h = arrHooks[i];
-			allowedHooks[h.hookid] = h; 
+			activeHooks[h.hookid] = h; 
 		}
-		console.log(allowedHooks)
 	}).catch((err) => log.error(err));
 });
 
@@ -72,7 +71,7 @@ router.post('/create', (req, res) => {
 		})
 		.then((hookid) => {
 			log.info('SRVC | WEBHOOKS "'+hookid+'" created and activated');
-			allowedHooks[hookid] = {
+			activeHooks[hookid] = {
 				hookname: req.body.hookname,
 				userid: userId
 			}
@@ -87,7 +86,7 @@ router.post('/delete/:id', (req, res) => {
 	log.info('SRVC | WEBHOOKS | Deleting Webhook '+hookid);
 	db.deleteWebhook(req.session.pub.id, hookid, (err, msg) => {
 		if(!err) {
-			delete allowedHooks[hookid];
+			delete activeHooks[hookid];
 			res.send('OK!');
 		} else res.status(400).send(err.toString());
 	})
@@ -95,14 +94,20 @@ router.post('/delete/:id', (req, res) => {
 
 // A remote service pushes an event over a webhook to our system
 router.post('/event/:id', (req, res) => {
-	let oHook = allowedHooks[req.params.id];
+	let oHook = activeHooks[req.params.id];
 	if(oHook) {
-		req.body.engineReceivedTime = (new Date()).getTime();
+		let now = new Date();
+		req.body.engineReceivedTime = now.getTime();
 		let obj = {
+			hookid: oHook.id,
 			eventname: oHook.hookname,
 			body: req.body
 		};
-		geb.emit('event:'+req.params.id, obj)
-		res.send('Thank you for the event on: "'+oHook.hookname+'"');
+		console.log('GOT EVENT', obj);
+		console.log('req.hostname', req.hostname)
+		console.log('req.ip', req.ip)
+		console.log('req.ips', req.ips)
+		geb.emit('webhook:event', obj)
+		res.send('Thank you for the event on: "'+oHook.hookname+'" at ' + now);
 	} else res.status(404).send('Webhook not existing!');
 });

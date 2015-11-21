@@ -89,20 +89,18 @@ fOnLoad = () ->
 		# window.open ('rules_create?webhook='+$('#sel_webh').val()), '_blank'
 
 	$('#but_emit').click () ->
-		window.scrollTo 0, 0
 		try
 			obj = JSON.parse editor.getValue()
 		catch err
-			main.setInfo false, 'You have errors in your JSON object! ' + err
+			main.setInfo false, 'You have errors in your JSON object! '+err, true
 
 		selectedHook = $('#sel_webh').val()
 		if obj
-			console.log 'posting to ' + '/service/webhooks/event/' + selectedHook
-			main.post('/service/webhooks/event/' + selectedHook, obj)
-				.done (data) ->
-					main.setInfo true, data.message
+			main.post('/service/webhooks/event/'+selectedHook, obj)
+				.done (msg) ->
+					main.setInfo true, msg
 				.fail (err) ->
-					main.setInfo false, 'Error in upload: ' + err.responseText
+					main.setInfo false, 'Error in upload: '+err.responseText, true
 
 	createWebhookList()
 

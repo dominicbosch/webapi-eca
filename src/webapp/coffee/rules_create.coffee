@@ -133,8 +133,7 @@ fOnLoad = () ->
 # SUBMIT
 
 	$('#but_submit').click () ->
-		window.scrollTo 0, 0
-		main.clearInfo()
+		main.clearInfo true
 		try
 			if $('#input_name').val() is ''
 				$('#input_name').focus()
