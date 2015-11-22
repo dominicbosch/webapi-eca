@@ -15,6 +15,16 @@ var log = require('../logging'),
 
 var router = module.exports = express.Router();
 
+geb.addListener('system:init', () => {
+	db.getAllRules()
+		.then((arr) => {
+			for(var i = 0; i < arr.length; i++) {
+				geb.emit('rule:new', arr[i]);
+			}
+		})
+		.catch((err) => log.error(err));
+});
+
 router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
 	db.getAllRules(req.session.pub.id)

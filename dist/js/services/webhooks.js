@@ -19,13 +19,15 @@ var log = require('../logging'),
 	router = module.exports = express.Router();
 
 geb.addListener('system:init', (msg) => {
-	db.getAllWebhooks().then((arrHooks) => {
-		log.info('SRVC | WEBHOOKS | Initializing '+arrHooks.length+' Webhooks');
-		for (let i = 0; i < arrHooks.length; i++) {
-			let h = arrHooks[i];
-			activeHooks[h.hookid] = h; 
-		}
-	}).catch((err) => log.error(err));
+	db.getAllWebhooks()
+		.then((arrHooks) => {
+			log.info('SRVC | WEBHOOKS | Initializing '+arrHooks.length+' Webhooks');
+			for (let i = 0; i < arrHooks.length; i++) {
+				let h = arrHooks[i];
+				activeHooks[h.hookid] = h; 
+			}
+		})
+		.catch((err) => log.error(err));
 });
 
 // User fetches all his existing webhooks
@@ -90,10 +92,10 @@ router.post('/event/:id', (req, res) => {
 		req.body.origin = req.ip;
 		let obj = {
 			hookid: oHook.id,
-			eventname: oHook.hookname,
+			hookname: oHook.hookname,
 			body: req.body
 		};
-		geb.emit('event:'+obj.hookid, obj)
+		geb.emit('webhook:event', obj);
 		res.send('Thank you for the event on: "'+oHook.hookname+'" at ' + now);
 	} else res.status(404).send('Webhook not existing!');
 });

@@ -95,7 +95,6 @@ paths = {
   lib: 'lib/',
   src: 'src/',
   srcGulp: 'src/gulp/gulpfile.coffee',
-  srcEngineCoffee: 'src/engine-coffee/**/*.coffee',
   srcWebAppCoffee: 'src/webapp/coffee/*.coffee',
   dist: 'dist/',
   distEngine: 'dist/js',
@@ -114,8 +113,7 @@ gulp.task('clean', 'Cleanup previously deployed distribution', function(cb) {
 gulp.task('compile', 'Compile the system\'s coffee files in the project', function(cb) {
   var compile;
   compile = function() {
-    var streamOne, streamTwo;
-    streamOne = fSimpleCoffeePipe('compile-engine', paths.srcEngineCoffee, paths.distEngine);
+    var streamTwo;
     streamTwo = fSimpleCoffeePipe('compile-webapp', paths.srcWebAppCoffee, paths.distWebApp + '/js');
     return cb();
   };

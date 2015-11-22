@@ -24,6 +24,11 @@ router.use('/*', (req, res, next) => {
 	else res.status(401).send('You are not admin, you böse bueb you!');
 });
 
+router.post('/setmaxmem', (req, res) => {
+	let newSize = pm.setMaxMem(req.body.memsize);
+	res.send('Maximum memory for user processes now set on '+newSize+'MB');
+});
+
 router.post('/createuser', (req, res) => {
 	if(req.body.username && req.body.password) {
 		db.getUsers().then((arrUsers) => {
@@ -40,17 +45,13 @@ router.post('/createuser', (req, res) => {
 		})
 		.then((oUser) => db.storeUser(oUser))
 		.then((oUser) => {
-			log.info('SRVC:ADMIN |User stored... starting up his dedicated process');
-			pm.startWorker(oUser, (err) => {
-				let msg = 'New user "'+oUser.username+'" created!';
-				if(err) {
-					log.warn('SRVC:ADMIN |Starting of process for user "'+oUser.username+'" failed!');
-					msg += ' But starting of process failed!';
-				}
-				log.info('SRVC:ADMIN |New user "'+oUser.username+'" created by "'+req.session.pub.username+'"!');
-				res.send(msg);
-				geb.emit('user:new', oUser);
-			});
+			log.info('SRVC:ADMIN | New user "'+oUser.username+'" created by "'
+				+req.session.pub.username+'". Starting up his dedicated process...');
+			return pm.startWorker(oUser)
+				.then(() => {
+					log.info('SRVC:ADMIN | Startup of user worker was successful too.');
+					res.send('New user "'+oUser.username+'" created!');
+				});
 		})
 		.catch(db.errHandler(res));
 	}
@@ -65,11 +66,11 @@ router.post('/deleteuser', (req, res) => {
 		db.deleteUser(uid).then(() => {
 			log.info('SRVC:ADMIN |User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
 			log.warn('SRVC:ADMIN | Remove all rules, all ADs and all ETs from user!');
-			res.send('User "'+req.body.username+'" deleted!');
+			return pm.killWorker(uid, req.body.username);
+		})
+		.then(() => {
+			res.send('User "'+req.body.username+'" properly deleted!');
 			// TODO req.body.username should not be used, but yeah it's anyways only the admin who can use it 
-			pm.killWorker(uid, req.body.username, (err) => {
-				if(err) log.error(err);
-			});
 		})
 		.catch(db.errHandler(res))
 	}

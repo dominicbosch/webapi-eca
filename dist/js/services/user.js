@@ -62,14 +62,10 @@ router.post('/worker/state/start', (req, res) => {
 		res.status(400).send('You can\'t start your worker all the time. Please wait at least one minute!');
 	} else {
 		db.getUserByName(req.body.username)
-			.then((oUser) => {
-				pm.startWorker(oUser, (err) => {
-					if(err) res.status(400).send(err);
-					else {
-						res.send('Done');
-						arrLastStart[uname] = now;
-					}					
-				});
+			.then((oUser) => pm.startWorker(oUser))
+			.then(() => {
+				res.send('Done');
+				arrLastStart[uname] = now;
 			})
 			.catch(db.errHandler(res));
 	}
@@ -78,10 +74,8 @@ router.post('/worker/state/start', (req, res) => {
 router.post('/worker/state/kill', (req, res) => {
 	db.getUserByName(req.body.username)
 		.then((oUser) => {
-			pm.killWorker(oUser.id, oUser.username, (err) => {
-				if(err) res.status(400).send(err);
-				else res.send('Done');
-			});
+			return pm.killWorker(oUser.id, oUser.username)
+				.then(() => res.send('Done'));
 		})
 		.catch(db.errHandler(res));
 });
@@ -93,3 +87,5 @@ router.post('/worker/get', (req, res) => {
 		else res.send(oWorker);
 	});
 });
+
+router.post('/worker/memsize', (req, res) => { res.send(''+pm.getMaxMem()) });

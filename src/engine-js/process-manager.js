@@ -22,37 +22,43 @@ var log = require('./logging'),
 
 	geb = global.eventBackbone,
 	db = global.db,
+	maxMem = 20,
 	systemName = '➠ System',
 	oChildren = {};
 
-geb.addListener('firebase:init', (oConf) => {
-	log.info('PM | Succcessfully connected to DB, Initialzing Users');
-	// Load the standard users from the user config file if they are not already existing
-	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
-	let oUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
-	db.getUsers()
-		.then((arrUsers) => {
-			let arrUsernames = arrUsers.map((o) => o.username);
-			for(let username in oUsers) {
-				if(arrUsernames.indexOf(username) === -1) {
-					oUsers[username].username = username;
-					db.storeUser(oUsers[username]).then((oUser) => {
-						log.info('PM | User '+oUser.username+' successfully stored with ID#'+oUser.id);
-						exports.startWorker(oUser);
-					})
-					.catch((err) => log.error(err));
-				}
-			}
-			for(let i = 0; i < arrUsers.length; i++) {
-				exports.startWorker(arrUsers[i]);
-			}
-		})
-		.catch((err) => log.error(err));
+exports.init = (oConf) => {	
+	log.info('PM | Initialzing Users and Loggers');
 
 	fb.getLastIndex(systemName, (err, id) => {
 		pl(registerProcessLogger(null, systemName), id);
-	})
-});
+	});
+
+	// Load the standard users from the user config file if they are not already existing
+	let pathUsers = path.resolve(__dirname, '..', 'config', 'users.json');
+	let oUsers = JSON.parse(fs.readFileSync(pathUsers, 'utf8'));
+	return db.getUsers()
+		.then((arrUsers) => {
+			let arrUsernames = arrUsers.map((o) => o.username);
+			let arrPromises = [];
+
+			for(let username in oUsers) {
+				if(arrUsernames.indexOf(username) === -1) {
+					oUsers[username].username = username;
+					let p = db.storeUser(oUsers[username])
+						.then((oUser) => {
+							log.info('PM | User '+oUser.username
+								+' successfully stored with ID#'+oUser.id);
+							return startWorker(oUser);
+						});
+					arrPromises.push(p);
+				}
+			}
+			for(let i = 0; i < arrUsers.length; i++) {
+				arrPromises.push(startWorker(arrUsers[i]));
+			}
+			return Promise.all(arrPromises);
+		})
+}
 
 geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
@@ -62,6 +68,7 @@ geb.addListener('rule:new', (oRule) => {
 	console.log('process manager got event about rule', oRule);
 	let oChild = oChildren[oRule.UserId];
 	if(oChild) {
+		oRule.cmd = 'rule:new';
 		oChild.send(oRule);
 	} else log.warn('PM | Got new rule for inactive Worker')
 });
@@ -84,38 +91,57 @@ function registerProcessLogger(uid, username) {
 	}
 }
 
-exports.startWorker = function(oUser, cb) {
-	var options = {
-		execArgv: ['--max-old-space-size=20']
-		// , stdio: [ 0, 0, 0 ]
-	};
-	if(oChildren[oUser.id]) {
-		log.warn('PM | Dedicated process for user '+oUser.username+' already existing with PID '+oChildren[oUser.id].pid);
-		if(typeof cb === 'function') cb(new Error('Process already running'))
-	} else {
+function startWorker(oUser) {
+	return new Promise((resolve, reject) => {
+		var options = {
+			execArgv: ['--max-old-space-size='+maxMem]
+			// , stdio: [ 0, 0, 0 ]
+		};
+		if(oChildren[oUser.id]) {
+			log.warn('PM | Dedicated process for user '+oUser.username
+				+' already existing with PID '+oChildren[oUser.id].pid);
+			throw new Error('Process already running');
+		} 
 		fb.getLastIndex(oUser.username, (err, id) => {
-			let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
-			proc.send({
-				cmd: 'init',
-				startIndex: id
-			});
-			log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
-			oChildren[oUser.id] = proc;
-			db.setWorker(oUser.id, proc.pid);
-			proc.on('message', registerProcessLogger(oUser.id, oUser.username));
-			if(typeof cb === 'function') cb(null);
+			if(err) reject(err);
+			else {
+				// FIXME this ID seems not to be correct!
+				console.log('got ID from firebase', id)
+				let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
+				proc.on('message', registerProcessLogger(oUser.id, oUser.username));
+				proc.send({
+					cmd: 'init',
+					startIndex: id
+				});
+				log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
+				oChildren[oUser.id] = proc;
+				db.setWorker(oUser.id, proc.pid)
+					.then(() => resolve());
+			}
 		});
-	}
+	})
 }
 
-exports.killWorker = function(uid, uname, cb) {
-	if(oChildren[uid]) {
-		oChildren[uid].kill('SIGINT');
-		log.warn('PM | Killed user process for user ID#'+uid);
-		fb.logState(uname, 'shutdown', (new Date().getTime()))
-		db.setWorker(uid, null)
-		oChildren[uid] = null;
-		cb(null);
-	} else cb(new Error('Process not running!'))
+function killWorker(uid, uname) {
+	return new Promise((resolve, reject) => {
+		if(!oChildren[uid]) reject('Process not running!');
+		else {
+			oChildren[uid].kill('SIGINT');
+			log.warn('PM | Killed user process for user ID#'+uid);
+			fb.logState(uname, 'shutdown', (new Date().getTime()))
+			db.setWorker(uid, null)
+				.then(() => {
+					oChildren[uid] = null;
+					resolve();			
+				})
+		}
+	});
 }
 
+exports.setMaxMem = function(memsize) {
+	maxMem = parseInt(memsize) || 50;
+	return maxMem;
+};
+exports.getMaxMem = function() { return maxMem };
+exports.startWorker = startWorker;
+exports.killWorker = killWorker;

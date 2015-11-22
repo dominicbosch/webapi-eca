@@ -151,15 +151,8 @@ function init() {
 	dbMod = require('./persistence/'+conf.db.module);
 	
 	// Init the database by using its promise, wau!
-	dbMod.init(conf.db, (err) => {
-		if(err) {
-			log.error(err);
-			log.error('RS | Error connecting DB!', err.toString(),
-				'You might want to change the configuration in config/system.json.',
-				'Shutting down system!'
-			);
-			shutDown();
-		} else {
+	dbMod.init(conf.db)
+		.then(() => {
 			for(let prop in dbMod) {
 				global.db[prop] = dbMod[prop]; // export DB properties
 			}
@@ -167,11 +160,21 @@ function init() {
 			http.init(conf);
 			log.info('RS | Initializing Firebase');
 			fb.init(conf);
-
+			log.info('RS | Initializing Process Manager');
+			return pm.init(conf);
+		})
+		.then(() => {
 			log.info('RS | All good so far, informing all modules about proper system initialization');
 			geb.emit('system:init', conf);
-		}
-	});
+		})
+		.catch((err) => {
+			log.error(err);
+			log.error('RS | Error connecting DB!', err.toString(),
+				'You might want to change the configuration in config/system.json.',
+				'Shutting down system!'
+			);
+			shutDown();
+		});
 }
 
 
@@ -179,7 +182,6 @@ function init() {
 function shutDown() {
 	log.warn('RS | Received shut down command!');
 	if(db.shutDown) db.shutDown();
-	if(engine) engine.shutDown();
 
 	// We need to call process.exit() since the express server in the http-listener
 	// can't be stopped gracefully. Why would you stop this system anyways!??

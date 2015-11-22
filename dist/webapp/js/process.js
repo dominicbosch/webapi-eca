@@ -1,6 +1,12 @@
 'use strict';
 
 $(document).ready(function() {
+	main.post('/service/user/worker/memsize')
+		.done(function(memsize) {
+			console.log('Current memsize set to '+memsize+'MB')
+		}).fail(function(e) {
+			console.log(e);
+		});
 
 	var selectBox = d3.select('#usernames'),
 		button = d3.select('#workerbutton'),

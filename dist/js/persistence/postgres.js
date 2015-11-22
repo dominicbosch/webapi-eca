@@ -26,20 +26,16 @@ var log = require('../logging'),
 // ## DB Connection
 
 // Initializes the DB connection. This returns a promise. Which means you can attach .then or .catch handlers 
-exports.init = (oDB, cb) => {
+exports.init = (oDB) => {
 	var dbPort = parseInt(oDB.port) || 5432;
-	log.info('POSTGRES | Connecting module: '+oDB.module+', host: '
+	log.info('PG | Connecting module: '+oDB.module+', host: '
 		+oDB.host+', port: '+dbPort+', username: '+oDB.user+', database: '+oDB.db);
 	sequelize = new Sequelize('postgres://'+oDB.user+':'+oDB.pass+'@'+oDB.host+':'+dbPort+'/'+oDB.db, {
 		// logging: false,
 		define: { timestamps: false }
 	});
 
-	// On success we call cb with nothing. if rejected an error is passed along:
-	sequelize.authenticate()
-		.then(initializeModels)
-		.then(() => cb())
-		.catch(cb);
+	return sequelize.authenticate().then(initializeModels);
 };
 
 // Initializes the Database model and returns also a promise
@@ -100,8 +96,8 @@ function initializeModels() {
 	Rule.belongsTo(Webhook);
 	
 	// Return a promise
-	return sequelize.sync().then(() => log.info('POSTGRES | Synced Models'));
-	// return sequelize.sync({ force: true }).then(() => log.info('POSTGRES | Synced Models'));
+	return sequelize.sync().then(() => log.info('PG | Synced Models'));
+	// return sequelize.sync({ force: true }).then(() => log.info('PG | Synced Models'));
 }
 
 function ec(err) { log.error(err) }
@@ -128,7 +124,7 @@ function arrRecordsToJSON(arrRecords) {
 
 // shutDown closes the DB connection
 exports.shutDown = (cb) => {
-	log.warn('POSTGRES | Closing connection!');
+	log.warn('PG | Closing connection!');
 	sequelize.close();
 	sequelize = null;
 };
@@ -161,7 +157,7 @@ exports.getUserByName = (username) => {
 };
 
 exports.storeUser = (oUser) => {
-	log.info('POSTGRES | Storing new user '+oUser.username);
+	log.info('PG | Storing new user '+oUser.username);
 	return User.create(oUser)
 		.then((oNewUser) => {
 			return oNewUser.createWorker({}).then(() => oNewUser)
@@ -171,7 +167,7 @@ exports.storeUser = (oUser) => {
 
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.updateUserAttribute = (uid, attr, val) => {
-	log.info('POSTGRES | Updating user #'+uid);
+	log.info('PG | Updating user #'+uid);
 	return User.findById(uid)
 		.then((oRecord) => {
 			if(oRecord) {
@@ -180,10 +176,11 @@ exports.updateUserAttribute = (uid, attr, val) => {
 				return oRecord.update(oChg, { fields: [ attr ] });
 			} else throwStatusCode(404, 'User not found!');
 		})
+		.then((o) => o.toJSON())
 };
 
 exports.deleteUser = (uid) => {
-	log.info('POSTGRES | Deleting user #'+uid);
+	log.info('PG | Deleting user #'+uid);
 	return User.findById(uid)
 		.then((oRecord) => {
 			if(oRecord) return oRecord.destroy();
@@ -232,13 +229,12 @@ exports.getWorker = (username, cb) => {
 };
 
 exports.setWorker = (uid, pid) => {
-	User.findById(uid)
+	return User.findById(uid)
 		.then((oUser) => {
 			if(!oUser) throw new Error('User not found!');
 			return oUser.getWorker();
-		}).then((oWorker) => {
-			return oWorker.update({ pid: pid }) //, { fields: ['pid'] })
-		}).catch(ec);
+		})
+		.then((oWorker) => oWorker.update({ pid: pid }))
 };
 
 
@@ -273,7 +269,7 @@ exports.getAllUserWebhooks = (uid) => {
 		});
 };
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
-	log.info('POSTGRES | Storing new webhook '+hookname+' for user '+uid);
+	log.info('PG | Storing new webhook '+hookname+' for user '+uid);
 	return User.findById(uid)
 		.then((oUser) => {
 			return oUser.createWebhook({
@@ -284,7 +280,7 @@ exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 		});
 };
 exports.deleteWebhook = (uid, hookid, cb) => {
-	log.info('POSTGRES | Deleting webhook #'+hookid);
+	log.info('PG | Deleting webhook #'+hookid);
 	Webhook.findById(hookid).then((oRecord) => {
 		if(oRecord) {
 			if(oRecord.get('UserId') === uid) {
@@ -329,13 +325,14 @@ exports.storeRule = (uid, oRule, hookid) => {
 		})
 		.then((o) => {
 			return o.user.createRule(oRule)
-				.then((oRule) => oRule.setWebhook(o.hook));
+				.then((oRule) => oRule.setWebhook(o.hook))
 		})
+		.then((oRule) => oRule.toJSON())
 }
 
 // Returns a promise
 exports.deleteRule = (uid, rid) => {
-	log.info('POSTGRES | Deleting Rule #'+rid);
+	log.info('PG | Deleting Rule #'+rid);
 	return Rule.findById(rid)
 		.then((oRecord) => {
 			if(oRecord) {
@@ -361,7 +358,7 @@ exports.getActionDispatcher = (aid) => {
 			include: [{ model: User, attributes: [ 'username' ]}]
 		})
 		.then((oAd) => {
-			if(oAd) return oAd;
+			if(oAd) return oAd.toJSON();
 			else throwStatusCode(404, 'Action Dispatcher does not exist!')
 		});
 };
@@ -374,12 +371,12 @@ exports.updateActionDispatcher = (uid, aid, oAd) => {
 	return User.findById(uid)
 		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
 		.then((arrOldAd) => {
-			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd)
+			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd);
 			else throwStatusCode(404, 'Action Dispatcher not found!');
 		})
 };
 exports.deleteActionDispatcher = (uid, aid) => {
-	log.info('POSTGRES | Deleting ActionDispatcher #'+aid);
+	log.info('PG | Deleting ActionDispatcher #'+aid);
 	return User.findById(uid)
 		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
 		.then((arrOldAd) => {
@@ -405,7 +402,7 @@ exports.getAllEventTriggers = (uid, cb) => {
 };
 
 exports.deleteEventTrigger = (eid, cb) => {
-	log.info('POSTGRES | Deleting EventTrigger #'+eid);
+	log.info('PG | Deleting EventTrigger #'+eid);
 	EventTrigger.findById(eid).then((oRecord) => {
 		if(oRecord) oRecord.destroy().then(() => cb(null, 'EventTrigger deleted!')).catch(cb);
 		else cb(new Error('EventTrigger with ID #'+eid+' not found!'));

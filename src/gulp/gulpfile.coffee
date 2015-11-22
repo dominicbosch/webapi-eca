@@ -79,7 +79,7 @@ paths =
 	lib: 'lib/'
 	src: 'src/'
 	srcGulp: 'src/gulp/gulpfile.coffee'
-	srcEngineCoffee: 'src/engine-coffee/**/*.coffee'
+	# srcEngineCoffee: 'src/engine-coffee/**/*.coffee'
 	srcWebAppCoffee: 'src/webapp/coffee/*.coffee'
 	dist: 'dist/'
 	distEngine: 'dist/js'
@@ -95,7 +95,7 @@ gulp.task 'clean', 'Cleanup previously deployed distribution', (cb) ->
 
 gulp.task 'compile', 'Compile the system\'s coffee files in the project', (cb) ->
 	compile = () ->
-		streamOne = fSimpleCoffeePipe 'compile-engine', paths.srcEngineCoffee, paths.distEngine
+		# streamOne = fSimpleCoffeePipe 'compile-engine', paths.srcEngineCoffee, paths.distEngine
 		streamTwo = fSimpleCoffeePipe 'compile-webapp', paths.srcWebAppCoffee, paths.distWebApp+'/js'
 		cb()
 

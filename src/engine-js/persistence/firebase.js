@@ -25,7 +25,6 @@ exports.init = (conf) => {
 		} else {
 			log.info("FB | Successfully connected to firebase");
 			hostid = conf.name;
-			geb.emit('firebase:init', conf);
 
 			fb.onAuth((authData) => {
 				if(!authData) log.warn('FB | Authorization lost!');
