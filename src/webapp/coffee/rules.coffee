@@ -49,11 +49,15 @@ fOnLoad = () ->
 
 	showLog = (d) ->
 		console.warn 'TODO open div over whole page with log in editor'
-		main.post('/service/rules/getlog', { id: d.id })
-			.done (data) ->
-				ts = (new Date()).toISOString()
-				log = data.message.replace new RegExp("\n", 'g'), "<br>"
-				$('#log_col').html "<h3>#{ ruleName } Log:</h3> <i>(updated UTC|#{ ts })</i><br/><br/>#{ log }"
+		main.post('/service/rules/getlog/'+d.id)
+			.done (arrLog) ->
+				d3.select('#log_col h3').text('Log file "'+d.name+'":');
+				d3tr = d3.select('#log_col ul').selectAll('li').data(arrLog);
+				d3tr.exit().transition().style('opacity', 0).remove();
+				d3tr.enter().append('li').text((d) => d);
+				# ts = (new Date()).toISOString()
+				# log = data.message.replace new RegExp("\n", 'g'), "<br>"
+				#  "<h3>#{ ruleName } Log:</h3> <i>(updated UTC|#{ ts })</i><br/><br/>#{ log }"
 			.fail (err) ->
 				main.setInfo false, 'Could not get rule log: '+err.responseText
 

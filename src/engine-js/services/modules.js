@@ -21,6 +21,9 @@ var fs = require('fs'),
 	// - [Logging](logging.html)
 	log = require('../logging'),
 
+	// - [Logging](logging.html)
+	dm = require('../dynamic-modules'),
+
 	db = global.db,
 	geb = global.eventBackbone,
 	pathModules = path.resolve(__dirname, '..', '..', 'config', 'allowedmodules.json'),
@@ -66,7 +69,8 @@ function reloadModules(cb) {
 		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 		log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
 		updateAllowedFlag(arrAllowed);
-		geb.emit('modules:list', arrModules);
+		dm.newAllowedModuleList(arrAllowed);
+		geb.emit('modules:list', arrAllowed);
 		cb(undefined, arrModules)
 	});
 }

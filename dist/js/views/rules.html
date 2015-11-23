@@ -10,11 +10,15 @@
 {% block content %}
 <div class="container-fluid">
 	<div class="row">
-		<div class="col-xs-12">
+		<div class="col-md-3">
 			<a href="rules_create">Create a new Rule!</a>
+			<div id="tableRules">
+				<table class="padded"></table>
+			</div>
 		</div>
-		<div class="col-xs-12" id="tableRules">
-			<table class="padded"></table>
+		<div class="col-md-9" id="log_col">
+			<h3></h3>
+			<ul></ul>
 		</div>
 	</div>
 </div>

@@ -32,6 +32,13 @@ router.post('/get', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
+router.post('/getlog/:id', (req, res) => {
+	log.info('SRVC | RULES | Fetching all Rules');
+	db.getRuleLog(req.params.id)
+		.then((log) => res.send(log))
+		.catch(db.errHandler(res));
+});
+
 router.post('/store', (req, res) => {
 	log.info('SRVC | RULES | Storing new Rule');
 	let oRule = {

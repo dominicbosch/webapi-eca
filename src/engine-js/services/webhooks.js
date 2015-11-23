@@ -21,7 +21,7 @@ var log = require('../logging'),
 geb.addListener('system:init', (msg) => {
 	db.getAllWebhooks()
 		.then((arrHooks) => {
-			log.info('SRVC | WEBHOOKS | Initializing '+arrHooks.length+' Webhooks');
+			log.info('SRVC:WH | Initializing '+arrHooks.length+' Webhooks');
 			for (let i = 0; i < arrHooks.length; i++) {
 				let h = arrHooks[i];
 				activeHooks[h.hookid] = h; 
@@ -32,7 +32,7 @@ geb.addListener('system:init', (msg) => {
 
 // User fetches all his existing webhooks
 router.post('/get', (req, res) => {
-	log.info('SRVC | WEBHOOKS | Fetching all Webhooks');
+	log.info('SRVC:WH | Fetching all Webhooks');
 	db.getAllUserWebhooks(req.session.pub.id)
 		.then((arr) => res.send(arr))
 		.catch(db.errHandler(res));
@@ -63,9 +63,9 @@ router.post('/create', (req, res) => {
 		.then((arrAllHooks) => genHookID(arrAllHooks.map((o) => o.hookid)))
 		.then((hid) => db.createWebhook(userId, hid, rb.hookname, rb.isPublic))
 		.then((oHook) => {
-			log.info('SRVC | WEBHOOKS | Webhook "'+oHook.name
+			log.info('SRVC:WH | Webhook "'+oHook.hookname
 				+'" created with ID "'+oHook.id+'" and activated');
-			activeHooks[oHook.id] = oHook;
+			activeHooks[oHook.hookid] = oHook;
 			res.send(oHook);
 		})
 		.catch(db.errHandler(res));
@@ -74,7 +74,7 @@ router.post('/create', (req, res) => {
 // User wants to delete a webhook
 router.post('/delete/:id', (req, res) => {
 	let hookid = req.params.id;
-	log.info('SRVC | WEBHOOKS | Deleting Webhook '+hookid);
+	log.info('SRVC:WH | Deleting Webhook '+hookid);
 	db.deleteWebhook(req.session.pub.id, hookid, (err, msg) => {
 		if(!err) {
 			delete activeHooks[hookid];

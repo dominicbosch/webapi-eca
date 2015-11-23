@@ -10,6 +10,7 @@
 var log = require('../logging'),
 
 	Sequelize = require('sequelize'),
+	moment = require('moment'),
 
 // Internal variables :
 	sequelize,
@@ -55,7 +56,8 @@ function initializeModels() {
 	Rule = sequelize.define('Rule', {
 		name: Sequelize.STRING,
 		conditions: Sequelize.JSON,
-		actions: Sequelize.JSON
+		actions: Sequelize.JSON,
+		log: Sequelize.ARRAY(Sequelize.STRING)
 	});
 	Webhook = sequelize.define('Webhook', {
 		hookid: { type: Sequelize.STRING, unique: true },
@@ -213,12 +215,13 @@ exports.getAllUsers = () => {
 // ##
 
 exports.logWorker = (uid, msg) => {
-	User.findById(uid).then((oUser) => {
-		return oUser.getWorker().then((oWorker) => {
-			console.log('got process, logging:', msg);
-			console.log(oWorker.toJSON());
-		})
-	}).catch(ec);
+	return User.findById(uid)
+		.then((oUser) => oUser.getWorker())
+		.then((oWorker) => {
+			if(oWorker) oWorker.update({
+				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+			})
+		}).catch(ec);
 };
 
 exports.getWorker = (username, cb) => {
@@ -277,7 +280,8 @@ exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 				hookname: hookname,
 				isPublic: isPublic
 			});
-		});
+		})
+		.then((oHook) => oHook.toJSON());
 };
 exports.deleteWebhook = (uid, hookid, cb) => {
 	log.info('PG | Deleting webhook #'+hookid);
@@ -329,6 +333,21 @@ exports.storeRule = (uid, oRule, hookid) => {
 		})
 		.then((oRule) => oRule.toJSON())
 }
+
+exports.logRule = (rid, msg) => {
+	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+	return Rule.findById(rid)
+		.then((oRule) => {
+			if(oRule) oRule.update({
+				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+			})
+		}).catch(ec);
+};
+
+exports.getRuleLog = (rid) => {
+	return Rule.findById(rid)
+		.then((oRule) => oRule.get('log'));
+};
 
 // Returns a promise
 exports.deleteRule = (uid, rid) => {

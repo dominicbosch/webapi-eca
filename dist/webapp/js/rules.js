@@ -44,13 +44,16 @@ fOnLoad = function() {
   };
   return showLog = function(d) {
     console.warn('TODO open div over whole page with log in editor');
-    return main.post('/service/rules/getlog', {
-      id: d.id
-    }).done(function(data) {
-      var log, ts;
-      ts = (new Date()).toISOString();
-      log = data.message.replace(new RegExp("\n", 'g'), "<br>");
-      return $('#log_col').html("<h3>" + ruleName + " Log:</h3> <i>(updated UTC|" + ts + ")</i><br/><br/>" + log);
+    return main.post('/service/rules/getlog/' + d.id).done(function(arrLog) {
+      var d3tr;
+      d3.select('#log_col h3').text('Log file "' + d.name + '":');
+      d3tr = d3.select('#log_col ul').selectAll('li').data(arrLog);
+      d3tr.exit().transition().style('opacity', 0).remove();
+      return d3tr.enter().append('li').text((function(_this) {
+        return function(d) {
+          return d;
+        };
+      })(this));
     }).fail(function(err) {
       return main.setInfo(false, 'Could not get rule log: ' + err.responseText);
     });

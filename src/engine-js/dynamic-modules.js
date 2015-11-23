@@ -8,23 +8,17 @@
 // **Loads Modules:**
 // - [Logging](logging.html)
 var log = require('./logging'),
-	// - [Encryption](encryption.html)
-	encryption = require('./encryption'),
 
 	// - Node.js Modules: [vm](http://nodejs.org/api/vm.html) and
 	vm = require('vm'),
-	// //   [fs](http://nodejs.org/api/fs.html),
-	// fs = require('fs'),
-	// //   [path](http://nodejs.org/api/path.html) and
-	// path = require('path'),
 
 	// - External Modules: [coffee-script](http://coffeescript.org/) and
 	cs = require('coffee-script'),
 	//       [request](https://github.com/request/request)
 	request = require('request'),
 	geb = global.eventBackbone,
-	oModules = {};
-	// oModules = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'config', 'modules.json')));
+	oModules = {},
+	arrAllowed = [];
 
 function throwStatusCode(code, msg) {
 	let e = new Error(msg);
@@ -32,20 +26,22 @@ function throwStatusCode(code, msg) {
 	throw e;
 }
 
-geb.addListener('modules:list', (arrModules) => {
-	let arrAllowed = arrModules.filter((o) => o.allowed);
-	log.info('DM | Got new allowed modules list: ' + arrAllowed.map((o) => o.name).join(', '));
+exports.newAllowedModuleList = function(arr) {
+	log.info('DM | Got new allowed modules list: '+arr.join(', '));
+	arrAllowed = arr;
+	// TODO in the future event triggers and action dispatchers should define which
+	// modules they require. like this the respective user process could only
+	// load what he really needs and te code below should go in a seperate function
 	oModules = {};
 	for (var i = 0; i < arrAllowed.length; i++) {
 		try {
-			let oMod = arrAllowed[i];
-			oModules[oMod.name] = require(oMod.name);
-			log.info('DM | Loaded module ' + oMod.name);
+			oModules[arrAllowed[i]] = require(arrAllowed[i]);
+			log.info('DM | Loaded module ' + arrAllowed[i]);
 		} catch(err) {
-			log.error('DM | Module not found: ' + oMod.name);
+			log.error('DM | Module not found: ' + arrAllowed[i]);
 		}
 	}
-});
+};
 
 let regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 function getFunctionArgumentsAsStringArray(func){	
@@ -97,15 +93,6 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 				throwStatusCode(400, 'Compilation of CoffeeScript failed at line '+err.location.first_line);
 			}
 		}
-
-		// TODO decrypting of user parameters has to happen before we runstringasmodule
-		// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
-		// for(let prop in opt.globals) {
-		// 	log.info('DM | Loading user defined global variable '+prop);
-		// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
-		// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
-		// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
-		// }
 
 		log.info('DM | Running module "'+opt.id+'" for user '+username);
 		// The sandbox contains the objects that are accessible to the user.

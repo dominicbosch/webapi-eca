@@ -22,7 +22,7 @@ var log = require('./logging'),
 
 	geb = global.eventBackbone,
 	db = global.db,
-	maxMem = 20,
+	maxMem = 200,
 	systemName = '➠ System',
 	oChildren = {};
 
@@ -64,13 +64,50 @@ geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
 });
 
+function sendToWorker(uname, evt) {
+	try {
+		oChildren[uname].send(evt);
+	} catch(err) {
+		log.error(err);
+	}
+}
+function broadcast(evt) {
+	for(let uname in oChildren) {
+		sendToWorker(uname, evt);
+	}
+}
+
 geb.addListener('rule:new', (oRule) => {
-	console.log('process manager got event about rule', oRule);
-	let oChild = oChildren[oRule.UserId];
-	if(oChild) {
-		oRule.cmd = 'rule:new';
-		oChild.send(oRule);
-	} else log.warn('PM | Got new rule for inactive Worker')
+	let arrPromises = [];
+	for(let i = 0; i < oRule.actions.length; i++) {
+		arrPromises.push(db.getActionDispatcher(oRule.actions[i].id));
+	}
+	Promise.all(arrPromises)
+		.then((arr) => {
+			oRule.actionModules = {};
+			for(let i = 0; i < arr.length; i++) {
+				oRule.actionModules[arr[i].id] = arr[i];
+			}
+			let evt = {
+				cmd: 'rule:new',
+				rule: oRule
+			}
+			sendToWorker(oRule.UserId, evt);
+		})
+});
+
+geb.addListener('modules:list', (arrModules) => {
+	broadcast({
+		cmd: 'modules:list',
+		arr: arrModules
+	});
+});
+
+geb.addListener('action', (oEvt) => {
+	sendToWorker(oEvt.uid, {
+		cmd: 'action',
+		evt: oEvt
+	});
 });
 
 function registerProcessLogger(uid, username) {
@@ -81,12 +118,14 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'log:info': db.logWorker(uid, oMsg.data);
 				break;
+			case 'log:rule': db.logRule(oMsg.data.rid, oMsg.data.msg);
+				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;
 			case 'stats': fb.logStats(username, oMsg.data);
 				break;
-			default: log.warn('PM | Got unknown command:' + oMsg.comd);
+			default: log.warn('PM | Got unknown command:' + oMsg.cmd);
 		}
 	}
 }
@@ -108,13 +147,13 @@ function startWorker(oUser) {
 				// FIXME this ID seems not to be correct!
 				console.log('got ID from firebase', id)
 				let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
+				oChildren[oUser.id] = proc;
 				proc.on('message', registerProcessLogger(oUser.id, oUser.username));
-				proc.send({
+				sendToWorker(oUser.id, {
 					cmd: 'init',
 					startIndex: id
 				});
 				log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
-				oChildren[oUser.id] = proc;
 				db.setWorker(oUser.id, proc.pid)
 					.then(() => resolve());
 			}

@@ -10,7 +10,8 @@ var pl = require('./process-logger')
 	// and [Dynamic Modules](dynamic-modules.html)
 	, dynmod = require('./dynamic-modules')
 
-	, listUserModules = {}
+	, oActions = {}
+	, oActArgs = {}
 	;
 
 function sendToParent(obj) {
@@ -32,7 +33,8 @@ var log = {
 	debug: (msg) => sendLog('debug', msg),
 	info: (msg) => sendLog('info', msg),
 	warn: (msg) => sendLog('warn', msg),
-	error: (msg) => sendLog('error', msg)
+	error: (msg) => sendLog('error', msg),
+	rule: (msg) => sendLog('rule', msg)
 };
 
 process.on('uncaughtException', (err) => {
@@ -40,7 +42,7 @@ process.on('uncaughtException', (err) => {
 	console.log(err);
 });
 process.on('disconnect', () => {
-	console.log('TP | Shutting down Code Executor');
+	console.log('UP | Shutting down Code Executor');
 	process.exit();
 });
 process.on('message', (oMsg) => {
@@ -49,227 +51,144 @@ process.on('message', (oMsg) => {
 			pl(sendToParent, oMsg.startIndex);
 			log.debug('Starting up with initial stats log index ' + oMsg.startIndex);
 		break;
+		case 'modules:list':
+			dynmod.newAllowedModuleList(oMsg.arr);
+		break;
 		case 'rule:new':
-			log.info('Got new rule');
+			newRule(oMsg.rule);
+		break;
+		case 'action':
+			let oFuncs = oActArgs[oMsg.evt.rid][oMsg.evt.aid];
+			for(let el in oFuncs) {
+				oActions[oMsg.evt.aid][el].apply(this, oFuncs[el]);
+			}
 		break; 
 		default: console.log('unknown command on child', oMsg)
 	}
 });
+function runModule(id, rid, oAct) {
+	let opts = {
+		globals: oAct.globals,
+		logger: (msg) => log.rule({ rid: rid, msg: msg })
+	};
+	return dynmod.runStringAsModule(oAct.code, oAct.lang, oAct.User.username, opts)
+		.then((answ) => {
+			log.info('Module "'+oAct.name+'" loaded for user '+oAct.User.username);
+			oActions[id] = answ.module;
+		})
+		.catch((err) => log.error(err))
+}
 
-// 	# A initialization notification or a new rule
-// 	if msg.intevent is 'new' or msg.intevent is 'init'
-// 		requestModule msg
-// 		# We fetch the module also if the rule was updated
-
-// # TODO if server restarts we would have to start modules in the interval
-// # that they were initially meant to (do not wait 24 hours until starting again)
-
-// 	# A rule was deleted
-// 	if msg.intevent is 'del'
-// 		delete listUserModules[msg.user][msg.ruleId]
-// 		if JSON.stringify( listUserModules[msg.user] ) is "{}"
-// 			delete listUserModules[msg.user]
-
-// # Loads a module if required
-// requestModule = ( msg ) ->
-// 	arrName = msg.rule.eventname.split ' -> '
-// 	if msg.intevent is 'new' or
-// 			not listUserModules[ msg.user ] or 
-// 			not listUserModules[ msg.user ][ msg.rule.id ]
-// 				# // FIXME This needs to be message passing to the mother process
-// 		process.send
-// 			command: 'get-ep'
-// 			user: msg.user
-// 			module: arrName[0]
-// 		db.eventTriggers.getModule msg.user, arrName[ 0 ], ( err, obj ) ->
-// 			if not obj
-// 				log.info "TP | No module retrieved for #{ arrName[ 0 ] }, must be a custom event or Webhook"
-// 			else
-// 				 # we compile the module and pass:
-// 				args =
-// 					src: obj.data,					# code
-// 					lang: obj.lang,					# script language
-// 					userId: msg.user,				# userId
-// 					modId: arrName[0],				# moduleId
-// 					modType: 'eventtrigger'		# module type
-// 					oRule: msg.rule,			# oRule
-// 				dynmod.runStringAsModule args, ( result ) ->
-// 						if not result.answ is 200
-// 							log.error "TP | Compilation of code failed! #{ msg.user },
-// 								#{ msg.rule.id }, #{ arrName[ 0 ] }"
-
-// 						# If user is not yet stored, we open a new object
-// 						if not listUserModules[ msg.user ]
-// 							listUserModules[ msg.user ] = {}
-
-// 						oUser = listUserModules[ msg.user ]
-// 						# We open up a new object for the rule it
-// 						oUser[ msg.rule.id ] =
-// 							id: msg.rule.eventname
-// 							timestamp: msg.rule.timestamp
-// 							pollfunc: arrName[ 1 ]
-// 							funcArgs: result.funcArgs
-// 							eventinterval: msg.rule.eventinterval * 60 * 1000
-// 							module: result.module
-// 							logger: result.logger
-
-// 						if msg.rule.eventstart
-// 							start = new Date msg.rule.eventstart
-// 						else
-// 							start = new Date msg.rule.timestamp
-// 						nd = new Date()
-// 						now = new Date()
-// 						if start < nd
-// 							# If the engine restarts start could be from last year even 
-// 							nd.setMilliseconds 0
-// 							nd.setSeconds start.getSeconds()
-// 							nd.setMinutes start.getMinutes()
-// 							nd.setHours start.getHours()
-// 							# if it's still smaller we add one day
-// 							if nd < now
-// 								log.info 'SETTING NEW INTERVAL: ' + (nd.getDate() + 1)
-// 								nd.setDate nd.getDate() + 1
-// 						else
-// 							nd = start
-								
-// 						log.info "TP | New event module '#{ arrName[ 0 ] }' loaded for user #{ msg.user },
-// 							in rule #{ msg.rule.id }, registered at UTC|#{ msg.rule.timestamp },
-// 							starting at UTC|#{ start.toISOString() } ( which is in #{ ( nd - now ) / 1000 / 60 } minutes )
-// 							and polling every #{ msg.rule.eventinterval } minutes"
-// 						if msg.rule.eventstart
-// 							setTimeout fCheckAndRun( msg.user, msg.rule.id, msg.rule.timestamp ), nd - now
-// 						else
-// 							fCheckAndRun msg.user, msg.rule.id, msg.rule.timestamp
+function newRule(oRule) {
+	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
+	for(let id in oRule.actionModules) {
+		let oam = oRule.actionModules[id];
+		let oArgs = oam.functions; // the functions in the rules
+		let oFuncArgs = oRule.actions.filter((o) => o.id === oam.id)[0].functions;
+		// Here we store the arguments in the internal data structure:
+		let oAct = oActArgs[oRule.id][oam.id] = {};
+		for(let af in oArgs) {
+			oAct[af] = [];
+			for (var i = 0; i < oArgs[af].length; i++) {
+				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
+			}
+		}
+		runModule(id, oRule.id, oam);
+	}
+}
 
 
-// fCheckAndRun = ( userId, ruleId, timestamp ) ->
-// 	() ->
-// 		log.info "TP | Check and run user #{ userId }, rule #{ ruleId }"
-// 		if isRunning and 
-// 				listUserModules[ userId ] and 
-// 				listUserModules[ userId ][ ruleId ]
-// 			# If there was a rule update we only continue the latest setTimeout execution
-// 			if listUserModules[ userId ][ ruleId ].timestamp is timestamp	
-// 				oRule = listUserModules[ userId ][ ruleId ]
-// 				try
-// 					fCallFunction userId, ruleId, oRule
-// 				catch e
-// 					log.error 'Error during execution of poller'
-				
-// 				setTimeout fCheckAndRun( userId, ruleId, timestamp ), oRule.eventinterval
-// 			else
-// 				log.info "TP | We found a newer polling interval and discontinue this one which
-// 						was created at UTC|#{ timestamp }"
+// 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
+// 		if not node
+// 			log.error "EN | Didn't find property in user rule list: "+arrPath.join( ', ' )+" at depth "+depth
+// 			return
+// 		if depth is arrPath.length
+// 			try
+// 				log.info "EN | #{ funcName } executes..."
+// 				arrArgs = []
+// 				if node.funcArgs[ funcName ]
+// 					# TODO do this on initiaisation and not each time an event is received
+// 					for oArg in node.funcArgs[ funcName ]
+// 						"// arrSelectors = oArg.value.match /#\{(.*?)\}/g"
+// 						argument = oArg.value
+// 						if arrSelectors
+// 							for sel in arrSelectors
+// 								selector = sel.substring 2, sel.length - 1
+// 								data = jsonQuery( evt.body, selector ).nodes()[0]
+// 								argument = argument.replace sel, data
+// 								if oArg.value is sel
+// 									argument = data # if the user wants to pass an object, we allow him to do so
+// 						# if oArg.jsselector
+// 						arrArgs.push argument #jsonQuery( evt.body, oArg.value ).nodes()[ 0 ]
+// 						# else
+// 						# 	arrArgs.push oArg.value
+// 				else
+// 					log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
+// 					arrArgs.push null
+// 				arrArgs.push evt
+// 				node.module[ funcName ].apply this, arrArgs
+// 				log.info "EN | #{ funcName } finished execution"
+// 			catch err
+// 				log.info "EN | ERROR IN ACTION INVOKER: "+err.message
+// 				node.logger err.message
+// 		else
+// 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth+1
 
-// # We have to register the poll function in belows anonymous function
-// # because we're fast iterating through the listUserModules and references will
-// # eventually not be what they are expected to be
-// fCallFunction = ( userId, ruleId, oRule ) ->
-// 	try
-// 		arrArgs = []
-// 		if oRule.funcArgs and oRule.funcArgs[ oRule.pollfunc ]
-// 			for oArg in oRule.funcArgs[ oRule.pollfunc ]
-// 				arrArgs.push oArg.value
-// 		@currentState =
-// 			rule: ruleId
-// 			func: oRule.pollfunc
-// 			user: userId
-// 		oRule.module[ oRule.pollfunc ].apply this, arrArgs
-// 	catch err
-// 		log.info "TP | ERROR in module when polled: #{ oRule.id } #{ userId }: #{err.message}"
-// 		throw err
-// 		oRule.logger err.message
-// ###
-// This function will loop infinitely every 10 seconds until isRunning is set to false
-
-// @private pollLoop()
-// ###
-// console.log 'Do we really need a poll loop in the trigger poller?'
-// pollLoop = () ->
-//   # We only loop if we're running
-//   if isRunning
-//   	#FIXME CHECK IF ALREADY RUNNING!
-
-//   	#FIXME a scheduler should go here because we are limited in setTimeout
-//   	# to an integer value -> ~24 days at maximum!
-
-
-//     # # Go through all users
-//     # for userName, oRules of listUserModules
-
-//     #   # Go through each of the users modules
-//     #   for ruleName, myRule of oRules
-
-//     #     # Call the event Trigger poller module function
-//     #     fCallFunction myRule, ruleName, userName
-
-//     setTimeout pollLoop, 10000
-
-
-// # Finally if everything initialized we start polling for new events
-// pollLoop()
+// TODO Maintain what happens when a rule was deleted
+// 	oRule.module[ oRule.pollfunc ].apply this, arrArgs
+// 	for action of oUser[updatedRuleId].rule.actions 
+// 		delete oUser[updatedRuleId].actions[action] if not fRequired action
 
 
 
+// TODO decrypting of user parameters has to happen before we runstringasmodule
+// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
+// for(let prop in opt.globals) {
+// 	log.info('DM | Loading user defined global variable '+prop);
+// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
+// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
+// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
+// }
 
 
-
-
-// // ###
-// // As soon as changes were made to the rule set we need to ensure that the aprropriate action
-// // dispatcher modules are loaded, updated or deleted.
-
-// // @private updateActionModules ( *updatedRuleId* )
-// // @param {Object} updatedRuleId
-// // ###
-// // updateActionModules = ( updatedRuleId ) =>
-	
-// // 	# Remove all action dispatcher modules that are not required anymore
-// // 	for name, oUser of listUserRules
-
-// // 		# Check whether the action is still existing in the rule
-// // 		fRequired = ( actionName ) ->
-// // 			for action in oUser[ updatedRuleId ].rule.actions
-// // 				# Since the event is in the format 'module -> function' we need to split the string
-// // 				if ( action.split ' -> ' )[ 0 ] is actionName
-// // 					return true
-// // 			false
-
-// // 		# Go thorugh all loaded action modules and check whether the action is still required
-// // 		if oUser[updatedRuleId]
-// // 			for action of oUser[updatedRuleId].rule.actions 
-// // 				delete oUser[updatedRuleId].actions[action] if not fRequired action
-
-
-// // 	# load all required modules for all users
-// // 	# Add action dispatcher modules that are not yet loaded
-// // 	for userName, oUser of listUserRules
-
-// // 		# Check whether the action is existing in a rule and load if not
-// // 		# Go thorugh all rules and check whether the action is still required
-// // 		for nmRl, oMyRule of oUser
-// // 			for action in oMyRule.rule.actions
-// // 			# Load the action dispatcher module if it was part of the updated rule or if it's new
-// // 				moduleName = (action.split ' -> ')[ 0 ]
-// // 				if not oMyRule.actions[moduleName] or oMyRule.rule.id is updatedRuleId
-// // 					db.actionDispatchers.getModule userName, moduleName, ( err, obj ) =>
-// // 						if obj
-// // 							# we compile the module and pass: 
-// // 							args =
-// // 								src: obj.data,					# code
-// // 								lang: obj.lang,					# script language
-// // 								userId: userName,				# userId
-// // 								modId: moduleName,				# moduleId
-// // 								modType: 'actiondispatcher'		# module type
-// // 								oRule: oMyRule.rule,			# oRule
-// // 							dynmod.runStringAsModule args, ( result ) =>
-// // 									if result.answ.code is 200
-// // 										log.info "EN | Module '#{ moduleName }' successfully loaded for userName
-// // 											'#{ userName }' in rule '#{ oMyRule.rule.id }'"
-// // 									else
-// // 										log.error "EN | Compilation of code failed! #{ userName },
-// // 											#{ oMyRule.rule.id }, #{ moduleName }: #{ result.answ.message }"
-// // 									oMyRule.actions[moduleName] = result
-// // 						else
-// // 							log.warn "EN | #{ moduleName } not found for #{ oMyRule.rule.id }!"
-
+// {
+//     "id": 2,
+//     "name": "45",
+//     "conditions": [],
+//     "actions": [
+//         {
+//             "id": 1,
+//             "globals": {},
+//             "functions": {
+//                 "sayHelloWorld": {}
+//             }
+//         }
+//     ],
+//     "UserId": 1,
+//     "WebhookId": 1,
+//     "Webhook": {
+//         "id": 1,
+//         "hookid": "9a0da8f495cae8c1c554819fa8ec022e",
+//         "hookname": "123456789",
+//         "isPublic": false,
+//         "UserId": 1
+//     },
+//     "actionModules": {
+//         "1": {
+//             "id": 1,
+//             "name": "Hello World",
+//             "lang": "CoffeeScript",
+//             "code": "\n# A simple Hello World code block\nexports.sayHelloWorld = () ->\n\tlog 'Hello Worlddd!'\n\t",
+//             "comment": "A simple Hello World code block\n",
+//             "functions": {
+//                 "sayHelloWorld": []
+//             },
+//             "published": false,
+//             "globals": {},
+//             "UserId": 1,
+//             "User": {
+//                 "username": "admin"
+//             }
+//         }
+//     }
+// }
