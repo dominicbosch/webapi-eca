@@ -11,9 +11,11 @@ fOnLoad = function() {
   fUpdateRuleList = function(data) {
     var d3div, d3newTrs, d3tr;
     if (data.length === 0) {
+      d3.select('#hasnorules').style('display', 'block');
       return d3.select('#hasrules').style('display', 'none');
     } else {
       d3.select('#hasnorules').style('display', 'none');
+      d3.select('#hasrules').style('display', 'block');
       d3div = d3.select('#tableRules');
       d3tr = d3div.select('table').selectAll('tr').data(data, function(d) {
         return d.id;
