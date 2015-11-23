@@ -46,7 +46,9 @@ fOnLoad = () ->
 	main.registerHoverInfo d3.select('#pagetitle'), 'webhooks_info.html'
 	updateWebhookList()
 
-	$('#inp_hookname').val decodeURIComponent oParams.hookname
+	if oParams.hookname
+		$('#inp_hookname').val decodeURIComponent oParams.hookname
+		
 	$('#but_submit').click ->
 		hookname = $('#inp_hookname').val()
 		if hookname is ''

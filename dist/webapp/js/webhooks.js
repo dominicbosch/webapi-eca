@@ -50,7 +50,9 @@ fShowWebhookUsage = function(hookid, hookname) {
 fOnLoad = function() {
   main.registerHoverInfo(d3.select('#pagetitle'), 'webhooks_info.html');
   updateWebhookList();
-  $('#inp_hookname').val(decodeURIComponent(oParams.hookname));
+  if (oParams.hookname) {
+    $('#inp_hookname').val(decodeURIComponent(oParams.hookname));
+  }
   $('#but_submit').click(function() {
     var data, hookname;
     hookname = $('#inp_hookname').val();
