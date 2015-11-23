@@ -159,7 +159,9 @@ function init() {
 			log.info('RS | Initializing http listener');
 			http.init(conf);
 			log.info('RS | Initializing Firebase');
-			fb.init(conf);
+			return fb.init(conf);
+		})
+		.then(() => {
 			log.info('RS | Initializing Process Manager');
 			return pm.init(conf);
 		})
