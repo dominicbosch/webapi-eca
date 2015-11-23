@@ -54,9 +54,7 @@ router.post('/create', (req, res) => {
 		.then((oHooks) => {
 			let arrHookNames = oHooks.private.map((o) => o.hookname);
 			if(arrHookNames.indexOf(rb.hookname) > -1) {
-				let e = new Error('Webhook already existing: '+rb.hookname);
-				e.statusCode = 409;
-				throw e;
+				db.throwStatusCode(409, 'Webhook already existing: '+rb.hookname);
 			}
 		})
 		.then(() => db.getAllWebhooks())

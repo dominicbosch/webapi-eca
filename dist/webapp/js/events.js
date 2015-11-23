@@ -103,7 +103,7 @@ fOnLoad = function() {
     if ($('#inp_webh').val() === '') {
       return main.setInfo(false, 'Please enter a Webhook name');
     } else {
-      return window.location.href = '/views/webhooks?id=' + $('#inp_webh').val();
+      return window.location.href = '/views/webhooks?hookname=' + encodeURIComponent($('#inp_webh').val());
     }
   });
   $('#but_rule').on('click', function() {

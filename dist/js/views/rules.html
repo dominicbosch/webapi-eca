@@ -9,16 +9,21 @@
 
 {% block content %}
 <div class="container-fluid">
-	<div class="row">
+	<div class="row" id="hasnorules">
+		<div class="col-xs-12">
+			<h3 class="empty">You don't have any rules! <a href="/views/rules_create">Create One first!</a></h3>
+		</div>
+	</div>
+	<div class="row" id="hasrules">
 		<div class="col-md-3">
 			<a href="rules_create">Create a new Rule!</a>
-			<div id="tableRules">
+			<div id="tableRules" class="hundredwide">
 				<table class="padded"></table>
 			</div>
 		</div>
 		<div class="col-md-9" id="log_col">
 			<h3></h3>
-			<ul></ul>
+			<ul class="consoled smallfont"></ul>
 		</div>
 	</div>
 </div>

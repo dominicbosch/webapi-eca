@@ -71,6 +71,8 @@ function initializeModels() {
 		comment: Sequelize.TEXT,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
+		schedule: Sequelize.JSON,
+		running: Sequelize.BOOLEAN,
 		globals: Sequelize.JSON
 	});
 	ActionDispatcher = sequelize.define('ActionDispatcher', {

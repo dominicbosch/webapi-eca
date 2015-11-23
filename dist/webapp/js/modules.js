@@ -1,5 +1,5 @@
 'use strict';
-var deleteModule, editModule, fOnLoad, modName, updateModules, urlService;
+var deleteModule, editModule, fOnLoad, modName, startStopModule, updateModules, urlService;
 
 urlService = '/service/';
 
@@ -33,6 +33,11 @@ updateModules = function(uid) {
         }
       });
       trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', editModule);
+      if (oParams.m !== 'ad') {
+        trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon edit').attr('src', function(d) {
+          return '/images/' + (d.running ? 'pause' : 'play') + '.png';
+        }).attr('title', 'Edit Module').on('click', startStopModule);
+      }
       trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
         return d.name;
       }).each(function(d) {
@@ -40,9 +45,14 @@ updateModules = function(uid) {
           return main.registerHoverInfoHTML(d3.select(this), d.comment);
         }
       });
-      return trNew.append('td').text(function(d) {
+      trNew.append('td').text(function(d) {
         return d.User.username;
       });
+      if (oParams.m !== 'ad') {
+        return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
+          return d.schedule.text;
+        });
+      }
     }
   });
   return req.fail(function(err) {
@@ -71,9 +81,19 @@ editModule = function(d) {
   }
 };
 
+startStopModule = function(d) {
+  console.log(d);
+  d.running = !d.running;
+  return d3.select(this).attr('src', '/images/' + (d.running ? 'pause' : 'play') + '.png');
+};
+
 fOnLoad = function() {
   $('.moduletype').text(modName);
   $('#linkMod').attr('href', '/views/modules_create?m=' + oParams.m);
+  if (oParams.m !== 'ad') {
+    d3.select('#tableModules thead tr').append('th').text('Schedule');
+    d3.select('#tableModules thead tr').insert('th', ':first-child');
+  }
   return updateModules(parseInt(d3.select('body').attr('data-uid')));
 };
 

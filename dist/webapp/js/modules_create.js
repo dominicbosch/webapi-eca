@@ -107,7 +107,7 @@ fOnLoad = function() {
   });
   fChangeInputVisibility();
   $('#but_submit').click(function() {
-    var action, e, error, listParams, obj, schedule;
+    var action, e, error, listParams, obj, schedule, txt;
     if ($('#input_id').val() === '') {
       return main.setInfo(false, "Please enter an " + moduleTypeName + " name!");
     } else {
@@ -132,11 +132,16 @@ fOnLoad = function() {
             globals: listParams
           };
           if (oParams.m !== 'ad') {
-            schedule = later.parse.text($('#inp_schedule').val());
+            txt = $('#inp_schedule').val();
+            schedule = later.parse.text(txt);
             if (schedule.error > -1) {
               throw new Error('You have an error in your schedule!');
             }
-            obj.schedule = schedule;
+            obj.schedule = {
+              text: txt,
+              arr: schedule.schedules
+            };
+            obj.running = true;
           }
           action = oParams.id ? 'update' : 'create';
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
@@ -173,6 +178,7 @@ fOnLoad = function() {
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.name);
+        $('#inp_schedule').val(oMod.schedule.text);
         if (uid === oMod.UserId) {
           fAddUserParam('', false);
         } else {
@@ -181,8 +187,9 @@ fOnLoad = function() {
           $('#editor').addClass('readonly');
           $('#editor_mode').hide();
           $('#but_submit').hide();
-          $('#tableParams img').remove();
+          $('#inp_schedule').addClass('readonly').attr('readonly', true).attr('disabled', true);
           $('#tableParams input').addClass('readonly').attr('readonly', true).attr('disabled', true);
+          $('#tableParams img').remove();
         }
         $('#editor_mode').val(oMod.lang);
         if (oMod.lang === 'CoffeeScript') {

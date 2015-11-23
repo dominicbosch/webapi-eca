@@ -22,8 +22,8 @@ var log = require('./logging'),
 
 	geb = global.eventBackbone,
 	db = global.db,
-	maxMem = 200,
 	systemName = '➠ System',
+	maxMem = 200,
 	oChildren = {};
 
 exports.init = (oConf) => {	
@@ -133,6 +133,7 @@ function registerProcessLogger(uid, username) {
 function startWorker(oUser) {
 	return new Promise((resolve, reject) => {
 		var options = {
+			// execArgv: ['--max-old-space-size=10']
 			execArgv: ['--max-old-space-size='+maxMem]
 			// , stdio: [ 0, 0, 0 ]
 		};

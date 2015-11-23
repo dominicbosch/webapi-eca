@@ -82,7 +82,7 @@ fOnLoad = () ->
 		if $('#inp_webh').val() is ''
 			main.setInfo false, 'Please enter a Webhook name'
 		else
-			window.location.href = '/views/webhooks?id='+$('#inp_webh').val()
+			window.location.href = '/views/webhooks?hookname='+encodeURIComponent($('#inp_webh').val())
 		 
 	$('#but_rule').on 'click', () ->
 		window.location.href = 'rules_create?webhook='+$('#sel_webh').val()

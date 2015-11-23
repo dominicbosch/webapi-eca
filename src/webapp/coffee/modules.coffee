@@ -36,11 +36,22 @@ updateModules = (uid) ->
 					.attr('src', '/images/edit.png')
 					.attr('title', 'Edit Module')
 					.on('click', editModule);
+			if oParams.m isnt 'ad'
+				trNew.append('td').classed('smallpadded', true)
+					.append('img')
+						.attr('class', 'icon edit')
+						.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
+						.attr('title', 'Edit Module')
+						.on('click', startStopModule);
+
 			trNew.append('td').classed('smallpadded', true)
 				.append('div').text((d) -> d.name)
 					.each (d) ->
 						if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
 			trNew.append('td').text((d) -> d.User.username)
+			if oParams.m isnt 'ad'
+				trNew.append('td').attr('class','consoled mediumfont')
+					.text((d) -> d.schedule.text)
 
 	req.fail ( err ) ->
 		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
@@ -60,9 +71,17 @@ editModule = (d) ->
 	else
 		window.location.href = 'modules_create?m=et&id='+d.id
 
+startStopModule = (d) ->
+	console.log(d)
+	d.running = !d.running;
+	d3.select(this).attr('src', '/images/'+(if d.running then 'pause' else 'play')+'.png')
+
 fOnLoad = () ->
 	$('.moduletype').text modName
 	$('#linkMod').attr 'href', '/views/modules_create?m=' + oParams.m
+	if oParams.m isnt 'ad'
+		d3.select('#tableModules thead tr').append('th').text('Schedule')
+		d3.select('#tableModules thead tr').insert('th', ':first-child')
 
 	updateModules(parseInt(d3.select('body').attr('data-uid')))
 

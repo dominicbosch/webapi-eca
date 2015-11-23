@@ -93,6 +93,8 @@ nav.navbar {
 
 input.consoled {
 	margin: 6px 4px;
+}
+.consoled {
 	font-family: "Lucida Console", Monaco, monospace;
 }
 

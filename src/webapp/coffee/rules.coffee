@@ -8,13 +8,11 @@ fOnLoad = () ->
 				main.setInfo false, 'Did not retrieve rules: '+err.responseText
 
 	fUpdateRuleList = (data) ->
-		d3div = d3.select('#tableRules');
-		if data.length is 0
-			d3div.selectAll('table').remove()
-			d3div.append('h3').classed('empty', true).html "You don't have any rules! 
-				<a href=\"/views/rules_create\">Create One first!</a>"
+		if data.length is 0			
+			d3.select('#hasrules').style('display', 'none');
 		else
-			d3div.selectAll('h3').remove();
+			d3.select('#hasnorules').style('display', 'none');
+			d3div = d3.select('#tableRules');
 			d3tr = d3div.select('table').selectAll('tr').data(data, (d) -> d.id);
 			d3tr.exit().transition().style('opacity', 0).remove();
 			d3newTrs = d3tr.enter().append('tr');

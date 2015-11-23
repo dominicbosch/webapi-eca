@@ -122,10 +122,15 @@ fOnLoad = () ->
 						globals: listParams
 
 					if oParams.m isnt 'ad'
-						schedule = later.parse.text($('#inp_schedule').val())
+						txt = $('#inp_schedule').val()
+						schedule = later.parse.text(txt)
 						if schedule.error > -1
 							throw new Error('You have an error in your schedule!')
-						obj.schedule = schedule
+						obj.schedule = {
+							text: txt,
+							arr: schedule.schedules
+						}
+						obj.running = true;
 
 					action = if oParams.id then 'update' else 'create'
 					main.post('/service/'+moduleType+'/'+action, obj)
@@ -156,6 +161,7 @@ fOnLoad = () ->
 					uid = parseInt d3.select('body').attr('data-uid')
 					fAddUserParam param, shielded for param, shielded of oMod.globals
 					$('#input_id').val(oMod.name)
+					$('#inp_schedule').val(oMod.schedule.text)
 					if uid is oMod.UserId 
 						fAddUserParam '', false
 					else
@@ -164,8 +170,11 @@ fOnLoad = () ->
 						$('#editor').addClass 'readonly'
 						$('#editor_mode').hide()
 						$('#but_submit').hide()
+						$('#inp_schedule').addClass('readonly')
+							.attr('readonly', true).attr('disabled', true)
+						$('#tableParams input').addClass('readonly')
+							.attr('readonly', true).attr('disabled', true)
 						$('#tableParams img').remove()
-						$('#tableParams input').addClass('readonly').attr('readonly', true).attr('disabled', true)
 					$('#editor_mode').val oMod.lang
 					if oMod.lang is 'CoffeeScript'
 						editor.getSession().setMode "ace/mode/coffee"
