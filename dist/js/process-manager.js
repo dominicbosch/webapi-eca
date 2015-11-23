@@ -145,17 +145,17 @@ function startWorker(oUser) {
 		fb.getLastIndex(oUser.username, (err, id) => {
 			if(err) reject(err);
 			else {
-				// FIXME this ID seems not to be correct!
-				console.log('got ID from firebase', id)
 				let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
 				oChildren[oUser.id] = proc;
-				proc.on('message', registerProcessLogger(oUser.id, oUser.username));
-				sendToWorker(oUser.id, {
-					cmd: 'init',
-					startIndex: id
-				});
 				log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
 				db.setWorker(oUser.id, proc.pid)
+					.then(() => {
+						proc.on('message', registerProcessLogger(oUser.id, oUser.username));
+						sendToWorker(oUser.id, {
+							cmd: 'init',
+							startIndex: id
+						});
+					})
 					.then(() => resolve());
 			}
 		});

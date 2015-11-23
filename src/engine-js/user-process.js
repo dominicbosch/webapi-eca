@@ -34,7 +34,10 @@ var log = {
 	info: (msg) => sendLog('info', msg),
 	warn: (msg) => sendLog('warn', msg),
 	error: (msg) => sendLog('error', msg),
-	rule: (msg) => sendLog('rule', msg)
+	rule: (rid, msg) => sendLog('rule', {
+			rid: rid, 
+			msg: msg
+		})
 };
 
 process.on('uncaughtException', (err) => {
@@ -66,13 +69,15 @@ process.on('message', (oMsg) => {
 		default: console.log('unknown command on child', oMsg)
 	}
 });
+
 function runModule(id, rid, oAct) {
 	let opts = {
 		globals: oAct.globals,
-		logger: (msg) => log.rule({ rid: rid, msg: msg })
+		logger: (msg) => log.rule(rid, msg)
 	};
 	return dynmod.runStringAsModule(oAct.code, oAct.lang, oAct.User.username, opts)
 		.then((answ) => {
+			log.rule(rid, ' --> Module "'+oAct.name+'" loaded');
 			log.info('Module "'+oAct.name+'" loaded for user '+oAct.User.username);
 			oActions[id] = answ.module;
 		})
@@ -81,6 +86,7 @@ function runModule(id, rid, oAct) {
 
 function newRule(oRule) {
 	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
+	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules: ');
 	for(let id in oRule.actionModules) {
 		let oam = oRule.actionModules[id];
 		let oArgs = oam.functions; // the functions in the rules
