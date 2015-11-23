@@ -107,38 +107,50 @@ fOnLoad = function() {
   });
   fChangeInputVisibility();
   $('#but_submit').click(function() {
-    var action, listParams, obj;
+    var action, e, error, listParams, obj, schedule;
     if ($('#input_id').val() === '') {
       return main.setInfo(false, "Please enter an " + moduleTypeName + " name!");
     } else {
       if (!oParams.id || confirm('Are you sure you want to overwrite the existing module?')) {
-        listParams = {};
-        $('#tableParams tr').each(function() {
-          var shld, val;
-          val = $('input.textinput', this).val();
-          shld = $('input[type=checkbox]', this).is(':checked');
-          if (val !== "") {
-            listParams[val] = shld;
+        try {
+          listParams = {};
+          $('#tableParams tr').each(function() {
+            var shld, val;
+            val = $('input.textinput', this).val();
+            shld = $('input[type=checkbox]', this).is(':checked');
+            if (val !== "") {
+              listParams[val] = shld;
+            }
+            return true;
+          });
+          obj = {
+            id: oParams.id,
+            name: $('#input_id').val(),
+            lang: $('#editor_mode').val(),
+            published: $('#is_public').is(':checked'),
+            code: editor.getValue(),
+            globals: listParams
+          };
+          if (oParams.m !== 'ad') {
+            schedule = later.parse.text($('#inp_schedule').val());
+            if (schedule.error > -1) {
+              throw new Error('You have an error in your schedule!');
+            }
+            obj.schedule = schedule;
           }
-          return true;
-        });
-        obj = {
-          id: oParams.id,
-          name: $('#input_id').val(),
-          lang: $('#editor_mode').val(),
-          published: $('#is_public').is(':checked'),
-          code: editor.getValue(),
-          globals: listParams
-        };
-        action = oParams.id ? 'update' : 'create';
-        return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
-          main.setInfo(true, msg, true);
-          if (oParams.id) {
-            return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
-          }
-        }).fail(function(err) {
-          return main.setInfo(false, err.responseText, true);
-        });
+          action = oParams.id ? 'update' : 'create';
+          return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
+            main.setInfo(true, msg, true);
+            if (oParams.id) {
+              return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
+            }
+          }).fail(function(err) {
+            return main.setInfo(false, err.responseText, true);
+          });
+        } catch (error) {
+          e = error;
+          return alert(e);
+        }
       }
     }
   });

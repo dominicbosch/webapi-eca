@@ -39,7 +39,6 @@ router.post('/get/:id', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
-// TODO IMPLEMENT
 router.post('/create', (req, res) => {
 	log.info('SRVC:AD | Create: ' + req.body.name);
 	let args = {
@@ -57,6 +56,7 @@ router.post('/create', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
+// TODO IMPLEMENT correctly
 router.post('/update', (req, res) => {
 	log.info('SRVC:AD | UPDATE: ' + req.body.name);
 	let args = {

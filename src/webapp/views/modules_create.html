@@ -3,6 +3,7 @@
 {% block head %}
 	<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" src="/js/lib/moment.min.js"></script>
+	<script type="text/javascript" src="/js/lib/later.min.js"></script>
 	<script type="text/javascript" src="/js/lib/bootstrap-datetimepicker.min.js"></script>
 	<script src="/js/modules_create.js"></script>
 	<link rel="stylesheet" type="text/css" href="/css/modules.css">
@@ -30,7 +31,9 @@ exports.sayHelloWorld = () ->
 
 	<div id="schedule" class="row">
 		<h2>Schedule</h2>
-		<div class="col-sm-6">
+ 		<input type="text" id="inp_schedule" value="every 20 mins starting on the 7th min" class="form-control"/>
+
+<!-- 		<div class="col-sm-6">
 			<h3 class="floater">Start</h3>
 			<div class="form-group">
 				<div class='input-group date' id='datetimePicker'>
@@ -44,7 +47,7 @@ exports.sayHelloWorld = () ->
 
 		<div class="col-sm-6">
 			<h3 class="floater">Interval</h3>
-			<div class="col-sm-3 timepicker">
+ 			<div class="col-sm-3 timepicker">
 				Day(s): <br>
 				<select id="pickDays">
 					<option>0</option>
@@ -83,8 +86,8 @@ exports.sayHelloWorld = () ->
 					<option>20</option>
 					<option>40</option>
 				</select>
-			</div>
-		</div>
+			</div> 
+		</div> -->
 	</div>
 
 	<div class="row">

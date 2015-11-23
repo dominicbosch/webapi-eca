@@ -104,32 +104,41 @@ fOnLoad = () ->
 			main.setInfo false, "Please enter an #{moduleTypeName} name!"
 		else
 			if !oParams.id or confirm 'Are you sure you want to overwrite the existing module?'
+				try
+					listParams = {}
+					$('#tableParams tr').each () ->
+						val =  $('input.textinput', this).val()
+						shld = $('input[type=checkbox]', this).is ':checked'
+						if val isnt ""
+							listParams[val] = shld
+						true
 
-				listParams = {}
-				$('#tableParams tr').each () ->
-					val =  $('input.textinput', this).val()
-					shld = $('input[type=checkbox]', this).is ':checked'
-					if val isnt ""
-						listParams[val] = shld
-					true
+					obj =
+						id: oParams.id
+						name: $('#input_id').val()
+						lang: $('#editor_mode').val()
+						published: $('#is_public').is ':checked'
+						code: editor.getValue()
+						globals: listParams
 
-				obj =
-					id: oParams.id
-					name: $('#input_id').val()
-					lang: $('#editor_mode').val()
-					published: $('#is_public').is ':checked'
-					code: editor.getValue()
-					globals: listParams
+					if oParams.m isnt 'ad'
+						schedule = later.parse.text($('#inp_schedule').val())
+						if schedule.error > -1
+							throw new Error('You have an error in your schedule!')
+						obj.schedule = schedule
 
-				action = if oParams.id then 'update' else 'create'
-				main.post('/service/'+moduleType+'/'+action, obj)
-					.done (msg) ->
-						main.setInfo true, msg, true
-						if oParams.id then alert "You need to update the rules that use this module in 
-										order for the changes to be applied to them!"
+					action = if oParams.id then 'update' else 'create'
+					main.post('/service/'+moduleType+'/'+action, obj)
+						.done (msg) ->
+							main.setInfo true, msg, true
+							if oParams.id then alert "You need to update the rules that use this module in 
+											order for the changes to be applied to them!"
 
-					.fail (err) ->
-						main.setInfo false, err.responseText, true
+						.fail (err) ->
+							main.setInfo false, err.responseText, true
+
+				catch e
+					alert(e)
 
 	
 	# EDIT MODULES

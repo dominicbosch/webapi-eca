@@ -112,7 +112,8 @@ function throwStatusCode(code, msg) {
 exports.throwStatusCode = throwStatusCode;
 
 exports.errHandler = (res) => (err) => {
-	log.error(err);
+	if(err.statusCode) log.info(err.message);
+	else log.error(err);
 	res.status(err.statusCode || 500);
 	res.send(err.message);
 }
@@ -400,11 +401,7 @@ exports.deleteActionDispatcher = (uid, aid) => {
 		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
 		.then((arrOldAd) => {
 			if(arrOldAd.length > 0) return arrOldAd[0].destroy();
-			else {
-				let e = new Error('No Action Dispatcher found to delete!');
-				e.statusCode = 404;
-				throw e;
-			}
+			else throwStatusCode(404, 'No Action Dispatcher found to delete!');
 		});
 };
 
@@ -413,17 +410,43 @@ exports.deleteActionDispatcher = (uid, aid) => {
 // ## EVENT TRIGGERS
 // ##
 
-exports.getAllEventTriggers = (uid, cb) => {
-	var query;
-	if(uid) query = { where: { UserId: uid } };
-	ActionDispatcher.findAll(query)
-		.then((arrRecords) => cb(null, arrRecordsToJSON(arrRecords)), cb).catch(ec);
+
+exports.getAllEventTriggers = (uid) => {
+	var query = { include: [{ model: User, attributes: [ 'username' ]}] };
+	if(uid) query.where = { UserId: uid };
+	return EventTrigger.findAll(query)
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
+};
+exports.getEventTrigger = (eid) => {
+	return EventTrigger.findOne({
+			where: { id: eid },
+			include: [{ model: User, attributes: [ 'username' ]}]
+		})
+		.then((oEt) => {
+			if(oEt) return oEt.toJSON();
+			else throwStatusCode(404, 'Event Trigger does not exist!')
+		});
+};
+exports.createEventTrigger = (uid, oAD) => {
+	return User.findById(uid)
+		.then((oUser) => oUser.createEventTrigger(oAD))
+		.then((oNewAD) => oNewAD.toJSON())
+};
+exports.updateEventTrigger = (uid, eid, oEt) => {
+	return User.findById(uid)
+		.then((oUser) => oUser.getEventTriggers({ where: { id: eid }}))
+		.then((arrOldEt) => {
+			if(arrOldEt.length > 0) return arrOldEt[0].update(oEt);
+			else throwStatusCode(404, 'Event Trigger not found!');
+		})
+};
+exports.deleteEventTrigger = (uid, eid) => {
+	log.info('PG | Deleting EventTrigger #'+eid);
+	return User.findById(uid)
+		.then((oUser) => oUser.getEventTriggers({ where: { id: eid }}))
+		.then((arrOldEt) => {
+			if(arrOldEt.length > 0) return arrOldEt[0].destroy();
+			else throwStatusCode(404, 'No Event Trigger found to delete!');
+		});
 };
 
-exports.deleteEventTrigger = (eid, cb) => {
-	log.info('PG | Deleting EventTrigger #'+eid);
-	EventTrigger.findById(eid).then((oRecord) => {
-		if(oRecord) oRecord.destroy().then(() => cb(null, 'EventTrigger deleted!')).catch(cb);
-		else cb(new Error('EventTrigger with ID #'+eid+' not found!'));
-	}, cb).catch(ec);
-};

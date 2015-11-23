@@ -1,70 +1,111 @@
 'use strict';
 
 // Serve EVENT TRIGGERS
-// ====================
+// ========================
 
 // **Loads Modules:**
 
 // - [Logging](logging.html)
 var log = require('../logging'),
-// - External Modules: [express](http://expressjs.com/api.html)
+	// - [Dynamic Modules](dynamic-modules.html)
+	dynmod = require('../dynamic-modules'),
+	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
 	db = global.db,
-	geb = global.eventBackbone;
+	geb = global.eventBackbone,
+	router = module.exports = express.Router();
 
-// geb.emit 'eventtrigger', {intevent: 'eventtrigger', data: 'wow'}
-var router = module.exports = express.Router();
-
-router.post('/getall', (req, res) => {
-	log.info('SRVC | EVENT TRIGGERS | Fetching all');
-	db.eventTriggers.getAllModules(req.session.pub.username, (err, oETs) => {
-		if(err) res.status(500).send(err);
-		else res.send(oETs);
-	});
+geb.addListener('system:init', () => {
+	db.getAllEventTriggers()
+		.then((arr) => {
+			for(let i = 0; i < arr.length; i++) {
+				geb.emit('module:new', arr[i]);
+			}
+		})
+		.catch((err) => log.error(err));
 });
 
-router.post('/store', (req, res) => {
-	log.info('SRVC | EVENT TRIGGERS | Storing new EP');
-})
+router.post('/get', (req, res) => {
+	log.info('SRVC:AD | Fetching all');
+	db.getAllEventTriggers()
+		.then((arr) => res.send(arr))
+		.catch(db.errHandler(res));
+});
 
-// # forgeModule = ( user, oBody, modType, dbMod, callback ) =>
-// # 	answ = hasRequiredParams [ 'id', 'params', 'lang', 'data' ], oBody
-// # 	if answ.code isnt 200
-// # 		callback answ
-// # 	else
-// # 		if oBody.overwrite
-// # 			storeModule user, oBody, modType, dbMod, callback
-// # 		else
-// # 			dbMod.getModule user.username, oBody.id, ( err, mod ) =>
-// # 				if mod
-// # 					answ.code = 409
-// # 					answ.message = 'Module name already existing: ' + oBody.id
-// # 					callback answ
-// # 				else
-// # 					storeModule user, oBody, modType, dbMod, callback
+router.post('/get/:id', (req, res) => {
+	log.info('SRVC:AD | Fetching one by id: ' + req.params.id);
+	db.getEventTrigger(req.params.id)
+		.then((oADs) => res.send(oADs))
+		.catch(db.errHandler(res));
+});
 
-// # storeModule = ( user, oBody, modType, dbMod, callback ) =>
-// # 	src = oBody.data
+router.post('/create', (req, res) => {
+	log.info('SRVC:AD | Create: ' + req.body.name);
+	let args = {
+		userid: req.session.pub.id,
+		username: req.session.pub.username,
+		body: req.body
+	};
+	console.log('GOT globals', req.body.globals);
+	storeModule(args)
+		.then((ad) => {
+			log.info('SRVC:AD | Module stored');
+			res.send('Event Trigger stored!')
+			geb.emit('module:new', ad);
+		})	
+		.catch(db.errHandler(res));
+});
 
-// 							# args =
-// 							# 	src: obj.data,					# code
-// 							# 	lang: obj.lang,					# script language
-// 							# 	userId: userName,				# userId
-// 							# 	modId: moduleName,				# moduleId
-// 							# 	modType: 'actiondispatcher'		# module type
-// 							# 	oRule: oMyRule.rule,			# oRule
-// # 	dynmod.compileString src, user.username, id: 'dummyRule', oBody.id, oBody.lang, modType, null, ( cm ) =>
-// # 		answ = cm.answ
-// # 		if answ.code is 200
-// # 			funcs = []
-// # 			funcs.push name for name, id of cm.module
-// # 			log.info "CM | Storing new module with functions #{ funcs.join( ', ' ) }"
-// # 			answ.message = 
-// # 				" Module #{ oBody.id } successfully stored! Found following function(s): #{ funcs }"
-// # 			oBody.functions = JSON.stringify funcs
-// # 			oBody.functionArgs = JSON.stringify cm.funcParams
-// # 			oBody.comment = cm.comment
-// # 			dbMod.storeModule user.username, oBody
-// # 			# if oBody.public is 'true'
-// # 			# 	dbMod.publish oBody.id
-// # 		callback answ
+// TODO IMPLEMENT correctly
+router.post('/update', (req, res) => {
+	log.info('SRVC:AD | UPDATE: ' + req.body.name);
+	let args = {
+		userid: req.session.pub.id,
+		username: req.session.pub.username,
+		body: req.body,
+		id: req.body.id
+	};
+	storeModule(args)
+		.then((ad) => {
+			log.info('SRVC:AD | Module stored');
+			res.send('Event Trigger stored!')
+			geb.emit('module:update', ad);
+		})	
+		.catch(db.errHandler(res));
+});
+
+function storeModule(args) {
+	let ab = args.body;
+	return db.getAllEventTriggers(args.userid)
+		.then((arr) => {
+			arr = arr || [];
+			if(args.id) arr = arr.filter((o) => o.id !== parseInt(args.id));
+			let arrNames = arr.map((o) => o.name);
+			if(arrNames.indexOf(ab.name) > -1) {
+				db.throwStatusCode(409, 'Module name already existing: '+ab.name);
+			}
+		})
+		.then(() => {
+			let options = { globals: {} };
+			for(let el in ab.globals) options.globals[el] = 'dummy';
+			log.info('SRVC:AD | Running AD ', ab.name);
+			return dynmod.runStringAsModule(ab.code, ab.lang, args.username, options)
+		})
+		.then((oMod) => {
+			log.info('SRVC:AD | Storing module "'+ab.name+'" with functions '+Object.keys(oMod.functions).join(', '));
+			let oModule = ab;
+			delete oModule.id; // If the ID is set it is an update of an existing module
+			oModule.comment = oMod.comment;
+			oModule.functions = oMod.functions;
+
+			if(args.id) return db.updateEventTrigger(args.userid, args.id, oModule);
+			else return db.createEventTrigger(args.userid, oModule);
+		})
+}
+
+router.post('/delete', (req, res) => {
+	log.info('SRVC:AD | DELETE: #' + req.body.id);
+	db.deleteEventTrigger(req.session.pub.id, req.body.id)
+		.then(() => res.send('Deleted!'))
+		.catch(db.errHandler(res));
+});
