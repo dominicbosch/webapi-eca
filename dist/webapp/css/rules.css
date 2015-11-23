@@ -1,3 +1,6 @@
+#hasnorules, #hasrules {
+	display: none;
+}
 
 #divConditions {
     display: inline-block;
