@@ -64,6 +64,13 @@ geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
 });
 
+geb.addListener('modules:list', (arrModules) => {
+	broadcast({
+		cmd: 'modules:list',
+		arr: arrModules
+	});
+});
+
 function sendToWorker(uname, evt) {
 	try {
 		oChildren[uname].send(evt);
@@ -84,6 +91,7 @@ geb.addListener('rule:new', (oRule) => {
 	}
 	Promise.all(arrPromises)
 		.then((arr) => {
+			console.log(arr);
 			oRule.actionModules = {};
 			for(let i = 0; i < arr.length; i++) {
 				oRule.actionModules[arr[i].id] = arr[i];
@@ -94,13 +102,6 @@ geb.addListener('rule:new', (oRule) => {
 			}
 			sendToWorker(oRule.UserId, evt);
 		})
-});
-
-geb.addListener('modules:list', (arrModules) => {
-	broadcast({
-		cmd: 'modules:list',
-		arr: arrModules
-	});
 });
 
 geb.addListener('action', (oEvt) => {

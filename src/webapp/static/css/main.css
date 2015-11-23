@@ -45,6 +45,7 @@ nav.navbar {
 	min-height: 0;
 	margin-bottom: 0;
 }
+.important{ text-decoration: underline }
 .nav.navbar-nav>li { transition: .5s }
 .nav.navbar-nav>li>a {
 	transition: .5s;
@@ -52,6 +53,11 @@ nav.navbar {
 	padding-top: 7px;
 	padding-bottom: 7px;
 }
+.nav.navbar-nav>li.arrow { 
+	padding: 7px 4px;
+	color: #FFF;
+}
+.nav.navbar-nav>li.arrow:hover { background: #2D373C }
 .nav.navbar-nav>li:hover>a { color: #2D373C }
 .nav.navbar-nav>li:hover { background: #FFF }
 .nav.navbar-nav>li>a:focus { color: #d20537 }
