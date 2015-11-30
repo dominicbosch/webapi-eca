@@ -35,9 +35,13 @@ var log = {
 	warn: (msg) => sendLog('warn', msg),
 	error: (msg) => sendLog('error', msg),
 	rule: (rid, msg) => sendLog('rule', {
-			rid: rid, 
-			msg: msg
-		})
+		rid: rid, 
+		msg: msg
+	}),
+	data: (rid, msg) => sendLog('ruledata', {
+		rid: rid, 
+		msg: msg
+	})
 };
 
 process.on('uncaughtException', (err) => {
@@ -73,7 +77,8 @@ process.on('message', (oMsg) => {
 function runModule(id, rid, oAct) {
 	let opts = {
 		globals: oAct.globals,
-		logger: (msg) => log.rule(rid, msg)
+		logger: (msg) => log.rule(rid, msg),
+		datalogger: (msg) => log.data(rid, msg)
 	};
 	return dynmod.runStringAsModule(oAct.code, oAct.lang, oAct.User.username, opts)
 		.then((answ) => {

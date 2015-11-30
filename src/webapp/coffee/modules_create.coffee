@@ -161,7 +161,8 @@ fOnLoad = () ->
 					uid = parseInt d3.select('body').attr('data-uid')
 					fAddUserParam param, shielded for param, shielded of oMod.globals
 					$('#input_id').val(oMod.name)
-					$('#inp_schedule').val(oMod.schedule.text)
+					if oParams.m isnt 'ad'
+						$('#inp_schedule').val(oMod.schedule.text)
 					if uid is oMod.UserId 
 						fAddUserParam '', false
 					else

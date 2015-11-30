@@ -2,7 +2,7 @@
 var fOnLoad;
 
 fOnLoad = function() {
-  var deleteRule, editRule, fUpdateRuleList, fetchRules, showLog;
+  var deleteRule, editRule, fUpdateRuleList, fetchRules, showDataLog, showLog;
   fetchRules = function() {
     return main.post('/service/rules/get').done(fUpdateRuleList).fail(function(err) {
       return main.setInfo(false, 'Did not retrieve rules: ' + err.responseText);
@@ -25,6 +25,7 @@ fOnLoad = function() {
       d3newTrs.append('td').append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Rule').on('click', deleteRule);
       d3newTrs.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Rule').on('click', editRule);
       d3newTrs.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);
+      d3newTrs.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk.png').attr('title', 'Download Data Log').on('click', showDataLog);
       return d3newTrs.append('td').text(function(d) {
         return d.name;
       });
@@ -43,7 +44,7 @@ fOnLoad = function() {
   editRule = function(d) {
     return window.location.href = 'rules_create?id=' + d.id;
   };
-  return showLog = function(d) {
+  showLog = function(d) {
     console.warn('TODO open div over whole page with log in editor');
     return main.post('/service/rules/getlog/' + d.id).done(function(arrLog) {
       var d3tr;
@@ -58,6 +59,10 @@ fOnLoad = function() {
     }).fail(function(err) {
       return main.setInfo(false, 'Could not get rule log: ' + err.responseText);
     });
+  };
+  return showDataLog = function(d) {
+    console.warn('TODO open div over whole page with log in editor');
+    return window.location.href = '/service/rules/getdatalog/' + d.id;
   };
 };
 

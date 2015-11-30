@@ -13,10 +13,10 @@ var log = require('../logging'),
 	moment = require('moment'),
 
 // Internal variables :
-	sequelize,
+	sequelize
 
 // DB Models:
-	User
+	, User
 	, Worker
 	, Rule
 	, Webhook
@@ -57,7 +57,8 @@ function initializeModels() {
 		name: Sequelize.STRING,
 		conditions: Sequelize.JSON,
 		actions: Sequelize.JSON,
-		log: Sequelize.ARRAY(Sequelize.STRING)
+		log: Sequelize.ARRAY(Sequelize.STRING),
+		datalog: Sequelize.ARRAY(Sequelize.JSON)
 	});
 	Webhook = sequelize.define('Webhook', {
 		hookid: { type: Sequelize.STRING, unique: true },
@@ -128,12 +129,22 @@ function arrRecordsToJSON(arrRecords) {
 }
 
 // shutDown closes the DB connection
-exports.shutDown = (cb) => {
+exports.shutDown = () => {
 	log.warn('PG | Closing connection!');
 	sequelize.close();
 	sequelize = null;
 };
 
+exports.getDBSize = () => {
+	return sequelize.query("select pg_database_size('"+sequelize.config.database+"')")
+		.spread(function(results, metadata) {
+			if(results.length > 0) {
+				return parseInt(results[0]['pg_database_size']);
+			} else {
+				throwStatusCode(500, 'Unable to determine the database size!');
+			}
+		})
+}
 
 // ##
 // ## USERS
@@ -347,9 +358,36 @@ exports.logRule = (rid, msg) => {
 		}).catch(ec);
 };
 
-exports.getRuleLog = (rid) => {
+exports.getRuleLog = (uid, rid) => {
 	return Rule.findById(rid)
 		.then((oRule) => oRule.get('log'));
+};
+
+
+exports.logRuleData = (rid, msg) => {
+	log.info('PG | Logging rule data #'+rid, msg);
+	let oLog = JSON.stringify({
+		timestamp: (new Date()).getTime(),
+		data: msg
+	});
+	return Rule.findById(rid)
+		.then((oRule) => {
+			if(oRule) {
+				return oRule.update({
+					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLog)
+				})
+			} else {
+				console.log('no rule foub')
+			}
+		}).catch(ec);
+};
+
+exports.getRuleDataLog = (uid, rid) => {
+	return Rule.findOne({ where: {
+			id: rid,
+			UserId: uid
+		}})
+		.then((oRule) => oRule.get('datalog'));
 };
 
 // Returns a promise

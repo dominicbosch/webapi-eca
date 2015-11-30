@@ -39,16 +39,22 @@ exports.init = (conf) => {
 exports.getHostId = () => hostid;
 
 exports.getLastIndex = (uid, cb) => {
-	fb.child(hostid+'/'+uid+'/index').once('value', (v) => cb(null, v.val() || 0));
+	fb.child(hostid+'/users/'+uid+'/index').once('value', (v) => cb(null, v.val() || 0));
 }
 
 exports.logState = (uid, state, ts) => {
-	fb.child(hostid+'/'+uid+'/'+state).push(ts);
+	fb.child(hostid+'/users/'+uid+'/'+state).push(ts);
+}
+exports.logDBSize = (size) => {
+	fb.child(hostid+'/dbsize').push({
+		timestamp: (new Date()).getTime(),
+		size: size
+	});
 }
 
 
 exports.logStats = (uid, oData) => {
-	fb.child(hostid+'/'+uid+'/index').set(oData.index);
-	fb.child(hostid+'/'+uid+'/data/'+oData.index).set(oData);
-	fb.child(hostid+'/'+uid+'/latest').set(oData);
+	fb.child(hostid+'/users/'+uid+'/index').set(oData.index);
+	fb.child(hostid+'/users/'+uid+'/data/'+oData.index).set(oData);
+	fb.child(hostid+'/users/'+uid+'/latest').set(oData);
 }

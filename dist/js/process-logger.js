@@ -3,7 +3,7 @@
 // 	[os](http://nodejs.org/api/os.html) and
 var os = require('os');
 
-module.exports = function(sendStats, startIndex) {
+module.exports = function(sendStats, startIndex, getDBSize) {
 	sendStats({
 		cmd: 'startup',
 		timestamp: (new Date()).getTime()
@@ -40,12 +40,14 @@ module.exports = function(sendStats, startIndex) {
 			heapTotal: {},
 			heapUsed: {},
 			rss: {},
+			dbsize: {},
 			loadavg: {}
 		};
 		resetMetric(oCumulated.heapTotal);
 		resetMetric(oCumulated.heapUsed);
 		resetMetric(oCumulated.rss);
 		resetMetric(oCumulated.loadavg);
+		resetMetric(oCumulated.dbsize);
 	}
 	function updateLog() {
 		if(currI++ > 120) {
@@ -60,7 +62,7 @@ module.exports = function(sendStats, startIndex) {
 		updateMetric(oCumulated.heapUsed, mem.heapUsed);
 		updateMetric(oCumulated.rss, mem.rss);
 		updateMetric(oCumulated.loadavg, os.loadavg()[0]);
-		sendStats({
+		let oStats = {
 			cmd: 'stats',
 			data: {
 				index: dataIndex,
@@ -70,10 +72,20 @@ module.exports = function(sendStats, startIndex) {
 				rss: getMetric(oCumulated.rss),
 				loadavg: getMetric(oCumulated.loadavg)
 			}
-		});
+		}
+		if((typeof getDBSize) === 'function') {
+			getDBSize()
+				.then((size) => {
+					updateMetric(oCumulated.dbsize, size);
+					oStats.data.dbsize = getMetric(oCumulated.dbsize)
+					sendStats(oStats);
+				})
+		} else {
+			sendStats(oStats);
+		}
 	}
 	resetLog();
 	updateLog();
 	dataIndex++;
-	setInterval(updateLog, 1*1000); // We are exhaustively sending stats to the parent
+	setInterval(updateLog, 30*1000); // We are exhaustively sending stats to the parent
 }

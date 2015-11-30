@@ -14,9 +14,10 @@ $(document).ready(function() {
 		margin = {top: 20, right: 50, bottom: 50, left: 50},
 		width = parseFloat(svg.style('width'))-margin.left-margin.right,
 		height = parseFloat(svg.style('height'))-margin.top-margin.bottom,
-		memMax = 0, cpuMax = 0,
+		memMax = 0, cpuMax = 0, dbMax = 0,
 		suspendUpdates = false,
-		xAxis, yAxis, yAxisCPU, scaleX, scaleY, allData;
+		systemname,
+		xAxis, yAxis, yAxisCPU, yAxisDB, scaleX, scaleY, allData;
 
 	selectBox.on('change', (el) => {
 		button.attr('disabled', 'disabled');
@@ -43,6 +44,7 @@ $(document).ready(function() {
 
 	var gStates = canvas.append('g').attr('class', 'state');
 	var gPath = canvas.append('g');
+	var gDB = canvas.append('g');
 
 	var username = svg.attr('data-user');
 	var isAdmin = svg.attr('data-admin') === 'true';
@@ -70,38 +72,57 @@ $(document).ready(function() {
 			.y(function(d){ return scaleY(getValue(d, arrProperty)*memMax/cpuMax) })
 			.interpolate('basis'); // cardinal|basis-open
 	}
-	function appendLineToGraph(type, pathFunc, dash) {
-		gPath.append('path')
+	function lineDB(arrProperty) {
+		return d3.svg.line()
+			.x(function(d){ return scaleX(d.timestamp) })
+			.y(function(d){ return scaleY(getValue(d, arrProperty)*memMax/dbMax) })
+			.interpolate('basis'); // cardinal|basis-open
+	}
+	function appendLineToGraph(g, type, pathFunc, dash) {
+		g.append('path')
 			.attr('class', 'line '+type)
 			.attr('stroke-linecap', 'round')
 			.attr('stroke-dasharray', dash);
 	}
 
-	appendLineToGraph('heapTotal avg', lineFunc(['heapTotal', 'avg']));
-	appendLineToGraph('heapTotal min', lineFunc(['heapTotal', 'min']), '1,1');
-	appendLineToGraph('heapTotal max', lineFunc(['heapTotal', 'max']), '5,5');
+	appendLineToGraph(gPath, 'heapTotal avg', lineFunc(['heapTotal', 'avg']));
+	appendLineToGraph(gPath, 'heapTotal min', lineFunc(['heapTotal', 'min']), '1,1');
+	appendLineToGraph(gPath, 'heapTotal max', lineFunc(['heapTotal', 'max']), '5,5');
 
-	appendLineToGraph('heapUsed avg', lineFunc(['heapUsed', 'avg']));
-	appendLineToGraph('heapUsed min', lineFunc(['heapUsed', 'min']), '1,1');
-	appendLineToGraph('heapUsed max', lineFunc(['heapUsed', 'max']), '5,5');
+	appendLineToGraph(gPath, 'heapUsed avg', lineFunc(['heapUsed', 'avg']));
+	appendLineToGraph(gPath, 'heapUsed min', lineFunc(['heapUsed', 'min']), '1,1');
+	appendLineToGraph(gPath, 'heapUsed max', lineFunc(['heapUsed', 'max']), '5,5');
 
-	appendLineToGraph('rss avg', lineFunc(['rss', 'avg']));
-	appendLineToGraph('rss min', lineFunc(['rss', 'min']), '1,1');
-	appendLineToGraph('rss max', lineFunc(['rss', 'max']), '5,5');
+	appendLineToGraph(gPath, 'rss avg', lineFunc(['rss', 'avg']));
+	appendLineToGraph(gPath, 'rss min', lineFunc(['rss', 'min']), '1,1');
+	appendLineToGraph(gPath, 'rss max', lineFunc(['rss', 'max']), '5,5');
 
 	if(isAdmin) {
-		appendLineToGraph('load avg', lineCPU(['loadavg', 'avg']));
-		appendLineToGraph('load min', lineCPU(['loadavg', 'min']), '1,1');
-		appendLineToGraph('load max', lineCPU(['loadavg', 'max']), '5,5');
+		appendLineToGraph(gPath, 'load avg', lineCPU(['loadavg', 'avg']));
+		appendLineToGraph(gPath, 'load min', lineCPU(['loadavg', 'min']), '1,1');
+		appendLineToGraph(gPath, 'load max', lineCPU(['loadavg', 'max']), '5,5');
+
+
+		appendLineToGraph(gDB, 'dbsize avg', lineDB(['dbsize', 'avg']));
+		appendLineToGraph(gDB, 'dbsize min', lineDB(['dbsize', 'min']), '1,1');
+		appendLineToGraph(gDB, 'dbsize max', lineDB(['dbsize', 'max']), '5,5');
 
 		canvas.append('g')
 			.attr('class', 'y axis load')
 			.append('text')
-				.attr('transform', 'translate(-40,20)rotate(-90)')
+				.attr('transform', 'translate(-40,120)rotate(-90)')
 				.style('text-anchor', 'end')
 				.text('CPU Usage (%)');
+
+		canvas.append('g')
+			.attr('class', 'y axis dbsize')
+			.append('text')
+				.attr('transform', 'translate(-40,20)rotate(-90)')
+				.style('text-anchor', 'end')
+				.text('DB Space (MB)');
 	} else {
 		d3.selectAll('span.legend.load').style('display', 'none');
+		d3.selectAll('span.legend.dbsize').style('display', 'none');
 	}
 
 	canvas.append('g')
@@ -121,24 +142,33 @@ $(document).ready(function() {
 	gStates.append('g').attr('class', 'startup');
 
 	function displayUser(username) {
-		var oData = allData[username];
+		suspendUpdates = true;
+		var oData = allData.users[username];
+		var arrSystemData = allData.users[systemname].data;
 		var arrData = oData.data;
-
 		var arrStartups = Object.keys(oData.startup || [])
 			.map(function(key) { return oData.startup[key] });
 		var arrShutdowns = Object.keys(oData.shutdown || [])
 			.map(function(key) { return oData.shutdown[key] });
+	
+		var arrDBSizes = arrSystemData.map(function(o) { 
+			return {
+				timestamp: o.timestamp,
+				dbsize: o.dbsize
+			}
+		});
 		var arrTs = arrData.map(function(d) { return d.timestamp })
 			// .concat(arrStartups)
 			// .concat(arrShutdowns)
 			;
 		// arrTs.push((new Date()).getTime());
-
 		memMax = d3.max(
-			arrData.map(function(d){ return [d.heapTotal.max, d.heapUsed.max, d.rss.max] }),
-			function(d){ return d3.max(d) }
+			arrData.map(function(d) {
+				return d3.max([d.heapTotal.max, d.heapUsed.max, d.rss.max])
+			})
 		);
 		cpuMax = d3.max(arrData, function(d) { return d.loadavg.max });
+		dbMax = d3.max(arrSystemData, function(d) {return d.dbsize.max });
 
 		scaleX = d3.time.scale().range([0, width])
 			.domain(d3.extent(arrTs));
@@ -148,11 +178,15 @@ $(document).ready(function() {
 
 		var scaleYCPU = d3.scale.linear().range([height, 0])
 			.domain([0, cpuMax]);
+		var scaleYDB = d3.scale.linear().range([height, 0])
+			.domain([0, dbMax]);
 
 		xAxis = d3.svg.axis().scale(scaleX);//.orient('bottom'),
 		yAxis = d3.svg.axis().scale(scaleY).tickFormat(formatMBs).orient('right');
 		yAxisCPU = d3.svg.axis().scale(scaleYCPU)
 			.tickFormat(d3.format('%.0')).orient('left');
+
+		yAxisDB = d3.svg.axis().scale(scaleYDB).tickFormat(formatMBs).orient('right');
 
 		// Display startups
 		var d3s = d3.selectAll('.startup').selectAll('line').data(arrStartups);
@@ -168,6 +202,8 @@ $(document).ready(function() {
 			.attr('transform', 'translate(-100,0)');
 	
 		gPath.selectAll('path').datum(arrData);
+		gDB.selectAll('path').datum(arrDBSizes);
+
 		updateGraph();
 	}
 	
@@ -201,6 +237,7 @@ $(document).ready(function() {
 
 		d3State.selectAll('.y.axis.mem').call(yAxis).attr('transform', 'translate('+width+',0)');
 		d3State.selectAll('.y.axis.load').call(yAxisCPU);
+		d3State.selectAll('.y.axis.dbsize').call(yAxisDB);
 
 		d3.selectAll('path.heapTotal.avg').attr('d', lineFunc(['heapTotal', 'avg']));
 		d3.selectAll('path.heapTotal.min').attr('d', lineFunc(['heapTotal', 'min']));
@@ -218,6 +255,10 @@ $(document).ready(function() {
 		d3.selectAll('path.load.min').attr('d', lineCPU(['loadavg', 'min']));
 		d3.selectAll('path.load.max').attr('d', lineCPU(['loadavg', 'max']));
 
+		d3.selectAll('path.dbsize.avg').attr('d', lineDB(['dbsize', 'avg']));
+		d3.selectAll('path.dbsize.min').attr('d', lineDB(['dbsize', 'min']));
+		d3.selectAll('path.dbsize.max').attr('d', lineDB(['dbsize', 'max']));
+
 		d3State.selectAll('g.state line').attr('transform', function(d) {
 			return 'translate('+scaleX(d)+',0)'
 		})
@@ -231,11 +272,12 @@ $(document).ready(function() {
 				allData = snapshot.val();
 				var sel = selectBox.node().value || username;
 				selectBox.selectAll('*').remove();
-				for(var prop in allData) {
-					var arr = allData[prop].data;
+				for(var name in allData.users) {
+					var arr = allData.users[name].data;
+					if(arr[0].dbsize) systemname = name;
 					// Relink the array so the path gets linked right
-					allData[prop].data = arr.splice(arr.index+1).concat(arr);
-					selectBox.append('option').attr('value', prop).text(prop);
+					allData.users[name].data = arr.splice(arr.index+1).concat(arr);
+					selectBox.append('option').attr('value', name).text(name);
 				}
 				selectBox.select('[value="'+sel+'"]').property('selected', true);
 				displayUser(sel);
@@ -252,4 +294,5 @@ $(document).ready(function() {
 		});
 	}
 	fetchData(true);
+	// $.post()
 });

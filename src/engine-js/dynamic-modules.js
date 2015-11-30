@@ -84,6 +84,7 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 		if(!opt.id) opt.id = 'TMP|'+Math.random().toString(36).substring(2)+'.vm';
 		if(!opt.globals) opt.globals = {};
 		if(typeof opt.logger !== 'function') opt.logger = () => {};
+		if(typeof opt.datalogger !== 'function') opt.datalogger = () => {};
 
 		if(lang === 'CoffeeScript') {
 			try {
@@ -101,8 +102,9 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			id: opt.id,
 			params: opt.globals,
 			log: opt.logger,
+			logdata: opt.datalogger,
 			exports: {},
-			sendEvent: (hook, evt) => {	
+			sendEvent: (hook, evt) => {
 				let options = {
 					uri: hook,
 					method: 'POST',

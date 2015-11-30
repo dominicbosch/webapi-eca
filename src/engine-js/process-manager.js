@@ -30,7 +30,7 @@ exports.init = (oConf) => {
 	log.info('PM | Initialzing Users and Loggers');
 
 	fb.getLastIndex(systemName, (err, id) => {
-		pl(registerProcessLogger(null, systemName), id);
+		pl(registerProcessLogger(null, systemName), id, db.getDBSize);
 	});
 
 	// Load the standard users from the user config file if they are not already existing
@@ -120,6 +120,8 @@ function registerProcessLogger(uid, username) {
 			case 'log:info': db.logWorker(uid, oMsg.data);
 				break;
 			case 'log:rule': db.logRule(oMsg.data.rid, oMsg.data.msg);
+				break;
+			case 'log:ruledata': db.logRuleData(oMsg.data.rid, oMsg.data.msg);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);

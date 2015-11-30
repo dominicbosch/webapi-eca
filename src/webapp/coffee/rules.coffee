@@ -33,6 +33,11 @@ fOnLoad = () ->
 				.attr('src', '/images/log.png')
 				.attr('title', 'Show Rule Log')
 				.on('click', showLog);
+			d3newTrs.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/bulk.png')
+				.attr('title', 'Download Data Log')
+				.on('click', showDataLog);
 			d3newTrs.append('td').text (d) -> d.name 
 
 	fetchRules()
@@ -60,5 +65,9 @@ fOnLoad = () ->
 				#  "<h3>#{ ruleName } Log:</h3> <i>(updated UTC|#{ ts })</i><br/><br/>#{ log }"
 			.fail (err) ->
 				main.setInfo false, 'Could not get rule log: '+err.responseText
+
+	showDataLog = (d) ->
+		console.warn 'TODO open div over whole page with log in editor'
+		window.location.href = '/service/rules/getdatalog/'+d.id
 
 window.addEventListener 'load', fOnLoad, true

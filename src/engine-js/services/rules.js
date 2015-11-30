@@ -33,9 +33,20 @@ router.post('/get', (req, res) => {
 });
 
 router.post('/getlog/:id', (req, res) => {
-	log.info('SRVC | RULES | Fetching all Rules');
-	db.getRuleLog(req.params.id)
+	log.info('SRVC | RULES | Fetching all Rule logs');
+	db.getRuleLog(req.session.pub.id, req.params.id)
 		.then((log) => res.send(log))
+		.catch(db.errHandler(res));
+});
+
+router.get('/getdatalog/:id', (req, res) => {
+	log.info('SRVC | RULES | Fetching all Rule data logs');
+	db.getRuleDataLog(req.session.pub.id, req.params.id)
+		.then((log) => {
+			res.set('Content-Type', 'text/json')
+				.set('Content-Disposition', 'attachment; filename=data.json')
+				.send(log)
+		})
 		.catch(db.errHandler(res));
 });
 

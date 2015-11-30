@@ -57,6 +57,10 @@ svg {
 	color: darkmagenta;
 	stroke: darkmagenta;
 }
+.dbsize {
+	color: #444;
+	stroke: #444;
+}
 .load text {
 	stroke: none;
 	fill: darkmagenta;
@@ -64,6 +68,14 @@ svg {
 .axis.load path,
 .axis.load line {
 	stroke: darkmagenta;
+}
+.dbsize text {
+	stroke: none;
+	fill: #444;
+}
+.axis.dbsize path,
+.axis.dbsize line {
+	stroke: #444;
 }
 
 .legend.startup {

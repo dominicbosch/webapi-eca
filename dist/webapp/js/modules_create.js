@@ -178,7 +178,9 @@ fOnLoad = function() {
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.name);
-        $('#inp_schedule').val(oMod.schedule.text);
+        if (oParams.m !== 'ad') {
+          $('#inp_schedule').val(oMod.schedule.text);
+        }
         if (uid === oMod.UserId) {
           fAddUserParam('', false);
         } else {
