@@ -7,4 +7,5 @@ Only a limited number of functions are available within such programs:
 <ul>
 	<li><kbd>log(msg)</kbd>: Will add an entry to the log that is accessible through the Rules list. <kbd>msg</kbd> is supposed to be a string and will be truncated after 200 characters.</li>
 	<li><kbd>datalog(data)</kbd>: Will add an entry to the data log of the rule. Data logs can be downloaded through the Rules list in a <kbd>JSON</kbd> format.<kbd>data</kbd> is supposed to be in string, number or JSON format.</li>
+	<li><kbd>sendEvent(webhookid, data)</kbd>: Will send an Event over a Webhook. This is especially useful for Event Triggers but could also be part of an Action Dispatcher in order to loop existing or new events back into the system over another webhook.</li>
 </ul>
