@@ -2,6 +2,7 @@
 
 moduleTypeName = if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
 moduleType = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
+arrUsedModules = null
 
 fOnLoad = () ->
 # TODO first check whether oParams.m edit is a valid module before setting the title
@@ -30,9 +31,9 @@ fOnLoad = () ->
 	editor.setFontSize "14px"
 	editor.setShowPrintMargin false
 	editor.session.setUseSoftTabs false
-	editor.getSession().on 'change', (el) ->
-		console.warn 'We should always search for export functions and provide means for ' +
-		'the user to enter a comment for each exported function'
+	# editor.getSession().on 'change', (el) ->
+	# 	console.warn 'TODO We should always search for export functions and provide means for ' +
+	# 	'the user to enter a comment for each exported function'
 
 	$('#editor_mode').change (el) ->
 		if $(this).val() is 'CoffeeScript'
@@ -68,6 +69,13 @@ fOnLoad = () ->
 		fChangeInputVisibility()
 		tr
 
+	updateUsedModules = (arrMods) ->
+		if arrMods
+			arrUsedModules = arrMods
+		if arrUsedModules
+			d3.selectAll('#listModules input').property 'checked', (d) ->
+				(arrUsedModules.indexOf(d.name)>-1)
+
 	$('#tableParams').on 'click', '.icon.del', () ->
 		main.clearInfo()
 		par = $(this).closest 'tr' 
@@ -75,6 +83,20 @@ fOnLoad = () ->
 			par.remove()
 		fChangeInputVisibility()
 
+	fChangeInputVisibility()
+
+	main.registerHoverInfoHTML d3.select('#moduleinfo'), 'The more modules you require, the more memory will be used by your worker'
+	main.post('/service/modules/get')
+		.done (arr) ->
+			arrAllowed = arr.filter (o) ->
+				o.allowed
+			newTr = d3.select('#listModules').selectAll('tr').data(arrAllowed).enter().append('tr')
+			newTr.append('td').append('input').attr('type', 'checkbox')
+			newTr.append('td').text (d) ->
+				d.name
+			newTr.append('td').attr('class', 'smallfont').each (d) ->
+				main.registerHoverInfoHTML d3.select(this), d.description + '<br> -> version ' + d.version
+			updateUsedModules()
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which
@@ -96,7 +118,6 @@ fOnLoad = () ->
 			else if myNewVal is '' and not par.is ':only-child'
 				par.remove()
 
-	fChangeInputVisibility()
 
 	# Add submit button logic
 	$('#but_submit').click () ->
@@ -120,6 +141,11 @@ fOnLoad = () ->
 						published: $('#is_public').is ':checked'
 						code: editor.getValue()
 						globals: listParams
+						modules: [] 
+
+					d3.selectAll('#listModules tr').each (d) ->
+						if d3.select(this).select('input').property 'checked'
+							obj.modules.push d.name
 
 					if oParams.m isnt 'ad'
 						txt = $('#inp_schedule').val()
@@ -186,6 +212,7 @@ fOnLoad = () ->
 						$('#is_public').prop 'checked', true
 					editor.setValue oMod.code
 					editor.moveCursorTo 0, 0
+					updateUsedModules(oMod.modules)
 
 			.fail (err) ->
 				fAddUserParam '', false

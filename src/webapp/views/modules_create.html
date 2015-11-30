@@ -36,7 +36,7 @@ exports.sayHelloWorld = () ->
 
 	<div class="row">
 		<h2 id="programcode">Program Code</h2>
-		<div class="col-sm-9">
+		<div class="col-sm-6">
 			<div class="row">
 				<div id="editor" class="modules"></div>
 			</div>
@@ -65,8 +65,12 @@ exports.sayHelloWorld = () ->
 				</select>
 			</div>
 		</div>
-		<div class="col-sm-3">
-			This module requires user-specific properties:
+		<div class="col-md-3">
+			<h3 id="moduleinfo">Required Modules</h3>
+			<table id="listModules" class="consoled smallfont"></table>
+		</div>
+		<div class="col-md-3">
+			<h3>Required Global Variables</h3>
 			<table id="tableParams"></table>
 		</div>
 	</div>

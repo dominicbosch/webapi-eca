@@ -17,7 +17,6 @@ var log = require('./logging'),
 	//       [request](https://github.com/request/request)
 	request = require('request'),
 	geb = global.eventBackbone,
-	oModules = {},
 	arrAllowed = [];
 
 function throwStatusCode(code, msg) {
@@ -29,18 +28,6 @@ function throwStatusCode(code, msg) {
 exports.newAllowedModuleList = function(arr) {
 	log.info('DM | Got new allowed modules list: '+arr.join(', '));
 	arrAllowed = arr;
-	// TODO in the future event triggers and action dispatchers should define which
-	// modules they require. like this the respective user process could only
-	// load what he really needs and te code below should go in a seperate function
-	oModules = {};
-	for (var i = 0; i < arrAllowed.length; i++) {
-		try {
-			oModules[arrAllowed[i]] = require(arrAllowed[i]);
-			log.info('DM | Loaded module ' + arrAllowed[i]);
-		} catch(err) {
-			log.error('DM | Module not found: ' + arrAllowed[i]);
-		}
-	}
 };
 
 let regexpComments = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
@@ -85,6 +72,7 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 		if(!opt.globals) opt.globals = {};
 		if(typeof opt.logger !== 'function') opt.logger = () => {};
 		if(typeof opt.datalogger !== 'function') opt.datalogger = () => {};
+		if(!opt.modules) opt.modules = [];
 
 		if(lang === 'CoffeeScript') {
 			try {
@@ -118,9 +106,19 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			}
 		}
 
-		// Attach all modules that are allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json
-		for(let mod in oModules) {
-			sandbox[mod] = oModules[mod];
+		// Attach all modules that are required and allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json
+		for (var i = 0; i < opt.modules.length; i++) {
+			let mod = opt.modules[i];
+			if(arrAllowed.indexOf(mod) > -1) {
+				try {
+					opt.logger(' --> | Loading external module "'+mod+'"...');
+					sandbox[mod] = require(mod);
+				} catch(err) {
+					opt.logger('ERROR: Module not found: ' + mod);
+				}
+			} else {
+				opt.logger('ERROR: Tried to load module which was not allowed! ' + opt.modules[i]);
+			}
 		}
 
 		try {

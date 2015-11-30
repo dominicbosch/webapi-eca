@@ -70,6 +70,7 @@ function initializeModels() {
 		lang: Sequelize.STRING,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
+		modules: Sequelize.JSON,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
 		schedule: Sequelize.JSON,
@@ -81,6 +82,7 @@ function initializeModels() {
 		lang: Sequelize.STRING,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
+		modules: Sequelize.JSON,
 		functions: Sequelize.JSON,
 		published: Sequelize.BOOLEAN,
 		globals: Sequelize.JSON

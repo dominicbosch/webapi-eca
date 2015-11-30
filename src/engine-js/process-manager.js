@@ -91,7 +91,6 @@ geb.addListener('rule:new', (oRule) => {
 	}
 	Promise.all(arrPromises)
 		.then((arr) => {
-			console.log(arr);
 			oRule.actionModules = {};
 			for(let i = 0; i < arr.length; i++) {
 				oRule.actionModules[arr[i].id] = arr[i];

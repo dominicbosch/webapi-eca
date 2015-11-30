@@ -15,7 +15,7 @@ var log = require('../logging'),
 
 var router = module.exports = express.Router();
 
-geb.addListener('system:init', () => {
+geb.addListener('modules:init', () => {
 	db.getAllRules()
 		.then((arr) => {
 			for(var i = 0; i < arr.length; i++) {
@@ -44,7 +44,7 @@ router.get('/getdatalog/:id', (req, res) => {
 	db.getRuleDataLog(req.session.pub.id, req.params.id)
 		.then((log) => {
 			res.set('Content-Type', 'text/json')
-				.set('Content-Disposition', 'attachment; filename=data.json')
+				.set('Content-Disposition', 'attachment; filename=rule_'+req.params.id+'_data.json')
 				.send(log)
 		})
 		.catch(db.errHandler(res));

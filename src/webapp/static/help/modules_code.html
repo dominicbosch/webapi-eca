@@ -2,4 +2,9 @@
 
 Program Codes can have comments which are also stored with the module.<br>
 These comments can help the users of your module to know how to use your module.<br>
-They need to start with double slash <kbd>//</kbd> for JavaScript code and only one hash <kbd>#</kbd> for CoffeeScript code.
+They need to start with double slash <kbd>//</kbd> for JavaScript code and only one hash <kbd>#</kbd> for CoffeeScript code.<br>
+Only a limited number of functions are available within such programs:
+<ul>
+	<li><kbd>log(msg)</kbd>: Will add an entry to the log that is accessible through the Rules list. <kbd>msg</kbd> is supposed to be a string and will be truncated after 200 characters.</li>
+	<li><kbd>datalog(data)</kbd>: Will add an entry to the data log of the rule. Data logs can be downloaded through the Rules list in a <kbd>JSON</kbd> format.<kbd>data</kbd> is supposed to be in string, number or JSON format.</li>
+</ul>

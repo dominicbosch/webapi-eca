@@ -1,12 +1,14 @@
 'use strict';
-var fOnLoad, moduleType, moduleTypeName;
+var arrUsedModules, fOnLoad, moduleType, moduleTypeName;
 
 moduleTypeName = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
 
 moduleType = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
 
+arrUsedModules = null;
+
 fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, title;
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, title, updateUsedModules;
   title = oParams.id ? 'Edit ' : 'Create ';
   title += moduleTypeName;
   $('#pagetitle').text(title);
@@ -29,9 +31,6 @@ fOnLoad = function() {
   editor.setFontSize("14px");
   editor.setShowPrintMargin(false);
   editor.session.setUseSoftTabs(false);
-  editor.getSession().on('change', function(el) {
-    return console.warn('We should always search for export functions and provide means for ' + 'the user to enter a comment for each exported function');
-  });
   $('#editor_mode').change(function(el) {
     if ($(this).val() === 'CoffeeScript') {
       return editor.getSession().setMode("ace/mode/coffee");
@@ -69,6 +68,16 @@ fOnLoad = function() {
     fChangeInputVisibility();
     return tr;
   };
+  updateUsedModules = function(arrMods) {
+    if (arrMods) {
+      arrUsedModules = arrMods;
+    }
+    if (arrUsedModules) {
+      return d3.selectAll('#listModules input').property('checked', function(d) {
+        return arrUsedModules.indexOf(d.name) > -1;
+      });
+    }
+  };
   $('#tableParams').on('click', '.icon.del', function() {
     var par;
     main.clearInfo();
@@ -77,6 +86,23 @@ fOnLoad = function() {
       par.remove();
     }
     return fChangeInputVisibility();
+  });
+  fChangeInputVisibility();
+  main.registerHoverInfoHTML(d3.select('#moduleinfo'), 'The more modules you require, the more memory will be used by your worker');
+  main.post('/service/modules/get').done(function(arr) {
+    var arrAllowed, newTr;
+    arrAllowed = arr.filter(function(o) {
+      return o.allowed;
+    });
+    newTr = d3.select('#listModules').selectAll('tr').data(arrAllowed).enter().append('tr');
+    newTr.append('td').append('input').attr('type', 'checkbox');
+    newTr.append('td').text(function(d) {
+      return d.name;
+    });
+    newTr.append('td').attr('class', 'smallfont').each(function(d) {
+      return main.registerHoverInfoHTML(d3.select(this), d.description + '<br> -> version ' + d.version);
+    });
+    return updateUsedModules();
   });
   $('#tableParams').on('keyup', 'input', function(e) {
     var code, i, myNewVal, par;
@@ -105,7 +131,6 @@ fOnLoad = function() {
       }
     }
   });
-  fChangeInputVisibility();
   $('#but_submit').click(function() {
     var action, e, error, listParams, obj, schedule, txt;
     if ($('#input_id').val() === '') {
@@ -129,8 +154,14 @@ fOnLoad = function() {
             lang: $('#editor_mode').val(),
             published: $('#is_public').is(':checked'),
             code: editor.getValue(),
-            globals: listParams
+            globals: listParams,
+            modules: []
           };
+          d3.selectAll('#listModules tr').each(function(d) {
+            if (d3.select(this).select('input').property('checked')) {
+              return obj.modules.push(d.name);
+            }
+          });
           if (oParams.m !== 'ad') {
             txt = $('#inp_schedule').val();
             schedule = later.parse.text(txt);
@@ -203,7 +234,8 @@ fOnLoad = function() {
           $('#is_public').prop('checked', true);
         }
         editor.setValue(oMod.code);
-        return editor.moveCursorTo(0, 0);
+        editor.moveCursorTo(0, 0);
+        return updateUsedModules(oMod.modules);
       }
     }).fail(function(err) {
       fAddUserParam('', false);

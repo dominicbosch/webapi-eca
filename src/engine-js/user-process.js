@@ -74,17 +74,26 @@ process.on('message', (oMsg) => {
 	}
 });
 
-function runModule(id, rid, oAct) {
+function runModule(id, rid, oMod, oStore) {
 	let opts = {
-		globals: oAct.globals,
-		logger: (msg) => log.rule(rid, msg),
+		globals: oMod.globals,
+		modules: oMod.modules,
+		logger: (msg) => {
+			try {
+				log.rule(rid, msg.substring(0, 200));
+			} catch(err) {
+				log.rule(rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+			}
+		},
 		datalogger: (msg) => log.data(rid, msg)
 	};
-	return dynmod.runStringAsModule(oAct.code, oAct.lang, oAct.User.username, opts)
+	let name = (oStore === oActions) ? 'Action Dispatcher' : 'Event Trigger';
+	log.rule(rid, ' --> Loading '+name+' "'+oMod.name+'"...');
+	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
 		.then((answ) => {
-			log.rule(rid, ' --> Module "'+oAct.name+'" loaded');
-			log.info('Module "'+oAct.name+'" loaded for user '+oAct.User.username);
-			oActions[id] = answ.module;
+			log.rule(rid, ' --> '+name+' "'+oMod.name+'" loaded');
+			log.info('UP | '+name+' "'+oMod.name+'" loaded for user '+oMod.User.username);
+			oStore[id] = answ.module;
 		})
 		.catch((err) => log.error(err))
 }
@@ -104,7 +113,7 @@ function newRule(oRule) {
 				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
 			}
 		}
-		runModule(id, oRule.id, oam);
+		runModule(id, oRule.id, oam, oActions);
 	}
 }
 
