@@ -36,7 +36,6 @@ router.post('/create', (req, res) => {
 		username: req.session.pub.username,
 		body: req.body
 	};
-	console.log('GOT globals', req.body.globals);
 	storeModule(args)
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');

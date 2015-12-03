@@ -21,7 +21,7 @@ var log = require('../logging'),
 	, Rule
 	, Webhook
 	, Schedule
-	, PersistentData
+	, Pdata
 	, CodeModule
 	;
 
@@ -81,9 +81,9 @@ function initializeModels() {
 		globals: Sequelize.JSON,
 		isaction: Sequelize.BOOLEAN
 	});
-	PersistentData = sequelize.define('PersistentData', {
-		moduleId: Sequelize.JSON,
-		data: Sequelize.JSON,
+	Pdata = sequelize.define('Pdata', {
+		moduleId: Sequelize.INTEGER,
+		data: Sequelize.JSON
 	});
 
 	// ### Define Relations
@@ -92,14 +92,14 @@ function initializeModels() {
 	Rule.belongsTo(User, { onDelete: 'cascade' });
 	Webhook.belongsTo(User, { onDelete: 'cascade' });
 	CodeModule.belongsTo(User, { onDelete: 'cascade' });
-	PersistentData.belongsTo(Rule, { onDelete: 'cascade' });
+	Pdata.belongsTo(Rule, { onDelete: 'cascade' });
 	User.hasOne(Worker);
 	User.hasMany(Rule);
 	User.hasMany(Webhook);
 	User.hasMany(Schedule);
 	User.hasMany(CodeModule);
 	Rule.belongsTo(Webhook);
-	Rule.hasMany(PersistentData);
+	Rule.hasMany(Pdata);
 	CodeModule.hasOne(Schedule);
 	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
 	
@@ -316,25 +316,25 @@ exports.deleteWebhook = (uid, hookid, cb) => {
 // ## RULES
 // ##
 exports.getAllRules = (uid) => {
-	var query = { include: [ Webhook, PersistentData ] };
+	var query = {
+		attributes: [
+			'id',
+			'UserId',
+			'WebhookId',
+			'name',
+			'conditions',
+			'actions'
+		],
+		include: [
+			Pdata,
+			{
+				model: Webhook,
+				attributes: [ 'id', 'hookid' ],
+			}
+		]
+	};
 	if(uid) query.where = { UserId: uid };
 	return Rule.findAll(query)
-		.then((arrRecords) => arrRecordsToJSON(arrRecords));
-};
-
-exports.getAllRulesSimple = (uid) => {
-	var query = {
-		attributes: [ 'id', 'name' ],
-		include: [{
-			model: Webhook,
-			attributes: [ 'hookid' ],
-		}]
-	};
-	return User.findById(uid)
-		.then((oUser) => {
-			if(!oUser) throwStatusCode(404, 'You do not exist!?');
-			return oUser.getRules(query);
-		})
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
@@ -342,7 +342,6 @@ exports.storeRule = (uid, oRule, hookid) => {
 	return User.findById(uid)
 		.then((oUser) => {
 			if(!oUser) throwStatusCode(404, 'You do not exist!?');
-
 			return oUser.getRules({ where: { name: oRule.name }})
 				.then((arrExisting) => {
 					if(arrExisting.length === 0) return oUser;
@@ -407,7 +406,8 @@ exports.logRuleData = (rid, msg) => {
 					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLog)
 				})
 			}
-		}).catch(ec);
+		})
+		.catch(ec);
 };
 
 exports.getRuleDataLog = (uid, rid) => {
@@ -479,21 +479,70 @@ function updateCodeModule (uid, cid, oMod) {
 }
 
 exports.persistRuleData = function(rid, cid, data) {
-	return PersistentData
-		.findOrCreate({
-			where: {
+	console.log(rid, cid, data);
+	return Rule.findById(rid)
+		.then((oRule) => {
+			console.log(oRule);
+			if(!oRule) throwStatusCode(404, 'Rule not found');
+			return oRule;
+		})
+		.then((oRule) => {
+			// FIXME
+		// .then((oUser) => oUser.createCodeModule(oMod))
+
+			// return oUser.getRules({ where: { name: oRule.name }})
+			// 	.then((arrExisting) => {
+			// 		if(arrExisting.length === 0) return oUser;
+			// 		else throwStatusCode(409, 'Rule name already existing!');
+			// 	})		
+			console.log(oRule);
+			console.log('creating persistent data');
+
+			return oRule.createPdata({
 				moduleId: cid,
-				RuleId: rid
-			},
-			defaults: {
-				moduleId: cid,
-				data: null
-			}
+				data: data
+			});
+			return oRule.getPdatas({ where: { moduleId: cid }})
+				.then((arr) => {
+					return {
+						rule: oRule,
+						arr: arr
+					}
+				})
+		})
+		.then((oRes) => {
+			console.log(oRes);
+			if(oRes.arr.length === 0) {
+
+				return oRes.rule.createPeristentData({
+					moduleId: cid,
+					data: data
+				});
+			} else return arrDatas[0];
 		})
 		.then((oData) => {
+			console.log('Got data', oData);
 			if(oData) return oData.update({ data: data });
 			else throwStatusCode(404, 'Code Module Data not found!');
 		})
+		.catch(ec);
+	// return Pdata
+	// 	.findOrCreate({
+	// 		where: {
+	// 			moduleId: cid,
+	// 			RuleId: rid
+	// 		}
+	// 		// ,
+	// 		// defaults: {
+	// 		// 	data: null
+	// 		// }
+	// 	})
+	// 	.then((oData) => {
+	// 		console.log('Got data', oData);
+	// 		if(oData) return oData.update({ data: data });
+	// 		else throwStatusCode(404, 'Code Module Data not found!');
+	// 	})
+	// 	.catch(ec);
 }
 
 function deleteCodeModule(uid, cid) {

@@ -17,6 +17,12 @@ exports.pollHelloWorld = () ->
 # A simple Hello World code block
 exports.sayHelloWorld = () ->
 	log 'Hello World!'
+	datalog your: 'first data log'
+	log 'Got persistence: ' + persistence.test
+	if not persistence.id then persistence.id = 0
+	persistence[persistence.id++] = 'valuabe value'
+	persistence.test = 'timestamp: ' + new Date()
+	persist()
 	</script>
 
 {% endblock %}

@@ -27,7 +27,7 @@ geb.addListener('modules:init', () => {
 
 router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
-	db.getAllRulesSimple(req.session.pub.id)
+	db.getAllRules(req.session.pub.id)
 		.then((arr) => res.send(arr))
 		.catch(db.errHandler(res));
 });

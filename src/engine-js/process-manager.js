@@ -71,21 +71,22 @@ geb.addListener('modules:list', (arrModules) => {
 	});
 });
 
-function sendToWorker(uname, evt) {
+function sendToWorker(uid, evt) {
 	try {
-		oChildren[uname].send(evt);
+		oChildren[uid].send(evt);
 	} catch(err) {
 		log.error(err);
 	}
 }
 function broadcast(evt) {
-	for(let uname in oChildren) {
-		sendToWorker(uname, evt);
+	for(let uid in oChildren) {
+		sendToWorker(uid, evt);
 	}
 }
 
 geb.addListener('rule:new', (oRule) => {
 	let arrPromises = [];
+	console.log('rules are new', oRule)
 	for(let i = 0; i < oRule.actions.length; i++) {
 		arrPromises.push(db.getActionDispatcher(oRule.actions[i].id));
 	}
@@ -113,21 +114,22 @@ geb.addListener('action', (oEvt) => {
 function registerProcessLogger(uid, username) {
 	log.info('PM | Registered Process Logger (uid='+uid+', username='+username+')')
 	return (oMsg) => {
+		let dat = oMsg.data;
 		switch(oMsg.cmd) {
-			case 'log:debug': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(oMsg.data));
+			case 'log:debug': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(dat));
 				break;
-			case 'log:info': db.logWorker(uid, oMsg.data);
+			case 'log:info': db.logWorker(uid, dat);
 				break;
-			case 'log:rule': db.logRule(oMsg.data.rid, oMsg.data.msg);
+			case 'log:rule': db.logRule(dat.rid, dat.msg);
 				break;
-			case 'log:ruledata': db.logRuleData(oMsg.data.rid, oMsg.data.msg);
+			case 'log:ruledata': db.logRuleData(dat.rid, dat.msg);
 				break;
-			case 'log:persist': db.persistRuleData(oMsg.data.rid, oMsg.data.cid, oMsg.data.data);
+			case 'log:persist': db.persistRuleData(dat.rid, dat.cid, dat.data);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;
-			case 'stats': fb.logStats(username, oMsg.data);
+			case 'stats': fb.logStats(username, dat);
 				break;
 			default: log.warn('PM | Got unknown command:' + oMsg.cmd);
 		}
@@ -139,6 +141,7 @@ function startWorker(oUser) {
 		var options = {
 			// execArgv: ['--max-old-space-size=10']
 			execArgv: ['--max-old-space-size='+maxMem]
+			// , stdio: 'inherit'
 			// , stdio: [ 0, 0, 0 ]
 		};
 		if(oChildren[oUser.id]) {
@@ -148,7 +151,7 @@ function startWorker(oUser) {
 		} 
 		fb.getLastIndex(oUser.username, (err, id) => {
 			if(err) reject(err);
-			else {
+			else try {
 				let proc = cp.fork(path.resolve(__dirname, 'user-process'), [], options);
 				oChildren[oUser.id] = proc;
 				log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
@@ -160,7 +163,10 @@ function startWorker(oUser) {
 							startIndex: id
 						});
 					})
-					.then(() => resolve());
+					.then(() => resolve())
+					.catch(reject);
+			} catch(err) {
+				reject(err);
 			}
 		});
 	})

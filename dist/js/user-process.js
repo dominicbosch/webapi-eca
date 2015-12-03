@@ -72,7 +72,6 @@ process.on('message', (oMsg) => {
 		break;
 		case 'action':
 			let oe = oMsg.evt;
-			console.log(oMsg);
 			let oFuncs = oActArgs[oe.rid][oe.aid];
 			for(let el in oFuncs) {
 				try {
