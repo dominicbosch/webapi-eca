@@ -21,6 +21,7 @@ var log = require('../logging'),
 	, Rule
 	, Webhook
 	, Schedule
+	, PersistentData
 	, CodeModule
 	;
 
@@ -72,12 +73,17 @@ function initializeModels() {
 	CodeModule = sequelize.define('CodeModule', {
 		name: Sequelize.STRING,
 		lang: Sequelize.STRING,
+		version: Sequelize.INTEGER,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
 		modules: Sequelize.JSON,
 		functions: Sequelize.JSON,
 		globals: Sequelize.JSON,
 		isaction: Sequelize.BOOLEAN
+	});
+	PersistentData = sequelize.define('PersistentData', {
+		moduleId: Sequelize.JSON,
+		data: Sequelize.JSON,
 	});
 
 	// ### Define Relations
@@ -86,12 +92,14 @@ function initializeModels() {
 	Rule.belongsTo(User, { onDelete: 'cascade' });
 	Webhook.belongsTo(User, { onDelete: 'cascade' });
 	CodeModule.belongsTo(User, { onDelete: 'cascade' });
+	PersistentData.belongsTo(Rule, { onDelete: 'cascade' });
 	User.hasOne(Worker);
 	User.hasMany(Rule);
 	User.hasMany(Webhook);
 	User.hasMany(Schedule);
 	User.hasMany(CodeModule);
 	Rule.belongsTo(Webhook);
+	Rule.hasMany(PersistentData);
 	CodeModule.hasOne(Schedule);
 	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
 	
@@ -308,7 +316,7 @@ exports.deleteWebhook = (uid, hookid, cb) => {
 // ## RULES
 // ##
 exports.getAllRules = (uid) => {
-	var query = { include: [ Webhook ] };
+	var query = { include: [ Webhook, PersistentData ] };
 	if(uid) query.where = { UserId: uid };
 	return Rule.findAll(query)
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
@@ -398,8 +406,6 @@ exports.logRuleData = (rid, msg) => {
 				return oRule.update({
 					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLog)
 				})
-			} else {
-				console.log('no rule foub')
 			}
 		}).catch(ec);
 };
@@ -453,6 +459,7 @@ function getAllCodeModules(isaction) {
 } 
 
 function createCodeModule(uid, oMod, oSchedule) {
+	oMod.version = 1;
 	return User.findById(uid)
 		.then((oUser) => oUser.createCodeModule(oMod))
 		// .then((oNewMod) => oNewMod.toJSON())
@@ -463,8 +470,29 @@ function updateCodeModule (uid, cid, oMod) {
 	return User.findById(uid)
 		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
 		.then((arrOldMod) => {
-			if(arrOldMod.length > 0) return arrOldMod[0].update(oMod);
+			if(arrOldMod.length > 0) {
+				oMod.version = arrOldMod[0].version+1;
+				return arrOldMod[0].update(oMod);
+			}
 			else throwStatusCode(404, 'Code Module not found!');
+		})
+}
+
+exports.persistRuleData = function(rid, cid, data) {
+	return PersistentData
+		.findOrCreate({
+			where: {
+				moduleId: cid,
+				RuleId: rid
+			},
+			defaults: {
+				moduleId: cid,
+				data: null
+			}
+		})
+		.then((oData) => {
+			if(oData) return oData.update({ data: data });
+			else throwStatusCode(404, 'Code Module Data not found!');
 		})
 }
 

@@ -75,9 +75,12 @@ fOnLoad = function() {
     });
   };
   return clearDataLog = function(d) {
-    return main.post('/service/rules/cleardatalog/' + d.id).done(function() {
-      return main.setInfo(true, 'Data Log deleted!');
-    });
+    if (confirm('Do you really want to delete all your gathered data?')) {
+      return main.post('/service/rules/cleardatalog/' + d.id).done(function() {
+        main.setInfo(true, 'Data Log deleted!');
+        return showLog(d);
+      });
+    }
   };
 };
 

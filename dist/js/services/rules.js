@@ -60,6 +60,7 @@ router.get('/getdatalog/:id', (req, res) => {
 router.post('/cleardatalog/:id', (req, res) => {
 	log.info('SRVC | RULES | Clearing Rule data log #'+req.params.id);
 	db.clearRuleDataLog(req.session.pub.id, req.params.id)
+		.then(() => db.logRule(req.params.id, 'Data Log deleted!'))
 		.then(() => res.send('Thanks!'))
 		.catch(db.errHandler(res));
 });

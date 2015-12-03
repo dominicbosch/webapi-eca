@@ -70,8 +70,10 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 		opt = opt || {}; // In case user didn't pass this
 		if(!opt.id) opt.id = 'TMP|'+Math.random().toString(36).substring(2)+'.vm';
 		if(!opt.globals) opt.globals = {};
+		if(!opt.persistence) opt.persistence = {};
 		if(typeof opt.logger !== 'function') opt.logger = () => {};
 		if(typeof opt.datalogger !== 'function') opt.datalogger = () => {};
+		if(typeof opt.persist !== 'function') opt.persist = () => {};
 		if(!opt.modules) opt.modules = [];
 
 		if(lang === 'CoffeeScript') {
@@ -93,6 +95,8 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			datalog: opt.datalogger,
 			modules: {},
 			exports: {},
+			persistence: opt.persistence,
+			persist: () => opt.persist(opt.persistence),
 			sendEvent: (hook, evt) => {
 				let options = {
 					uri: hook,

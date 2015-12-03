@@ -1,11 +1,25 @@
 <div class="title">Program Code</div>
-
-Program Codes can have comments which are also stored with the module.<br>
-These comments can help the users of your module to know how to use your module.<br>
-They need to start with double slash <kbd>//</kbd> for JavaScript code and only one hash <kbd>#</kbd> for CoffeeScript code.<br>
-Only a limited number of functions are available within such programs:
+Program code is custom code provided by you which will run in the system for you, either scheduled as an Event Trigger or as an action as part of a rule.
+<p>
+<h4 style="font-weight: bold">Available Variables</h4>
+<ul>
+	<li><kbd>exports</kbd>: Attach your executable functions to this object.</li>
+	<li><kbd>globals</kbd>: Global parameters required to run this module. Those need to be provided whenever this code module is used (e.g. in a rule when ran as an Action Dispatcher). They can be defined in the right section on this page under "Required Global Variables"</li>
+	<li><kbd>persistence</kbd>: Everything within this object can be persisted in the database by calling <kbd>persist()</kbd>. <span style="color: firebrick; text-decoration: underline">Depending on the size of the attached object this can be a very expensive operation! Use wisely!</span></li>
+</ul>
+	
+</p>
+<p>
+<h4 style="font-weight: bold">Available Functions</h4>
 <ul>
 	<li><kbd>log(msg)</kbd>: Will add an entry to the log that is accessible through the Rules list. <kbd>msg</kbd> is supposed to be a string and will be truncated after 200 characters.</li>
 	<li><kbd>datalog(data)</kbd>: Will add an entry to the data log of the rule. Data logs can be downloaded through the Rules list in a <kbd>JSON</kbd> format.<kbd>data</kbd> is supposed to be in string, number or JSON format.</li>
+	<li><kbd>persist()</kbd>: Will store the JSON object attached to the <kbd>persistence</kbd> variable. <span style="color: firebrick; text-decoration: underline">Depending on the size of the attached object this can be a very expensive operation! Use wisely!</span></li>
 	<li><kbd>sendEvent(webhookid, data)</kbd>: Will send an Event over a Webhook. This is especially useful for Event Triggers but could also be part of an Action Dispatcher in order to loop existing or new events back into the system over another webhook.</li>
 </ul>
+</p>
+<p>
+Program Codes can have comments which are also stored with the module.
+These comments can help the users of your module to know how to use your module.
+They need to start with double slash <kbd>//</kbd> for JavaScript code and only one hash <kbd>#</kbd> for CoffeeScript code.
+</p>

@@ -81,8 +81,10 @@ fOnLoad = () ->
 				showLog(d)
 
 	clearDataLog = (d) ->
-		main.post('/service/rules/cleardatalog/'+d.id)
-			.done () ->
-				main.setInfo true, 'Data Log deleted!'
+		if confirm 'Do you really want to delete all your gathered data?'
+			main.post('/service/rules/cleardatalog/'+d.id)
+				.done () ->
+					main.setInfo true, 'Data Log deleted!'
+					showLog(d)
 
 window.addEventListener 'load', fOnLoad, true

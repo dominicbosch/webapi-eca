@@ -122,6 +122,8 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'log:ruledata': db.logRuleData(oMsg.data.rid, oMsg.data.msg);
 				break;
+			case 'log:persist': db.persistRuleData(oMsg.data.rid, oMsg.data.cid, oMsg.data.data);
+				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;

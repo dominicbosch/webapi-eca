@@ -42,6 +42,11 @@ var log = {
 	data: (rid, msg) => sendLog('ruledata', {
 		rid: rid, 
 		msg: msg
+	}),
+	persist: (rid, cid, data) => sendLog('persist', {
+		rid: rid, 
+		cid: cid, 
+		data: data
 	})
 };
 
@@ -85,20 +90,25 @@ function runModule(id, rid, oMod, oStore) {
 	let opts = {
 		globals: oMod.globals,
 		modules: oMod.modules,
+		persistence: oMod.persistence,
 		logger: (msg) => {
 			try {
-				log.rule(rid, msg.substring(0, 200));
+				log.debug('trying to log');
+				log.debug(msg);
+				log.rule(rid, msg.toString().substring(0, 200));
 			} catch(err) {
+				log.debug(err.toString());
 				log.rule(rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		datalogger: (msg) => log.data(rid, msg)
+		datalogger: (msg) => log.data(rid, msg),
+		persist: (data) => log.persist(rid, oMod.id, data)
 	};
 	let name = (oStore === oEventTriggers) ? 'Event Trigger' : 'Action Dispatcher';
 	log.rule(rid, ' --> Loading '+name+' "'+oMod.name+'"...');
 	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
 		.then((answ) => {
-			log.rule(rid, ' --> '+name+' "'+oMod.name+'" loaded');
+			log.rule(rid, ' --> '+name+' "'+oMod.name+'" (v'+oMod.version+') loaded');
 			log.info('UP | '+name+' "'+oMod.name+'" loaded for user '+oMod.User.username);
 			oStore[id] = answ.module;
 		})

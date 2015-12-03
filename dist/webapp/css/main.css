@@ -172,6 +172,7 @@ table.mystyle td { padding-right: 8px }
 	font-size: 12px;
 	margin: 5px;
 	padding: 7px 14px;
+	line-height: 120%;
 	background: #FFF;
 	border: 1px solid #666;
 	border-radius: 3px;
@@ -182,6 +183,9 @@ table.mystyle td { padding-right: 8px }
 .mytooltip .title {
 	font-weight: bold;
 	font-size: 1.3em;
+}
+.mytooltip li { 
+	padding: 1px;
 }
 .mytooltip kbd { 
 	white-space: nowrap;
