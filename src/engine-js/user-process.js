@@ -10,7 +10,8 @@ var pl = require('./process-logger')
 	// and [Dynamic Modules](dynamic-modules.html)
 	, dynmod = require('./dynamic-modules')
 
-	, oActions = {}
+	, oEventTriggers = {}
+	, oRules = {}
 	, oActArgs = {}
 	;
 
@@ -65,9 +66,15 @@ process.on('message', (oMsg) => {
 			newRule(oMsg.rule);
 		break;
 		case 'action':
-			let oFuncs = oActArgs[oMsg.evt.rid][oMsg.evt.aid];
+			let oe = oMsg.evt;
+			console.log(oMsg);
+			let oFuncs = oActArgs[oe.rid][oe.aid];
 			for(let el in oFuncs) {
-				oActions[oMsg.evt.aid][el].apply(this, oFuncs[el]);
+				try {
+					oRules[oe.rid][oe.aid][el].apply(this, oFuncs[el]);
+				} catch(err) {
+					log.rule(oe.rid, err.toString());
+				}
 			}
 		break; 
 		default: console.log('unknown command on child', oMsg)
@@ -87,7 +94,7 @@ function runModule(id, rid, oMod, oStore) {
 		},
 		datalogger: (msg) => log.data(rid, msg)
 	};
-	let name = (oStore === oActions) ? 'Action Dispatcher' : 'Event Trigger';
+	let name = (oStore === oEventTriggers) ? 'Event Trigger' : 'Action Dispatcher';
 	log.rule(rid, ' --> Loading '+name+' "'+oMod.name+'"...');
 	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
 		.then((answ) => {
@@ -99,9 +106,13 @@ function runModule(id, rid, oMod, oStore) {
 }
 
 function newRule(oRule) {
+	if(!oRules[oRule.id]) oRules[oRule.id] = {};
 	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
-	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules: ');
+
+	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
+	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
 	for(let id in oRule.actionModules) {
+		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oRule.actionModules[id].name);
 		let oam = oRule.actionModules[id];
 		let oArgs = oam.functions; // the functions in the rules
 		let oFuncArgs = oRule.actions.filter((o) => o.id === oam.id)[0].functions;
@@ -113,10 +124,11 @@ function newRule(oRule) {
 				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
 			}
 		}
-		runModule(id, oRule.id, oam, oActions);
+		runModule(id, oRule.id, oam, oRules[oRule.id]);
 	}
 }
 
+// TODO list all modules the worker process has loaded and tell from which module it was required
 
 // 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
 // 		if not node

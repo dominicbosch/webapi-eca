@@ -43,7 +43,7 @@ updateWebhookSelection = () ->
 
 checkRuleExists = () ->
 	main.post('/service/rules/get').done (arrRules) ->
-		arrListeners = arrRules.filter((o) -> o.Webhook && o.Webhook.id);
+		arrListeners = arrRules.filter((o) -> o.Webhook && o.Webhook.hookid is $('#sel_webh').val());
 		if arrListeners.length > 0
 			$('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png')
 			$('#but_rule').hide()

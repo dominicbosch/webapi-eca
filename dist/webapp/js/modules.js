@@ -4,16 +4,16 @@ var deleteModule, editModule, fOnLoad, modName, startStopModule, updateModules, 
 urlService = '/service/';
 
 if (oParams.m === 'ad') {
-  urlService += 'actiondispatcher/';
+  urlService += 'actiondispatcher';
   modName = 'Action Dispatcher';
 } else {
-  urlService += 'eventtrigger/';
+  urlService += 'eventtrigger';
   modName = 'Event Trigger';
 }
 
 updateModules = function(uid) {
   var req;
-  req = main.post(urlService + 'get');
+  req = main.post(urlService + '/get');
   req.done(function(arrModules) {
     var parent, tr, trNew;
     console.log(arrModules);
@@ -62,7 +62,7 @@ updateModules = function(uid) {
 
 deleteModule = function(d) {
   if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
-    return main.post(urlService + 'delete', {
+    return main.post(urlService + '/delete', {
       id: d.id
     }).done(function() {
       main.setInfo(true, 'Action Dispatcher deleted!', true);

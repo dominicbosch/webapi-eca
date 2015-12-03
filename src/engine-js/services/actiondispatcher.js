@@ -15,16 +15,6 @@ var log = require('../logging'),
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
 
-geb.addListener('system:init', () => {
-	db.getAllActionDispatchers()
-		.then((arr) => {
-			for(let i = 0; i < arr.length; i++) {
-				geb.emit('module:new', arr[i]);
-			}
-		})
-		.catch((err) => log.error(err));
-});
-
 router.post('/get', (req, res) => {
 	log.info('SRVC:AD | Fetching all');
 	db.getAllActionDispatchers()
@@ -46,7 +36,6 @@ router.post('/create', (req, res) => {
 		username: req.session.pub.username,
 		body: req.body
 	};
-	console.log('GOT globals', req.body.globals);
 	storeModule(args)
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');
@@ -76,7 +65,7 @@ router.post('/update', (req, res) => {
 
 function storeModule(args) {
 	let ab = args.body;
-	return db.getAllActionDispatchers(args.userid)
+	return db.getAllActionDispatchers()
 		.then((arr) => {
 			arr = arr || [];
 			if(args.id) arr = arr.filter((o) => o.id !== parseInt(args.id));

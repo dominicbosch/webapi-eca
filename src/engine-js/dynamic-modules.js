@@ -90,7 +90,8 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			id: opt.id,
 			params: opt.globals,
 			log: opt.logger,
-			logdata: opt.datalogger,
+			datalog: opt.datalogger,
+			modules: {},
 			exports: {},
 			sendEvent: (hook, evt) => {
 				let options = {
@@ -112,7 +113,10 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			if(arrAllowed.indexOf(mod) > -1) {
 				try {
 					opt.logger(' --> | Loading external module "'+mod+'"...');
-					sandbox[mod] = require(mod);
+					sandbox.modules[mod] = require(mod);
+					// delete require.cache[require.resolve('./b.js')]
+					// console.log('DM| cache adding', require.resolve(mod));
+					// console.log('DM|now has cache', Object.keys(require.cache));
 				} catch(err) {
 					opt.logger('ERROR: Module not found: ' + mod);
 				}

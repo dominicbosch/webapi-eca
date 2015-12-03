@@ -27,7 +27,7 @@ geb.addListener('modules:init', () => {
 
 router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
-	db.getAllRules(req.session.pub.id)
+	db.getAllRulesSimple(req.session.pub.id)
 		.then((arr) => res.send(arr))
 		.catch(db.errHandler(res));
 });
@@ -39,6 +39,13 @@ router.post('/getlog/:id', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
+router.post('/clearlog/:id', (req, res) => {
+	log.info('SRVC | RULES | Clearing Rule log #'+req.params.id);
+	db.clearRuleLog(req.session.pub.id, req.params.id)
+		.then(() => res.send('Thanks!'))
+		.catch(db.errHandler(res));
+});
+
 router.get('/getdatalog/:id', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rule data logs');
 	db.getRuleDataLog(req.session.pub.id, req.params.id)
@@ -47,6 +54,13 @@ router.get('/getdatalog/:id', (req, res) => {
 				.set('Content-Disposition', 'attachment; filename=rule_'+req.params.id+'_data.json')
 				.send(log)
 		})
+		.catch(db.errHandler(res));
+});
+
+router.post('/cleardatalog/:id', (req, res) => {
+	log.info('SRVC | RULES | Clearing Rule data log #'+req.params.id);
+	db.clearRuleDataLog(req.session.pub.id, req.params.id)
+		.then(() => res.send('Thanks!'))
 		.catch(db.errHandler(res));
 });
 

@@ -20,8 +20,8 @@ var log = require('../logging'),
 	, Worker
 	, Rule
 	, Webhook
-	, EventTrigger
-	, ActionDispatcher
+	, Schedule
+	, CodeModule
 	;
 
 // ## DB Connection
@@ -65,27 +65,19 @@ function initializeModels() {
 		hookname: Sequelize.STRING,
 		isPublic: Sequelize.BOOLEAN
 	});
-	EventTrigger = sequelize.define('EventTrigger', {
-		name: Sequelize.STRING,
-		lang: Sequelize.STRING,
-		code: Sequelize.TEXT,
-		comment: Sequelize.TEXT,
-		modules: Sequelize.JSON,
-		functions: Sequelize.JSON,
-		published: Sequelize.BOOLEAN,
+	Schedule = sequelize.define('Schedule', {
 		schedule: Sequelize.JSON,
-		running: Sequelize.BOOLEAN,
-		globals: Sequelize.JSON
+		running: Sequelize.BOOLEAN
 	});
-	ActionDispatcher = sequelize.define('ActionDispatcher', {
+	CodeModule = sequelize.define('CodeModule', {
 		name: Sequelize.STRING,
 		lang: Sequelize.STRING,
 		code: Sequelize.TEXT,
 		comment: Sequelize.TEXT,
 		modules: Sequelize.JSON,
 		functions: Sequelize.JSON,
-		published: Sequelize.BOOLEAN,
-		globals: Sequelize.JSON
+		globals: Sequelize.JSON,
+		isaction: Sequelize.BOOLEAN
 	});
 
 	// ### Define Relations
@@ -93,14 +85,15 @@ function initializeModels() {
 	Worker.belongsTo(User, { onDelete: 'cascade' });
 	Rule.belongsTo(User, { onDelete: 'cascade' });
 	Webhook.belongsTo(User, { onDelete: 'cascade' });
-	EventTrigger.belongsTo(User, { onDelete: 'cascade' });
-	ActionDispatcher.belongsTo(User, { onDelete: 'cascade' });
+	CodeModule.belongsTo(User, { onDelete: 'cascade' });
 	User.hasOne(Worker);
 	User.hasMany(Rule);
 	User.hasMany(Webhook);
-	User.hasMany(EventTrigger);
-	User.hasMany(ActionDispatcher);
+	User.hasMany(Schedule);
+	User.hasMany(CodeModule);
 	Rule.belongsTo(Webhook);
+	CodeModule.hasOne(Schedule);
+	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
 	
 	// Return a promise
 	return sequelize.sync().then(() => log.info('PG | Synced Models'));
@@ -317,8 +310,23 @@ exports.deleteWebhook = (uid, hookid, cb) => {
 exports.getAllRules = (uid) => {
 	var query = { include: [ Webhook ] };
 	if(uid) query.where = { UserId: uid };
-	return Rule
-	.findAll(query)
+	return Rule.findAll(query)
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
+};
+
+exports.getAllRulesSimple = (uid) => {
+	var query = {
+		attributes: [ 'id', 'name' ],
+		include: [{
+			model: Webhook,
+			attributes: [ 'hookid' ],
+		}]
+	};
+	return User.findById(uid)
+		.then((oUser) => {
+			if(!oUser) throwStatusCode(404, 'You do not exist!?');
+			return oUser.getRules(query);
+		})
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
@@ -362,9 +370,21 @@ exports.logRule = (rid, msg) => {
 
 exports.getRuleLog = (uid, rid) => {
 	return Rule.findById(rid)
-		.then((oRule) => oRule.get('log'));
+		.then((oRule) => (oRule.get('log') || []).reverse());
 };
 
+exports.clearRuleLog = (uid, rid) => {
+	return Rule.findById(rid)
+		.then((oRule) => {
+			if(oRule) oRule.update({ log: null })
+		}).catch(ec);
+};
+exports.clearRuleDataLog = (uid, rid) => {
+	return Rule.findById(rid)
+		.then((oRule) => {
+			if(oRule) oRule.update({ datalog: null })
+		}).catch(ec);
+};
 
 exports.logRuleData = (rid, msg) => {
 	log.info('PG | Logging rule data #'+rid, msg);
@@ -404,91 +424,95 @@ exports.deleteRule = (uid, rid) => {
 		})
 };
 
+
+
+// ##
+// ## CODE MODULES -- Internal functions
+// ## This is because Event Triggers and Action Dispatchers have almost the same functionality
+// ## except for that the Event Triggers also have a schedule
+// ## 
+
+function getCodeModule (cid) {
+	return CodeModule.findOne({
+			where: { id: cid },
+			include: [{ model: User, attributes: [ 'username' ]}]
+		})
+		.then((oMod) => {
+			if(oMod) return oMod.toJSON();
+			else throwStatusCode(404, 'Code Module does not exist!')
+		});
+}
+
+function getAllCodeModules(isaction) {
+	var query = {
+		where: { isaction: isaction },
+		include: [{ model: User, attributes: [ 'username' ]}]
+	};
+	return CodeModule.findAll(query)
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
+} 
+
+function createCodeModule(uid, oMod, oSchedule) {
+	return User.findById(uid)
+		.then((oUser) => oUser.createCodeModule(oMod))
+		// .then((oNewMod) => oNewMod.toJSON())
+		.then((oNewMod) => oNewMod.toJSON())
+}
+
+function updateCodeModule (uid, cid, oMod) {
+	return User.findById(uid)
+		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
+		.then((arrOldMod) => {
+			if(arrOldMod.length > 0) return arrOldMod[0].update(oMod);
+			else throwStatusCode(404, 'Code Module not found!');
+		})
+}
+
+function deleteCodeModule(uid, cid) {
+	log.info('PG | Deleting CodeModule #'+cid);
+	return User.findById(uid)
+		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
+		.then((arrOldMod) => {
+			if(arrOldMod.length > 0) return arrOldMod[0].destroy();
+			else throwStatusCode(404, 'No Code Module found to delete!');
+		});
+}
+
 // ##
 // ## ACTION DISPATCHERS
 // ##
 
-exports.getAllActionDispatchers = (uid) => {
-	var query = { include: [{ model: User, attributes: [ 'username' ]}] };
-	if(uid) query.where = { UserId: uid };
-	return ActionDispatcher.findAll(query)
-		.then((arrRecords) => arrRecordsToJSON(arrRecords));
+exports.getActionDispatcher = (aid) => getCodeModule(aid);
+exports.getAllActionDispatchers = () => getAllCodeModules(true);
+exports.updateActionDispatcher = (uid, aid, oAd) => updateCodeModule(uid, aid, oAd)
+exports.deleteActionDispatcher = (uid, aid) => deleteCodeModule(uid, aid);
+exports.createActionDispatcher = (uid, oAd) => {
+	oAd.isaction = true;
+	return createCodeModule(uid, oAd)
 };
-exports.getActionDispatcher = (aid) => {
-	return ActionDispatcher.findOne({
-			where: { id: aid },
-			include: [{ model: User, attributes: [ 'username' ]}]
-		})
-		.then((oAd) => {
-			if(oAd) return oAd.toJSON();
-			else throwStatusCode(404, 'Action Dispatcher does not exist!')
-		});
-};
-exports.createActionDispatcher = (uid, oAD) => {
-	return User.findById(uid)
-		.then((oUser) => oUser.createActionDispatcher(oAD))
-		.then((oNewAD) => oNewAD.toJSON())
-};
-exports.updateActionDispatcher = (uid, aid, oAd) => {
-	return User.findById(uid)
-		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
-		.then((arrOldAd) => {
-			if(arrOldAd.length > 0) return arrOldAd[0].update(oAd);
-			else throwStatusCode(404, 'Action Dispatcher not found!');
-		})
-};
-exports.deleteActionDispatcher = (uid, aid) => {
-	log.info('PG | Deleting ActionDispatcher #'+aid);
-	return User.findById(uid)
-		.then((oUser) => oUser.getActionDispatchers({ where: { id: aid }}))
-		.then((arrOldAd) => {
-			if(arrOldAd.length > 0) return arrOldAd[0].destroy();
-			else throwStatusCode(404, 'No Action Dispatcher found to delete!');
-		});
-};
-
 
 // ##
 // ## EVENT TRIGGERS
 // ##
 
-
-exports.getAllEventTriggers = (uid) => {
-	var query = { include: [{ model: User, attributes: [ 'username' ]}] };
-	if(uid) query.where = { UserId: uid };
-	return EventTrigger.findAll(query)
-		.then((arrRecords) => arrRecordsToJSON(arrRecords));
-};
-exports.getEventTrigger = (eid) => {
-	return EventTrigger.findOne({
-			where: { id: eid },
-			include: [{ model: User, attributes: [ 'username' ]}]
-		})
-		.then((oEt) => {
-			if(oEt) return oEt.toJSON();
-			else throwStatusCode(404, 'Event Trigger does not exist!')
-		});
-};
-exports.createEventTrigger = (uid, oAD) => {
-	return User.findById(uid)
-		.then((oUser) => oUser.createEventTrigger(oAD))
-		.then((oNewAD) => oNewAD.toJSON())
-};
-exports.updateEventTrigger = (uid, eid, oEt) => {
-	return User.findById(uid)
-		.then((oUser) => oUser.getEventTriggers({ where: { id: eid }}))
-		.then((arrOldEt) => {
-			if(arrOldEt.length > 0) return arrOldEt[0].update(oEt);
-			else throwStatusCode(404, 'Event Trigger not found!');
-		})
-};
-exports.deleteEventTrigger = (uid, eid) => {
-	log.info('PG | Deleting EventTrigger #'+eid);
-	return User.findById(uid)
-		.then((oUser) => oUser.getEventTriggers({ where: { id: eid }}))
-		.then((arrOldEt) => {
-			if(arrOldEt.length > 0) return arrOldEt[0].destroy();
-			else throwStatusCode(404, 'No Event Trigger found to delete!');
-		});
+exports.getActionDispatcher = (eid) => {
+	return getCodeModule(eid);
 };
 
+exports.getAllEventTriggers = () => {
+	return getAllCodeModules(false);
+};
+
+
+// exports.createEventTrigger = (uid, oEt) => {
+	// oEt.isaction = true;
+// 	return createCodeModule(uid, oEt)
+// };
+
+// exports.updateEventTrigger = (uid, eid, oEt) => {
+// 	return updateCodeModule(uid, eid, oEt)
+// };
+
+// exports.deleteEventTrigger = (uid, eid) => {
+// 	return deleteCodeModule(uid, eid);
+// };

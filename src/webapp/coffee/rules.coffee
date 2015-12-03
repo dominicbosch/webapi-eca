@@ -1,5 +1,6 @@
 'use strict';
 
+
 fOnLoad = () ->
 	fetchRules = () ->
 		main.post('/service/rules/get')
@@ -8,6 +9,7 @@ fOnLoad = () ->
 				main.setInfo false, 'Did not retrieve rules: '+err.responseText
 
 	fUpdateRuleList = (data) ->
+		console.log(data)
 		if data.length is 0			
 			d3.select('#hasnorules').style('display', 'block');
 			d3.select('#hasrules').style('display', 'none');
@@ -38,6 +40,11 @@ fOnLoad = () ->
 				.attr('src', '/images/bulk.png')
 				.attr('title', 'Download Data Log')
 				.on('click', showDataLog);
+			d3newTrs.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/bulk_del.png')
+				.attr('title', 'Delete Data Log')
+				.on('click', clearDataLog);
 			d3newTrs.append('td').text (d) -> d.name 
 
 	fetchRules()
@@ -53,21 +60,29 @@ fOnLoad = () ->
 		window.location.href = 'rules_create?id='+d.id
 
 	showLog = (d) ->
-		console.warn 'TODO open div over whole page with log in editor'
 		main.post('/service/rules/getlog/'+d.id)
 			.done (arrLog) ->
+				d3.select('#log_col').style('visibility','visible');
 				d3.select('#log_col h3').text('Log file "'+d.name+'":');
+				d3.selectAll('#log_col li').remove();
 				d3tr = d3.select('#log_col ul').selectAll('li').data(arrLog);
-				d3tr.exit().transition().style('opacity', 0).remove();
 				d3tr.enter().append('li').text((d) => d);
-				# ts = (new Date()).toISOString()
-				# log = data.message.replace new RegExp("\n", 'g'), "<br>"
-				#  "<h3>#{ ruleName } Log:</h3> <i>(updated UTC|#{ ts })</i><br/><br/>#{ log }"
+				d3.select('#log_col button').on 'click', () -> clearLog(d);
 			.fail (err) ->
 				main.setInfo false, 'Could not get rule log: '+err.responseText
 
 	showDataLog = (d) ->
-		console.warn 'TODO open div over whole page with log in editor'
 		window.location.href = '/service/rules/getdatalog/'+d.id
+
+	clearLog = (d) ->
+		main.post('/service/rules/clearlog/'+d.id)
+			.done () ->
+				main.setInfo true, 'Log deleted!'
+				showLog(d)
+
+	clearDataLog = (d) ->
+		main.post('/service/rules/cleardatalog/'+d.id)
+			.done () ->
+				main.setInfo true, 'Data Log deleted!'
 
 window.addEventListener 'load', fOnLoad, true

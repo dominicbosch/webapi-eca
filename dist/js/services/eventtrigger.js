@@ -15,16 +15,6 @@ var log = require('../logging'),
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
 
-geb.addListener('system:init', () => {
-	db.getAllEventTriggers()
-		.then((arr) => {
-			for(let i = 0; i < arr.length; i++) {
-				geb.emit('module:new', arr[i]);
-			}
-		})
-		.catch((err) => log.error(err));
-});
-
 router.post('/get', (req, res) => {
 	log.info('SRVC:AD | Fetching all');
 	db.getAllEventTriggers()

@@ -62,7 +62,7 @@ checkRuleExists = function() {
   return main.post('/service/rules/get').done(function(arrRules) {
     var arrListeners;
     arrListeners = arrRules.filter(function(o) {
-      return o.Webhook && o.Webhook.id;
+      return o.Webhook && o.Webhook.hookid === $('#sel_webh').val();
     });
     if (arrListeners.length > 0) {
       $('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png');

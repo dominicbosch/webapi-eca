@@ -157,7 +157,10 @@ table.mystyle td { padding-right: 8px }
 }
 #loginTable td { padding: 3px 4px }
 
-.mytooltip { position: relative }
+.mytooltip {
+	font-family: Tahoma, sans-serif;
+	position: relative
+}
 .mytooltip > div {
 	visibility: hidden;
 	position: absolute;

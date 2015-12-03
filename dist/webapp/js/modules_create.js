@@ -152,7 +152,6 @@ fOnLoad = function() {
             id: oParams.id,
             name: $('#input_id').val(),
             lang: $('#editor_mode').val(),
-            published: $('#is_public').is(':checked'),
             code: editor.getValue(),
             globals: listParams,
             modules: []
@@ -229,9 +228,6 @@ fOnLoad = function() {
           editor.getSession().setMode("ace/mode/coffee");
         } else {
           editor.getSession().setMode("ace/mode/javascript");
-        }
-        if (oMod.published) {
-          $('#is_public').prop('checked', true);
         }
         editor.setValue(oMod.code);
         editor.moveCursorTo(0, 0);

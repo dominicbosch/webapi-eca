@@ -3,14 +3,14 @@
 urlService = '/service/'
 
 if oParams.m is 'ad'
-	urlService += 'actiondispatcher/'
+	urlService += 'actiondispatcher'
 	modName = 'Action Dispatcher'
 else
-	urlService += 'eventtrigger/'
+	urlService += 'eventtrigger'
 	modName = 'Event Trigger'
 
 updateModules = (uid) ->
-	req = main.post(urlService+'get')
+	req = main.post(urlService+'/get')
 	req.done ( arrModules ) ->
 		console.log(arrModules);
 		if arrModules.length is 0
@@ -58,7 +58,7 @@ updateModules = (uid) ->
 
 deleteModule = (d) ->
 	if confirm 'Do you really want to delete the Module "'+d.name+'"?'
-		main.post(urlService+'delete', { id: d.id })
+		main.post(urlService+'/delete', { id: d.id })
 			.done () ->
 				main.setInfo true, 'Action Dispatcher deleted!', true
 				updateModules()
