@@ -86,7 +86,6 @@ function broadcast(evt) {
 
 geb.addListener('rule:new', (oRule) => {
 	let arrPromises = [];
-	console.log('rules are new', oRule)
 	for(let i = 0; i < oRule.actions.length; i++) {
 		arrPromises.push(db.getActionDispatcher(oRule.actions[i].id));
 	}

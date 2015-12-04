@@ -85,11 +85,43 @@ process.on('message', (oMsg) => {
 	}
 });
 
-function runModule(id, rid, oMod, oStore) {
+function newRule(oRule) {
+	var oPers = oRule.ModPersists;
+
+	if(!oRules[oRule.id]) oRules[oRule.id] = {};
+	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
+
+	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
+	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
+	for(let id in oRule.actionModules) {
+		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oRule.actionModules[id].name);
+		let pers;
+		let oam = oRule.actionModules[id];
+		let oArgs = oam.functions; // the functions in the rules
+		let oFuncArgs = oRule.actions.filter((o) => o.id === oam.id)[0].functions;
+		// Here we store the arguments in the internal data structure:
+		let oAct = oActArgs[oRule.id][oam.id] = {};
+		for(let af in oArgs) {
+			oAct[af] = [];
+			for (var i = 0; i < oArgs[af].length; i++) {
+				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
+			}
+		}
+		if(oPers !== undefined) {
+			for (let i = 0; i < oPers.length; i++) {
+				if(oPers[i].moduleId === oam.id) pers = oPers[i].data;
+			}
+		}
+		if(pers === undefined) pers = {};
+		runModule(id, oRule.id, oam, pers, oRules[oRule.id]);
+	}
+}
+
+function runModule(id, rid, oMod, persistence, oStore) {
 	let opts = {
 		globals: oMod.globals,
 		modules: oMod.modules,
-		persistence: oMod.persistence,
+		persistence: persistence,
 		logger: (msg) => {
 			try {
 				log.debug('trying to log');
@@ -112,29 +144,6 @@ function runModule(id, rid, oMod, oStore) {
 			oStore[id] = answ.module;
 		})
 		.catch((err) => log.error(err))
-}
-
-function newRule(oRule) {
-	if(!oRules[oRule.id]) oRules[oRule.id] = {};
-	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
-
-	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
-	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
-	for(let id in oRule.actionModules) {
-		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oRule.actionModules[id].name);
-		let oam = oRule.actionModules[id];
-		let oArgs = oam.functions; // the functions in the rules
-		let oFuncArgs = oRule.actions.filter((o) => o.id === oam.id)[0].functions;
-		// Here we store the arguments in the internal data structure:
-		let oAct = oActArgs[oRule.id][oam.id] = {};
-		for(let af in oArgs) {
-			oAct[af] = [];
-			for (var i = 0; i < oArgs[af].length; i++) {
-				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
-			}
-		}
-		runModule(id, oRule.id, oam, oRules[oRule.id]);
-	}
 }
 
 // TODO list all modules the worker process has loaded and tell from which module it was required
