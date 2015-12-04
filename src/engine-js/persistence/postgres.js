@@ -187,7 +187,7 @@ exports.storeUser = (oUser) => {
 // Fetch all user IDs and pass them to cb(err, obj).
 exports.updateUserAttribute = (uid, attr, val) => {
 	log.info('PG | Updating user #'+uid);
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oRecord) => {
 			if(oRecord) {
 				let oChg = {};
@@ -200,7 +200,7 @@ exports.updateUserAttribute = (uid, attr, val) => {
 
 exports.deleteUser = (uid) => {
 	log.info('PG | Deleting user #'+uid);
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oRecord) => {
 			if(oRecord) return oRecord.destroy();
 			else throwStatusCode(404, 'User with ID #'+uid+' not found!');
@@ -232,7 +232,7 @@ exports.getAllUsers = () => {
 // ##
 
 exports.logWorker = (uid, msg) => {
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getWorker())
 		.then((oWorker) => {
 			if(oWorker) oWorker.update({
@@ -249,7 +249,7 @@ exports.getWorker = (username, cb) => {
 };
 
 exports.setWorker = (uid, pid) => {
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
 			if(!oUser) throw new Error('User not found!');
 			return oUser.getWorker();
@@ -275,7 +275,7 @@ exports.getAllUserWebhooks = (uid) => {
 		}
 	});
 
-	var privateSearch = User.findById(uid)
+	var privateSearch = User.findById(uid, { attributes: [ 'id' ] })
 		.then((oRecord) => oRecord.getWebhooks());
 		// .then((oRecord) => oRecord.getWebhooks({ include: [ User ] }));
 
@@ -290,7 +290,7 @@ exports.getAllUserWebhooks = (uid) => {
 };
 exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 	log.info('PG | Storing new webhook '+hookname+' for user '+uid);
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
 			return oUser.createWebhook({
 				hookid: hookid,
@@ -302,13 +302,14 @@ exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 };
 exports.deleteWebhook = (uid, hookid, cb) => {
 	log.info('PG | Deleting webhook #'+hookid);
-	Webhook.findById(hookid).then((oRecord) => {
-		if(oRecord) {
-			if(oRecord.get('UserId') === uid) {
-				oRecord.destroy().then(() => cb(null, 'Webhook deleted!'), cb).catch(ec);
-			} else cb(new Error('You are not the owner of this webhook!'));
-		} else cb(new Error('Webhook with ID #'+hookid+' not found!'));
-	}, cb).catch(ec)
+	Webhook.findById(hookid, { attributes: [ 'id' ] })
+		.then((oRecord) => {
+			if(oRecord) {
+				if(oRecord.get('UserId') === uid) {
+					oRecord.destroy().then(() => cb(null, 'Webhook deleted!'), cb).catch(ec);
+				} else cb(new Error('You are not the owner of this webhook!'));
+			} else cb(new Error('Webhook with ID #'+hookid+' not found!'));
+		}, cb).catch(ec)
 };
 
 
@@ -339,7 +340,7 @@ exports.getAllRules = (uid) => {
 };
 
 exports.storeRule = (uid, oRule, hookid) => {
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
 			if(!oUser) throwStatusCode(404, 'You do not exist!?');
 			return oUser.getRules({ where: { name: oRule.name }})
@@ -349,7 +350,7 @@ exports.storeRule = (uid, oRule, hookid) => {
 				})
 		})
 		.then((oUser) => {
-			return Webhook.findById(hookid)
+			return Webhook.findById(hookid, { attributes: [ 'id' ] })
 				.then((oWebhook) => {
 					if(oWebhook) {
 						if(oWebhook.isPublic || oWebhook.UserId===uid) {
@@ -367,7 +368,7 @@ exports.storeRule = (uid, oRule, hookid) => {
 
 exports.logRule = (rid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => {
 			if(oRule) oRule.update({
 				log: sequelize.fn('array_append', sequelize.col('log'), msg)
@@ -376,18 +377,18 @@ exports.logRule = (rid, msg) => {
 };
 
 exports.getRuleLog = (uid, rid) => {
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => (oRule.get('log') || []).reverse());
 };
 
 exports.clearRuleLog = (uid, rid) => {
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => {
 			if(oRule) oRule.update({ log: null })
 		}).catch(ec);
 };
 exports.clearRuleDataLog = (uid, rid) => {
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => {
 			if(oRule) oRule.update({ datalog: null })
 		}).catch(ec);
@@ -399,7 +400,7 @@ exports.logRuleData = (rid, msg) => {
 		timestamp: (new Date()).getTime(),
 		data: msg
 	});
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => {
 			if(oRule) {
 				return oRule.update({
@@ -421,7 +422,7 @@ exports.getRuleDataLog = (uid, rid) => {
 // Returns a promise
 exports.deleteRule = (uid, rid) => {
 	log.info('PG | Deleting Rule #'+rid);
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRecord) => {
 			if(oRecord) {
 				if(oRecord.get('UserId') === uid) return oRecord.destroy();
@@ -460,14 +461,14 @@ function getAllCodeModules(isaction) {
 
 function createCodeModule(uid, oMod, oSchedule) {
 	oMod.version = 1;
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.createCodeModule(oMod))
 		// .then((oNewMod) => oNewMod.toJSON())
 		.then((oNewMod) => oNewMod.toJSON())
 }
 
 function updateCodeModule (uid, cid, oMod) {
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
 		.then((arrOldMod) => {
 			if(arrOldMod.length > 0) {
@@ -480,11 +481,11 @@ function updateCodeModule (uid, cid, oMod) {
 
 exports.persistRuleData = function(rid, cid, data) {
 	console.log(rid, cid, data);
-	return Rule.findById(rid)
+	return Rule.findById(rid, { attributes: [ 'id' ] })
 		.then((oRule) => {
 			console.log(oRule);
 			if(!oRule) throwStatusCode(404, 'Rule not found');
-			return oRule;
+			else return oRule.addPdata({});
 		})
 		.then((oRule) => {
 			// FIXME
@@ -547,7 +548,7 @@ exports.persistRuleData = function(rid, cid, data) {
 
 function deleteCodeModule(uid, cid) {
 	log.info('PG | Deleting CodeModule #'+cid);
-	return User.findById(uid)
+	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
 		.then((arrOldMod) => {
 			if(arrOldMod.length > 0) return arrOldMod[0].destroy();
