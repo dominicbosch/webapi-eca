@@ -20,6 +20,11 @@ fOnLoad = () ->
 			d3tr = d3div.select('table').selectAll('tr').data(data, (d) -> d.id);
 			d3tr.exit().transition().style('opacity', 0).remove();
 			d3newTrs = d3tr.enter().append('tr');
+			d3newTrs.append('td').attr('class', 'jumping').each (d) -> 
+				if not d.Webhook 
+					d3.select(this).append('img')
+						.attr('src', '/images/exclamation.png')
+						.attr('title', 'Webhook has been deleted!!');
 			d3newTrs.append('td').append('img')
 				.attr('class', 'icon del')
 				.attr('src', '/images/del.png')
@@ -45,7 +50,7 @@ fOnLoad = () ->
 				.attr('src', '/images/bulk_del.png')
 				.attr('title', 'Delete Data Log')
 				.on('click', clearDataLog);
-			d3newTrs.append('td').text (d) -> d.name 
+			d3newTrs.append('td').text (d) -> d.name
 
 	fetchRules()
 

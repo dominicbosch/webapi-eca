@@ -153,12 +153,12 @@ exports.getDBSize = () => {
 // ## USERS
 // ##
 
-// Fetch all user IDs and pass them to cb(err, obj).
+// Fetch all users
 exports.getUsers = () => {
 	return User.findAll().then((arr) => arrRecordsToJSON(arr))
 };
 
-// Fetch all user IDs and pass them to cb(err, obj).
+// Fetch distinct user
 exports.getUser = (uid) => {
 	return User.findById(uid)
 		.then((oRecord) => {
@@ -184,7 +184,6 @@ exports.storeUser = (oUser) => {
 		.then((oNewUser) => oNewUser.toJSON())
 };
 
-// Fetch all user IDs and pass them to cb(err, obj).
 exports.updateUserAttribute = (uid, attr, val) => {
 	log.info('PG | Updating user #'+uid);
 	return User.findById(uid, { attributes: [ 'id' ] })
@@ -207,19 +206,20 @@ exports.deleteUser = (uid) => {
 		});
 };
 
-// Checks the credentials and on success returns the user object to the
-// callback(err, obj) function. The password has to be hashed (SHA-3-512)
+// Checks the credentials and on success returns the user object.
+// The password has to be hashed (SHA-3-512)
 // beforehand by the instance closest to the user that enters the password,
 // because we only store hashes of passwords for security reasons.
-exports.loginUser = (username, password, cb) => {
-	User.findOne({ where: { username: username } }).then((oRecord) => {
-		if(!oRecord) cb(new Error('User not found!'));
-		else {
-			let oUser = oRecord.toJSON();
-			if(oUser.password === password) cb(null, oUser);
-			else cb(new Error('Nice try!'));
-		}
-	}, cb).catch(ec);
+exports.loginUser = (username, password) => {
+	return User.findOne({ where: { username: username } })
+		.then((oRecord) => {
+			if(!oRecord) throwStatusCode(404, 'User not found!');
+			else {
+				let oUser = oRecord.toJSON();
+				if(oUser.password === password) return oUser;
+				else throwStatusCode(404, 'Nice try!');
+			}
+		});
 };
 
 exports.getAllUsers = () => {
@@ -241,11 +241,13 @@ exports.logWorker = (uid, msg) => {
 		}).catch(ec);
 };
 
-exports.getWorker = (username, cb) => {
-	User.findOne({ where: { username: username } }).then((oUser) => {
-		if(!oUser) return cb(new Error('User not found!'))
-		return oUser.getWorker().then((oWorker) => cb(null, oWorker.toJSON()));
-	}, cb).catch(ec);
+exports.getWorker = (username) => {
+	return User.findOne({ where: { username: username } })
+		.then((oUser) => {
+			if(!oUser) throwStatusCode(404, 'User not found!');
+			return oUser.getWorker();
+		})
+		.then((o) => o.toJSON());
 };
 
 exports.setWorker = (uid, pid) => {
@@ -288,7 +290,7 @@ exports.getAllUserWebhooks = (uid) => {
 			}
 		});
 };
-exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
+exports.createWebhook = (uid, hookid, hookname, isPublic) => {
 	log.info('PG | Storing new webhook '+hookname+' for user '+uid);
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
@@ -300,16 +302,15 @@ exports.createWebhook = (uid, hookid, hookname, isPublic, cb) => {
 		})
 		.then((oHook) => oHook.toJSON());
 };
-exports.deleteWebhook = (uid, hookid, cb) => {
+exports.deleteWebhook = (uid, hookid) => {
 	log.info('PG | Deleting webhook #'+hookid);
-	Webhook.findById(hookid, { attributes: [ 'id' ] })
+	return Webhook.findById(hookid, { attributes: [ 'id', 'UserId' ] })
 		.then((oRecord) => {
 			if(oRecord) {
-				if(oRecord.get('UserId') === uid) {
-					oRecord.destroy().then(() => cb(null, 'Webhook deleted!'), cb).catch(ec);
-				} else cb(new Error('You are not the owner of this webhook!'));
-			} else cb(new Error('Webhook with ID #'+hookid+' not found!'));
-		}, cb).catch(ec)
+				if(oRecord.get('UserId') === uid) return oRecord.destroy();
+				else throwStatusCode(403, 'You are not the owner of this webhook!');
+			} else throwStatusCode(404, 'Webhook with ID #'+hookid+' not found!');
+		})
 };
 
 
@@ -431,7 +432,7 @@ exports.getRuleDataLog = (uid, rid) => {
 // Returns a promise
 exports.deleteRule = (uid, rid) => {
 	log.info('PG | Deleting Rule #'+rid);
-	return Rule.findById(rid, { attributes: [ 'id' ] })
+	return Rule.findById(rid, { attributes: [ 'id', 'UserId' ] })
 		.then((oRecord) => {
 			if(oRecord) {
 				if(oRecord.get('UserId') === uid) return oRecord.destroy();

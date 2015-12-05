@@ -23,6 +23,11 @@ fOnLoad = function() {
       });
       d3tr.exit().transition().style('opacity', 0).remove();
       d3newTrs = d3tr.enter().append('tr');
+      d3newTrs.append('td').attr('class', 'jumping').each(function(d) {
+        if (!d.Webhook) {
+          return d3.select(this).append('img').attr('src', '/images/exclamation.png').attr('title', 'Webhook has been deleted!!');
+        }
+      });
       d3newTrs.append('td').append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Rule').on('click', deleteRule);
       d3newTrs.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Rule').on('click', editRule);
       d3newTrs.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);

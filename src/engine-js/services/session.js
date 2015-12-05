@@ -20,18 +20,17 @@ var router = module.exports = express.Router();
 
 // Associates the user object with the session if login is successful.
 router.post('/login', (req, res) => {
-	db.loginUser(req.body.username, req.body.password, (err, oUser) => {
-			// Tapping on fingers, at least in log...
-		if(err) log.warn('RH | AUTH-UH-OH ('+req.body.username+'): '+err.message);
+	db.loginUser(req.body.username, req.body.password)
+		.then((oUser) => {
 			// no error, so we can associate the user object from the DB to the session
-		else {
 			req.session.pub = oUser;
+			res.send('OK!');
 			// req.session.dbUser = oUser.dbUser; // Future performance improvement
-		}
-
-		if(req.session.pub) res.send('OK!');
-		else res.status(404).send('NO!');
-	});
+		}).catch((err) => {
+			// Tapping on fingers, at least in log...
+			log.warn('RH | AUTH-UH-OH ('+req.body.username+'): '+err.message);
+			res.send('NO!');
+		});
 });
 
 // A post request retrieved on this handler causes the user object to be

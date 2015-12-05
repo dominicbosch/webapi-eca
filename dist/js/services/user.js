@@ -73,19 +73,16 @@ router.post('/worker/state/start', (req, res) => {
 
 router.post('/worker/state/kill', (req, res) => {
 	db.getUserByName(req.body.username)
-		.then((oUser) => {
-			return pm.killWorker(oUser.id, oUser.username)
-				.then(() => res.send('Done'));
-		})
+		.then((oUser) => pm.killWorker(oUser.id, oUser.username))
+		.then(() => res.send('Done'))
 		.catch(db.errHandler(res));
 });
 
 
 router.post('/worker/get', (req, res) => {
-	db.getWorker(req.body.username, (err, oWorker) => {
-		if(err) res.status(404).send('Not found!')
-		else res.send(oWorker);
-	});
+	db.getWorker(req.body.username)
+		.then((oWorker) => res.send(oWorker))
+		.catch(db.errHandler(res));
 });
 
 router.post('/worker/memsize', (req, res) => { res.send(''+pm.getMaxMem()) });
