@@ -327,6 +327,7 @@ exports.getAllRules = (uid) => {
 			'conditions',
 			'actions'
 		],
+		order: 'id DESC',
 		include: [
 			ModPersist,
 			{
@@ -385,7 +386,7 @@ exports.getRuleLog = (uid, rid) => {
 			},
 			attributes: [ 'log' ]
 		})
-		.then((oRule) => oRule.get('log').reverse());
+		.then((oRule) => (oRule.get('log') || []).reverse());
 };
 
 exports.clearRuleLog = (uid, rid) => {

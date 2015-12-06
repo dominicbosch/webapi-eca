@@ -63,7 +63,7 @@ fOnLoad = () ->
 			d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
 				.append('select').attr('class','mediummarged smallfont')
 			createWebhookRow = (oHook, owner) ->
-				isSel = if oParams.webhook and oParams.webhook is oHook.id then true else null
+				isSel = if oParams.webhook and oParams.webhook is oHook.hookid then true else null
 				d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
 					.text oHook.hookname+' ('+owner+')'
 			createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
@@ -269,114 +269,6 @@ fOnLoad = () ->
 					try
 						msg = JSON.parse(err.responseText).message
 				console.log('Error in upload: ' + msg) err
-
-# #
-# # ACTION Related Helper Functions
-# #
-
-# fFetchActionParams = (modName) ->
-# 	main.post 
-# 		command: 'get_action_dispatcher_params'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: modName
-# 		done: (data) ->
-# 			if data.message
-# 				oParams = JSON.parse data.message
-# 				if JSON.stringify(oParams) isnt '{}'
-# 					domSectionActionParameters.show()
-# 					div = $('<div>').appendTo $('#action_dispatcher_params')
-# 					subdiv = $('<div> ').appendTo div 
-# 					subdiv.append $('<div>')
-# 						.attr('class', 'modName underlined').text modName
-
-# 					comment = $('<div>').attr('class', 'comment indent20').appendTo div
-# 					main.post 
-# 						command: 'get_action_dispatcher_comment'
-# 						data: 
-# 							body: JSON.stringify
-# 								id: modName
-# 						done: (data) ->
-# 							comment.html data.message.replace /\n/g, '<br>'
-# 						fail: console.log 'Error fetching Event Trigger comment'
-
-# 					table = $ '<table>'
-# 					div.append table
-# 					for name, shielded of oParams
-# 						tr = $('<tr>')
-# 						tr.append $('<td>').css 'width', '20px'
-# 						tr.append $('<td>').attr('class', 'key').text name
-# 						inp = $('<input>')
-# 						if shielded
-# 							inp.attr('type', 'password')
-# 						else
-# 							inp.attr('type', 'text')
-# 						tr.append $('<td>').text(' : ').append inp
-# 						table.append tr
-
-# 		fail: console.log 'Error fetching action dispatcher params'
-
-# fFetchActionFunctionArgs = (tag, arrName) ->
-# 	main.post 
-# 		command: 'get_action_dispatcher_function_arguments'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: arrName[ 0 ]
-# 		done: (data) ->
-# 			if data.message
-# 				oParams = JSON.parse data.message
-# 				if oParams[ arrName[ 1 ] ]
-# 					table = $('<table>').appendTo tag
-# 					for functionArgument in oParams[ arrName[ 1 ] ]
-# 						tr = $('<tr>').appendTo table
-# 						td = $('<td>').appendTo tr
-# 						td.append $('<div>').attr('class', 'funcarg').text functionArgument
-# 						tr.append td
-# 						td = $('<td>').appendTo tr
-# 						td.append $('<input>').attr 'type', 'text'
-# 						tr.append td
-# 		fail: console.log 'Error fetching action dispatcher function params'
-
-# fFillActionFunction = (name) ->
-# 	main.post 
-# 		command: 'get_action_dispatcher_user_params'
-# 		data: 
-# 			body: JSON.stringify
-# 				id: name
-# 		done: fAddActionUserParams name
-
-# 	main.post 
-# 		command: 'get_action_dispatcher_user_arguments'
-# 		data:
-# 			body: JSON.stringify
-# 				ruleId: $('#input_name').val()
-# 				moduleId: name
-# 		done: fAddActionUserArgs name
-
-# fAddActionUserParams = (name) ->
-# 	(data) ->
-# 		oParams = JSON.parse data.message
-# 		domMod = $("#action_dispatcher_params div").filter () ->
-# 			$('div.modName', this).text() is name
-# 		for param, oParam of oParams
-# 			par = $("tr", domMod).filter () ->
-# 				$('td.key', this).text() is param
-# 			$('input', par).val oParam.value
-# 			$('input', par).attr 'unchanged', 'true'
-# 			$('input', par).change () ->
-# 				$(this).attr 'unchanged', 'false'
-
-# fAddActionUserArgs = (name) ->
-# 	(data) ->
-# 		for key, arrFuncs of data.message
-# 			par = $("#selected_actions tr").filter () ->
-# 				$('td.title', this).text() is "#{ name } -> #{ key }"
-# 			for oFunc in JSON.parse arrFuncs
-# 				tr = $("tr", par).filter () ->
-# 					$('.funcarg', this).text() is "#{ oFunc.argument }"
-# 				$("input[type=text]", tr).val oFunc.value
-# 				# $("input[type=checkbox]", tr).prop 'checked', oFunc.jsselector
-
 
 window.addEventListener 'load', fOnLoad, true
 

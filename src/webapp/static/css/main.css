@@ -116,8 +116,7 @@ table.padded .highlight {
 
 table.mystyle>tbody>tr { border-top: 1px solid #DDD }
 table.mystyle>tbody>tr:nth-child(even) { background: #F8F8F8 }
-table.mystyle>tbody>tr>td:first-child { padding-right: 8px }
-table.mystyle td { padding-right: 8px }
+table.mystyle td { padding-right: 12px }
 
 .hundredwide { width: 100% }
 .seventywide { width: 70% }

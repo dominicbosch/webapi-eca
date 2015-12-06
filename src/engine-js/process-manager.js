@@ -73,7 +73,8 @@ geb.addListener('modules:list', (arrModules) => {
 
 function sendToWorker(uid, evt) {
 	try {
-		oChildren[uid].send(evt);
+		if(oChildren[uid]) oChildren[uid].send(evt);
+		else log.warn('User #'+uid+' worker process offline');
 	} catch(err) {
 		log.error(err);
 	}

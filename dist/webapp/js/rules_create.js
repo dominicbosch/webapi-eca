@@ -48,7 +48,7 @@ fOnLoad = function() {
       d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:').append('select').attr('class', 'mediummarged smallfont');
       createWebhookRow = function(oHook, owner) {
         var isSel;
-        isSel = oParams.webhook && oParams.webhook === oHook.id ? true : null;
+        isSel = oParams.webhook && oParams.webhook === oHook.hookid ? true : null;
         return d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
       };
       ref = oHooks["private"];

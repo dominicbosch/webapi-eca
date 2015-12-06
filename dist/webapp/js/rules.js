@@ -18,7 +18,7 @@ fOnLoad = function() {
       d3.select('#hasnorules').style('display', 'none');
       d3.select('#hasrules').style('display', 'block');
       d3div = d3.select('#tableRules');
-      d3tr = d3div.select('table').selectAll('tr').data(data, function(d) {
+      d3tr = d3div.select('table tbody').selectAll('tr').data(data, function(d) {
         return d.id;
       });
       d3tr.exit().transition().style('opacity', 0).remove();

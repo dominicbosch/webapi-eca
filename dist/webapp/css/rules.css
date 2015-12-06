@@ -68,7 +68,10 @@
 .col-sm-9, .col-sm-12 {
 	padding: 0px 12px;
 }
-
+#tableRules .mystyle>tbody>tr>td:first-child {
+	width: 20px;
+	padding-left: 3px;
+}
 #log_col {
 	visibility: hidden;
 }

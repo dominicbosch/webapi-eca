@@ -10,14 +10,14 @@ fOnLoad = () ->
 
 	fUpdateRuleList = (data) ->
 		console.log(data)
-		if data.length is 0			
+		if data.length is 0
 			d3.select('#hasnorules').style('display', 'block');
 			d3.select('#hasrules').style('display', 'none');
 		else
 			d3.select('#hasnorules').style('display', 'none');
 			d3.select('#hasrules').style('display', 'block');
 			d3div = d3.select('#tableRules');
-			d3tr = d3div.select('table').selectAll('tr').data(data, (d) -> d.id);
+			d3tr = d3div.select('table tbody').selectAll('tr').data(data, (d) -> d.id);
 			d3tr.exit().transition().style('opacity', 0).remove();
 			d3newTrs = d3tr.enter().append('tr');
 			d3newTrs.append('td').attr('class', 'jumping').each (d) -> 
@@ -55,7 +55,7 @@ fOnLoad = () ->
 	fetchRules()
 
 	deleteRule = (d) ->
-		if confirm  "Do you really want to delete the rule '#{ d.name }'?"
+		if confirm "Do you really want to delete the rule '#{ d.name }'?"
 			main.post('/service/rules/delete', { id: d.id })
 				.done fetchRules
 				.fail (err) ->
