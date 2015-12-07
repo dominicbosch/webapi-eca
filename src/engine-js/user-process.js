@@ -9,6 +9,7 @@
 var pl = require('./process-logger')
 	// and [Dynamic Modules](dynamic-modules.html)
 	, dynmod = require('./dynamic-modules')
+	, encryption = require('./encryption')
 
 	, oEventTriggers = {}
 	, oRules = {}
@@ -42,16 +43,11 @@ var log = {
 	data: (rid, msg) => sendLog('ruledata', {
 		rid: rid, 
 		msg: msg
-	}),
-	persist: (rid, cid, data) => sendLog('persist', {
-		rid: rid, 
-		cid: cid, 
-		data: data
 	})
 };
 
 process.on('uncaughtException', (err) => {
-	console.log('Your Code Executor produced an error!');
+	console.log('Your user process produced an error!');
 	console.log(err);
 });
 process.on('disconnect', () => {
@@ -93,33 +89,80 @@ function newRule(oRule) {
 
 	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
 	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
-	for(let id in oRule.actionModules) {
-		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oRule.actionModules[id].name);
-		let pers;
-		let oam = oRule.actionModules[id];
-		let oArgs = oam.functions; // the functions in the rules
-		let oFuncArgs = oRule.actions.filter((o) => o.id === oam.id)[0].functions;
-		// Here we store the arguments in the internal data structure:
-		let oAct = oActArgs[oRule.id][oam.id] = {};
-		for(let af in oArgs) {
-			oAct[af] = [];
-			for (var i = 0; i < oArgs[af].length; i++) {
-				oAct[af].push(oFuncArgs[af][oArgs[af][i]]);
+	console.log(JSON.stringify(oRule, null, 2));
+	for(let i = 0; i < oRule.actions.length; i++) {
+		let oAction = oRule.actions[i];
+		let oModule = oRule.actionModules[oAction.id];
+		console.log('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		// log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+
+		for(let j = 0; j < oAction.functions.length; j++) {
+			let oActFunc = oAction.functions[j];
+			console.log('UP | Rule "'+oRule.name+'" initializes module function -> '+oActFunc.name);
+			let arrRequiredArguments = oModule.functions[oActFunc.name];
+			console.log(arrRequiredArguments);
+			for(let k = 0; k < arrRequiredArguments.length; k++) {
+				let val = oActFunc.args[arrRequiredArguments[k]];
+				if(val===undefined) console.warn('UP | Missing argument: ' + arrRequiredArguments[k])
+				else {
+					console.log('attaching', arrRequiredArguments[k], val);
+				}
 			}
 		}
+
+
+		// let requiredFunctions = requiredModule.functions; // the functions in the rules
+		// let oFuncArgs = oRule.actions.filter((o) => o.id === requiredModule.id)[0].functions;
+		// // Here we store the arguments in the internal data structure:
+		// let oAct = oActArgs[oRule.id][requiredModule.id] = {};
+		// for(let af in requiredFunctions) {
+		// 	oAct[af] = [];
+		// 	for (var i = 0; i < requiredFunctions[af].length; i++) {
+		// 		oAct[af].push(oFuncArgs[af][requiredFunctions[af][i]]);
+		// 	}
+		// }
+
+
+		// Attach persistent data if it exists
+		let pers;
 		if(oPers !== undefined) {
 			for (let i = 0; i < oPers.length; i++) {
-				if(oPers[i].moduleId === oam.id) pers = oPers[i].data;
+				if(oPers[i].moduleId === oModule.id) pers = oPers[i].data;
 			}
 		}
 		if(pers === undefined) pers = {};
-		runModule(id, oRule.id, oam, pers, oRules[oRule.id]);
+		runModule(null, oRule.id, oModule, oAction.globals, pers, oRules[oRule.id]);
 	}
+	// for(let id in oRule.actionModules) {
+	// 	let requiredModule = oRule.actionModules[id];
+	// 	log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+requiredModule.name);
+
+	// 	let requiredFunctions = requiredModule.functions; // the functions in the rules
+	// 	let oFuncArgs = oRule.actions.filter((o) => o.id === requiredModule.id)[0].functions;
+	// 	// Here we store the arguments in the internal data structure:
+	// 	let oAct = oActArgs[oRule.id][requiredModule.id] = {};
+	// 	for(let af in requiredFunctions) {
+	// 		oAct[af] = [];
+	// 		for (var i = 0; i < requiredFunctions[af].length; i++) {
+	// 			oAct[af].push(oFuncArgs[af][requiredFunctions[af][i]]);
+	// 		}
+	// 	}
+
+	// 	// Attach persistent data if it exists
+	// 	let pers;
+	// 	if(oPers !== undefined) {
+	// 		for (let i = 0; i < oPers.length; i++) {
+	// 			if(oPers[i].moduleId === requiredModule.id) pers = oPers[i].data;
+	// 		}
+	// 	}
+	// 	if(pers === undefined) pers = {};
+	// 	runModule(id, oRule.id, requiredModule, pers, oRules[oRule.id]);
+	// }
 }
 
-function runModule(id, rid, oMod, persistence, oStore) {
+function runModule(id, rid, oMod, globals, persistence, oStore) {
 	let opts = {
-		globals: oMod.globals,
+		globals: globals || {},
 		modules: oMod.modules,
 		persistence: persistence,
 		logger: (msg) => {
@@ -133,8 +176,17 @@ function runModule(id, rid, oMod, persistence, oStore) {
 			}
 		},
 		datalogger: (msg) => log.data(rid, msg),
-		persist: (data) => log.persist(rid, oMod.id, data)
+		persist: (data) => sendToParent({
+			cmd: 'persist',
+			data: {	
+				rid: rid, 
+				cid: oMod.id, 
+				data: data
+			}
+		})
 	};
+
+	console.log('Running Globals', opts.globals);
 	let name = (oStore === oEventTriggers) ? 'Event Trigger' : 'Action Dispatcher';
 	log.rule(rid, ' --> Loading '+name+' "'+oMod.name+'"...');
 	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
@@ -190,55 +242,3 @@ function runModule(id, rid, oMod, persistence, oStore) {
 // 		delete oUser[updatedRuleId].actions[action] if not fRequired action
 
 
-
-// TODO decrypting of user parameters has to happen before we runstringasmodule
-// // Decrypt encrypted user parameters to ensure some level of security when it comes down to storing passwords on our server.
-// for(let prop in opt.globals) {
-// 	log.info('DM | Loading user defined global variable '+prop);
-// 	// Eventually we only have a list of globals without values for a dry run when storing a new module. Thus we 
-// 	// expect the '.value' property not to be set on these elements. we add an empty string as value in these cases
-// 	opt.globals[prop] = encryption.decrypt(opt.globals[prop].value || '');
-// }
-
-
-// {
-//     "id": 2,
-//     "name": "45",
-//     "conditions": [],
-//     "actions": [
-//         {
-//             "id": 1,
-//             "globals": {},
-//             "functions": {
-//                 "sayHelloWorld": {}
-//             }
-//         }
-//     ],
-//     "UserId": 1,
-//     "WebhookId": 1,
-//     "Webhook": {
-//         "id": 1,
-//         "hookid": "9a0da8f495cae8c1c554819fa8ec022e",
-//         "hookname": "123456789",
-//         "isPublic": false,
-//         "UserId": 1
-//     },
-//     "actionModules": {
-//         "1": {
-//             "id": 1,
-//             "name": "Hello World",
-//             "lang": "CoffeeScript",
-//             "code": "\n# A simple Hello World code block\nexports.sayHelloWorld = () ->\n\tlog 'Hello Worlddd!'\n\t",
-//             "comment": "A simple Hello World code block\n",
-//             "functions": {
-//                 "sayHelloWorld": []
-//             },
-//             "published": false,
-//             "globals": {},
-//             "UserId": 1,
-//             "User": {
-//                 "username": "admin"
-//             }
-//         }
-//     }
-// }

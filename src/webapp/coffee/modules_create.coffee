@@ -208,7 +208,7 @@ fOnLoad = () ->
 						editor.getSession().setMode "ace/mode/javascript"
 
 					editor.setValue oMod.code
-					editor.moveCursorTo 0, 0
+					editor.gotoLine(1, 1)
 					updateUsedModules(oMod.modules)
 
 			.fail (err) ->
@@ -224,6 +224,6 @@ fOnLoad = () ->
 		else
 			editor.insert $('#etSource').text()
 			fAddUserParam '', false
-		editor.moveCursorTo 0, 0
+		editor.gotoLine(1, 1)
 
 window.addEventListener 'load', fOnLoad, true

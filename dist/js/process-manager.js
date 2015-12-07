@@ -10,6 +10,7 @@ var log = require('./logging'),
 	pl = require('./process-logger'),
 	
 	fb = require('./persistence/firebase'),
+	encryption = require('./encryption'),
 
 	// - Node.js Modules: [path](http://nodejs.org/api/path.html),
 	path = require('path'),
@@ -96,12 +97,24 @@ geb.addListener('rule:new', (oRule) => {
 			for(let i = 0; i < arr.length; i++) {
 				oRule.actionModules[arr[i].id] = arr[i];
 			}
+
+			// Decrypt global action parameters before notifying the user process
+			for(let i = 0; i < oRule.actions.length; i++) {
+				let oAction = oRule.actions[i];
+				let glob = oAction.globals;
+				for(let el in glob) {
+					if(oRule.actionModules[oAction.id].globals[el]) {
+						oAction.globals[el] = encryption.decrypt(oAction.globals[el] || '');
+					}
+				}
+			}
 			let evt = {
 				cmd: 'rule:new',
 				rule: oRule
 			}
 			sendToWorker(oRule.UserId, evt);
 		})
+		.catch((err) => console.error(err));
 });
 
 geb.addListener('action', (oEvt) => {
@@ -124,7 +137,7 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'log:ruledata': db.logRuleData(dat.rid, dat.msg);
 				break;
-			case 'log:persist': db.persistRuleData(dat.rid, dat.cid, dat.data);
+			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.data);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);

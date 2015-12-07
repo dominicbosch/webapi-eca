@@ -45,7 +45,9 @@ fOnLoad = () ->
 			if oParams.id is undefined then return null;
 			else return loadRule();
 		.then attachListeners
-		.then () -> $('#input_name').focus()
+		.then () ->
+			$('#input_name').get(0).setSelectionRange(0,0);
+			$('#input_name').focus()
 		.catch (err) -> main.setInfo false, err.toString()
 
 	editor = ace.edit "divConditionsEditor"
@@ -77,26 +79,36 @@ fOnLoad = () ->
 	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
 
 
-
-window.addEventListener 'load', fOnLoad, true
-
-
-loadRule = () ->
 # Preload editting of a Rule
 # -----------
-
+loadRule = () ->
 	return new Promise (resolve, reject) ->
 		console.warn('TODO implement edit rules')
 		main.post('/service/rules/get/'+oParams.id)
 			.done (oRule) ->
+				# Rule Name
 				$('#input_name').val oRule.name
-				console.log oRule
-				editor.setValue JSON.stringify oRule.conditions, undefined, 2
 
+				# Webhook
+				d3.select('#selectWebhook option[value="'+oRule.WebhookId+'"]').attr('selected', true)
+
+				# Conditions
+				editor.setValue '\n'+(JSON.stringify oRule.conditions, undefined, 2)+'\n'
+				editor.gotoLine(1, 1)
+
+				# Fill all action modules
 				for oAct in oRule.actions
-					for func of oAct.functions
-						addAction(oAct.id, func)
+					# Fill all functions per action module
+					for func in oAct.functions
+						addAction(oAct.id, func.name)
+						# Fill all values in the function arguments
+						for key, val of func.args
+							d3.select('.flid'+oAct.id+' .fid'+func.fid+' .arg_'+key).node().value = val
+					
+					for key, val of oAct.globals
+						d3.select('.flid'+oAct.id+' .inp_'+key).node().value = val
 
+							
 				resolve 'Rule loaded'
 			.fail reject
 
@@ -190,7 +202,8 @@ updateParameterList = () ->
 		.selectAll('.firstlevel').data(arrSelectedActions, (d) -> d.id)
 
 	d3Rows.exit().transition().style('opacity', 0).remove()
-	d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel')
+	d3New = d3Rows.enter().append('div').attr 'class', (d) ->
+		'row firstlevel flid'+d.id
 
 	# The main module container
 	dModule = d3New.append('div').attr('class', 'col-sm-6')
@@ -200,12 +213,15 @@ updateParameterList = () ->
 			nd = d3.select(this).append('div').attr('class', 'row glob')
 			nd.append('div').attr('class', 'col-xs-3 key').text(key)
 			nd.append('div').attr('class', 'col-xs-9 val')
-				.append('input').attr('type', if encrypted then 'password' else 'text')
+				.append('input')
+					.attr('class', 'inp_'+key)
+					.attr('type', if encrypted then 'password' else 'text')
 				.on 'change', () -> d3.select(this).attr('changed', 'yes')
 
 	funcs = d3Rows.selectAll('.actions').data((d) -> d.arr);
 	funcs.exit().transition().style('opacity', 0).remove();
-	newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6')
+	newFuncs = funcs.enter().append('div').attr('data-fid', (d, i) -> i)
+		.attr('class', (d, i) -> 'actions col-sm-6 fid'+i)
 		.append('div').attr('class', 'row')
 	title = newFuncs.append('div').attr('class', 'col-sm-12')
 	title.append('img').attr('src', '/images/del.png').attr('class', 'icon del')
@@ -215,43 +231,12 @@ updateParameterList = () ->
 		.enter().append('div').attr('class', 'col-sm-12 arg')
 		.append('div').attr('class', 'row')
 	funcParams.append('div').attr('class', 'col-xs-3 key').text((d) -> d)
-	funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text')
+	funcParams.append('div').attr('class', 'col-xs-9 val').append('input')
+		.attr('type', 'text').attr('class', (d) -> 'arg_'+d)
 
 # LISTENERS
 # ---------
 attachListeners = () ->
-	$('#actionSection select').on 'change', () ->
-		domSectionSelectedActions.show()
-		opt = $ 'option:selected', this
-		fAddSelectedAction opt.text()
-		
-	$('#selected_actions').on 'click', 'img', () ->
-		act = $(this).closest('td').siblings('.title').text()
-		arrName = act.split ' -> '
-
-		nMods = 0
-		# Check whether we're the only function left that was selected from this module
-		$("#selected_actions td.title").each () ->
-			arrNm = $(this).text().split ' -> '
-			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
-
-		if nMods is 1
-			$('#action_dispatcher_params > div').each () ->
-				if $(this).children('div.modName').text() is arrName[ 0 ]
-					$(this).remove()
-
-		# Hide if nothing to show
-		if $('#selected_actions td.title').length is 0
-			domSectionSelectedActions.hide()
-
-		if $('#action_dispatcher_params > div').length is 0
-			domSectionActionParameters.hide()
-
-		opt = $('<option>').text act
-		$('#actionSection select').append opt
-		$(this).closest('tr').remove()
-
-
 	# SUBMIT
 	$('#but_submit').click () ->
 		main.clearInfo true
@@ -289,11 +274,13 @@ attachListeners = () ->
 					oAction.globals[key] = val
 
 				d3module.selectAll('.actions').each (dFunc) ->
+					d3This = d3.select(this);
 					func = {
+						fid: d3This.attr('data-fid')
 						name: dFunc.name
-						args: []
+						args: {}
 					}
-					d3arg = d3.select(this).selectAll('.arg').each (d) ->
+					d3arg = d3This.selectAll('.arg').each (d) ->
 						d3arg = d3.select(this)
 						val = d3arg.select('.val input').node().value
 						if val is ''
@@ -325,10 +312,21 @@ attachListeners = () ->
 			if oParams.id is undefined
 				cmd = 'create'
 			else
+				obj.id = oParams.id
 				cmd = 'update'
 			main.post('/service/rules/'+cmd, obj)
-				.done (msg) -> main.setInfo true, msg
+				.done (msg) ->
+					wl = window.location;
+					oParams.id = msg.id;
+					newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id='+msg.id;
+					window.history.pushState({path:newurl},'',newurl);
+					main.setInfo true, 'Rule stored!'
 				.fail (err) -> main.setInfo false, err.responseText
 
 		catch err
+			console.log err
 			main.setInfo false, 'Error in upload: '+err.message
+
+
+# Most stuff is happening after the document has loaded:
+window.addEventListener 'load', fOnLoad, true

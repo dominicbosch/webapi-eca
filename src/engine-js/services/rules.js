@@ -72,19 +72,41 @@ router.post('/cleardatalog/:id', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
-router.post('/create', (req, res) => {
-	log.info('SRVC | RULES | Storing new Rule');
+function storeRule(uid, reason, body, res) {
 	let oRule = {
-		name: req.body.name,
-		conditions: req.body.conditions,
-		actions: req.body.actions
-	}
-	db.storeRule(req.session.pub.id, oRule, req.body.hookid)
-		.then((oRule) => {
-			geb.emit('rule:new', oRule);
-			res.send('Rule stored!');
+		name: body.name,
+		conditions: body.conditions,
+		actions: body.actions
+	};
+	let prom;
+	if(reason === 'new') prom = db.createRule(uid, oRule, body.hookid)
+	else prom = db.updateRule(uid, body.id, oRule, body.hookid)
+	prom.then((oRule) => {
+			geb.emit('rule:'+reason, oRule);
+			res.send({ id: oRule.id });
 		})
 		.catch(db.errHandler(res))
+}
+
+router.post('/create', (req, res) => {
+	log.info('SRVC | RULES | Creating new Rule');
+	storeRule(req.session.pub.id, 'new', req.body, res);
+	// let oRule = {
+	// 	name: req.body.name,
+	// 	conditions: req.body.conditions,
+	// 	actions: req.body.actions
+	// }
+	// db.createRule(req.session.pub.id, oRule, req.body.hookid)
+	// 	.then((oRule) => {
+	// 		geb.emit('rule:new', oRule);
+	// 		res.send('Rule stored!');
+	// 	})
+	// 	.catch(db.errHandler(res))
+});
+
+router.post('/update', (req, res) => {
+	log.info('SRVC | RULES | Updating existing Rule #'+req.body.id);
+	storeRule(req.session.pub.id, 'update', req.body, res);
 });
 
 router.post('/delete', (req, res) => {

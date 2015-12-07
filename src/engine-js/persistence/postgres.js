@@ -347,14 +347,7 @@ exports.getRule = (uid, rid) => {
 			if(!oUser) throwStatusCode(404, 'You do not exist!?');
 			return oUser.getRules({
 				where: { id: rid },
-				attributes: [
-					'id',
-					'UserId',
-					'WebhookId',
-					'name',
-					'conditions',
-					'actions'
-				],
+				attributes: [ 'id', 'UserId', 'WebhookId', 'name', 'conditions', 'actions' ]
 			})
 		})
 		.then((arrRules) => {
@@ -363,32 +356,110 @@ exports.getRule = (uid, rid) => {
 		})
 }
 
-exports.storeRule = (uid, oRule, hookid) => {
+function storeRule(uid, rid, oRule, hookid) {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
-			if(!oUser) throwStatusCode(404, 'You do not exist!?');
-			return oUser.getRules({ where: { name: oRule.name }})
-				.then((arrExisting) => {
-					if(arrExisting.length === 0) return oUser;
-					else throwStatusCode(409, 'Rule name already existing!');
-				})
+			let query = { attributes: [ 'id', 'UserId', 'WebhookId', 'name', 'conditions', 'actions' ] };
+			if(!oUser) {
+				throwStatusCode(404, 'You do not exist!?');
+			
+			// Create new rule
+			} else if(rid===undefined) {
+				query.where = { name: oRule.name };
+				return oUser.getRules(query)
+					.then((arrRules) => {
+						if(arrRules.length === 0) return { user: oUser };
+						else throwStatusCode(409, 'Rule name already existing!');
+					})
+			// Update of existing rule
+			} else {
+				query.where = { id: rid };
+				return oUser.getRules(query)
+					.then((arrRules) => {
+						if(arrRules.length > 0) return { user: oUser, rule: arrRules[0] };
+						else throwStatusCode(403, 'Rule not existing!');
+					})
+			}
 		})
-		.then((oUser) => {
+		.then((oResult) => {
 			return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
 				.then((oWebhook) => {
 					if(oWebhook) {
 						if(oWebhook.isPublic || oWebhook.UserId===uid) {
-							return { user: oUser, hook: oWebhook };
+							return { user: oResult.user, rule: oResult.rule, hook: oWebhook };
 						} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
 					} else throwStatusCode(404, 'Webhook not existing!');
 				})
 		})
 		.then((o) => {
-			return o.user.createRule(oRule)
-				.then((oRule) => oRule.setWebhook(o.hook))
+			if(rid===undefined) {
+				return o.user.createRule(oRule)
+					.then((oRule) => oRule.setWebhook(o.hook));
+			} else {
+				return o.rule.update(oRule)
+					.then((updatedRule) => {
+						console.log(updatedRule.toJSON());
+						return updatedRule.setWebhook(o.hook);
+					});
+			}
 		})
 		.then((oRule) => oRule.toJSON())
 }
+
+exports.createRule = (uid, oRule, hookid) => storeRule(uid, undefined, oRule, hookid);
+	// return User.findById(uid, { attributes: [ 'id' ] })
+	// 	.then((oUser) => {
+	// 		if(!oUser) throwStatusCode(404, 'You do not exist!?');
+	// 		return oUser.getRules({ where: { name: oRule.name }})
+	// 			.then((arrExisting) => {
+	// 				if(arrExisting.length === 0) return oUser;
+	// 				else throwStatusCode(409, 'Rule name already existing!');
+	// 			})
+	// 	})
+	// 	.then((oUser) => {
+	// 		return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
+	// 			.then((oWebhook) => {
+	// 				if(oWebhook) {
+	// 					if(oWebhook.isPublic || oWebhook.UserId===uid) {
+	// 						return { user: oUser, hook: oWebhook };
+	// 					} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
+	// 				} else throwStatusCode(404, 'Webhook not existing!');
+	// 			})
+	// 	})
+	// 	.then((o) => {
+	// 		return o.user.createRule(oRule)
+	// 			.then((oRule) => oRule.setWebhook(o.hook))
+	// 	})
+	// 	.then((oRule) => oRule.toJSON())
+// }
+
+exports.updateRule = (uid, rid, oRule, hookid) => storeRule(uid, rid, oRule, hookid);
+// exports.updateRule = (uid, rid, oRule, hookid) => {
+// 	return User.findById(uid, { attributes: [ 'id' ] })
+// 		.then((oUser) => {
+// 			if(!oUser) throwStatusCode(404, 'You do not exist!?');
+// 			return oUser.getRules({ where: { name: oRule.name }})
+// 				.then((arrExisting) => {
+// 					if(arrExisting.length === 0) return oUser;
+// 					else throwStatusCode(409, 'Rule name already existing!');
+// 				})
+// 		})
+// 		.then((oUser) => {
+// 			return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
+// 				.then((oWebhook) => {
+// 					if(oWebhook) {
+// 						if(oWebhook.isPublic || oWebhook.UserId===uid) {
+// 							return { user: oUser, hook: oWebhook };
+// 						} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
+// 					} else throwStatusCode(404, 'Webhook not existing!');
+// 				})
+// 		})
+// 		.then((o) => {
+// 			return o.user.createRule(oRule)
+// 				.then((oRule) => oRule.setWebhook(o.hook))
+// 		})
+// 		.then((oRule) => oRule.toJSON())
+// }
 
 exports.logRule = (rid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;

@@ -230,7 +230,7 @@ fOnLoad = function() {
           editor.getSession().setMode("ace/mode/javascript");
         }
         editor.setValue(oMod.code);
-        editor.moveCursorTo(0, 0);
+        editor.gotoLine(1, 1);
         return updateUsedModules(oMod.modules);
       }
     }).fail(function(err) {
@@ -246,7 +246,7 @@ fOnLoad = function() {
       editor.insert($('#etSource').text());
       fAddUserParam('', false);
     }
-    return editor.moveCursorTo(0, 0);
+    return editor.gotoLine(1, 1);
   }
 };
 

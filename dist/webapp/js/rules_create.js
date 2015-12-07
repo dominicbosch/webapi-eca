@@ -42,6 +42,7 @@ fOnLoad = function() {
       return loadRule();
     }
   }).then(attachListeners).then(function() {
+    $('#input_name').get(0).setSelectionRange(0, 0);
     return $('#input_name').focus();
   })["catch"](function(err) {
     return main.setInfo(false, err.toString());
@@ -64,21 +65,32 @@ fOnLoad = function() {
   return main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
 };
 
-window.addEventListener('load', fOnLoad, true);
-
 loadRule = function() {
   return new Promise(function(resolve, reject) {
     console.warn('TODO implement edit rules');
     return main.post('/service/rules/get/' + oParams.id).done(function(oRule) {
-      var func, j, len, oAct, ref;
+      var func, j, k, key, len, len1, oAct, ref, ref1, ref2, ref3, val;
       $('#input_name').val(oRule.name);
-      console.log(oRule);
-      editor.setValue(JSON.stringify(oRule.conditions, void 0, 2));
+      d3.select('#selectWebhook option[value="' + oRule.WebhookId + '"]').attr('selected', true);
+      editor.setValue('\n' + (JSON.stringify(oRule.conditions, void 0, 2)) + '\n');
+      editor.gotoLine(1, 1);
       ref = oRule.actions;
       for (j = 0, len = ref.length; j < len; j++) {
         oAct = ref[j];
-        for (func in oAct.functions) {
-          addAction(oAct.id, func);
+        ref1 = oAct.functions;
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          func = ref1[k];
+          addAction(oAct.id, func.name);
+          ref2 = func.args;
+          for (key in ref2) {
+            val = ref2[key];
+            d3.select('.flid' + oAct.id + ' .fid' + func.fid + ' .arg_' + key).node().value = val;
+          }
+        }
+        ref3 = oAct.globals;
+        for (key in ref3) {
+          val = ref3[key];
+          d3.select('.flid' + oAct.id + ' .inp_' + key).node().value = val;
         }
       }
       return resolve('Rule loaded');
@@ -205,7 +217,9 @@ updateParameterList = function() {
     return d.id;
   });
   d3Rows.exit().transition().style('opacity', 0).remove();
-  d3New = d3Rows.enter().append('div').attr('class', 'row firstlevel');
+  d3New = d3Rows.enter().append('div').attr('class', function(d) {
+    return 'row firstlevel flid' + d.id;
+  });
   dModule = d3New.append('div').attr('class', 'col-sm-6');
   dModule.append('h4').text(function(d) {
     return d.name;
@@ -218,7 +232,7 @@ updateParameterList = function() {
       encrypted = ref[key];
       nd = d3.select(this).append('div').attr('class', 'row glob');
       nd.append('div').attr('class', 'col-xs-3 key').text(key);
-      results.push(nd.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', encrypted ? 'password' : 'text').on('change', function() {
+      results.push(nd.append('div').attr('class', 'col-xs-9 val').append('input').attr('class', 'inp_' + key).attr('type', encrypted ? 'password' : 'text').on('change', function() {
         return d3.select(this).attr('changed', 'yes');
       }));
     }
@@ -228,7 +242,11 @@ updateParameterList = function() {
     return d.arr;
   });
   funcs.exit().transition().style('opacity', 0).remove();
-  newFuncs = funcs.enter().append('div').attr('class', 'actions col-sm-6').append('div').attr('class', 'row');
+  newFuncs = funcs.enter().append('div').attr('data-fid', function(d, i) {
+    return i;
+  }).attr('class', function(d, i) {
+    return 'actions col-sm-6 fid' + i;
+  }).append('div').attr('class', 'row');
   title = newFuncs.append('div').attr('class', 'col-sm-12');
   title.append('img').attr('src', '/images/del.png').attr('class', 'icon del').on('click', removeAction);
   title.append('span').text(function(d) {
@@ -240,45 +258,12 @@ updateParameterList = function() {
   funcParams.append('div').attr('class', 'col-xs-3 key').text(function(d) {
     return d;
   });
-  return funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text');
+  return funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text').attr('class', function(d) {
+    return 'arg_' + d;
+  });
 };
 
 attachListeners = function() {
-  $('#actionSection select').on('change', function() {
-    var opt;
-    domSectionSelectedActions.show();
-    opt = $('option:selected', this);
-    return fAddSelectedAction(opt.text());
-  });
-  $('#selected_actions').on('click', 'img', function() {
-    var act, arrName, nMods, opt;
-    act = $(this).closest('td').siblings('.title').text();
-    arrName = act.split(' -> ');
-    nMods = 0;
-    $("#selected_actions td.title").each(function() {
-      var arrNm;
-      arrNm = $(this).text().split(' -> ');
-      if (arrNm[0] === arrName[0]) {
-        return nMods++;
-      }
-    });
-    if (nMods === 1) {
-      $('#action_dispatcher_params > div').each(function() {
-        if ($(this).children('div.modName').text() === arrName[0]) {
-          return $(this).remove();
-        }
-      });
-    }
-    if ($('#selected_actions td.title').length === 0) {
-      domSectionSelectedActions.hide();
-    }
-    if ($('#action_dispatcher_params > div').length === 0) {
-      domSectionActionParameters.hide();
-    }
-    opt = $('<option>').text(act);
-    $('#actionSection select').append(opt);
-    return $(this).closest('tr').remove();
-  });
   return $('#but_submit').click(function() {
     var arrActions, arrConditions, cmd, el, err, error, error1, j, len, obj, wid;
     main.clearInfo(true);
@@ -319,12 +304,14 @@ attachListeners = function() {
           return oAction.globals[key] = val;
         });
         d3module.selectAll('.actions').each(function(dFunc) {
-          var d3arg, func;
+          var d3This, d3arg, func;
+          d3This = d3.select(this);
           func = {
+            fid: d3This.attr('data-fid'),
             name: dFunc.name,
-            args: []
+            args: {}
           };
-          d3arg = d3.select(this).selectAll('.arg').each(function(d) {
+          d3arg = d3This.selectAll('.arg').each(function(d) {
             var val;
             d3arg = d3.select(this);
             val = d3arg.select('.val input').node().value;
@@ -362,16 +349,27 @@ attachListeners = function() {
       if (oParams.id === void 0) {
         cmd = 'create';
       } else {
+        obj.id = oParams.id;
         cmd = 'update';
       }
       return main.post('/service/rules/' + cmd, obj).done(function(msg) {
-        return main.setInfo(true, msg);
+        var newurl, wl;
+        wl = window.location;
+        oParams.id = msg.id;
+        newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id=' + msg.id;
+        window.history.pushState({
+          path: newurl
+        }, '', newurl);
+        return main.setInfo(true, 'Rule stored!');
       }).fail(function(err) {
         return main.setInfo(false, err.responseText);
       });
     } catch (error1) {
       err = error1;
+      console.log(err);
       return main.setInfo(false, 'Error in upload: ' + err.message);
     }
   });
 };
+
+window.addEventListener('load', fOnLoad, true);
