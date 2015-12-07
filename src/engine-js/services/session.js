@@ -26,11 +26,8 @@ router.post('/login', (req, res) => {
 			req.session.pub = oUser;
 			res.send('OK!');
 			// req.session.dbUser = oUser.dbUser; // Future performance improvement
-		}).catch((err) => {
-			// Tapping on fingers, at least in log...
-			log.warn('RH | AUTH-UH-OH ('+req.body.username+'): '+err.message);
-			res.send('NO!');
-		});
+		})
+		.catch(() => res.status(409).send('NU-UH!'));
 });
 
 // A post request retrieved on this handler causes the user object to be

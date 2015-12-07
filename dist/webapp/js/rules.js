@@ -25,7 +25,7 @@ fOnLoad = function() {
       d3newTrs = d3tr.enter().append('tr');
       d3newTrs.append('td').attr('class', 'jumping').each(function(d) {
         if (!d.Webhook) {
-          return d3.select(this).append('img').attr('src', '/images/exclamation.png').attr('title', 'Webhook has been deleted!!');
+          return d3.select(this).append('img').attr('src', '/images/exclamation.png').attr('title', 'Webhook has been deleted!! - Edit or delete this Rule!');
         }
       });
       d3newTrs.append('td').append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Rule').on('click', deleteRule);

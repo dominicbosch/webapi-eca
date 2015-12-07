@@ -24,7 +24,7 @@ fOnLoad = () ->
 				if not d.Webhook 
 					d3.select(this).append('img')
 						.attr('src', '/images/exclamation.png')
-						.attr('title', 'Webhook has been deleted!!');
+						.attr('title', 'Webhook has been deleted!! - Edit or delete this Rule!');
 			d3newTrs.append('td').append('img')
 				.attr('class', 'icon del')
 				.attr('src', '/images/del.png')

@@ -15,12 +15,38 @@ setEditorReadOnly = (isTrue) ->
 #
 # When the document has loaded we really start to execute some logic
 fOnLoad = () ->
-	# Fetch the public key from the engine
-	main.post('/service/session/publickey')
-		.done (data) ->
-			strPublicKey = data
-		.fail (err) ->
-			main.setInfo false, 'Error when fetching public key. Unable to send user specific parameters securely!'
+
+	# First we need to fetch a lot of stuff. If all promises fulfill eventually the rule gets loaded
+	# TODO Yes we could move this above onLoad and also take the loading as a promise and then do all 
+	# the other stuff in order to optimize document loading time. Let's do this another day ;)
+	arrPromises = []
+	addPromise = (url, thenFunc, failMsg) ->
+		p = new Promise (resolve, reject) ->
+			main.post(url)
+				.done (dat) -> resolve dat
+				.fail (err) -> reject new Error failMsg
+		arrPromises.push p.then thenFunc
+
+	# Load public key for encryption
+	afterwards = (key) ->  strPublicKey = key
+	addPromise '/service/session/publickey', afterwards,
+		'Error when fetching public key. Unable to send user specific parameters securely!'
+
+	# Load Webhooks
+	addPromise '/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks'
+
+	# Load Actions
+	addPromise '/service/actiondispatcher/get', fillActions, 'Unable to fetch Action Dispatchers'
+
+	# First we want to load all data, then we want to load a rule if the user edits one
+	# finally we want to attach all the listeners on the document so it works properly
+	Promise.all(arrPromises)
+		.then () ->
+			if oParams.id is undefined then return null;
+			else return loadRule();
+		.then attachListeners
+		.then () -> $('#input_name').focus()
+		.catch (err) -> main.setInfo false, err.toString()
 
 	editor = ace.edit "divConditionsEditor"
 	editor.setTheme "ace/theme/crimson_editor"
@@ -47,232 +73,83 @@ fOnLoad = () ->
 			]
 			"""
 		editor.gotoLine(1, 1);
-	$('#input_name').focus()
+
+	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
+
+
+
+window.addEventListener 'load', fOnLoad, true
+
+
+loadRule = () ->
+# Preload editting of a Rule
+# -----------
+
+	return new Promise (resolve, reject) ->
+		console.warn('TODO implement edit rules')
+		main.post('/service/rules/get/'+oParams.id)
+			.done (oRule) ->
+				$('#input_name').val oRule.name
+				console.log oRule
+				editor.setValue JSON.stringify oRule.conditions, undefined, 2
+
+				for oAct in oRule.actions
+					for func of oAct.functions
+						addAction(oAct.id, func)
+
+				resolve 'Rule loaded'
+			.fail reject
 
 
 # EVENT
 # -----
-	main.post('/service/webhooks/get').done (oHooks) ->
-		prl = if oHooks.private then Object.keys(oHooks.private).length else 0
-		pul = if oHooks.public then Object.keys(oHooks.public).length else 0
-		if prl + pul is 0
-			d3.select('#selectWebhook').append('h3').classed('empty', true)
-				.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
-			setEditorReadOnly true
-		else
-			d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
-				.append('select').attr('class','mediummarged smallfont')
-			createWebhookRow = (oHook, owner) ->
-				isSel = if oParams.webhook and oParams.webhook is oHook.hookid then true else null
-				d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
-					.text oHook.hookname+' ('+owner+')'
-			createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
-			createWebhookRow(oHook, oHook.username) for i, oHook of oHooks.public
-
+fillWebhooks = (oHooks) ->
+	prl = if oHooks.private then Object.keys(oHooks.private).length else 0
+	pul = if oHooks.public then Object.keys(oHooks.public).length else 0
+	if prl + pul is 0
+		d3.select('#selectWebhook').append('h3').classed('empty', true)
+			.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
+		setEditorReadOnly true
+	else
+		d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
+			.append('select').attr('class','mediummarged smallfont')
+		d3Sel.append('option').attr('value', -1).text('No Webhook selected')
+		createWebhookRow = (oHook, owner) ->
+			isSel = if oParams.webhook and oParams.webhook is oHook.hookid then true else null
+			d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
+				.text oHook.hookname+' ('+owner+')'
+		createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
+		createWebhookRow(oHook, oHook.username) for i, oHook of oHooks.public
 
 # ACTIONS
 # -------
-	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
-	main.post('/service/actiondispatcher/get').done (arrAD) ->
-		arrAllActions = arrAD
-		if(arrAD.length is 0)
-			setEditorReadOnly true
-		else
-			d3.select('#actionEmpty').style('display', 'none');
-			d3.select('#actionSection').style('visibility', 'visible')
-				.select('tbody').selectAll('tr').data(arrAD, (d) -> d?.id)
-			.enter().append('tr').each (oMod) ->
-				d3This = d3.select(this)
-				main.registerHoverInfoHTML d3This.append('td').text(oMod.name), oMod.comment
-				d3This.append('td').text((d) -> d.User.username)
-				list = d3This.append('td').append('table')
-				for func of oMod.functions
-					trNew = list.append('tr')
-					# trNew.append('td').classed('bullet', true).text('•')
-					trNew.append('td').append('button').text('add')
-						.attr('onclick', 'addAction('+oMod.id+', "'+func+'")')
-					trNew.append('td').text(func)
+fillActions = (arrAD) ->
+	arrAllActions = arrAD
+	if(arrAD.length is 0)
+		setEditorReadOnly true
+	else
+		d3.select('#actionEmpty').style('display', 'none');
+		d3.select('#actionSection').style('visibility', 'visible')
+			.select('tbody').selectAll('tr').data(arrAD, (d) -> d?.id)
+		.enter().append('tr').each (oMod) ->
+			d3This = d3.select(this)
+			main.registerHoverInfoHTML d3This.append('td').text(oMod.name), oMod.comment
+			d3This.append('td').text((d) -> d.User.username)
+			list = d3This.append('td').append('table')
+			for func of oMod.functions
+				trNew = list.append('tr')
+				# trNew.append('td').classed('bullet', true).text('•')
+				trNew.append('td').append('button').text('add')
+					.attr('onclick', 'addAction('+oMod.id+', "'+func+'")')
+				trNew.append('td').text(func)
 
 
-			d3sel = d3.select('#actionSection table');
-			d3row = d3sel.selectAll('tr').data(arrAD).enter().append('tr')
-			d3row.append('td').text((d) -> d.name)
-			d3row.append('td')
+		d3sel = d3.select('#actionSection table');
+		d3row = d3sel.selectAll('tr').data(arrAD).enter().append('tr')
+		d3row.append('td').text((d) -> d.name)
+		d3row.append('td')
 
-	$('#actionSection select').on 'change', () ->
-		domSectionSelectedActions.show()
-		opt = $ 'option:selected', this
-		fAddSelectedAction opt.text()
-		
-	$('#selected_actions').on 'click', 'img', () ->
-		act = $(this).closest('td').siblings('.title').text()
-		arrName = act.split ' -> '
-
-		nMods = 0
-		# Check whether we're the only function left that was selected from this module
-		$("#selected_actions td.title").each () ->
-			arrNm = $(this).text().split ' -> '
-			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
-
-		if nMods is 1
-			$('#action_dispatcher_params > div').each () ->
-				if $(this).children('div.modName').text() is arrName[ 0 ]
-					$(this).remove()
-
-		# Hide if nothing to show
-		if $('#selected_actions td.title').length is 0
-			domSectionSelectedActions.hide()
-
-		if $('#action_dispatcher_params > div').length is 0
-			domSectionActionParameters.hide()
-
-		opt = $('<option>').text act
-		$('#actionSection select').append opt
-		$(this).closest('tr').remove()
-
-
-# SUBMIT
-
-	$('#but_submit').click () ->
-		main.clearInfo true
-		try
-			if $('#input_name').val() is ''
-				$('#input_name').focus()
-				throw new Error 'Please enter a rule name!'
-
-			if arrSelectedActions.length is 0
-				throw new Error 'Please select at least one action or create one!'
-
-			# Store all selected action dispatchers
-			arrActions = []
-			d3.selectAll('.firstlevel').each (oModule) ->
-				oAction = {
-					id: oModule.id,
-					globals: {},
-					functions: {}
-				}
-				d3module = d3.select(this);
-				d3module.selectAll('.glob').each () ->
-					d3t = d3.select(this);
-					key = d3t.select('.key').text();
-					d3val = d3t.select('.val input');
-					val = d3val.node().value;
-					if val is ''
-						d3val.node().focus()
-						throw new Error('Please enter a value in all requested fields!')
-					if oModule.globals[key] && d3val.attr('changed') == 'yes'
-						val = cryptico.encrypt(val, strPublicKey).cipher
-					oAction.globals[key] = val
-
-				d3module.selectAll('.actions').each (dFunc) ->
-					oAction.functions[dFunc.name] = {}
-
-					d3arg = d3.select(this).selectAll('.arg').each (d) ->
-						d3arg = d3.select(this)
-						val = d3arg.select('.val input').node().value
-						if val is ''
-							d3arg.node().focus()
-							throw new Error('Please enter a value in all requested fields!')
-						oAction.functions[dFunc.name][d] = val;
-
-				arrActions.push(oAction);
-			
-			try
-				arrConditions = JSON.parse editor.getValue()
-			catch err
-				throw new Error "Parsing of your conditions failed! Needs to be an Array of Strings!"
-			
-			if arrConditions not instanceof Array
-				throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
-			for el in arrConditions
-				if el not instanceof Object then throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
-
-			obj = 
-				name: $('#input_name').val()
-				hookid: $('#selectWebhook select').val()
-				conditions: arrConditions
-				actions: arrActions
-
-			main.post('/service/rules/store', obj)
-				.done (msg) -> main.setInfo true, msg
-				.fail (err) ->
-					if err.status is 409
-						if confirm 'Are you sure you want to overwrite the existing rule?'
-							obj.overwrite = true
-							main.post('service/rules/store', obj)
-								.done (msg) -> main.setInfo true, msg
-								.fail (err) -> main.setInfo false, err.responseText
-					else
-						main.setInfo false, err.responseText
-
-		catch err
-			main.setInfo false, 'Error in upload: ' + err.message
-
-# Preload editting of a Rule
-# -----------
-	console.warn('TODO implement edit rules')
-	if oParams.id
-		main.post 
-			command: 'get_rule'
-			data: 
-				body: JSON.stringify
-					id: oParams.id
-			done: (data) ->
-				oRule = JSON.parse data.message
-				if oRule
-					$('#input_name').val oRule.id
-					
-					# Event
-					fPrepareEventType oRule.eventtype, () ->
-
-						switch oRule.eventtype
-							when 'Event Trigger'
-								$('select', domSelectEventTrigger).val oRule.eventname
-								if $('select', domSelectEventTrigger).val() is oRule.eventname
-									fFetchEventParams oRule.eventname
-									d = new Date oRule.eventstart 
-									mins = d.getMinutes()
-									if mins.toString().length is 1
-											mins = '0' + mins
-									$('#input_start', domInputEventTiming).val d.getHours() + ':' + mins
-									$('#input_interval', domInputEventTiming).val oRule.eventinterval
-
-								else
-									window.scrollTo 0, 0
-									$('#info').text 'Error loading Rule: Your Event Trigger does not exist anymore!'
-									$('#info').attr 'class', 'error'
-
-							when 'Webhook'
-								$('select', domSelectWebhook).val oRule.eventname
-
-								if $('select', domSelectWebhook).val() is oRule.eventname
-									window.scrollTo 0, 0
-									$('#info').text 'Your Webhook does not exist anymore!'
-									$('#info').attr 'class', 'error'
-
-						# Conditions
-						editor.setValue JSON.stringify oRule.conditions, undefined, 2
-
-						# Actions
-						domSectionSelectedActions.show()
-						for action in oRule.actions
-							arrName = action.split ' -> '
-							# FIXME we can only add this if the action is still existing! Therefore we should not allow to delete
-							# Actions and events but keep a version history and deprecate a module if really need be
-								# $('#info').text 'Error loading Rule: Your Event Trigger does not exist anymore!'
-							fAddSelectedAction action
-
-			fail: (err) ->
-				if err.responseText is ''
-					msg = 'No Response from Server!'
-				else
-					try
-						msg = JSON.parse(err.responseText).message
-				console.log('Error in upload: ' + msg) err
-
-window.addEventListener 'load', fOnLoad, true
-
-addAction = (id, name) ->
+addAction = (id, funcName) ->
 	oSelMod = arrSelectedActions.filter((o) -> o.id is id)[0]
 	if not oSelMod
 		oAd = arrAllActions.filter((d) -> d.id is id)[0]
@@ -285,10 +162,10 @@ addAction = (id, name) ->
 			arr: []
 		arrSelectedActions.push(oSelMod)
 	oSelMod.arr.push
-		name: name
+		name: funcName
 		modid: oSelMod.id
 		funcid: oSelMod.currid++
-		args: oSelMod.functions[name]
+		args: oSelMod.functions[funcName]
 	updateParameterList()
 
 removeAction = (d) ->
@@ -340,3 +217,118 @@ updateParameterList = () ->
 	funcParams.append('div').attr('class', 'col-xs-3 key').text((d) -> d)
 	funcParams.append('div').attr('class', 'col-xs-9 val').append('input').attr('type', 'text')
 
+# LISTENERS
+# ---------
+attachListeners = () ->
+	$('#actionSection select').on 'change', () ->
+		domSectionSelectedActions.show()
+		opt = $ 'option:selected', this
+		fAddSelectedAction opt.text()
+		
+	$('#selected_actions').on 'click', 'img', () ->
+		act = $(this).closest('td').siblings('.title').text()
+		arrName = act.split ' -> '
+
+		nMods = 0
+		# Check whether we're the only function left that was selected from this module
+		$("#selected_actions td.title").each () ->
+			arrNm = $(this).text().split ' -> '
+			nMods++ if arrNm[ 0 ] is arrName[ 0 ]
+
+		if nMods is 1
+			$('#action_dispatcher_params > div').each () ->
+				if $(this).children('div.modName').text() is arrName[ 0 ]
+					$(this).remove()
+
+		# Hide if nothing to show
+		if $('#selected_actions td.title').length is 0
+			domSectionSelectedActions.hide()
+
+		if $('#action_dispatcher_params > div').length is 0
+			domSectionActionParameters.hide()
+
+		opt = $('<option>').text act
+		$('#actionSection select').append opt
+		$(this).closest('tr').remove()
+
+
+	# SUBMIT
+	$('#but_submit').click () ->
+		main.clearInfo true
+		try
+			if $('#input_name').val() is ''
+				$('#input_name').focus()
+				throw new Error 'Please enter a rule name!'
+			
+			wid = parseInt($('#selectWebhook select').val())
+			if wid is -1				
+				throw new Error 'Please select a valid Webhook!'
+
+			if arrSelectedActions.length is 0
+				throw new Error 'Please select at least one action!'
+
+			# Store all selected action dispatchers
+			arrActions = []
+			d3.selectAll('.firstlevel').each (oModule) ->
+				oAction = {
+					id: oModule.id,
+					globals: {},
+					functions: []
+				}
+				d3module = d3.select(this);
+				d3module.selectAll('.glob').each () ->
+					d3t = d3.select(this);
+					key = d3t.select('.key').text();
+					d3val = d3t.select('.val input');
+					val = d3val.node().value;
+					if val is ''
+						d3val.node().focus()
+						throw new Error('Please enter a value in all requested fields!')
+					if oModule.globals[key] && d3val.attr('changed') is 'yes'
+						val = cryptico.encrypt(val, strPublicKey).cipher
+					oAction.globals[key] = val
+
+				d3module.selectAll('.actions').each (dFunc) ->
+					func = {
+						name: dFunc.name
+						args: []
+					}
+					d3arg = d3.select(this).selectAll('.arg').each (d) ->
+						d3arg = d3.select(this)
+						val = d3arg.select('.val input').node().value
+						if val is ''
+							d3arg.node().focus()
+							throw new Error('Please enter a value in all requested fields!')
+						func.args[d] = val;
+
+					oAction.functions.push func
+				arrActions.push(oAction);
+			
+			try
+				arrConditions = JSON.parse editor.getValue()
+			catch err
+				throw new Error "Parsing of your conditions failed! Needs to be an Array of Strings!"
+
+			if arrConditions not instanceof Array
+				throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
+			for el in arrConditions
+				if el not instanceof Object then throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
+
+			obj = 
+				name: $('#input_name').val()
+				hookid: wid
+				conditions: arrConditions
+				actions: arrActions
+
+
+			# User is creating a new rule
+			if oParams.id is undefined
+				cmd = 'create'
+			else
+				cmd = 'update'
+			main.post('/service/rules/'+cmd, obj)
+				.done (msg) -> main.setInfo true, msg
+				.fail (err) -> main.setInfo false, err.responseText
+
+		catch err
+			main.setInfo false, 'Error in upload: '+err.message

@@ -32,6 +32,13 @@ router.post('/get', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
+router.post('/get/:id', (req, res) => {
+	log.info('SRVC | RULES | Fetching Rule #'+req.params.id);
+	db.getRule(req.session.pub.id, req.params.id)
+		.then((o) => res.send(o))
+		.catch(db.errHandler(res));
+});
+
 router.post('/getlog/:id', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rule logs');
 	db.getRuleLog(req.session.pub.id, req.params.id)
@@ -65,7 +72,7 @@ router.post('/cleardatalog/:id', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
-router.post('/store', (req, res) => {
+router.post('/create', (req, res) => {
 	log.info('SRVC | RULES | Storing new Rule');
 	let oRule = {
 		name: req.body.name,

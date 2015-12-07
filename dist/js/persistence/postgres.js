@@ -341,6 +341,28 @@ exports.getAllRules = (uid) => {
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
+exports.getRule = (uid, rid) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => {
+			if(!oUser) throwStatusCode(404, 'You do not exist!?');
+			return oUser.getRules({
+				where: { id: rid },
+				attributes: [
+					'id',
+					'UserId',
+					'WebhookId',
+					'name',
+					'conditions',
+					'actions'
+				],
+			})
+		})
+		.then((arrRules) => {
+			if(arrRules.length > 0) return arrRules[0];
+			else throwStatusCode(404, 'Rule not existing!');
+		})
+}
+
 exports.storeRule = (uid, oRule, hookid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
