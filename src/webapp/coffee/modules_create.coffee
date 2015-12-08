@@ -101,14 +101,11 @@ fOnLoad = () ->
 
 	main.post('/service/webhooks/get')
 		.done (o) ->
-			arr = o.public.concat(o.private);
-			console.log(arr)
-			newTr = d3.select('#listWebhooks').selectAll('tr').data(arr).enter().append('tr')
-			newTr.append('td').append('input').attr('class', 'hundredwide').attr('readonly', true).attr 'value', (d) ->
-				d.hookname
-			# newTr.append('td').attr('class', 'smallfont').each (d) ->
-			# 	main.registerHoverInfoHTML d3.select(this), d.description + '<br> -> version ' + d.version
-			# updateUsedModules()
+			arr = [{ hookname: ''}].concat(o.public.concat(o.private));
+			d3.select('#listWebhooks').on 'change', () ->
+					$('#webhookid').val($(this).val())
+				.selectAll('option').data(arr).enter()
+				.append('option').attr('value', (d) -> d.hookid).text((d) -> d.hookname)
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which

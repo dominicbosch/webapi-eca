@@ -25,11 +25,12 @@ var log = require('./logging'),
 	db = global.db,
 	systemName = '➠ System',
 	maxMem = 200,
+	// activeHooks = {},
 	oChildren = {};
 
 exports.init = (oConf) => {	
 	log.info('PM | Initialzing Users and Loggers');
-
+	console.log(oConf);
 	fb.getLastIndex(systemName, (err, id) => {
 		pl(registerProcessLogger(null, systemName), id, db.getDBSize);
 	});
@@ -71,7 +72,6 @@ geb.addListener('modules:list', (arrModules) => {
 		arr: arrModules
 	});
 });
-
 function sendToWorker(uid, evt) {
 	try {
 		if(oChildren[uid]) oChildren[uid].send(evt);
@@ -144,6 +144,13 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
+			case 'event':;
+				let obj = {
+					hookid: dat.hookid,
+					body: dat.evt
+				};
+				geb.emit('webhook:event', obj);
+			break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;
@@ -178,7 +185,8 @@ function startWorker(oUser) {
 						proc.on('message', registerProcessLogger(oUser.id, oUser.username));
 						sendToWorker(oUser.id, {
 							cmd: 'init',
-							startIndex: id
+							startIndex: id,
+							host: ''
 						});
 					})
 					.then(() => resolve())

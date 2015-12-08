@@ -74,6 +74,7 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 		if(typeof opt.logger !== 'function') opt.logger = () => {};
 		if(typeof opt.datalogger !== 'function') opt.datalogger = () => {};
 		if(typeof opt.persist !== 'function') opt.persist = () => {};
+		if(typeof opt.emitEvent !== 'function') opt.emitEvent = () => {};
 		if(!opt.modules) opt.modules = [];
 
 		if(lang === 'CoffeeScript') {
@@ -84,7 +85,8 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 				throwStatusCode(400, 'Compilation of CoffeeScript failed at line '+err.location.first_line);
 			}
 		}
-
+		var os = require("os");
+		console.log(os.hostname());
 		log.info('DM | Running module "'+opt.id+'" for user '+username);
 		// The sandbox contains the objects that are accessible to the user.
 		// Eventually they need to be required from a vm themselves 
@@ -97,18 +99,7 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 			exports: {},
 			persistence: opt.persistence,
 			persist: () => opt.persist(opt.persistence),
-			sendEvent: (hook, evt) => {
-				let options = {
-					uri: hook,
-					method: 'POST',
-					json: true ,
-					body: evt
-				}
-				request(options, (err, res, body) => {
-					if(err || res.statusCode !== 200) 
-						opt.logger('ERROR('+__filename+') REQUESTING: '+hook+' ('+(new Date())+')');
-				});
-			}
+			emitEvent: opt.emitEvent
 		}
 
 		// Attach all modules that are required and allowed for the coders, as defined by the administrator or initially also in config/allowedmodules.json

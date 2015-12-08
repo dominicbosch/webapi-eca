@@ -25,7 +25,7 @@ geb.addListener('system:init', (msg) => {
 			for (let i = 0; i < arrHooks.length; i++) {
 				let h = arrHooks[i];
 				activeHooks[h.hookid] = h;
-				geb.emit('webhook:activated', h.hookid);
+				geb.emit('webhook:activated', h);
 			}
 		})
 		.catch((err) => log.error(err));
@@ -65,7 +65,7 @@ router.post('/create', (req, res) => {
 			log.info('SRVC:WH | Webhook "'+oHook.hookname
 				+'" created with ID "'+oHook.id+'" and activated');
 			activeHooks[oHook.hookid] = oHook;
-			geb.emit('webhook:activated', oHook.hookid);
+			geb.emit('webhook:activated', oHook);
 			res.send(oHook);
 		})
 		.catch(db.errHandler(res));
@@ -73,27 +73,30 @@ router.post('/create', (req, res) => {
 
 // User wants to delete a webhook
 router.post('/delete/:id', (req, res) => {
-	let hookid = req.params.id;
-	log.info('SRVC:WH | Deleting Webhook '+hookid);
-	db.deleteWebhook(req.session.pub.id, hookid)
+	let hid = parseInt(req.params.id);
+	log.info('SRVC:WH | Deleting Webhook '+hid);
+	db.deleteWebhook(req.session.pub.id, hid)
 		.then(() => {
-			delete activeHooks[hookid];
-			geb.emit('webhook:deactivated', hookid);
+			for(let hookid in activeHooks) {
+				if(activeHooks[hookid].id === hid) {	
+					geb.emit('webhook:deactivated', hookid);
+					delete activeHooks[hookid];
+				}
+			}
 			res.send('OK!');
 		})
 		.catch(db.errHandler(res));
 })
 
 // A remote service pushes an event over a webhook to our system
-router.post('/event/:id', (req, res) => {
-	let oHook = activeHooks[req.params.id];
+router.post('/event/:hookid', (req, res) => {
+	let oHook = activeHooks[req.params.hookid];
 	if(oHook) {
 		let now = new Date();
 		req.body.engineReceivedTime = now.getTime();
 		req.body.origin = req.ip;
 		let obj = {
 			hookid: oHook.id,
-			hookname: oHook.hookname,
 			body: req.body
 		};
 		geb.emit('webhook:event', obj);

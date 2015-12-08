@@ -81,7 +81,18 @@ exports.sayHelloWorld = () ->
 		</div>
 		<div class="col-md-3">
 			<h3 id="webhookinfo">Available Webhooks</h3>
-			<table id="listWebhooks" class="consoled smallfont hundredwide"></table>
+			<table class="consoled smallfont hundredwide">
+				<tr>
+					<td><kbd>hookname</kbd></td>
+					<td> : </td>
+					<td><select id="listWebhooks"></select></td>
+				</tr>
+				<tr>
+					<td><kbd>hookid</kbd></td>
+					<td> : </td>
+					<td><input id="webhookid" class="hundredwide" /></td>
+				</tr>
+			</table>
 		</div>
 	</div>
 	<div class="row">

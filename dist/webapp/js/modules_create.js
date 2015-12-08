@@ -106,11 +106,17 @@ fOnLoad = function() {
     return updateUsedModules();
   });
   main.post('/service/webhooks/get').done(function(o) {
-    var arr, newTr;
-    arr = o["public"].concat(o["private"]);
-    console.log(arr);
-    newTr = d3.select('#listWebhooks').selectAll('tr').data(arr).enter().append('tr');
-    return newTr.append('td').append('input').attr('class', 'hundredwide').attr('readonly', true).attr('value', function(d) {
+    var arr;
+    arr = [
+      {
+        hookname: ''
+      }
+    ].concat(o["public"].concat(o["private"]));
+    return d3.select('#listWebhooks').on('change', function() {
+      return $('#webhookid').val($(this).val());
+    }).selectAll('option').data(arr).enter().append('option').attr('value', function(d) {
+      return d.hookid;
+    }).text(function(d) {
       return d.hookname;
     });
   });

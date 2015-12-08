@@ -206,6 +206,7 @@ function deleteRule(id) {
 
 
 function runModule(id, rid, oMod, globals, persistence, oStore) {
+	var lastEvent = null;
 	let opts = {
 		globals: globals || {},
 		modules: oMod.modules,
@@ -232,7 +233,24 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 				cid: oMod.id, 
 				persistence: data
 			}
-		})
+		}),
+		emitEvent: (hookid, evt) => {
+			let now = (new Date()).getTime();
+			if(lastEvent && (lastEvent-now)<100) {
+				log.rule(rid, 'You are flooding our system with events... We need to limit this, sorry!');
+			} else {
+				lastEvent = now;
+				evt.engineReceivedTime = now;
+				evt.origin = 'internal'
+				sendToParent({
+					cmd: 'event',
+					data: {
+						hookid: hookid, 
+						evt: evt
+					}
+				})
+			}
+		}
 	};
 
 	let name = (oStore === oEventTriggers) ? 'Event Trigger' : 'Action Dispatcher';

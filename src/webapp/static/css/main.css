@@ -187,9 +187,11 @@ table.mystyle td { padding-right: 12px }
 	padding: 1px;
 }
 .mytooltip kbd { 
-	white-space: nowrap;
 	font-size: 0.8em;
 	padding: 1px 3px;
+}
+kbd { 
+	white-space: nowrap;
 }
 .mytooltip .attention { 
 	color: firebrick;

@@ -92,8 +92,8 @@ geb.addListener('webhook:event', (oEvt) => {
 	for(let el in oHooks) {
 		let oRule = oHooks[el];
 		if(validConditions(oEvt, oRule)) {
-			log.info('EN | Conditions valid: EVENT FIRED! '
-				+oEvt.hookname+' for rule '+oRule.name);
+			log.info('EN | Conditions valid: EVENT FIRED! HookID #'
+				+oEvt.hookid+' for rule '+oRule.name);
 			for(let i = 0; i < oRule.actions.length; i++) {
 				geb.emit('action', {
 					rid: oRule.id,
