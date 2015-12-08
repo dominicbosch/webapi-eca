@@ -86,36 +86,9 @@ process.on('message', (oMsg) => {
 				// We can't work on the existing data structure or we will alter it until the next event:
 				let arrPassingArgs = [];
 
-				// Go through all function arguments
+				// Evaluate all function arguments with the event and eventually pass data from the event as argument
 				for(let j = 0; j < func.args.length; j++) {
-					let arg = func.args[j].trim();
-					let arrSelectors = arg.match(/#\{(.*?)\}/g);
-
-					// Only substitute selectors with data if there are any
-					if(arrSelectors) {
-						let sel = arrSelectors[0];
-
-						// If the selector is the only argument that is passed, a selector array will be passed
-						// which can be reused in the action dispatcher
-						if(arrSelectors.length===1 && sel===arg) {
-							let selector = sel.substring(2, sel.length-1);
-							let data = jsonQuery(oe, selector).nodes();
-							// If only one selector is used in a field, the whole resulting object is attached
-							arg = data;
-
-						// If there was more then just a selector in the argument we will pass a string
-						// and substitute all selectors beforehand
-						} else {
-							for(let k = 0; k < arrSelectors.length; k++) {
-								let sel = arrSelectors[k];
-								let selector = sel.substring(2, sel.length-1);
-								let data = jsonQuery(oe, selector).nodes();
-								if(data.length === 0) data = '[selector "'+arrSelectors[k]+'" did not select any data]';
-								arg = arg.replace(new RegExp(sel, 'g'), data.toString());
-							}
-						}
-					}
-					arrPassingArgs.push(arg);
+					arrPassingArgs.push(func.args[j](oe));
 				}
 
 				try {
@@ -171,7 +144,46 @@ function newRule(oRule) {
 			for(let k = 0; k < arrRequiredArguments.length; k++) {
 				let val = oActFunc.args[arrRequiredArguments[k]];
 				if(val===undefined) log.rule('Missing argument: ' + arrRequiredArguments[k]);
-				else oFunc.args.push(val);
+				else {
+
+					// Attention! This is magic and needs your full attention ;)
+
+					// We attach event handlers as arguments which expect the event to be handed over in
+					// order to find an answer to the query whenever an event arrives. This is preprocessing to
+					// process events as fast as possible
+					let arg = val.trim();
+					let arrSelectors = arg.match(/#\{(.*?)\}/g);
+					// Only substitute selectors with data if there are any
+					if(!arrSelectors) {
+						oFunc.args.push(() => val);
+					} else {
+						let sel = arrSelectors[0];
+
+						// If the selector is the only argument that is passed, a selector array will be passed
+						// which can be reused in the action dispatcher
+						if(arrSelectors.length===1 && sel===arg) {
+							let selector = sel.substring(2, sel.length-1);
+							// If only one selector is used in a field, the whole resulting object is attached
+							oFunc.args.push((evt) => jsonQuery(evt, selector).nodes());
+
+						// If there was more then just a selector in the argument we will pass a string
+						// and substitute all selectors beforehand
+						} else {
+							oFunc.args.push((evt) => {
+								let answer = val.trim();
+								for(let k = 0; k < arrSelectors.length; k++) {
+									let sel = arrSelectors[k];
+									let selector = sel.substring(2, sel.length-1);
+									let data = jsonQuery(evt, selector).nodes();
+									if(data.length === 0) data = '[selector "'+arrSelectors[k]+'" did not select any data]';
+									answer = answer.replace(new RegExp(sel, 'g'), data.toString());
+								}
+								return answer;
+							});
+
+						}
+					}
+				}
 			}
 			actFuncs.push(oFunc);
 		}
