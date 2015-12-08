@@ -65,11 +65,18 @@ window.main =
 				d3Div.transition().style('opacity', 0).each 'end', () ->
 					d3Div.style('visibility', 'hidden')
 
-		# d3El.style('position', 'relative');
 		d3Img = d3El.append('img')
 			.classed('info icon', true)
 			.attr('src', '/images/info.png')
 			.on 'mouseenter', () ->
+				pos = $(this).offset().left;
+				width = $(d3Div.node()).width()+20;
+				if(pos+width > window.innerWidth)
+					if(pos-width < 0)
+						d3Div.style('left', 'auto').style('right', 'auto').style('top', '17px')
+					else
+						d3Div.style('left', 'auto').style('right', '10px')
+				else d3Div.style('left', '-7px').style('right', 'auto')
 				d3Img.classed('hovered', true)
 				d3Div.style('visibility', 'visible')
 					.transition().style('opacity', 1)

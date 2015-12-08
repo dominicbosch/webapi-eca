@@ -13,6 +13,7 @@ fOnLoad = function() {
   title += moduleTypeName;
   $('#pagetitle').text(title);
   main.registerHoverInfo(d3.select('#programcode'), 'modules_code.html');
+  main.registerHoverInfo(d3.select('#webhookinfo'), 'webhooks_events.html');
   if (oParams.m !== 'ad') {
     main.registerHoverInfo(d3.select('#schedule > h2'), 'modules_schedule.html');
     $('#schedule').show();
@@ -103,6 +104,15 @@ fOnLoad = function() {
       return main.registerHoverInfoHTML(d3.select(this), d.description + '<br> -> version ' + d.version);
     });
     return updateUsedModules();
+  });
+  main.post('/service/webhooks/get').done(function(o) {
+    var arr, newTr;
+    arr = o["public"].concat(o["private"]);
+    console.log(arr);
+    newTr = d3.select('#listWebhooks').selectAll('tr').data(arr).enter().append('tr');
+    return newTr.append('td').append('input').attr('class', 'hundredwide').attr('readonly', true).attr('value', function(d) {
+      return d.hookname;
+    });
   });
   $('#tableParams').on('keyup', 'input', function(e) {
     var code, i, myNewVal, par;

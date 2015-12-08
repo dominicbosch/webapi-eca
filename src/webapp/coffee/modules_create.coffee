@@ -10,6 +10,7 @@ fOnLoad = () ->
 	title += moduleTypeName
 	$('#pagetitle').text title
 	main.registerHoverInfo d3.select('#programcode'), 'modules_code.html'
+	main.registerHoverInfo d3.select('#webhookinfo'), 'webhooks_events.html'
 	
 	if oParams.m isnt 'ad'
 		main.registerHoverInfo d3.select('#schedule > h2'), 'modules_schedule.html'
@@ -97,6 +98,17 @@ fOnLoad = () ->
 			newTr.append('td').attr('class', 'smallfont').each (d) ->
 				main.registerHoverInfoHTML d3.select(this), d.description + '<br> -> version ' + d.version
 			updateUsedModules()
+
+	main.post('/service/webhooks/get')
+		.done (o) ->
+			arr = o.public.concat(o.private);
+			console.log(arr)
+			newTr = d3.select('#listWebhooks').selectAll('tr').data(arr).enter().append('tr')
+			newTr.append('td').append('input').attr('class', 'hundredwide').attr('readonly', true).attr 'value', (d) ->
+				d.hookname
+			# newTr.append('td').attr('class', 'smallfont').each (d) ->
+			# 	main.registerHoverInfoHTML d3.select(this), d.description + '<br> -> version ' + d.version
+			# updateUsedModules()
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which
