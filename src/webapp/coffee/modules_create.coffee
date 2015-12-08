@@ -105,7 +105,7 @@ fOnLoad = () ->
 			d3.select('#listWebhooks').on 'change', () ->
 					$('#webhookid').val($(this).val())
 				.selectAll('option').data(arr).enter()
-				.append('option').attr('value', (d) -> d.hookid).text((d) -> d.hookname)
+				.append('option').attr('value', (d) -> d.hookurl).text((d) -> d.hookname)
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which

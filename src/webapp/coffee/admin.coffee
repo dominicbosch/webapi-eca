@@ -87,7 +87,6 @@ fOnLoad = () ->
 
 		main.post('/service/admin/createuser', data)
 			.done (msg) ->
-				console.log('SUCCESS', msg)
 				main.setInfo true, msg
 				updateUserList()
 			.fail failHandler

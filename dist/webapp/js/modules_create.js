@@ -115,7 +115,7 @@ fOnLoad = function() {
     return d3.select('#listWebhooks').on('change', function() {
       return $('#webhookid').val($(this).val());
     }).selectAll('option').data(arr).enter().append('option').attr('value', function(d) {
-      return d.hookid;
+      return d.hookurl;
     }).text(function(d) {
       return d.hookname;
     });

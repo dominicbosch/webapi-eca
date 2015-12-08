@@ -22,11 +22,11 @@ var db = global.db
 
 function addRule(oRule) {
 	log.info('EN | --> Adding Rule "'+oRule.name+'"');
-	let hid = oRule.WebhookId;
-	if(!oWebhooks[hid]) {
-		oWebhooks[hid] = {};
+	let hurl = oRule.Webhook.hookurl;
+	if(!oWebhooks[hurl]) {
+		oWebhooks[hurl] = {};
 	}
-	oWebhooks[hid][oRule.id] = oRule;
+	oWebhooks[hurl][oRule.id] = oRule;
 }
 
 geb.addListener('system:init', () => {
@@ -88,12 +88,12 @@ function validConditions(evt, rule, uid) {
 }
 
 geb.addListener('webhook:event', (oEvt) => {
-	let oHooks = oWebhooks[oEvt.hookid];
+	let oHooks = oWebhooks[oEvt.hookurl];
 	for(let el in oHooks) {
 		let oRule = oHooks[el];
 		if(validConditions(oEvt, oRule)) {
-			log.info('EN | Conditions valid: EVENT FIRED! HookID #'
-				+oEvt.hookid+' for rule '+oRule.name);
+			log.info('EN | Conditions valid: EVENT FIRED! Hook URL "'
+				+oEvt.hookurl+'" for rule "'+oRule.name+'"');
 			for(let i = 0; i < oRule.actions.length; i++) {
 				geb.emit('action', {
 					rid: oRule.id,

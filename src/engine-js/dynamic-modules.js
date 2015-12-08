@@ -85,8 +85,6 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 				throwStatusCode(400, 'Compilation of CoffeeScript failed at line '+err.location.first_line);
 			}
 		}
-		var os = require("os");
-		console.log(os.hostname());
 		log.info('DM | Running module "'+opt.id+'" for user '+username);
 		// The sandbox contains the objects that are accessible to the user.
 		// Eventually they need to be required from a vm themselves 

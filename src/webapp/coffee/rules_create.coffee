@@ -127,7 +127,7 @@ fillWebhooks = (oHooks) ->
 			.append('select').attr('class','mediummarged smallfont')
 		d3Sel.append('option').attr('value', -1).text('No Webhook selected')
 		createWebhookRow = (oHook, owner) ->
-			isSel = if oParams.webhook and oParams.webhook is oHook.hookid then true else null
+			isSel = if oParams.webhook and oParams.webhook is oHook.hookurl then true else null
 			d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
 				.text oHook.hookname+' ('+owner+')'
 		createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
@@ -245,8 +245,8 @@ attachListeners = () ->
 				$('#input_name').focus()
 				throw new Error 'Please enter a rule name!'
 			
-			wid = parseInt($('#selectWebhook select').val())
-			if wid is -1				
+			hurl = parseInt($('#selectWebhook select').val())
+			if hurl is -1				
 				throw new Error 'Please select a valid Webhook!'
 
 			if arrSelectedActions.length is 0
@@ -303,7 +303,7 @@ attachListeners = () ->
 
 			obj = 
 				name: $('#input_name').val()
-				hookid: wid
+				hookurl: hurl
 				conditions: arrConditions
 				actions: arrActions
 
@@ -316,11 +316,11 @@ attachListeners = () ->
 				cmd = 'update'
 			main.post('/service/rules/'+cmd, obj)
 				.done (msg) ->
+					main.setInfo true, 'Rule ' + if oParams.id is undefined then 'stored!' else 'updated!'
 					wl = window.location;
 					oParams.id = msg.id;
 					newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id='+msg.id;
 					window.history.pushState({path:newurl},'',newurl);
-					main.setInfo true, 'Rule stored!'
 				.fail (err) -> main.setInfo false, err.responseText
 
 		catch err

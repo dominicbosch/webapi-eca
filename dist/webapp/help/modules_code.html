@@ -15,7 +15,7 @@ Program code is custom code provided by you which will run in the system for you
 	<li><kbd>log(msg)</kbd>: Will add an entry to the log that is accessible through the Rules list. <kbd>msg</kbd> is supposed to be a string and will be truncated after 200 characters.</li>
 	<li><kbd>datalog(data)</kbd>: Will add an entry to the data log of the rule. Data logs can be downloaded through the Rules list in a <kbd>JSON</kbd> format.<kbd>data</kbd> is supposed to be in string, number or JSON format.</li>
 	<li><kbd>persist()</kbd>: Will store the JSON object attached to the <kbd>persistence</kbd> variable. <span style="color: firebrick; text-decoration: underline">Depending on the size of the attached object this can be a very expensive operation! Use wisely!</span></li>
-	<li><kbd>emitEvent(webhookname, obj)</kbd>: Will send an Event over a Webhook. This is especially useful for Event Triggers but could also be part of an Action Dispatcher in order to loop existing or new events back into the system over another webhook.</li>
+	<li><kbd>emitEvent(hookid, obj)</kbd>: Will send an Event over a Webhook. This is especially useful for Event Triggers but could also be part of an Action Dispatcher in order to loop existing or new events back into the system over another webhook.</li>
 </ul>
 </p>
 <p>

@@ -9,7 +9,6 @@ fOnLoad = () ->
 				main.setInfo false, 'Did not retrieve rules: '+err.responseText
 
 	fUpdateRuleList = (data) ->
-		console.log(data)
 		if data.length is 0
 			d3.select('#hasnorules').style('display', 'block');
 			d3.select('#hasrules').style('display', 'none');

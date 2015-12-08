@@ -30,7 +30,6 @@ var log = require('./logging'),
 
 exports.init = (oConf) => {	
 	log.info('PM | Initialzing Users and Loggers');
-	console.log(oConf);
 	fb.getLastIndex(systemName, (err, id) => {
 		pl(registerProcessLogger(null, systemName), id, db.getDBSize);
 	});
@@ -144,13 +143,8 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
-			case 'event':;
-				let obj = {
-					hookid: dat.hookid,
-					body: dat.evt
-				};
-				geb.emit('webhook:event', obj);
-			break;
+			case 'event': geb.emit('webhook:event', dat);
+				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
 				break;

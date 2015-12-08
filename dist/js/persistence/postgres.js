@@ -62,7 +62,7 @@ function initializeModels() {
 		datalog: Sequelize.ARRAY(Sequelize.JSON)
 	});
 	Webhook = sequelize.define('Webhook', {
-		hookid: { type: Sequelize.STRING, unique: true },
+		hookurl: { type: Sequelize.STRING, unique: true },
 		hookname: Sequelize.STRING,
 		isPublic: Sequelize.BOOLEAN
 	});
@@ -290,26 +290,26 @@ exports.getAllUserWebhooks = (uid) => {
 			}
 		});
 };
-exports.createWebhook = (uid, hookid, hookname, isPublic) => {
+exports.createWebhook = (uid, hookurl, hookname, isPublic) => {
 	log.info('PG | Storing new webhook '+hookname+' for user '+uid);
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
 			return oUser.createWebhook({
-				hookid: hookid,
+				hookurl: hookurl,
 				hookname: hookname,
 				isPublic: isPublic
 			});
 		})
 		.then((oHook) => oHook.toJSON());
 };
-exports.deleteWebhook = (uid, hookid) => {
-	log.info('PG | Deleting webhook #'+hookid);
-	return Webhook.findById(hookid, { attributes: [ 'id', 'UserId' ] })
+exports.deleteWebhook = (uid, hid) => {
+	log.info('PG | Deleting webhook #'+hid);
+	return Webhook.findById(hid, { attributes: [ 'id', 'UserId' ] })
 		.then((oRecord) => {
 			if(oRecord) {
 				if(oRecord.get('UserId') === uid) return oRecord.destroy();
 				else throwStatusCode(403, 'You are not the owner of this webhook!');
-			} else throwStatusCode(404, 'Webhook with ID #'+hookid+' not found!');
+			} else throwStatusCode(404, 'Webhook with ID #'+hid+' not found!');
 		})
 };
 
@@ -332,7 +332,7 @@ exports.getAllRules = (uid) => {
 			ModPersist,
 			{
 				model: Webhook,
-				attributes: [ 'id', 'hookid' ],
+				attributes: [ 'id', 'hookurl' ],
 			}
 		]
 	};
@@ -356,7 +356,7 @@ exports.getRule = (uid, rid) => {
 		})
 }
 
-function storeRule(uid, rid, oRule, hookid) {
+function storeRule(uid, rid, oRule, hid) {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
 			let query = { attributes: [ 'id', 'UserId', 'WebhookId', 'name', 'conditions', 'actions' ] };
@@ -382,7 +382,7 @@ function storeRule(uid, rid, oRule, hookid) {
 			}
 		})
 		.then((oResult) => {
-			return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
+			return Webhook.findById(hid, { attributes: [ 'id', 'isPublic', 'UserId', 'hookurl' ] })
 				.then((oWebhook) => {
 					if(oWebhook) {
 						if(oWebhook.isPublic || oWebhook.UserId===uid) {
@@ -392,22 +392,22 @@ function storeRule(uid, rid, oRule, hookid) {
 				})
 		})
 		.then((o) => {
-			if(rid===undefined) {
-				return o.user.createRule(oRule)
-					.then((oRule) => oRule.setWebhook(o.hook));
-			} else {
-				return o.rule.update(oRule)
-					.then((updatedRule) => {
-						console.log(updatedRule.toJSON());
-						return updatedRule.setWebhook(o.hook);
-					});
-			}
+			let prom;
+			if(rid===undefined) prom = o.user.createRule(oRule);
+			else prom = o.rule.update(oRule);
+			return prom.then((oRule) => {
+					return oRule.setWebhook(o.hook);
+				})
+				.then((oRule) => {
+					oRule = oRule.toJSON();
+					oRule.Webhook = o.hook.toJSON();
+					return oRule;
+				});
 		})
-		.then((oRule) => oRule.toJSON())
 }
 
-exports.createRule = (uid, oRule, hookid) => storeRule(uid, undefined, oRule, hookid);
-exports.updateRule = (uid, rid, oRule, hookid) => storeRule(uid, rid, oRule, hookid);
+exports.createRule = (uid, oRule, hid) => storeRule(uid, undefined, oRule, hid);
+exports.updateRule = (uid, rid, oRule, hid) => storeRule(uid, rid, oRule, hid);
 
 exports.logRule = (rid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;

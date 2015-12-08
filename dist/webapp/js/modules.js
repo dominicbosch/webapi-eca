@@ -16,7 +16,6 @@ updateModules = function(uid) {
   req = main.post(urlService + '/get');
   req.done(function(arrModules) {
     var parent, tr, trNew;
-    console.log(arrModules);
     if (arrModules.length === 0) {
       parent = $('#tableModules').parent();
       $('#tableModules').remove();
@@ -82,7 +81,6 @@ editModule = function(d) {
 };
 
 startStopModule = function(d) {
-  console.log(d);
   d.running = !d.running;
   return d3.select(this).attr('src', '/images/' + (d.running ? 'pause' : 'play') + '.png');
 };

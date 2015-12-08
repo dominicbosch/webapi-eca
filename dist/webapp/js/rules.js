@@ -10,7 +10,6 @@ fOnLoad = function() {
   };
   fUpdateRuleList = function(data) {
     var d3div, d3newTrs, d3tr;
-    console.log(data);
     if (data.length === 0) {
       d3.select('#hasnorules').style('display', 'block');
       return d3.select('#hasrules').style('display', 'none');

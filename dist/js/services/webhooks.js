@@ -24,7 +24,7 @@ geb.addListener('system:init', (msg) => {
 			log.info('SRVC:WH | Initializing '+arrHooks.length+' Webhooks');
 			for (let i = 0; i < arrHooks.length; i++) {
 				let h = arrHooks[i];
-				activeHooks[h.hookid] = h;
+				activeHooks[h.hookurl] = h;
 				geb.emit('webhook:activated', h);
 			}
 		})
@@ -59,12 +59,12 @@ router.post('/create', (req, res) => {
 			}
 		})
 		.then(() => db.getAllWebhooks())
-		.then((arrAllHooks) => genHookID(arrAllHooks.map((o) => o.hookid)))
+		.then((arrAllHooks) => genHookID(arrAllHooks.map((o) => o.hookurl)))
 		.then((hid) => db.createWebhook(userId, hid, rb.hookname, rb.isPublic))
 		.then((oHook) => {
 			log.info('SRVC:WH | Webhook "'+oHook.hookname
 				+'" created with ID "'+oHook.id+'" and activated');
-			activeHooks[oHook.hookid] = oHook;
+			activeHooks[oHook.hookurl] = oHook;
 			geb.emit('webhook:activated', oHook);
 			res.send(oHook);
 		})
@@ -77,10 +77,10 @@ router.post('/delete/:id', (req, res) => {
 	log.info('SRVC:WH | Deleting Webhook '+hid);
 	db.deleteWebhook(req.session.pub.id, hid)
 		.then(() => {
-			for(let hookid in activeHooks) {
-				if(activeHooks[hookid].id === hid) {	
-					geb.emit('webhook:deactivated', hookid);
-					delete activeHooks[hookid];
+			for(let hookurl in activeHooks) {
+				if(activeHooks[hookurl].id === hid) {	
+					geb.emit('webhook:deactivated', hookurl);
+					delete activeHooks[hookurl];
 				}
 			}
 			res.send('OK!');
@@ -89,14 +89,14 @@ router.post('/delete/:id', (req, res) => {
 })
 
 // A remote service pushes an event over a webhook to our system
-router.post('/event/:hookid', (req, res) => {
-	let oHook = activeHooks[req.params.hookid];
+router.post('/event/:hookurl', (req, res) => {
+	let oHook = activeHooks[req.params.hookurl];
 	if(oHook) {
 		let now = new Date();
-		req.body.engineReceivedTime = now.getTime();
-		req.body.origin = req.ip;
 		let obj = {
-			hookid: oHook.id,
+			hookurl: oHook.hookurl,
+			origin: req.ip,
+			engineReceivedTime: now.getTime(),
 			body: req.body
 		};
 		geb.emit('webhook:event', obj);

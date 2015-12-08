@@ -88,7 +88,7 @@ process.on('message', (oMsg) => {
 
 				// Evaluate all function arguments with the event and eventually pass data from the event as argument
 				for(let j = 0; j < func.args.length; j++) {
-					arrPassingArgs.push(func.args[j](oe));
+					arrPassingArgs.push(func.args[j](oe.evt));
 				}
 
 				try {
@@ -234,19 +234,19 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 				persistence: data
 			}
 		}),
-		emitEvent: (hookid, evt) => {
+		emitEvent: (hookurl, evt) => {
 			let now = (new Date()).getTime();
 			if(lastEvent && (lastEvent-now)<100) {
 				log.rule(rid, 'You are flooding our system with events... We need to limit this, sorry!');
 			} else {
 				lastEvent = now;
-				evt.engineReceivedTime = now;
-				evt.origin = 'internal'
 				sendToParent({
 					cmd: 'event',
 					data: {
-						hookid: hookid, 
-						evt: evt
+						hookurl: hookurl, 
+						origin: 'internal',
+						engineReceivedTime: now,
+						body: evt
 					}
 				})
 			}

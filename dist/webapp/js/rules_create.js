@@ -110,7 +110,7 @@ fillWebhooks = function(oHooks) {
     d3Sel.append('option').attr('value', -1).text('No Webhook selected');
     createWebhookRow = function(oHook, owner) {
       var isSel;
-      isSel = oParams.webhook && oParams.webhook === oHook.hookid ? true : null;
+      isSel = oParams.webhook && oParams.webhook === oHook.hookurl ? true : null;
       return d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
     };
     ref = oHooks["private"];
@@ -265,15 +265,15 @@ updateParameterList = function() {
 
 attachListeners = function() {
   return $('#but_submit').click(function() {
-    var arrActions, arrConditions, cmd, el, err, error, error1, j, len, obj, wid;
+    var arrActions, arrConditions, cmd, el, err, error, error1, hurl, j, len, obj;
     main.clearInfo(true);
     try {
       if ($('#input_name').val() === '') {
         $('#input_name').focus();
         throw new Error('Please enter a rule name!');
       }
-      wid = parseInt($('#selectWebhook select').val());
-      if (wid === -1) {
+      hurl = parseInt($('#selectWebhook select').val());
+      if (hurl === -1) {
         throw new Error('Please select a valid Webhook!');
       }
       if (arrSelectedActions.length === 0) {
@@ -342,7 +342,7 @@ attachListeners = function() {
       }
       obj = {
         name: $('#input_name').val(),
-        hookid: wid,
+        hookurl: hurl,
         conditions: arrConditions,
         actions: arrActions
       };
@@ -354,13 +354,13 @@ attachListeners = function() {
       }
       return main.post('/service/rules/' + cmd, obj).done(function(msg) {
         var newurl, wl;
+        main.setInfo(true, 'Rule ' + (oParams.id === void 0 ? 'stored!' : 'updated!'));
         wl = window.location;
         oParams.id = msg.id;
         newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id=' + msg.id;
-        window.history.pushState({
+        return window.history.pushState({
           path: newurl
         }, '', newurl);
-        return main.setInfo(true, 'Rule stored!');
       }).fail(function(err) {
         return main.setInfo(false, err.responseText);
       });

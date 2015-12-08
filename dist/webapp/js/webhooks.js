@@ -5,7 +5,7 @@ hostUrl = [location.protocol, '//', location.host].join('');
 
 updateWebhookList = function() {
   return main.post('/service/webhooks/get').done(function(oHooks) {
-    var createWebhookRow, hookid, oHook, prl, pul, ref, ref1, results, table;
+    var createWebhookRow, hookurl, oHook, prl, pul, ref, ref1, results, table;
     $('#table_webhooks *').remove();
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
@@ -14,20 +14,20 @@ updateWebhookList = function() {
         var img, tit;
         img = oHook.isPublic ? 'public' : 'private';
         tit = oHook.isPublic ? 'Public' : 'Private';
-        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="icon del" src="/images/del.png" title="Delete Webhook" data-id="' + oHook.id + '">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookid + "\" readonly></td>\n</tr>"));
+        return table.append($("<tr>\n	<td>" + (isMine ? '<img class="icon del" src="/images/del.png" title="Delete Webhook" data-id="' + oHook.id + '">' : '') + "</td>\n	<td style=\"white-space: nowrap\"><kbd>" + oHook.hookname + "</kbd></td>\n	<td style=\"white-space: nowrap\">" + (isMine ? '(you)' : oHook.User.username) + "</td>\n	<td class=\"centered\" title=\"" + tit + "\">\n		<img src=\"/images/" + img + ".png\"></td>\n	<td class=\"hundredwide\"><input class=\"smallfont hundredwide\" value=\"" + hostUrl + "/service/webhooks/event/" + oHook.hookurl + "\" readonly></td>\n</tr>"));
       };
       $('#table_webhooks').append($('<h2>').text('Available Webhooks'));
       table = $('<table>').attr('class', 'hundredywide').appendTo($('#table_webhooks'));
       table.append('<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>');
       ref = oHooks["private"];
-      for (hookid in ref) {
-        oHook = ref[hookid];
+      for (hookurl in ref) {
+        oHook = ref[hookurl];
         createWebhookRow(oHook, true);
       }
       ref1 = oHooks["public"];
       results = [];
-      for (hookid in ref1) {
-        oHook = ref1[hookid];
+      for (hookurl in ref1) {
+        oHook = ref1[hookurl];
         results.push(createWebhookRow(oHook));
       }
       return results;
@@ -39,11 +39,11 @@ updateWebhookList = function() {
   });
 };
 
-fShowWebhookUsage = function(hookid, hookname) {
+fShowWebhookUsage = function(hookurl, hookname) {
   $('#display_hookurl *').remove();
-  if (hookid) {
+  if (hookurl) {
     main.setInfo(true, 'Webhook created!');
-    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"seventywide smallfont\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookid + "\" readonly><br>\n<div><b>Now you can <a href=\"/views/events?webhook=" + hookid + "\">emit an Event</a> \non this Webhook!</b></div>"));
+    return $('#display_hookurl').append($("<div>This is the Webhook Url you can use for your Events <kbd>" + hookname + "</kbd> :</div>\n<input class=\"seventywide smallfont\" type=\"text\" value=\"" + hostUrl + "/service/webhooks/event/" + hookurl + "\" readonly><br>\n<div><b>Now you can <a href=\"/views/events?webhook=" + hookurl + "\">emit an Event</a> \non this Webhook!</b></div>"));
   }
 };
 
@@ -65,7 +65,7 @@ fOnLoad = function() {
       };
       return main.post('/service/webhooks/create', data).done(function(data) {
         updateWebhookList();
-        return fShowWebhookUsage(data.hookid, data.hookname);
+        return fShowWebhookUsage(data.hookurl, data.hookname);
       }).fail(function(err) {
         if (err.status === 409) {
           return main.setInfo(false, 'Webhook Event Name already existing!');

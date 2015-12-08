@@ -19,7 +19,7 @@ createWebhookList = function() {
     createRow = function(hook, isMine) {
       var elm, owner;
       owner = isMine ? 'yours' : hook.User.username + '\'s';
-      elm = $('<option value="' + hook.hookid + '">' + hook.hookname + ' (' + owner + ')</option>');
+      elm = $('<option value="' + hook.hookurl + '">' + hook.hookname + ' (' + owner + ')</option>');
       return list.append(elm);
     };
     ref = oHooks["private"];
@@ -62,7 +62,7 @@ checkRuleExists = function() {
   return main.post('/service/rules/get').done(function(arrRules) {
     var arrListeners;
     arrListeners = arrRules.filter(function(o) {
-      return o.Webhook && o.Webhook.hookid === $('#sel_webh').val();
+      return o.Webhook && o.Webhook.hookurl === $('#sel_webh').val();
     });
     if (arrListeners.length > 0) {
       $('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png');

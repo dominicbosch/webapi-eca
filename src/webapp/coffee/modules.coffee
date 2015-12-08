@@ -12,7 +12,6 @@ else
 updateModules = (uid) ->
 	req = main.post(urlService+'/get')
 	req.done ( arrModules ) ->
-		console.log(arrModules);
 		if arrModules.length is 0
 			parent = $('#tableModules').parent()
 			$('#tableModules').remove()
@@ -72,7 +71,6 @@ editModule = (d) ->
 		window.location.href = 'modules_create?m=et&id='+d.id
 
 startStopModule = (d) ->
-	console.log(d)
 	d.running = !d.running;
 	d3.select(this).attr('src', '/images/'+(if d.running then 'pause' else 'play')+'.png')
 

@@ -15,7 +15,7 @@ createWebhookList = () ->
 	main.post('/service/webhooks/get').done (oHooks) ->
 		createRow = (hook, isMine) ->
 			owner = if isMine then 'yours' else hook.User.username+'\'s'
-			elm = $ '<option value="'+hook.hookid+'">'+hook.hookname+' ('+owner+')</option>'
+			elm = $ '<option value="'+hook.hookurl+'">'+hook.hookname+' ('+owner+')</option>'
 			list.append elm
 		
 		createRow hook, true for id, hook of oHooks.private
@@ -43,7 +43,7 @@ updateWebhookSelection = () ->
 
 checkRuleExists = () ->
 	main.post('/service/rules/get').done (arrRules) ->
-		arrListeners = arrRules.filter((o) -> o.Webhook && o.Webhook.hookid is $('#sel_webh').val());
+		arrListeners = arrRules.filter((o) -> o.Webhook && o.Webhook.hookurl is $('#sel_webh').val());
 		if arrListeners.length > 0
 			$('#tlrule').removeClass('red').addClass('green').attr('src', '/images/tl_green.png')
 			$('#but_rule').hide()

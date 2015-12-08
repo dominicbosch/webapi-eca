@@ -94,7 +94,6 @@ fOnLoad = function() {
       isAdmin: $('#admin').is(':checked')
     };
     return main.post('/service/admin/createuser', data).done(function(msg) {
-      console.log('SUCCESS', msg);
       main.setInfo(true, msg);
       return updateUserList();
     }).fail(failHandler);

@@ -69,8 +69,8 @@ function storeRule(uid, reason, body, res) {
 		actions: body.actions
 	};
 	let prom;
-	if(reason === 'create') prom = db.createRule(uid, oRule, body.hookid)
-	else prom = db.updateRule(uid, body.id, oRule, body.hookid)
+	if(reason === 'create') prom = db.createRule(uid, oRule, body.hookurl)
+	else prom = db.updateRule(uid, body.id, oRule, body.hookurl)
 	prom.then((oRule) => {
 			geb.emit('rule:new', oRule);
 			res.send({ id: oRule.id });
