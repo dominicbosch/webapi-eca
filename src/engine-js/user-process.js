@@ -11,6 +11,10 @@ var pl = require('./process-logger')
 	, dynmod = require('./dynamic-modules')
 	, encryption = require('./encryption')
 
+// - External Modules:
+//   [js-select](https://github.com/harthur/js-select)
+	, jsonQuery = require('js-select')
+
 	, oEventTriggers = {}
 	, oRuleModules = {} //The actual exectuable functions stored under their rules (results in duplicates)
 	, oActArgs = {} // The storage for the action arguments
@@ -19,7 +23,8 @@ var pl = require('./process-logger')
 // 	for each rule
 // 		for each action module
 //			for each action (action modules can be selected several times, thus also executed several times)
-// 				function arguments
+// 				function name as string
+//				function arguments as array
 
 function sendToParent(obj) {
 	try {
@@ -74,13 +79,51 @@ process.on('message', (oMsg) => {
 		case 'action':
 			let oe = oMsg.evt;
 			let arrFuncs = oActArgs[oe.rid][oe.aid];
-			for(let i = 0; i < arrFuncs.length; i++) {
+			
+			// Go through all functions that need to be executed
+			for(let i = 0; i < arrFuncs.length; i++) {	
 				let func = arrFuncs[i];
+				// We can't work on the existing data structure or we will alter it until the next event:
+				let arrPassingArgs = [];
+
+				// Go through all function arguments
+				for(let j = 0; j < func.args.length; j++) {
+					let arg = func.args[j].trim();
+					let arrSelectors = arg.match(/#\{(.*?)\}/g);
+
+					// Only substitute selectors with data if there are any
+					if(arrSelectors) {
+						let sel = arrSelectors[0];
+
+						// If the selector is the only argument that is passed, a selector array will be passed
+						// which can be reused in the action dispatcher
+						if(arrSelectors.length===1 && sel===arg) {
+							let selector = sel.substring(2, sel.length-1);
+							let data = jsonQuery(oe, selector).nodes();
+							// If only one selector is used in a field, the whole resulting object is attached
+							arg = data;
+
+						// If there was more then just a selector in the argument we will pass a string
+						// and substitute all selectors beforehand
+						} else {
+							for(let k = 0; k < arrSelectors.length; k++) {
+								let sel = arrSelectors[k];
+								let selector = sel.substring(2, sel.length-1);
+								let data = jsonQuery(oe, selector).nodes();
+								if(data.length === 0) data = '[selector "'+arrSelectors[k]+'" did not select any data]';
+								arg = arg.replace(new RegExp(sel, 'g'), data.toString());
+							}
+						}
+					}
+					arrPassingArgs.push(arg);
+				}
+
 				try {
 					log.debug('Executing function '+func.name+' in action #'+oe.aid);
-					oRuleModules[oe.rid][oe.aid][func.name].apply(this, func.args);
+					oRuleModules[oe.rid][oe.aid][func.name].apply(this, arrPassingArgs);
 				} catch(err) {
 					log.rule(oe.rid, err.toString());
+					log.debug(err.toString());
 				}
 			}
 		break; 
@@ -192,46 +235,3 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 }
 
 // TODO list all modules the worker process has loaded and tell from which module it was required
-
-// 	fSearchAndInvokeAction = ( node, arrPath, funcName, evt, depth ) =>
-// 		if not node
-// 			log.error "EN | Didn't find property in user rule list: "+arrPath.join( ', ' )+" at depth "+depth
-// 			return
-// 		if depth is arrPath.length
-// 			try
-// 				log.info "EN | #{ funcName } executes..."
-// 				arrArgs = []
-// 				if node.funcArgs[ funcName ]
-// 					# TODO do this on initiaisation and not each time an event is received
-// 					for oArg in node.funcArgs[ funcName ]
-// 						"// arrSelectors = oArg.value.match /#\{(.*?)\}/g"
-// 						argument = oArg.value
-// 						if arrSelectors
-// 							for sel in arrSelectors
-// 								selector = sel.substring 2, sel.length - 1
-// 								data = jsonQuery( evt.body, selector ).nodes()[0]
-// 								argument = argument.replace sel, data
-// 								if oArg.value is sel
-// 									argument = data # if the user wants to pass an object, we allow him to do so
-// 						# if oArg.jsselector
-// 						arrArgs.push argument #jsonQuery( evt.body, oArg.value ).nodes()[ 0 ]
-// 						# else
-// 						# 	arrArgs.push oArg.value
-// 				else
-// 					log.warn "EN | Weird! arguments not loaded for function '#{ funcName }'!"
-// 					arrArgs.push null
-// 				arrArgs.push evt
-// 				node.module[ funcName ].apply this, arrArgs
-// 				log.info "EN | #{ funcName } finished execution"
-// 			catch err
-// 				log.info "EN | ERROR IN ACTION INVOKER: "+err.message
-// 				node.logger err.message
-// 		else
-// 			fSearchAndInvokeAction node[arrPath[depth]], arrPath, funcName, evt, depth+1
-
-// TODO Maintain what happens when a rule was deleted
-// 	oRule.module[ oRule.pollfunc ].apply this, arrArgs
-// 	for action of oUser[updatedRuleId].rule.actions 
-// 		delete oUser[updatedRuleId].actions[action] if not fRequired action
-
-
