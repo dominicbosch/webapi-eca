@@ -39,7 +39,7 @@ router.post('/create', (req, res) => {
 	storeModule(args)
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');
-			res.send('Action Dispatcher stored!')
+			res.send({ id: ad.id })
 			geb.emit('module:new', ad);
 		})	
 		.catch(db.errHandler(res));
@@ -57,7 +57,7 @@ router.post('/update', (req, res) => {
 	storeModule(args)
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');
-			res.send('Action Dispatcher stored!')
+			res.send('Action Dispatcher updated!')
 			geb.emit('module:update', ad);
 		})	
 		.catch(db.errHandler(res));

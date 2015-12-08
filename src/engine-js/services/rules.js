@@ -15,16 +15,6 @@ var log = require('../logging'),
 
 var router = module.exports = express.Router();
 
-geb.addListener('modules:init', () => {
-	db.getAllRules()
-		.then((arr) => {
-			for(var i = 0; i < arr.length; i++) {
-				geb.emit('rule:new', arr[i]);
-			}
-		})
-		.catch((err) => log.error(err));
-});
-
 router.post('/get', (req, res) => {
 	log.info('SRVC | RULES | Fetching all Rules');
 	db.getAllRules(req.session.pub.id)
@@ -79,10 +69,10 @@ function storeRule(uid, reason, body, res) {
 		actions: body.actions
 	};
 	let prom;
-	if(reason === 'new') prom = db.createRule(uid, oRule, body.hookid)
+	if(reason === 'create') prom = db.createRule(uid, oRule, body.hookid)
 	else prom = db.updateRule(uid, body.id, oRule, body.hookid)
 	prom.then((oRule) => {
-			geb.emit('rule:'+reason, oRule);
+			geb.emit('rule:new', oRule);
 			res.send({ id: oRule.id });
 		})
 		.catch(db.errHandler(res))
@@ -90,18 +80,7 @@ function storeRule(uid, reason, body, res) {
 
 router.post('/create', (req, res) => {
 	log.info('SRVC | RULES | Creating new Rule');
-	storeRule(req.session.pub.id, 'new', req.body, res);
-	// let oRule = {
-	// 	name: req.body.name,
-	// 	conditions: req.body.conditions,
-	// 	actions: req.body.actions
-	// }
-	// db.createRule(req.session.pub.id, oRule, req.body.hookid)
-	// 	.then((oRule) => {
-	// 		geb.emit('rule:new', oRule);
-	// 		res.send('Rule stored!');
-	// 	})
-	// 	.catch(db.errHandler(res))
+	storeRule(req.session.pub.id, 'create', req.body, res);
 });
 
 router.post('/update', (req, res) => {
@@ -112,7 +91,10 @@ router.post('/update', (req, res) => {
 router.post('/delete', (req, res) => {
 	log.info('SRVC | RULES | Deleting Rule #' +req.body.id);
 	db.deleteRule(req.session.pub.id, req.body.id)
-		.then(() => res.send('Rule deleted!'))
+		.then(() => {
+			geb.emit('rule:delete', req.body.id);
+			res.send('Rule deleted!')
+		})
 		.catch(db.errHandler(res))
 });
 

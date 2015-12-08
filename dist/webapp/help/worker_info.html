@@ -1,0 +1,7 @@
+<div class="title">Workers</div>
+<p>
+Every user has one dedicated worker which is a process running on the server.
+This worker has limited memory in order to protect the server from being overloaded.</p>
+<p>
+<span class="attention">Whenever you use a new Event Trigger or Action Dispatcher, which uses some built-in modules, your available memory will decrease. Since there is currently no safe way to unrequire modules it might be necessary for you to restart your worker if you required a lot of modules that used up all your available space!</span>
+</p>

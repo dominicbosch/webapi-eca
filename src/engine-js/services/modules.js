@@ -71,10 +71,6 @@ function reloadModules(cb) {
 		updateAllowedFlag(arrAllowed);
 		dm.newAllowedModuleList(arrAllowed);
 		geb.emit('modules:list', arrAllowed);
-		setTimeout(() => {
-			log.warn('SRVC:MODS | Telling everbody that allowed modules have been distributed... Maybe this is a lie...')
-			geb.emit('modules:init')
-		}, 5*1000);
 		cb(undefined, arrModules)
 	});
 }

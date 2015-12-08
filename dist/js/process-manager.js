@@ -86,8 +86,10 @@ function broadcast(evt) {
 	}
 }
 
-geb.addListener('rule:new', (oRule) => {
+function sendRuleToUser(oRule) {
 	let arrPromises = [];
+	// The user process ha no DB connection so we need to send it all the required 
+	// Action dispatcehrs that are needed for the module
 	for(let i = 0; i < oRule.actions.length; i++) {
 		arrPromises.push(db.getActionDispatcher(oRule.actions[i].id));
 	}
@@ -108,14 +110,15 @@ geb.addListener('rule:new', (oRule) => {
 					}
 				}
 			}
-			let evt = {
+			sendToWorker(oRule.UserId, {
 				cmd: 'rule:new',
 				rule: oRule
-			}
-			sendToWorker(oRule.UserId, evt);
+			});
 		})
 		.catch((err) => console.error(err));
-});
+}
+
+geb.addListener('rule:new', sendRuleToUser);
 
 geb.addListener('action', (oEvt) => {
 	sendToWorker(oEvt.uid, {
@@ -135,9 +138,11 @@ function registerProcessLogger(uid, username) {
 				break;
 			case 'log:rule': db.logRule(dat.rid, dat.msg);
 				break;
-			case 'log:ruledata': db.logRuleData(dat.rid, dat.msg);
+			case 'log:error': log.error(dat);
 				break;
-			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.data);
+			case 'datalog': db.logRuleData(dat.rid, dat.msg);
+				break;
+			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
@@ -183,6 +188,11 @@ function startWorker(oUser) {
 			}
 		});
 	})
+	// After a worker has been started it needs to receive all its rules
+	.then(() => db.getAllRules(oUser.id))
+	.then((arr) => {
+		for(var i = 0; i < arr.length; i++) sendRuleToUser(arr[i]);
+	});
 }
 
 function killWorker(uid, uname) {

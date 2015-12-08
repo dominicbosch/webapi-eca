@@ -12,14 +12,20 @@ var pl = require('./process-logger')
 	, encryption = require('./encryption')
 
 	, oEventTriggers = {}
-	, oRules = {}
-	, oActArgs = {}
+	, oRuleModules = {} //The actual exectuable functions stored under their rules (results in duplicates)
+	, oActArgs = {} // The storage for the action arguments
 	;
+// oActArgs has:
+// 	for each rule
+// 		for each action module
+//			for each action (action modules can be selected several times, thus also executed several times)
+// 				function arguments
 
 function sendToParent(obj) {
 	try {
 		process.send(obj);
 	} catch(err) {
+		// Actually we should die here, right?
 		console.error(err);
 	}
 }
@@ -37,10 +43,6 @@ var log = {
 	warn: (msg) => sendLog('warn', msg),
 	error: (msg) => sendLog('error', msg),
 	rule: (rid, msg) => sendLog('rule', {
-		rid: rid, 
-		msg: msg
-	}),
-	data: (rid, msg) => sendLog('ruledata', {
 		rid: rid, 
 		msg: msg
 	})
@@ -66,12 +68,17 @@ process.on('message', (oMsg) => {
 		case 'rule:new':
 			newRule(oMsg.rule);
 		break;
+		case 'rule:delete':
+			deleteRule(oMsg.id);
+		break;
 		case 'action':
 			let oe = oMsg.evt;
-			let oFuncs = oActArgs[oe.rid][oe.aid];
-			for(let el in oFuncs) {
+			let arrFuncs = oActArgs[oe.rid][oe.aid];
+			for(let i = 0; i < arrFuncs.length; i++) {
+				let func = arrFuncs[i];
 				try {
-					oRules[oe.rid][oe.aid][el].apply(this, oFuncs[el]);
+					log.debug('Executing function '+func.name+' in action #'+oe.aid);
+					oRuleModules[oe.rid][oe.aid][func.name].apply(this, func.args);
 				} catch(err) {
 					log.rule(oe.rid, err.toString());
 				}
@@ -81,47 +88,50 @@ process.on('message', (oMsg) => {
 	}
 });
 
+// The parent process does not only send the rule but in it also execution data such as
+// persistence data, function arguments and the action modules required to execute the action
 function newRule(oRule) {
 	var oPers = oRule.ModPersists;
 
-	if(!oRules[oRule.id]) oRules[oRule.id] = {};
-	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {};
+	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {}; // New rule
+	if(!oRuleModules[oRule.id]) oRuleModules[oRule.id] = {}; // New rule
+	// We don't need any already existing actions for this module anymore because we got fresh ones
+	// Since we can't remove the modules that have been 'required' by the previous modules, this
+	// will likely lead to a filling of the memory and require a restart of the user process from time to time
+	for(let el in oRuleModules[oRule.id]) {
+		log.debug('UP | Removing module "'+el+'" from rule #'+oRule.id);
+		delete oRuleModules[oRule.id][el];
+	}
 
 	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
 	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
-	console.log(JSON.stringify(oRule, null, 2));
+
+	// For each action in the rule we find arguments and the required module (both provided here in the rule)
 	for(let i = 0; i < oRule.actions.length; i++) {
 		let oAction = oRule.actions[i];
 		let oModule = oRule.actionModules[oAction.id];
-		console.log('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
-		// log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		// This is where we actually store all actions:
+		let actFuncs = [];
+		if(!oActArgs[oRule.id][oAction.id]) oActArgs[oRule.id][oAction.id] = actFuncs;
 
+		// We use this action function for the first time in this rule (might not be the case if it's an update)
+
+		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		// // Got through all action functions
 		for(let j = 0; j < oAction.functions.length; j++) {
 			let oActFunc = oAction.functions[j];
-			console.log('UP | Rule "'+oRule.name+'" initializes module function -> '+oActFunc.name);
 			let arrRequiredArguments = oModule.functions[oActFunc.name];
-			console.log(arrRequiredArguments);
+			let oFunc = {
+				name: oActFunc.name,
+				args: []
+			};
 			for(let k = 0; k < arrRequiredArguments.length; k++) {
 				let val = oActFunc.args[arrRequiredArguments[k]];
-				if(val===undefined) console.warn('UP | Missing argument: ' + arrRequiredArguments[k])
-				else {
-					console.log('attaching', arrRequiredArguments[k], val);
-				}
+				if(val===undefined) log.rule('Missing argument: ' + arrRequiredArguments[k]);
+				else oFunc.args.push(val);
 			}
+			actFuncs.push(oFunc);
 		}
-
-
-		// let requiredFunctions = requiredModule.functions; // the functions in the rules
-		// let oFuncArgs = oRule.actions.filter((o) => o.id === requiredModule.id)[0].functions;
-		// // Here we store the arguments in the internal data structure:
-		// let oAct = oActArgs[oRule.id][requiredModule.id] = {};
-		// for(let af in requiredFunctions) {
-		// 	oAct[af] = [];
-		// 	for (var i = 0; i < requiredFunctions[af].length; i++) {
-		// 		oAct[af].push(oFuncArgs[af][requiredFunctions[af][i]]);
-		// 	}
-		// }
-
 
 		// Attach persistent data if it exists
 		let pers;
@@ -131,34 +141,14 @@ function newRule(oRule) {
 			}
 		}
 		if(pers === undefined) pers = {};
-		runModule(null, oRule.id, oModule, oAction.globals, pers, oRules[oRule.id]);
+		runModule(oModule.id, oRule.id, oModule, oAction.globals, pers, oRuleModules[oRule.id]);
 	}
-	// for(let id in oRule.actionModules) {
-	// 	let requiredModule = oRule.actionModules[id];
-	// 	log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+requiredModule.name);
-
-	// 	let requiredFunctions = requiredModule.functions; // the functions in the rules
-	// 	let oFuncArgs = oRule.actions.filter((o) => o.id === requiredModule.id)[0].functions;
-	// 	// Here we store the arguments in the internal data structure:
-	// 	let oAct = oActArgs[oRule.id][requiredModule.id] = {};
-	// 	for(let af in requiredFunctions) {
-	// 		oAct[af] = [];
-	// 		for (var i = 0; i < requiredFunctions[af].length; i++) {
-	// 			oAct[af].push(oFuncArgs[af][requiredFunctions[af][i]]);
-	// 		}
-	// 	}
-
-	// 	// Attach persistent data if it exists
-	// 	let pers;
-	// 	if(oPers !== undefined) {
-	// 		for (let i = 0; i < oPers.length; i++) {
-	// 			if(oPers[i].moduleId === requiredModule.id) pers = oPers[i].data;
-	// 		}
-	// 	}
-	// 	if(pers === undefined) pers = {};
-	// 	runModule(id, oRule.id, requiredModule, pers, oRules[oRule.id]);
-	// }
 }
+
+function deleteRule(id) {
+	console.log('TODO: UP | Implement delete Rule');
+}
+
 
 function runModule(id, rid, oMod, globals, persistence, oStore) {
 	let opts = {
@@ -167,26 +157,29 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 		persistence: persistence,
 		logger: (msg) => {
 			try {
-				log.debug('trying to log');
-				log.debug(msg);
 				log.rule(rid, msg.toString().substring(0, 200));
 			} catch(err) {
 				log.debug(err.toString());
 				log.rule(rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		datalogger: (msg) => log.data(rid, msg),
+		datalogger: (msg) =>  sendToParent({
+			cmd: 'datalog',
+			data: {	
+				rid: rid, 
+				msg: msg
+			}
+		}),
 		persist: (data) => sendToParent({
 			cmd: 'persist',
 			data: {	
 				rid: rid, 
 				cid: oMod.id, 
-				data: data
+				persistence: data
 			}
 		})
 	};
 
-	console.log('Running Globals', opts.globals);
 	let name = (oStore === oEventTriggers) ? 'Event Trigger' : 'Action Dispatcher';
 	log.rule(rid, ' --> Loading '+name+' "'+oMod.name+'"...');
 	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
@@ -195,7 +188,7 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 			log.info('UP | '+name+' "'+oMod.name+'" loaded for user '+oMod.User.username);
 			oStore[id] = answ.module;
 		})
-		.catch((err) => log.error(err))
+		.catch((err) => log.error(err.toString()+'\n'+err.stack))
 }
 
 // TODO list all modules the worker process has loaded and tell from which module it was required

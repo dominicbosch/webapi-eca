@@ -407,59 +407,7 @@ function storeRule(uid, rid, oRule, hookid) {
 }
 
 exports.createRule = (uid, oRule, hookid) => storeRule(uid, undefined, oRule, hookid);
-	// return User.findById(uid, { attributes: [ 'id' ] })
-	// 	.then((oUser) => {
-	// 		if(!oUser) throwStatusCode(404, 'You do not exist!?');
-	// 		return oUser.getRules({ where: { name: oRule.name }})
-	// 			.then((arrExisting) => {
-	// 				if(arrExisting.length === 0) return oUser;
-	// 				else throwStatusCode(409, 'Rule name already existing!');
-	// 			})
-	// 	})
-	// 	.then((oUser) => {
-	// 		return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
-	// 			.then((oWebhook) => {
-	// 				if(oWebhook) {
-	// 					if(oWebhook.isPublic || oWebhook.UserId===uid) {
-	// 						return { user: oUser, hook: oWebhook };
-	// 					} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
-	// 				} else throwStatusCode(404, 'Webhook not existing!');
-	// 			})
-	// 	})
-	// 	.then((o) => {
-	// 		return o.user.createRule(oRule)
-	// 			.then((oRule) => oRule.setWebhook(o.hook))
-	// 	})
-	// 	.then((oRule) => oRule.toJSON())
-// }
-
 exports.updateRule = (uid, rid, oRule, hookid) => storeRule(uid, rid, oRule, hookid);
-// exports.updateRule = (uid, rid, oRule, hookid) => {
-// 	return User.findById(uid, { attributes: [ 'id' ] })
-// 		.then((oUser) => {
-// 			if(!oUser) throwStatusCode(404, 'You do not exist!?');
-// 			return oUser.getRules({ where: { name: oRule.name }})
-// 				.then((arrExisting) => {
-// 					if(arrExisting.length === 0) return oUser;
-// 					else throwStatusCode(409, 'Rule name already existing!');
-// 				})
-// 		})
-// 		.then((oUser) => {
-// 			return Webhook.findById(hookid, { attributes: [ 'id', 'isPublic', 'UserId' ] })
-// 				.then((oWebhook) => {
-// 					if(oWebhook) {
-// 						if(oWebhook.isPublic || oWebhook.UserId===uid) {
-// 							return { user: oUser, hook: oWebhook };
-// 						} else throwStatusCode(403, 'You are not allowed to use this Webhook!')
-// 					} else throwStatusCode(404, 'Webhook not existing!');
-// 				})
-// 		})
-// 		.then((o) => {
-// 			return o.user.createRule(oRule)
-// 				.then((oRule) => oRule.setWebhook(o.hook))
-// 		})
-// 		.then((oRule) => oRule.toJSON())
-// }
 
 exports.logRule = (rid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;

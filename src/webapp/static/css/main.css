@@ -191,6 +191,10 @@ table.mystyle td { padding-right: 12px }
 	font-size: 0.8em;
 	padding: 1px 3px;
 }
+.mytooltip .attention { 
+	color: firebrick;
+	text-decoration: underline;
+}
 
 #table_webhooks td { padding-right: 10px }
 

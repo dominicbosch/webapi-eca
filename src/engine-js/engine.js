@@ -20,14 +20,26 @@ var db = global.db
 	, jsonQuery = require('js-select')
 	;
 
-geb.addListener('rule:new', (oRule) => {
+function addRule(oRule) {
+	log.info('EN | --> Adding Rule "'+oRule.name+'"');
 	let hid = oRule.WebhookId;
 	if(!oWebhooks[hid]) {
 		oWebhooks[hid] = {};
 	}
 	oWebhooks[hid][oRule.id] = oRule;
+}
+
+geb.addListener('system:init', () => {
+	// FIXME Implement CRUD on Webhooks
+	log.warn('EN | Implement CRUD on Webhooks');
+	log.info('EN | Loading existing Rules');
+	db.getAllRules()
+		.then((arr) => {
+			for(var i = 0; i < arr.length; i++) addRule(arr[i])
+		})
+		.catch((err) => log.error(err));
 });
-// FIXME Implement CRUD on Webhooks
+geb.addListener('rule:new', addRule);
 
 let oOperators = {	
 	'<':  (x, y) => { return (x < y) },

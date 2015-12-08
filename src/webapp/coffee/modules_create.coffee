@@ -160,9 +160,13 @@ fOnLoad = () ->
 					action = if oParams.id then 'update' else 'create'
 					main.post('/service/'+moduleType+'/'+action, obj)
 						.done (msg) ->
-							main.setInfo true, msg, true
+							main.setInfo true, 'Action Dispatcher stroed!', true
 							if oParams.id then alert "You need to update the rules that use this module in 
 											order for the changes to be applied to them!"
+							wl = window.location;
+							oParams.id = msg.id;
+							newurl = wl.protocol + "//" + wl.host + wl.pathname + '&id='+msg.id;
+							window.history.pushState({path:newurl},'',newurl);
 
 						.fail (err) ->
 							main.setInfo false, err.responseText, true

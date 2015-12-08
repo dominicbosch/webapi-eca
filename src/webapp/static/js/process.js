@@ -19,6 +19,7 @@ $(document).ready(function() {
 		systemname,
 		xAxis, yAxis, yAxisCPU, yAxisDB, scaleX, scaleY, allData;
 
+	main.registerHoverInfo(d3.select('#workertitle'), 'worker_info.html')
 	selectBox.on('change', (el) => {
 		button.attr('disabled', 'disabled');
 		updateButton();

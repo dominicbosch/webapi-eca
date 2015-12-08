@@ -175,10 +175,17 @@ fOnLoad = function() {
           }
           action = oParams.id ? 'update' : 'create';
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
-            main.setInfo(true, msg, true);
+            var newurl, wl;
+            main.setInfo(true, 'Action Dispatcher stroed!', true);
             if (oParams.id) {
-              return alert("You need to update the rules that use this module in order for the changes to be applied to them!");
+              alert("You need to update the rules that use this module in order for the changes to be applied to them!");
             }
+            wl = window.location;
+            oParams.id = msg.id;
+            newurl = wl.protocol + "//" + wl.host + wl.pathname + '&id=' + msg.id;
+            return window.history.pushState({
+              path: newurl
+            }, '', newurl);
           }).fail(function(err) {
             return main.setInfo(false, err.responseText, true);
           });
