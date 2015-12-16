@@ -515,7 +515,6 @@ function createCodeModule(uid, oMod, oSchedule) {
 	oMod.version = 1;
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.createCodeModule(oMod))
-		// .then((oNewMod) => oNewMod.toJSON())
 		.then((oNewMod) => oNewMod.toJSON())
 }
 
@@ -555,17 +554,6 @@ exports.persistRuleData = function(rid, cid, data) {
 				.then((oMp) => oRes.rule.addModPersist(oMp));
 		})
 		.catch(ec);
-	// return ModPersist
-	// 	.findOrCreate({
-	// 		where: {
-	// 			moduleId: cid,
-	// 			RuleId: rid
-	// 		}
-	// 		// ,
-	// 		// defaults: {
-	// 		// 	data: null
-	// 		// }
-	// 	})
 }
 
 function deleteCodeModule(uid, cid) {
@@ -582,10 +570,10 @@ function deleteCodeModule(uid, cid) {
 // ## ACTION DISPATCHERS
 // ##
 
-exports.getActionDispatcher = (aid) => getCodeModule(aid);
 exports.getAllActionDispatchers = () => getAllCodeModules(true);
-exports.updateActionDispatcher = (uid, aid, oAd) => updateCodeModule(uid, aid, oAd)
-exports.deleteActionDispatcher = (uid, aid) => deleteCodeModule(uid, aid);
+exports.getActionDispatcher = getCodeModule;
+exports.updateActionDispatcher = updateCodeModule;
+exports.deleteActionDispatcher = deleteCodeModule;
 exports.createActionDispatcher = (uid, oAd) => {
 	oAd.isaction = true;
 	return createCodeModule(uid, oAd)
@@ -595,24 +583,16 @@ exports.createActionDispatcher = (uid, oAd) => {
 // ## EVENT TRIGGERS
 // ##
 
-exports.getActionDispatcher = (eid) => {
-	return getCodeModule(eid);
+exports.getAllEventTriggers = () => getAllCodeModules(false);
+exports.getEventTrigger = getCodeModule;
+exports.updateEventTrigger = (uid, eid, oEt) => {
+	// TODO Implement
+	return updateCodeModule(uid, eid, oEt)
+}
+exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
+exports.createEventTrigger = (uid, oEt) => {
+	// TODO Implement
+	oEt.isaction = false;
+	return createCodeModule(uid, oEt)
 };
 
-exports.getAllEventTriggers = () => {
-	return getAllCodeModules(false);
-};
-
-
-// exports.createEventTrigger = (uid, oEt) => {
-	// oEt.isaction = true;
-// 	return createCodeModule(uid, oEt)
-// };
-
-// exports.updateEventTrigger = (uid, eid, oEt) => {
-// 	return updateCodeModule(uid, eid, oEt)
-// };
-
-// exports.deleteEventTrigger = (uid, eid) => {
-// 	return deleteCodeModule(uid, eid);
-// };

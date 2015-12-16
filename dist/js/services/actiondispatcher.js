@@ -58,7 +58,6 @@ router.post('/update', (req, res) => {
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');
 			res.send('Action Dispatcher updated!')
-			geb.emit('module:update', ad);
 		})	
 		.catch(db.errHandler(res));
 });

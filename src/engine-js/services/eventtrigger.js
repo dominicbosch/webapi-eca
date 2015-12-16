@@ -16,38 +16,38 @@ var log = require('../logging'),
 	router = module.exports = express.Router();
 
 router.post('/get', (req, res) => {
-	log.info('SRVC:AD | Fetching all');
+	log.info('SRVC:ET | Fetching all');
 	db.getAllEventTriggers()
 		.then((arr) => res.send(arr))
 		.catch(db.errHandler(res));
 });
 
 router.post('/get/:id', (req, res) => {
-	log.info('SRVC:AD | Fetching one by id: ' + req.params.id);
+	log.info('SRVC:ET | Fetching one by id: ' + req.params.id);
 	db.getEventTrigger(req.params.id)
-		.then((oADs) => res.send(oADs))
+		.then((oETs) => res.send(oETs))
 		.catch(db.errHandler(res));
 });
 
 router.post('/create', (req, res) => {
-	log.info('SRVC:AD | Create: ' + req.body.name);
+	log.info('SRVC:ET | Create: ' + req.body.name);
 	let args = {
 		userid: req.session.pub.id,
 		username: req.session.pub.username,
 		body: req.body
 	};
 	storeModule(args)
-		.then((ad) => {
-			log.info('SRVC:AD | Module stored');
+		.then((et) => {
+			log.info('SRVC:ET | Module stored');
 			res.send('Event Trigger stored!')
-			geb.emit('module:new', ad);
+			geb.emit('module:new', et);
 		})	
 		.catch(db.errHandler(res));
 });
 
 // TODO IMPLEMENT correctly
 router.post('/update', (req, res) => {
-	log.info('SRVC:AD | UPDATE: ' + req.body.name);
+	log.info('SRVC:ET | UPDATE: ' + req.body.name);
 	let args = {
 		userid: req.session.pub.id,
 		username: req.session.pub.username,
@@ -55,10 +55,9 @@ router.post('/update', (req, res) => {
 		id: req.body.id
 	};
 	storeModule(args)
-		.then((ad) => {
-			log.info('SRVC:AD | Module stored');
+		.then((et) => {
+			log.info('SRVC:ET | Module stored');
 			res.send('Event Trigger stored!')
-			geb.emit('module:update', ad);
 		})	
 		.catch(db.errHandler(res));
 });
@@ -77,11 +76,11 @@ function storeModule(args) {
 		.then(() => {
 			let options = { globals: {} };
 			for(let el in ab.globals) options.globals[el] = 'dummy';
-			log.info('SRVC:AD | Running AD ', ab.name);
+			log.info('SRVC:ET | Running ET ', ab.name);
 			return dynmod.runStringAsModule(ab.code, ab.lang, args.username, options)
 		})
 		.then((oMod) => {
-			log.info('SRVC:AD | Storing module "'+ab.name+'" with functions '+Object.keys(oMod.functions).join(', '));
+			log.info('SRVC:ET | Storing module "'+ab.name+'" with functions '+Object.keys(oMod.functions).join(', '));
 			let oModule = ab;
 			delete oModule.id; // If the ID is set it is an update of an existing module
 			oModule.comment = oMod.comment;
@@ -93,7 +92,7 @@ function storeModule(args) {
 }
 
 router.post('/delete', (req, res) => {
-	log.info('SRVC:AD | DELETE: #' + req.body.id);
+	log.info('SRVC:ET | DELETE: #' + req.body.id);
 	db.deleteEventTrigger(req.session.pub.id, req.body.id)
 		.then(() => res.send('Deleted!'))
 		.catch(db.errHandler(res));
