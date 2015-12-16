@@ -11,6 +11,7 @@ var log = require('./logging'),
 	
 	fb = require('./persistence/firebase'),
 	encryption = require('./encryption'),
+	webhooks = require('./webhooks'),
 
 	// - Node.js Modules: [path](http://nodejs.org/api/path.html),
 	path = require('path'),
@@ -25,7 +26,6 @@ var log = require('./logging'),
 	db = global.db,
 	systemName = '➠ System',
 	maxMem = 200,
-	// activeHooks = {},
 	oChildren = {};
 
 exports.init = (oConf) => {	
@@ -77,6 +77,14 @@ geb.addListener('modules:list', (arrModules) => {
 		arr: arrModules
 	});
 });
+
+function emitEvent(uid, evt) {
+	let oHook = webhooks.getByUser(uid, evt.hookname);
+	console.log('found hook', oHook);
+	evt.hookurl = oHook.hookurl;
+	geb.emit('webhook:event', evt);
+}
+
 function sendToWorker(uid, evt) {
 	try {
 		if(oChildren[uid]) oChildren[uid].send(evt);
@@ -85,10 +93,9 @@ function sendToWorker(uid, evt) {
 		log.error(err);
 	}
 }
+
 function broadcast(evt) {
-	for(let uid in oChildren) {
-		sendToWorker(uid, evt);
-	}
+	for(let uid in oChildren) sendToWorker(uid, evt);
 }
 
 // Message Passing Interface, Incoming from children
@@ -109,7 +116,7 @@ function MPI(uid, username) {
 				break;
 			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
-			case 'event': geb.emit('webhook:event', dat);
+			case 'event': emitEvent(uid, dat);
 				break;
 			case 'startup':
 			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);

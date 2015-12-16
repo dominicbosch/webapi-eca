@@ -101,11 +101,9 @@ fOnLoad = () ->
 
 	main.post('/service/webhooks/get')
 		.done (o) ->
-			arr = [{ hookname: ''}].concat(o.public.concat(o.private));
-			d3.select('#listWebhooks').on 'change', () ->
-					$('#webhookid').val($(this).val())
-				.selectAll('option').data(arr).enter()
-				.append('option').attr('value', (d) -> d.hookurl).text((d) -> d.hookname)
+			arr = o.public.concat(o.private);
+			d3.select('#listWebhooks').selectAll('li').data(arr).enter()
+				.append('li').append('kbd').text (d) -> d.hookname
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which

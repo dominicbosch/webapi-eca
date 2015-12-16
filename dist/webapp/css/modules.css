@@ -1,3 +1,7 @@
+#listWebhooks li {
+	padding: 1px;
+}
+
 #schedule {
 	display: none;
 }

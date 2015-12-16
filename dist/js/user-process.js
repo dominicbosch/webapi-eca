@@ -212,7 +212,7 @@ function deleteRule(id) {
 
 
 function runModule(id, rid, oMod, globals, persistence, oStore) {
-	var lastEvent = null;
+	var lastEvent = {};
 	let opts = {
 		globals: globals || {},
 		modules: oMod.modules,
@@ -227,14 +227,22 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 		},
 		datalogger: (msg) => send.datalog({ rid: rid, msg: msg }),
 		persist: (data) => send.persist({ rid: rid, cid: oMod.id, persistence: data }),
-		emitEvent: (hookurl, evt) => {
+		emitEvent: (hookname, evt) => {
 			let now = (new Date()).getTime();
-			if(lastEvent && (lastEvent-now)<100) {
+			let oEvt = lastEvent[hookname];
+			if(!oEvt || (now-oEvt.time)>200) {
+				oEvt = lastEvent[hookname] = {
+					time: now,
+					count: 0
+				};
+			}
+			// We allow 20 events within 200 ms per rule per eventname before we tell the user that he floods
+			if(oEvt && (now-oEvt.time)<200 && oEvt.count>20) {
 				log.rule(rid, 'You are flooding our system with events... We need to limit this, sorry!');
 			} else {
-				lastEvent = now;
+				oEvt.count++;
 				send.event({
-					hookurl: hookurl, 
+					hookname: hookname, 
 					origin: 'internal',
 					engineReceivedTime: now,
 					body: evt

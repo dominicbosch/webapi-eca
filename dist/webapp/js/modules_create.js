@@ -107,16 +107,8 @@ fOnLoad = function() {
   });
   main.post('/service/webhooks/get').done(function(o) {
     var arr;
-    arr = [
-      {
-        hookname: ''
-      }
-    ].concat(o["public"].concat(o["private"]));
-    return d3.select('#listWebhooks').on('change', function() {
-      return $('#webhookid').val($(this).val());
-    }).selectAll('option').data(arr).enter().append('option').attr('value', function(d) {
-      return d.hookurl;
-    }).text(function(d) {
+    arr = o["public"].concat(o["private"]);
+    return d3.select('#listWebhooks').selectAll('li').data(arr).enter().append('li').append('kbd').text(function(d) {
       return d.hookname;
     });
   });

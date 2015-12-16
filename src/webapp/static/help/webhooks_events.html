@@ -1,5 +1,7 @@
 <div class="title">Emit Events on Webhooks</div>
 <p>
-In order to emit an event on a webhook use one <kbd>hookid</kbd> in the list below and emit an event on it by using the built-in function <kbd>emitEvent(hookid, obj)</kbd>, where <kbd>hookid</kbd> is the webhook's ID string and <kbd>obj</kbd> is any arbitrary serializable JSON object.
-
+In order to emit an event on a webhook use one <kbd>eventname</kbd> in the list below and emit an event on it by using the built-in function <kbd>emitEvent(eventname, obj)</kbd>, where <kbd>eventname</kbd> is the name you gave to your webhook and <kbd>obj</kbd> is any arbitrary serializable JSON object, e.g.:
+</p>
+<p>
+<kbd>emitEvent('hello world', { meet: 'greet' });</kbd>
 </p>

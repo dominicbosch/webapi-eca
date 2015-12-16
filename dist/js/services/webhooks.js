@@ -8,12 +8,12 @@
 
 // - [Logging](logging.html)
 var log = require('../logging'),
+	webhooks = require('../webhooks'),
 
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
 	crypto = require('crypto-js'),
 
-	activeHooks = {},
 	db = global.db,
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
@@ -23,9 +23,7 @@ geb.addListener('system:init', (msg) => {
 		.then((arrHooks) => {
 			log.info('SRVC:WH | Initializing '+arrHooks.length+' Webhooks');
 			for (let i = 0; i < arrHooks.length; i++) {
-				let h = arrHooks[i];
-				activeHooks[h.hookurl] = h;
-				geb.emit('webhook:activated', h);
+				geb.emit('webhook:activated', arrHooks[i]);
 			}
 		})
 		.catch((err) => log.error(err));
@@ -64,7 +62,6 @@ router.post('/create', (req, res) => {
 		.then((oHook) => {
 			log.info('SRVC:WH | Webhook "'+oHook.hookname
 				+'" created with ID "'+oHook.id+'" and activated');
-			activeHooks[oHook.hookurl] = oHook;
 			geb.emit('webhook:activated', oHook);
 			res.send(oHook);
 		})
@@ -77,12 +74,7 @@ router.post('/delete/:id', (req, res) => {
 	log.info('SRVC:WH | Deleting Webhook '+hid);
 	db.deleteWebhook(req.session.pub.id, hid)
 		.then(() => {
-			for(let hookurl in activeHooks) {
-				if(activeHooks[hookurl].id === hid) {	
-					geb.emit('webhook:deactivated', hookurl);
-					delete activeHooks[hookurl];
-				}
-			}
+			geb.emit('webhook:deactivated', hid);
 			res.send('OK!');
 		})
 		.catch(db.errHandler(res));
@@ -90,11 +82,12 @@ router.post('/delete/:id', (req, res) => {
 
 // A remote service pushes an event over a webhook to our system
 router.post('/event/:hookurl', (req, res) => {
-	let oHook = activeHooks[req.params.hookurl];
+	let oHook = webhooks.getByUrl(req.params.hookurl);
 	if(oHook) {
 		let now = new Date();
 		let obj = {
 			hookurl: oHook.hookurl,
+			hookname: oHook.hookname,
 			origin: req.ip,
 			engineReceivedTime: now.getTime(),
 			body: req.body
