@@ -26,6 +26,7 @@ var pl = require('./process-logger')
 // 				function name as string
 //				function arguments as array
 
+// Message Passing Interface: Outgoing to main process
 function sendToParent(obj) {
 	try {
 		process.send(obj);
@@ -35,19 +36,22 @@ function sendToParent(obj) {
 	}
 }
 
-function sendLog(level, msg) {
-	sendToParent({
-		cmd: 'log:'+level,
-		data: msg
-	});
-}
+var send = {
+	startup: () => sendToParent({ cmd: 'startup', timestamp: (new Date()).getTime() }),
+	stats: (stats) => sendToParent({ cmd: 'stats', data: stats }),
+	log: (level, msg) => sendToParent({ cmd: 'log:'+level, data: msg }),
+	event: (evt) => sendToParent({ cmd: 'event', data: evt }),
+	datalog: (data) => sendToParent({ cmd: 'datalog', data: data }),
+	persist: (data) => sendToParent({ cmd: 'persist', data: data })
+};
+
+send.startup();
 
 var log = {
-	debug: (msg) => sendLog('debug', msg),
-	info: (msg) => sendLog('info', msg),
-	warn: (msg) => sendLog('warn', msg),
-	error: (msg) => sendLog('error', msg),
-	rule: (rid, msg) => sendLog('rule', {
+	info: (msg) => send.log('info', msg),
+	worker: (msg) => send.log('worker', msg),
+	error: (msg) => send.log('error', msg),
+	rule: (rid, msg) => send.log('rule', {
 		rid: rid, 
 		msg: msg
 	})
@@ -61,11 +65,13 @@ process.on('disconnect', () => {
 	console.log('UP | Shutting down Code Executor');
 	process.exit();
 });
+
+// Message Passing Interface: Incoming from main process
 process.on('message', (oMsg) => {
 	switch(oMsg.cmd) {
 		case 'init':
-			pl(sendToParent, oMsg.startIndex);
-			log.debug('Starting up with initial stats log index ' + oMsg.startIndex);
+			pl(send.stats, oMsg.startIndex);
+			log.info('Starting up with initial stats log index ' + oMsg.startIndex);
 		break;
 		case 'modules:list':
 			dynmod.newAllowedModuleList(oMsg.arr);
@@ -92,11 +98,11 @@ process.on('message', (oMsg) => {
 				}
 
 				try {
-					log.debug('Executing function '+func.name+' in action #'+oe.aid);
+					log.info('Executing function '+func.name+' in action #'+oe.aid);
 					oRuleModules[oe.rid][oe.aid][func.name].apply(this, arrPassingArgs);
 				} catch(err) {
 					log.rule(oe.rid, err.toString());
-					log.debug(err.toString());
+					log.info(err.toString());
 				}
 			}
 		break; 
@@ -115,12 +121,12 @@ function newRule(oRule) {
 	// Since we can't remove the modules that have been 'required' by the previous modules, this
 	// will likely lead to a filling of the memory and require a restart of the user process from time to time
 	for(let el in oRuleModules[oRule.id]) {
-		log.debug('UP | Removing module "'+el+'" from rule #'+oRule.id);
+		log.info('UP | Removing module "'+el+'" from rule #'+oRule.id);
 		delete oRuleModules[oRule.id][el];
 	}
 
 	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
-	log.debug('UP | Rule "'+oRule.name+'" initializes modules: ');
+	log.info('UP | Rule "'+oRule.name+'" initializes modules: ');
 
 	// For each action in the rule we find arguments and the required module (both provided here in the rule)
 	for(let i = 0; i < oRule.actions.length; i++) {
@@ -132,7 +138,7 @@ function newRule(oRule) {
 
 		// We use this action function for the first time in this rule (might not be the case if it's an update)
 
-		log.debug('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		log.info('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
 		// // Got through all action functions
 		for(let j = 0; j < oAction.functions.length; j++) {
 			let oActFunc = oAction.functions[j];
@@ -215,39 +221,23 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 			try {
 				log.rule(rid, msg.toString().substring(0, 200));
 			} catch(err) {
-				log.debug(err.toString());
+				log.info(err.toString());
 				log.rule(rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		datalogger: (msg) =>  sendToParent({
-			cmd: 'datalog',
-			data: {	
-				rid: rid, 
-				msg: msg
-			}
-		}),
-		persist: (data) => sendToParent({
-			cmd: 'persist',
-			data: {	
-				rid: rid, 
-				cid: oMod.id, 
-				persistence: data
-			}
-		}),
+		datalogger: (msg) => send.datalog({ rid: rid, msg: msg }),
+		persist: (data) => send.persist({ rid: rid, cid: oMod.id, persistence: data }),
 		emitEvent: (hookurl, evt) => {
 			let now = (new Date()).getTime();
 			if(lastEvent && (lastEvent-now)<100) {
 				log.rule(rid, 'You are flooding our system with events... We need to limit this, sorry!');
 			} else {
 				lastEvent = now;
-				sendToParent({
-					cmd: 'event',
-					data: {
-						hookurl: hookurl, 
-						origin: 'internal',
-						engineReceivedTime: now,
-						body: evt
-					}
+				send.event({
+					hookurl: hookurl, 
+					origin: 'internal',
+					engineReceivedTime: now,
+					body: evt
 				})
 			}
 		}
@@ -258,7 +248,7 @@ function runModule(id, rid, oMod, globals, persistence, oStore) {
 	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
 		.then((answ) => {
 			log.rule(rid, ' --> '+name+' "'+oMod.name+'" (v'+oMod.version+') loaded');
-			log.info('UP | '+name+' "'+oMod.name+'" loaded for user '+oMod.User.username);
+			log.worker('UP | '+name+' "'+oMod.name+'" loaded for user '+oMod.User.username);
 			oStore[id] = answ.module;
 		})
 		.catch((err) => log.error(err.toString()+'\n'+err.stack))

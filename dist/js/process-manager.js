@@ -31,7 +31,13 @@ var log = require('./logging'),
 exports.init = (oConf) => {	
 	log.info('PM | Initialzing Users and Loggers');
 	fb.getLastIndex(systemName, (err, id) => {
-		pl(registerProcessLogger(null, systemName), id, db.getDBSize);
+		let mpi = MPI(null, systemName);
+		let sendStats = (data) => mpi({ cmd: 'stats', data: data });
+		pl(sendStats, id, db.getDBSize);
+		mpi({
+			cmd: 'startup',
+			timestamp: (new Date()).getTime()
+		});
 	});
 
 	// Load the standard users from the user config file if they are not already existing
@@ -85,6 +91,35 @@ function broadcast(evt) {
 	}
 }
 
+// Message Passing Interface, Incoming from children
+function MPI(uid, username) {
+	log.info('PM | Registered Process Logger (uid='+uid+', username='+username+')')
+	return (oMsg) => {
+		let dat = oMsg.data;
+		switch(oMsg.cmd) {
+			case 'log:info': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(dat));
+				break;
+			case 'log:worker': db.logWorker(uid, dat);
+				break;
+			case 'log:rule': db.logRule(dat.rid, dat.msg);
+				break;
+			case 'log:error': log.error(dat);
+				break;
+			case 'datalog': db.logRuleData(dat.rid, dat.msg);
+				break;
+			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
+				break;
+			case 'event': geb.emit('webhook:event', dat);
+				break;
+			case 'startup':
+			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
+				break;
+			case 'stats': fb.logStats(username, dat);
+				break;
+			default: log.warn('PM | Got unknown command:' + oMsg.cmd);
+		}
+	}
+}
 function sendRuleToUser(oRule) {
 	let arrPromises = [];
 	// The user process ha no DB connection so we need to send it all the required 
@@ -126,35 +161,6 @@ geb.addListener('action', (oEvt) => {
 	});
 });
 
-function registerProcessLogger(uid, username) {
-	log.info('PM | Registered Process Logger (uid='+uid+', username='+username+')')
-	return (oMsg) => {
-		let dat = oMsg.data;
-		switch(oMsg.cmd) {
-			case 'log:debug': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(dat));
-				break;
-			case 'log:info': db.logWorker(uid, dat);
-				break;
-			case 'log:rule': db.logRule(dat.rid, dat.msg);
-				break;
-			case 'log:error': log.error(dat);
-				break;
-			case 'datalog': db.logRuleData(dat.rid, dat.msg);
-				break;
-			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
-				break;
-			case 'event': geb.emit('webhook:event', dat);
-				break;
-			case 'startup':
-			case 'shutdown': fb.logState(username, oMsg.cmd, oMsg.timestamp);
-				break;
-			case 'stats': fb.logStats(username, dat);
-				break;
-			default: log.warn('PM | Got unknown command:' + oMsg.cmd);
-		}
-	}
-}
-
 function startWorker(oUser) {
 	return new Promise((resolve, reject) => {
 		var options = {
@@ -176,7 +182,7 @@ function startWorker(oUser) {
 				log.info('PM | Started dedicated process with PID '+proc.pid+' for user '+oUser.username);
 				db.setWorker(oUser.id, proc.pid)
 					.then(() => {
-						proc.on('message', registerProcessLogger(oUser.id, oUser.username));
+						proc.on('message', MPI(oUser.id, oUser.username));
 						sendToWorker(oUser.id, {
 							cmd: 'init',
 							startIndex: id,

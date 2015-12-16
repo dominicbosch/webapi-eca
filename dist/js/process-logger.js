@@ -4,10 +4,6 @@
 var os = require('os');
 
 module.exports = function(sendStats, startIndex, getDBSize) {
-	sendStats({
-		cmd: 'startup',
-		timestamp: (new Date()).getTime()
-	});
 	// measure every minute. min/max average over two hours (120 data points averaged),
 	// 100 data points overall -> 1.5 weeks of data displayed
 	var dataIndex = startIndex;
@@ -63,23 +59,21 @@ module.exports = function(sendStats, startIndex, getDBSize) {
 		updateMetric(oCumulated.rss, mem.rss);
 		updateMetric(oCumulated.loadavg, os.loadavg()[0]);
 		let oStats = {
-			cmd: 'stats',
-			data: {
-				index: dataIndex,
-				timestamp: (new Date()).getTime(),
-				heapTotal: getMetric(oCumulated.heapTotal),
-				heapUsed: getMetric(oCumulated.heapUsed),
-				rss: getMetric(oCumulated.rss),
-				loadavg: getMetric(oCumulated.loadavg)
-			}
+			index: dataIndex,
+			timestamp: (new Date()).getTime(),
+			heapTotal: getMetric(oCumulated.heapTotal),
+			heapUsed: getMetric(oCumulated.heapUsed),
+			rss: getMetric(oCumulated.rss),
+			loadavg: getMetric(oCumulated.loadavg)
 		}
 		if((typeof getDBSize) === 'function') {
 			getDBSize()
 				.then((size) => {
 					updateMetric(oCumulated.dbsize, size);
-					oStats.data.dbsize = getMetric(oCumulated.dbsize)
+					oStats.dbsize = getMetric(oCumulated.dbsize)
 					sendStats(oStats);
 				})
+				.catch((err) => console.log(err))
 		} else {
 			sendStats(oStats);
 		}
