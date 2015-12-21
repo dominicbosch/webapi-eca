@@ -38,13 +38,40 @@ router.post('/create', (req, res) => {
 	};
 	storeModule(args)
 		.then((et) => {
-			log.info('SRVC:ET | Module stored');
+			log.info('SRVC:ET | Module created');
 			res.send(et)
 			geb.emit('eventtrigger:new', et);
 		})	
 		.catch(db.errHandler(res));
 });
 
+router.post('/start/:id', (req, res) => {
+	log.info('SRVC:ET | Starting: #' + req.body.id);
+	db.startStopEventTrigger(req.session.pub.id, req.params.id, true)
+		.then((et) => {
+			log.info('SRVC:ET | Module started');
+			res.send('OK');
+			geb.emit('eventtrigger:start', {
+				uid: req.session.pub.id,
+				eid: req.body.id
+			});
+		})	
+		.catch(db.errHandler(res));
+});
+
+router.post('/stop/:id', (req, res) => {
+	log.info('SRVC:ET | Stopping: #' + req.body.id);
+	db.startStopEventTrigger(req.session.pub.id, req.params.id, false)
+		.then((et) => {
+			log.info('SRVC:ET | Module stopped');
+			res.send('OK');
+			geb.emit('eventtrigger:stop', {
+				uid: req.session.pub.id,
+				eid: req.body.id
+			});
+		})	
+		.catch(db.errHandler(res));
+});
 
 router.post('/update', (req, res) => {
 	log.info('SRVC:ET | UPDATE: ' + req.body.name);
@@ -56,7 +83,7 @@ router.post('/update', (req, res) => {
 	};
 	storeModule(args)
 		.then((et) => {
-			log.info('SRVC:ET | Module stored');
+			log.info('SRVC:ET | Module updated');
 			res.send('Event Trigger stored!');
 			geb.emit('eventtrigger:new', et);
 		})	

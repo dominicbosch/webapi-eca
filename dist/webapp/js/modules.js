@@ -87,13 +87,14 @@ editModule = function(d) {
 };
 
 startStopModule = function(d) {
-  var action, req;
+  var action, d3This, req;
+  d3This = d3.select(this);
   action = d.Schedule.running ? 'stop' : 'start';
-  req = main.post(urlService + '/get');
+  req = main.post(urlService + '/' + action + '/' + d.id);
   req.done(function() {
     action = d.Schedule.running ? 'stopped' : 'started';
     d.Schedule.running = !d.Schedule.running;
-    return d3.select(this).attr('src', '/images/' + (d.Schedule.running ? 'pause' : 'play') + '.png').attr('title', function(d) {
+    return d3This.attr('src', '/images/' + (d.Schedule.running ? 'pause' : 'play') + '.png').attr('title', function(d) {
       if (d.Schedule.running) {
         return 'Stop Module';
       } else {

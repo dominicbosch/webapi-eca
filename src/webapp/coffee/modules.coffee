@@ -71,12 +71,13 @@ editModule = (d) ->
 		window.location.href = 'modules_create?m=et&id='+d.id
 
 startStopModule = (d) ->
+	d3This = d3.select(this)
 	action = if d.Schedule.running then 'stop' else 'start'
-	req = main.post(urlService+'/get')
+	req = main.post(urlService+'/'+action+'/'+d.id)
 	req.done () ->
 		action = if d.Schedule.running then 'stopped' else 'started'
 		d.Schedule.running = !d.Schedule.running;
-		d3.select(this).attr('src', '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
+		d3This.attr('src', '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
 			.attr('title', (d) -> if d.Schedule.running then 'Stop Module' else 'Start Module')
 	req.fail (err) ->
 		action = if d.Schedule.running then 'stop' else 'start'

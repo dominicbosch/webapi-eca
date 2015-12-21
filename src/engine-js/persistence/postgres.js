@@ -600,6 +600,19 @@ exports.updateEventTrigger = (uid, eid, oEt) => {
 				})
 		})
 }
+exports.startStopEventTrigger = (uid, eid, isStart) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getCodeModules({
+			where: { id: eid },
+			include: [ Schedule ]
+		}))
+		.then((arrOldMod) => {
+			if(arrOldMod.length > 0) {
+				return arrOldMod[0].Schedule.update({ running: isStart });
+			}
+			else throwStatusCode(404, 'No Code Module found to update!');
+		});
+}
 exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
 exports.createEventTrigger = (uid, oEt) => {
 	oEt.isaction = false;

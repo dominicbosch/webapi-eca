@@ -82,6 +82,40 @@ process.on('message', (oMsg) => {
 		case 'rule:delete':
 			deleteRule(oMsg.id);
 		break;
+		case 'eventtrigger:new':
+			console.log('TODO implement ET new');
+		break;
+		case 'eventtrigger:start':
+			console.log('TODO implement ET start');
+		break;
+		case 'eventtrigger:stop':
+			console.log('TODO implement ET stop');
+		// TODO check if is running . because it might be an update on a non running module
+// 		Got event ttrigger { id: 3,
+//   name: 'Hello Worldqwqwfasdasdasq',
+//   lang: 'CoffeeScript',
+//   version: 2,
+//   code: '\n# A simple Hello World code block\nexports.pollHelloWorld = () ->\n\tlog \'Hello World!\'\n\t',
+//   comment: 'A simple Hello World code block\n',
+//   modules: [],
+//   functions: { pollHelloWorld: [] },
+//   globals: {},
+//   isaction: false,
+//   UserId: 1,
+//   Schedule: 
+//    { id: 3,
+//      text: 'every 20 mins starting on the 7th min',
+//      running: true,
+//      CodeModuleId: 3 } }
+// Worker got new event trigger:[object Object]
+// Executing (default): select pg_database_size('webapi-eca')
+// [11:33:42] Redeploying:  src/engine-js/process-manager.js
+// [11:33:42] [nodemon] restarting due to changes...
+// [11:33:42] [nodemon] starting `node dist/js/webapi-eca.js`
+// [11:33:42] 
+// [2015-12-21T10:33:
+			console.log('Worker got new event trigger:'+oMsg.trigger);
+		break;
 		case 'action':
 			let oe = oMsg.evt;
 			let arrFuncs = oActArgs[oe.rid][oe.aid];

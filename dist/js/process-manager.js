@@ -67,6 +67,7 @@ exports.init = (oConf) => {
 		})
 }
 
+// Process Manager heavily relies on (internal) events coming from the web services
 geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
 });
@@ -79,7 +80,31 @@ geb.addListener('modules:list', (arrModules) => {
 });
 
 geb.addListener('eventtrigger:new', (oEt) => {
-	console.log('Got event ttrigger', oEt)
+	sendToWorker(oEt.UserId, {
+		cmd: 'eventtrigger:new',
+		trigger: oEt
+	});
+});
+geb.addListener('eventtrigger:start', (oEvt) => {
+	sendToWorker(oEvt.uid, {
+		cmd: 'eventtrigger:start',
+		eid: oEvt.eid
+	});
+});
+geb.addListener('eventtrigger:stop', (oEvt) => {
+	sendToWorker(oEvt.uid, {
+		cmd: 'eventtrigger:stop',
+		eid: oEvt.eid
+	});
+});
+
+geb.addListener('rule:new', sendRuleToUser);
+
+geb.addListener('action', (oEvt) => {
+	sendToWorker(oEvt.uid, {
+		cmd: 'action',
+		evt: oEvt
+	});
 });
 
 function emitEvent(uid, evt) {
@@ -162,15 +187,6 @@ function sendRuleToUser(oRule) {
 		})
 		.catch((err) => console.error(err));
 }
-
-geb.addListener('rule:new', sendRuleToUser);
-
-geb.addListener('action', (oEvt) => {
-	sendToWorker(oEvt.uid, {
-		cmd: 'action',
-		evt: oEvt
-	});
-});
 
 function startWorker(oUser) {
 	return new Promise((resolve, reject) => {
