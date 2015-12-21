@@ -4,11 +4,13 @@ moduleTypeName = if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigg
 moduleType = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 arrUsedModules = null
 
-fOnLoad = () ->
-# TODO first check whether oParams.m edit is a valid module before setting the title
+updateTitle = () ->
 	title = if oParams.id then 'Edit ' else 'Create '
 	title += moduleTypeName
 	$('#pagetitle').text title
+
+fOnLoad = () ->
+	updateTitle()
 	main.registerHoverInfo d3.select('#programcode'), 'modules_code.html'
 	main.registerHoverInfo d3.select('#webhookinfo'), 'webhooks_events.html'
 	
@@ -167,13 +169,16 @@ fOnLoad = () ->
 					action = if oParams.id then 'update' else 'create'
 					main.post('/service/'+moduleType+'/'+action, obj)
 						.done (msg) ->
-							main.setInfo true, 'Action Dispatcher stroed!', true
+							main.setInfo true, (moduleTypeName+' stored!'), true
 							if oParams.id then alert "You need to update the rules that use this module in 
 											order for the changes to be applied to them!"
+							# Since we stored a new module we got the id back. we add this id to the URL query 
+							# like this we are in a clean edit (update) mode after creating a new event trigger
 							wl = window.location;
 							oParams.id = msg.id;
-							newurl = wl.protocol + "//" + wl.host + wl.pathname + '&id='+msg.id;
+							newurl = wl.href+'&id='+msg.id;
 							window.history.pushState({path:newurl},'',newurl);
+							updateTitle()
 
 						.fail (err) ->
 							main.setInfo false, err.responseText, true
@@ -225,6 +230,12 @@ fOnLoad = () ->
 			.fail (err) ->
 				fAddUserParam '', false
 				main.setInfo false, 'Could not get module '+oParams.id+': '+ err.responseText
+				
+				wl = window.location;
+				newurl = wl.href+'&m='+moduleType;
+				window.history.pushState({path:newurl},'',newurl);
+				delete oParams.id
+				updateTitle()
 
 	else
 		# We add the standard template, params and names

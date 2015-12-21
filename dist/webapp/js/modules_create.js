@@ -1,5 +1,5 @@
 'use strict';
-var arrUsedModules, fOnLoad, moduleType, moduleTypeName;
+var arrUsedModules, fOnLoad, moduleType, moduleTypeName, updateTitle;
 
 moduleTypeName = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
 
@@ -7,11 +7,16 @@ moduleType = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
 
 arrUsedModules = null;
 
-fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, title, updateUsedModules;
+updateTitle = function() {
+  var title;
   title = oParams.id ? 'Edit ' : 'Create ';
   title += moduleTypeName;
-  $('#pagetitle').text(title);
+  return $('#pagetitle').text(title);
+};
+
+fOnLoad = function() {
+  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, updateUsedModules;
+  updateTitle();
   main.registerHoverInfo(d3.select('#programcode'), 'modules_code.html');
   main.registerHoverInfo(d3.select('#webhookinfo'), 'webhooks_events.html');
   if (oParams.m !== 'ad') {
@@ -184,16 +189,17 @@ fOnLoad = function() {
           action = oParams.id ? 'update' : 'create';
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
             var newurl, wl;
-            main.setInfo(true, 'Action Dispatcher stroed!', true);
+            main.setInfo(true, moduleTypeName + ' stored!', true);
             if (oParams.id) {
               alert("You need to update the rules that use this module in order for the changes to be applied to them!");
             }
             wl = window.location;
             oParams.id = msg.id;
-            newurl = wl.protocol + "//" + wl.host + wl.pathname + '&id=' + msg.id;
-            return window.history.pushState({
+            newurl = wl.href + '&id=' + msg.id;
+            window.history.pushState({
               path: newurl
             }, '', newurl);
+            return updateTitle();
           }).fail(function(err) {
             return main.setInfo(false, err.responseText, true);
           });
@@ -249,8 +255,16 @@ fOnLoad = function() {
         return updateUsedModules(oMod.modules);
       }
     }).fail(function(err) {
+      var newurl, wl;
       fAddUserParam('', false);
-      return main.setInfo(false, 'Could not get module ' + oParams.id + ': ' + err.responseText);
+      main.setInfo(false, 'Could not get module ' + oParams.id + ': ' + err.responseText);
+      wl = window.location;
+      newurl = wl.href + '&m=' + moduleType;
+      window.history.pushState({
+        path: newurl
+      }, '', newurl);
+      delete oParams.id;
+      return updateTitle();
     });
   } else {
     $('#input_id').val('Hello World');
