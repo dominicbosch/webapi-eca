@@ -1,3 +1,7 @@
+#moduleparams {
+	visibility: hidden;
+}
+
 #listWebhooks li {
 	padding: 1px;
 }

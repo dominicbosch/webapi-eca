@@ -71,8 +71,14 @@ editModule = (d) ->
 		window.location.href = 'modules_create?m=et&id='+d.id
 
 startStopModule = (d) ->
-	d3This = d3.select(this)
-	action = if d.Schedule.running then 'stop' else 'start'
+	if d.Schedule.running 
+		d3.select('#moduleparams').style('visibility', 'hidden')
+		sendStartStopCommand d3.select(this), d, 'stop'
+	else
+		d3.select('#moduleparams').style('visibility', 'visible')
+		action = 'start'
+
+sendStartStopCommand = (d3This, d, action) ->
 	req = main.post(urlService+'/'+action+'/'+d.id)
 	req.done () ->
 		action = if d.Schedule.running then 'stopped' else 'started'

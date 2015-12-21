@@ -1,5 +1,5 @@
 'use strict';
-var deleteModule, editModule, fOnLoad, modName, startStopModule, updateModules, urlService;
+var deleteModule, editModule, fOnLoad, modName, sendStartStopCommand, startStopModule, updateModules, urlService;
 
 urlService = '/service/';
 
@@ -87,9 +87,18 @@ editModule = function(d) {
 };
 
 startStopModule = function(d) {
-  var action, d3This, req;
-  d3This = d3.select(this);
-  action = d.Schedule.running ? 'stop' : 'start';
+  var action;
+  if (d.Schedule.running) {
+    d3.select('#moduleparams').style('visibility', 'hidden');
+    return sendStartStopCommand(d3.select(this), d, 'stop');
+  } else {
+    d3.select('#moduleparams').style('visibility', 'visible');
+    return action = 'start';
+  }
+};
+
+sendStartStopCommand = function(d3This, d, action) {
+  var req;
   req = main.post(urlService + '/' + action + '/' + d.id);
   req.done(function() {
     action = d.Schedule.running ? 'stopped' : 'started';
