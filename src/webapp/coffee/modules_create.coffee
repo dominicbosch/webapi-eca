@@ -230,9 +230,9 @@ fOnLoad = () ->
 			.fail (err) ->
 				fAddUserParam '', false
 				main.setInfo false, 'Could not get module '+oParams.id+': '+ err.responseText
-				
+				# Removing the ID from the string and updating the tile because we are in CREATE mode now
 				wl = window.location;
-				newurl = wl.href+'&m='+moduleType;
+				newurl = wl.origin+wl.pathname+'?m='+oParams.m;
 				window.history.pushState({path:newurl},'',newurl);
 				delete oParams.id
 				updateTitle()
