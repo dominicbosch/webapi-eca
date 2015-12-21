@@ -40,12 +40,10 @@ router.post('/create', (req, res) => {
 		.then((ad) => {
 			log.info('SRVC:AD | Module stored');
 			res.send({ id: ad.id })
-			geb.emit('module:new', ad);
 		})	
 		.catch(db.errHandler(res));
 });
 
-// TODO IMPLEMENT correctly
 router.post('/update', (req, res) => {
 	log.info('SRVC:AD | UPDATE: ' + req.body.name);
 	let args = {

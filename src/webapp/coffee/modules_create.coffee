@@ -17,14 +17,6 @@ fOnLoad = () ->
 	if oParams.m isnt 'ad'
 		main.registerHoverInfo d3.select('#schedule > h2'), 'modules_schedule.html'
 		$('#schedule').show()
-		# document.getElementById('datePicker').value = new Date().toDateInputValue();
-		dateNow = new Date()
-		# dateNow.setMinutes dateNow.getMinutes() + 10
-		$('#datetimePicker').datetimepicker
-			defaultDate: dateNow
-			minDate: dateNow
-		$('#timePicker').datetimepicker
-			format: 'LT'
 
 	# Setup the ACE editor
 	editor = ace.edit "editor"
@@ -170,7 +162,7 @@ fOnLoad = () ->
 					main.post('/service/'+moduleType+'/'+action, obj)
 						.done (msg) ->
 							main.setInfo true, (moduleTypeName+' stored!'), true
-							if oParams.id then alert "You need to update the rules that use this module in 
+							if oParams.id and oParams.m is 'ad' then alert "You need to update the rules that use this module in 
 											order for the changes to be applied to them!"
 							# Since we stored a new module we got the id back. we add this id to the URL query 
 							# like this we are in a clean edit (update) mode after creating a new event trigger
@@ -199,11 +191,12 @@ fOnLoad = () ->
 		main.post('/service/'+moduleType+'/get/'+oParams.id)
 			.done (oMod) ->
 				if oMod
+					console.log(oMod)
 					uid = parseInt d3.select('body').attr('data-uid')
 					fAddUserParam param, shielded for param, shielded of oMod.globals
 					$('#input_id').val(oMod.name)
 					if oParams.m isnt 'ad'
-						$('#inp_schedule').val(oMod.schedule.text)
+						$('#inp_schedule').val(oMod.Schedule.text)
 					if uid is oMod.UserId 
 						fAddUserParam '', false
 					else

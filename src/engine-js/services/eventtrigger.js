@@ -39,13 +39,13 @@ router.post('/create', (req, res) => {
 	storeModule(args)
 		.then((et) => {
 			log.info('SRVC:ET | Module stored');
-			res.send('Event Trigger stored!')
-			geb.emit('module:new', et);
+			res.send(et)
+			geb.emit('eventtrigger:new', et);
 		})	
 		.catch(db.errHandler(res));
 });
 
-// TODO IMPLEMENT correctly
+
 router.post('/update', (req, res) => {
 	log.info('SRVC:ET | UPDATE: ' + req.body.name);
 	let args = {
@@ -57,7 +57,8 @@ router.post('/update', (req, res) => {
 	storeModule(args)
 		.then((et) => {
 			log.info('SRVC:ET | Module stored');
-			res.send('Event Trigger stored!')
+			res.send('Event Trigger stored!');
+			geb.emit('eventtrigger:new', et);
 		})	
 		.catch(db.errHandler(res));
 });

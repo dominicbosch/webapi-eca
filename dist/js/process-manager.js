@@ -78,6 +78,10 @@ geb.addListener('modules:list', (arrModules) => {
 	});
 });
 
+geb.addListener('eventtrigger:new', (oEt) => {
+	console.log('Got event ttrigger', oEt)
+});
+
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
 	console.log('found hook', oHook);

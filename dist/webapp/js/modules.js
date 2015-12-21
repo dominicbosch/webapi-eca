@@ -34,8 +34,14 @@ updateModules = function(uid) {
       trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', editModule);
       if (oParams.m !== 'ad') {
         trNew.append('td').classed('smallpadded', true).append('img').attr('class', 'icon edit').attr('src', function(d) {
-          return '/images/' + (d.running ? 'pause' : 'play') + '.png';
-        }).attr('title', 'Edit Module').on('click', startStopModule);
+          return '/images/' + (d.Schedule.running ? 'pause' : 'play') + '.png';
+        }).attr('title', function(d) {
+          if (d.Schedule.running) {
+            return 'Stop Module';
+          } else {
+            return 'Start Module';
+          }
+        }).on('click', startStopModule);
       }
       trNew.append('td').classed('smallpadded', true).append('div').text(function(d) {
         return d.name;
@@ -49,7 +55,7 @@ updateModules = function(uid) {
       });
       if (oParams.m !== 'ad') {
         return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
-          return d.schedule.text;
+          return d.Schedule.schedule;
         });
       }
     }
@@ -81,8 +87,24 @@ editModule = function(d) {
 };
 
 startStopModule = function(d) {
-  d.running = !d.running;
-  return d3.select(this).attr('src', '/images/' + (d.running ? 'pause' : 'play') + '.png');
+  var action, req;
+  action = d.Schedule.running ? 'stop' : 'start';
+  req = main.post(urlService + '/get');
+  req.done(function() {
+    action = d.Schedule.running ? 'stopped' : 'started';
+    d.Schedule.running = !d.Schedule.running;
+    return d3.select(this).attr('src', '/images/' + (d.Schedule.running ? 'pause' : 'play') + '.png').attr('title', function(d) {
+      if (d.Schedule.running) {
+        return 'Stop Module';
+      } else {
+        return 'Start Module';
+      }
+    });
+  });
+  return req.fail(function(err) {
+    action = d.Schedule.running ? 'stop' : 'start';
+    return main.setInfo(false, 'Unable to ' + action + ' Event Trigger');
+  });
 };
 
 fOnLoad = function() {

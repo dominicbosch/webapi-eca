@@ -15,21 +15,13 @@ updateTitle = function() {
 };
 
 fOnLoad = function() {
-  var dateNow, editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, updateUsedModules;
+  var editor, fAddInputRow, fAddUserParam, fChangeInputVisibility, updateUsedModules;
   updateTitle();
   main.registerHoverInfo(d3.select('#programcode'), 'modules_code.html');
   main.registerHoverInfo(d3.select('#webhookinfo'), 'webhooks_events.html');
   if (oParams.m !== 'ad') {
     main.registerHoverInfo(d3.select('#schedule > h2'), 'modules_schedule.html');
     $('#schedule').show();
-    dateNow = new Date();
-    $('#datetimePicker').datetimepicker({
-      defaultDate: dateNow,
-      minDate: dateNow
-    });
-    $('#timePicker').datetimepicker({
-      format: 'LT'
-    });
   }
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
@@ -190,7 +182,7 @@ fOnLoad = function() {
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
             var newurl, wl;
             main.setInfo(true, moduleTypeName + ' stored!', true);
-            if (oParams.id) {
+            if (oParams.id && oParams.m === 'ad') {
               alert("You need to update the rules that use this module in order for the changes to be applied to them!");
             }
             wl = window.location;
@@ -222,6 +214,7 @@ fOnLoad = function() {
     return main.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
       var param, ref, shielded, uid;
       if (oMod) {
+        console.log(oMod);
         uid = parseInt(d3.select('body').attr('data-uid'));
         ref = oMod.globals;
         for (param in ref) {
@@ -230,7 +223,7 @@ fOnLoad = function() {
         }
         $('#input_id').val(oMod.name);
         if (oParams.m !== 'ad') {
-          $('#inp_schedule').val(oMod.schedule.text);
+          $('#inp_schedule').val(oMod.Schedule.text);
         }
         if (uid === oMod.UserId) {
           fAddUserParam('', false);

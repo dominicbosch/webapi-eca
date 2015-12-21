@@ -39,8 +39,8 @@ updateModules = (uid) ->
 				trNew.append('td').classed('smallpadded', true)
 					.append('img')
 						.attr('class', 'icon edit')
-						.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
-						.attr('title', 'Edit Module')
+						.attr('src', (d) -> '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
+						.attr('title', (d) -> if d.Schedule.running then 'Stop Module' else 'Start Module')
 						.on('click', startStopModule);
 
 			trNew.append('td').classed('smallpadded', true)
@@ -50,7 +50,7 @@ updateModules = (uid) ->
 			trNew.append('td').text((d) -> d.User.username)
 			if oParams.m isnt 'ad'
 				trNew.append('td').attr('class','consoled mediumfont')
-					.text((d) -> d.schedule.text)
+					.text((d) -> d.Schedule.schedule)
 
 	req.fail ( err ) ->
 		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
@@ -71,8 +71,16 @@ editModule = (d) ->
 		window.location.href = 'modules_create?m=et&id='+d.id
 
 startStopModule = (d) ->
-	d.running = !d.running;
-	d3.select(this).attr('src', '/images/'+(if d.running then 'pause' else 'play')+'.png')
+	action = if d.Schedule.running then 'stop' else 'start'
+	req = main.post(urlService+'/get')
+	req.done () ->
+		action = if d.Schedule.running then 'stopped' else 'started'
+		d.Schedule.running = !d.Schedule.running;
+		d3.select(this).attr('src', '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
+			.attr('title', (d) -> if d.Schedule.running then 'Stop Module' else 'Start Module')
+	req.fail (err) ->
+		action = if d.Schedule.running then 'stop' else 'start'
+		main.setInfo false, 'Unable to '+action+' Event Trigger'
 
 fOnLoad = () ->
 	$('.moduletype').text modName

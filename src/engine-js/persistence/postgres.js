@@ -67,7 +67,7 @@ function initializeModels() {
 		isPublic: Sequelize.BOOLEAN
 	});
 	Schedule = sequelize.define('Schedule', {
-		schedule: Sequelize.JSON,
+		text: Sequelize.JSON,
 		running: Sequelize.BOOLEAN
 	});
 	CodeModule = sequelize.define('CodeModule', {
@@ -96,7 +96,7 @@ function initializeModels() {
 	User.hasOne(Worker);
 	User.hasMany(Rule);
 	User.hasMany(Webhook);
-	User.hasMany(Schedule);
+	// User.hasMany(Schedule);
 	User.hasMany(CodeModule);
 	Rule.belongsTo(Webhook);
 	Rule.hasMany(ModPersist);
@@ -494,7 +494,7 @@ exports.deleteRule = (uid, rid) => {
 function getCodeModule (cid) {
 	return CodeModule.findOne({
 			where: { id: cid },
-			include: [{ model: User, attributes: [ 'username' ]}]
+			include: [ Schedule, { model: User, attributes: [ 'username' ]}]
 		})
 		.then((oMod) => {
 			if(oMod) return oMod.toJSON();
@@ -507,6 +507,8 @@ function getAllCodeModules(isaction) {
 		where: { isaction: isaction },
 		include: [{ model: User, attributes: [ 'username' ]}]
 	};
+	// If an Event Trigger is requested, we also load the schedule
+	if(!isaction) query.include.push(Schedule);
 	return CodeModule.findAll(query)
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 } 
@@ -515,12 +517,14 @@ function createCodeModule(uid, oMod, oSchedule) {
 	oMod.version = 1;
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.createCodeModule(oMod))
-		.then((oNewMod) => oNewMod.toJSON())
 }
 
 function updateCodeModule (uid, cid, oMod) {
 	return User.findById(uid, { attributes: [ 'id' ] })
-		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
+		.then((oUser) => oUser.getCodeModules({
+			where: { id: cid },
+			include: [ Schedule ]
+		}))
 		.then((arrOldMod) => {
 			if(arrOldMod.length > 0) {
 				oMod.version = arrOldMod[0].version+1;
@@ -577,22 +581,39 @@ exports.deleteActionDispatcher = deleteCodeModule;
 exports.createActionDispatcher = (uid, oAd) => {
 	oAd.isaction = true;
 	return createCodeModule(uid, oAd)
+		.then((oNewMod) => oNewMod.toJSON())
 };
 
 // ##
 // ## EVENT TRIGGERS
 // ##
-
 exports.getAllEventTriggers = () => getAllCodeModules(false);
 exports.getEventTrigger = getCodeModule;
 exports.updateEventTrigger = (uid, eid, oEt) => {
-	// TODO Implement
 	return updateCodeModule(uid, eid, oEt)
+		.then((mod) => {
+			return mod.Schedule.update({ text: oEt.schedule.text })
+				.then((sched) => {
+					let ret = mod.toJSON();
+					ret.Schedule = sched.toJSON();
+					return ret;
+				})
+		})
 }
 exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
 exports.createEventTrigger = (uid, oEt) => {
-	// TODO Implement
 	oEt.isaction = false;
 	return createCodeModule(uid, oEt)
+		.then((oNewMod) => {
+			return oNewMod.createSchedule({
+				text: oEt.schedule.text,
+				running: true
+			})
+			.then((sched) => {
+				let ret = oNewMod.toJSON();
+				ret.Schedule = sched.toJSON();
+				return ret;
+			}); // We need to return the new module with the schedule
+		})
 };
 
