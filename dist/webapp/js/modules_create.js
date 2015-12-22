@@ -176,7 +176,6 @@ fOnLoad = function() {
               text: txt,
               arr: schedule.schedules
             };
-            obj.running = true;
           }
           action = oParams.id ? 'update' : 'create';
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {

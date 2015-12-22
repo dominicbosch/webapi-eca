@@ -94,7 +94,7 @@ nav.navbar {
 
 .row { padding-bottom: 10px }
 
-.smallpadded { padding: 3px }
+.smallpadded td { padding: 3px }
 .mediummarged { margin: 6px }
 .bigmargeleft { margin-left: 20px }
 .smallmarged { margin: 3px }

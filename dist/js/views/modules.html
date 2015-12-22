@@ -1,6 +1,7 @@
 {% extends 'skeleton.html' %}
 
 {% block head %}
+	<script src="/js/lib/cryptico.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="/js/modules.js" type="text/javascript" charset="utf-8"></script>
 	<link rel="stylesheet" type="text/css" href="/css/modules.css">
@@ -13,7 +14,7 @@
 	<div class="row">
 		<div class="col-xs-7">
 			<a id="linkMod">Create a new <span class="moduletype"></span>!</a>
-			<table id="tableModules" class="mystyle">
+			<table id="tableModules" class="mystyle smallpadded">
 				<thead><tr>
 					<th></th>
 					<th></th>
@@ -25,6 +26,10 @@
 		</div>
 		<div id="moduleparams" class="col-xs-5">
 			<h3>Required Module Params</h3>
+			<table class="mystyle smallpadded">
+				<tbody></tbody>
+			</table>
+			<button onclick="start()">start</button>
 		</div>
 	</div>
 </div>

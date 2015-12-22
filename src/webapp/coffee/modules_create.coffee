@@ -155,8 +155,7 @@ fOnLoad = () ->
 						obj.schedule = {
 							text: txt,
 							arr: schedule.schedules
-						}
-						obj.running = true;
+						};
 
 					action = if oParams.id then 'update' else 'create'
 					main.post('/service/'+moduleType+'/'+action, obj)

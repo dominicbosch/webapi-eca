@@ -505,7 +505,8 @@ function getCodeModule (cid) {
 function getAllCodeModules(isaction) {
 	var query = {
 		where: { isaction: isaction },
-		include: [{ model: User, attributes: [ 'username' ]}]
+		include: [{ model: User, attributes: [ 'username' ]}],
+		order: [['id', 'DESC']]
 	};
 	// If an Event Trigger is requested, we also load the schedule
 	if(!isaction) query.include.push(Schedule);
@@ -620,7 +621,7 @@ exports.createEventTrigger = (uid, oEt) => {
 		.then((oNewMod) => {
 			return oNewMod.createSchedule({
 				text: oEt.schedule.text,
-				running: true
+				running: false
 			})
 			.then((sched) => {
 				let ret = oNewMod.toJSON();
