@@ -7,7 +7,7 @@
 // **Loads Modules:**
 
 // - Node.js Modules: [fs](http://nodejs.org/api/fs.html) and
-var fs = require('fs'),
+let fs = require('fs'),
 
 	// [path](http://nodejs.org/api/path.html)
 	path = require('path'),
@@ -29,7 +29,7 @@ var fs = require('fs'),
 	pathModules = path.resolve(__dirname, '..', '..', 'config', 'allowedmodules.json'),
 	arrModules = [];
 
-var router = module.exports = express.Router();
+let router = module.exports = express.Router();
 
 router.post('/get', (req, res) => res.send(arrModules));
 
@@ -70,7 +70,6 @@ function reloadModules(cb) {
 		log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
 		updateAllowedFlag(arrAllowed);
 		dm.newAllowedModuleList(arrAllowed);
-		geb.emit('modules:list', arrAllowed);
 		cb(undefined, arrModules)
 	});
 }
@@ -83,12 +82,13 @@ function updateAllowedFlag(arrAllowed) {
 
 router.post('/allow', (req, res) => {
 	if(req.session.pub.isAdmin) {
-		var arrAllowed = JSON.parse(fs.readFileSync(pathModules));
+		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 		if(arrAllowed.indexOf(req.body.module) === -1) {
 			try {
 				arrAllowed.push(req.body.module);
 				updateAllowedFlag(arrAllowed);
 				fs.writeFileSync(pathModules, JSON.stringify(arrAllowed, null, 2));
+				geb.emit('modules:allowed', arrAllowed);
 				res.send('Module "'+req.body.module+'" now allowed!');
 				log.info('SRVC:MODS | Module set as allowed: '+req.body.module);
 			} catch(err) {
@@ -110,6 +110,7 @@ router.post('/forbid', (req, res) => {
 				arrAllowed.splice(i, 1);
 				updateAllowedFlag(arrAllowed);
 				fs.writeFileSync(pathModules, JSON.stringify(arrAllowed, null, 2));
+				geb.emit('modules:allowed', arrAllowed);
 				res.send('Module "'+req.body.module+'" now forbidden!');
 				log.info('SRVC:MODS | Module set as forbidden: '+req.body.module);
 			} catch(err) {

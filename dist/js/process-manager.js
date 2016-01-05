@@ -6,7 +6,7 @@
 
 // **Loads Modules:**
 // - [Logging](logging.html)
-var log = require('./logging'),
+let log = require('./logging'),
 	pl = require('./process-logger'),
 	
 	fb = require('./persistence/firebase'),
@@ -24,11 +24,14 @@ var log = require('./logging'),
 
 	geb = global.eventBackbone,
 	db = global.db,
+	arrAllowed,
 	systemName = '➠ System',
 	maxMem = 200,
 	oChildren = {};
 
-exports.init = (oConf) => {	
+exports.init = (oConf) => {
+	let allowedModulesPath = path.resolve(__dirname, '..', 'config', 'allowedmodules.json');
+	arrAllowed = JSON.parse(fs.readFileSync(allowedModulesPath));
 	log.info('PM | Initialzing Users and Loggers');
 	fb.getLastIndex(systemName, (err, id) => {
 		let mpi = MPI(null, systemName);
@@ -72,9 +75,10 @@ geb.addListener('system:shutdown', () => {
 	fb.logState(systemName, 'shutdown', (new Date().getTime()))
 });
 
-geb.addListener('modules:list', (arrModules) => {
+geb.addListener('modules:allowed', (arrModules) => {
+	arrAllowed = arrModules;
 	broadcast({
-		cmd: 'modules:list',
+		cmd: 'modules:allowed',
 		arr: arrModules
 	});
 });
@@ -98,14 +102,14 @@ geb.addListener('eventtrigger:stop', (oEvt) => {
 	});
 });
 
-geb.addListener('rule:new', sendRuleToUser);
-
-geb.addListener('action', (oEvt) => {
-	sendToWorker(oEvt.uid, {
-		cmd: 'action',
+geb.addListener('webhook:event', (oEvt) => {
+	broadcast({
+		cmd: 'event',
 		evt: oEvt
 	});
 });
+
+geb.addListener('rule:new', sendRuleToUser);
 
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
@@ -159,7 +163,7 @@ function MPI(uid, username) {
 function sendRuleToUser(oRule) {
 	let arrPromises = [];
 	// The user process ha no DB connection so we need to send it all the required 
-	// Action dispatcehrs that are needed for the module
+	// Action dispatchers that are needed for the module
 	for(let i = 0; i < oRule.actions.length; i++) {
 		arrPromises.push(db.getActionDispatcher(oRule.actions[i].id));
 	}
@@ -223,6 +227,10 @@ function startWorker(oUser) {
 			}
 		});
 	})
+	.then(() => sendToWorker(oUser.id, {
+		cmd: 'modules:allowed',
+		arr: arrAllowed
+	}))
 	// After a worker has been started it needs to receive all its rules
 	.then(() => db.getAllRules(oUser.id))
 	.then((arr) => {

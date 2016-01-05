@@ -27,9 +27,6 @@ var events = require('events'),
 	// - [Configuration](config.html)
 	conf = require('./config'),
 
-	// - [Engine](engine.html)
-	engine = require('./engine'),
-
 	// - [Process Manager](process-manager.html)
 	pm = require('./process-manager'),
 
