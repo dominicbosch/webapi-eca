@@ -27,7 +27,10 @@ let fs = require('fs'),
 	db = global.db,
 	geb = global.eventBackbone,
 	pathModules = path.resolve(__dirname, '..', '..', 'config', 'allowedmodules.json'),
-	arrModules = [];
+	arrModules = [],
+	arrAllowed;
+
+arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 
 let router = module.exports = express.Router();
 
@@ -65,16 +68,14 @@ function reloadModules(cb) {
 				}
 			}
 		}
-		log.info('SRVC:MODS | Descriptions for all modules loaded');
-		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
-		log.info('SRVC:MODS | Found '+arrAllowed.length+' allowed modules');
+		log.info('SRVC:MODS | Descriptions for all modules loaded. '+arrAllowed.length+' allowed modules. updating...');
 		updateAllowedFlag(arrAllowed);
 		dm.newAllowedModuleList(arrAllowed);
 		cb(undefined, arrModules)
 	});
 }
 
-function updateAllowedFlag(arrAllowed) {
+function updateAllowedFlag() {
 	for(let i = 0; i < arrModules.length; i++) {
 		arrModules[i].allowed = (arrAllowed.indexOf(arrModules[i].name) > -1);
 	}
@@ -82,11 +83,10 @@ function updateAllowedFlag(arrAllowed) {
 
 router.post('/allow', (req, res) => {
 	if(req.session.pub.isAdmin) {
-		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 		if(arrAllowed.indexOf(req.body.module) === -1) {
 			try {
 				arrAllowed.push(req.body.module);
-				updateAllowedFlag(arrAllowed);
+				updateAllowedFlag();
 				fs.writeFileSync(pathModules, JSON.stringify(arrAllowed, null, 2));
 				geb.emit('modules:allowed', arrAllowed);
 				res.send('Module "'+req.body.module+'" now allowed!');
@@ -103,12 +103,11 @@ router.post('/allow', (req, res) => {
 
 router.post('/forbid', (req, res) => {
 	if(req.session.pub.isAdmin) {
-		let arrAllowed = JSON.parse(fs.readFileSync(pathModules));
 		let i = arrAllowed.indexOf(req.body.module);
 		if(i > -1) {
 			try {
 				arrAllowed.splice(i, 1);
-				updateAllowedFlag(arrAllowed);
+				updateAllowedFlag();
 				fs.writeFileSync(pathModules, JSON.stringify(arrAllowed, null, 2));
 				geb.emit('modules:allowed', arrAllowed);
 				res.send('Module "'+req.body.module+'" now forbidden!');

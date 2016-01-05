@@ -16,9 +16,10 @@ let dynmod = require('./dynamic-modules')
 	//   [js-select](https://github.com/harthur/js-select)
 	, jsonQuery = require('js-select')
 
-	, oRuleModules = {} //The actual exectuable functions stored under their rules (results in duplicates)
+	, oRules = {} //The actual exectuable functions stored under their rules (results in duplicates)
 	, oActArgs = {} // The storage for the action arguments
 	, log
+	, send
 	;
  
 // oActArgs has:
@@ -28,25 +29,28 @@ let dynmod = require('./dynamic-modules')
 // 				function name as string
 //				function arguments as array
 
+// Hacky... but alright I guess
 exports.setLogger = (logger) => log = logger;
+exports.setSend = (sender) => send = sender;
 
 // The parent process does not only send the rule but in it also execution data such as
 // persistence data, function arguments and the action modules required to execute the action
 exports.newRule = (oRule) => {
-
-	// , oWebhooks = {}
-	// // oWebhooks are rules stored under their respective webhook id for fast access// 
-
 	let oPers = oRule.ModPersists;
 
 	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {}; // New rule
-	if(!oRuleModules[oRule.id]) oRuleModules[oRule.id] = {}; // New rule
+	if(!oRules[oRule.id]) {
+		oRules[oRule.id] = {
+			rule: oRule,
+			modules: {}
+		}
+	}; // New rule
 	// We don't need any already existing actions for this module anymore because we got fresh ones
 	// Since we can't remove the modules that have been 'required' by the previous modules, this
 	// will likely lead to a filling of the memory and require a restart of the user process from time to time
-	for(let el in oRuleModules[oRule.id]) {
+	for(let el in oRules[oRule.id].modules) {
 		log.info('UP | Removing module "'+el+'" from rule #'+oRule.id);
-		delete oRuleModules[oRule.id][el];
+		delete oRules[oRule.id].modules[el];
 	}
 
 	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
@@ -128,8 +132,20 @@ exports.newRule = (oRule) => {
 		if(pers === undefined) pers = {};
 
 		log.rule(oRule.id, ' --> Loading Action Dispatcher "'+oModule.name+'"...');
-		runModule(oModule.id, oRule.id, oModule, oAction.globals, pers)
-			.then((oMod) => oRuleModules[oRule.id][oModule.id] = oMod)
+		let store = {
+			log: (msg) => {
+				try {
+					log.rule(oRule.id, msg.toString().substring(0, 200));
+				} catch(err) {
+					log.info(err.toString());
+					log.rule(oRule.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+				}
+			},
+			data: (msg) => send.datalog({ rid: oRule.id, msg: msg }),
+			persist: (data) => send.persist({ rid: oRule.id, cid: oModule.id, persistence: data })
+		};
+		runModule(store, oModule, oAction.globals, pers)
+			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
 				log.rule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
 				log.worker('UP | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
@@ -139,22 +155,15 @@ exports.newRule = (oRule) => {
 }
 
 
-function runModule(id, rid, oMod, globals, persistence) {
+function runModule(store, oMod, globals, persistence) {
 	let lastEvent = {};
 	let opts = {
 		globals: globals || {},
 		modules: oMod.modules,
 		persistence: persistence,
-		logger: (msg) => {
-			try {
-				log.rule(rid, msg.toString().substring(0, 200));
-			} catch(err) {
-				log.info(err.toString());
-				log.rule(rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
-			}
-		},
-		datalogger: (msg) => send.datalog({ rid: rid, msg: msg }),
-		persist: (data) => send.persist({ rid: rid, cid: oMod.id, persistence: data }),
+		logger: store.log,
+		datalogger: store.data,
+		persist: store.persist,
 		emitEvent: (hookname, evt) => {
 			let now = (new Date()).getTime();
 			let oEvt = lastEvent[hookname];
@@ -166,7 +175,7 @@ function runModule(id, rid, oMod, globals, persistence) {
 			}
 			// We allow 20 events within 200 ms per rule per eventname before we tell the user that he floods
 			if(oEvt && (now-oEvt.time)<200 && oEvt.count>20) {
-				log.rule(rid, 'You are flooding our system with events... We need to limit this, sorry!');
+				store.log('You are flooding our system with events... We need to limit this, sorry!');
 			} else {
 				oEvt.count++;
 				send.event({
@@ -230,22 +239,22 @@ function validConditions(evt, rule, uid) {
 }
 
 exports.processEvent = (oEvt) => {
-	let oHooks = oWebhooks[oEvt.hookurl];
-	for(let el in oHooks) {
-		let oRule = oHooks[el];
-		if(validConditions(oEvt, oRule)) {
-			log.info('EN | Conditions valid: EVENT FIRED! Hook URL "'
-				+oEvt.hookurl+'" for rule "'+oRule.name+'"');
-			for(let i = 0; i < oRule.actions.length; i++) {
-				executeAction(oRule.id, oRule.UserId, oRule.actions[i].id, oEvt)
+	for(let el in oRules) {
+		let oRule = oRules[el].rule;
+		if(oRule.WebhookId === oEvt.hookid) {
+			if(validConditions(oEvt, oRule)) {
+				log.info('EN | Conditions valid: EVENT FIRED! Hook URL "'
+					+oEvt.hookurl+'" for rule "'+oRule.name+'"');
+				for(let i = 0; i < oRule.actions.length; i++) {
+					executeAction(oRule.id, oRule.UserId, oRule.actions[i].id, oEvt)
+				}
 			}
 		}
 	}
 };
 
 function executeAction(rid, uid, aid, evt) {
-	let oe = oMsg.evt;
-	let arrFuncs = oActArgs[oe.rid][oe.aid];
+	let arrFuncs = oActArgs[rid][aid];
 	
 	// Go through all functions that need to be executed
 	for(let i = 0; i < arrFuncs.length; i++) {	
@@ -255,15 +264,20 @@ function executeAction(rid, uid, aid, evt) {
 
 		// Evaluate all function arguments with the event and eventually pass data from the event as argument
 		for(let j = 0; j < func.args.length; j++) {
-			arrPassingArgs.push(func.args[j](oe.evt));
+			arrPassingArgs.push(func.args[j](evt));
 		}
 
 		try {
-			log.info('Executing function '+func.name+' in action #'+oe.aid);
-			oRuleModules[oe.rid][oe.aid][func.name].apply(this, arrPassingArgs);
+			log.info('Executing function '+func.name+' in action #'+aid);
+			oRules[rid].modules[aid][func.name].apply(this, arrPassingArgs);
 		} catch(err) {
-			log.rule(oe.rid, err.toString());
+			log.rule(rid, err.toString());
 			log.info(err.toString());
 		}
 	}
 }
+
+
+exports.deleteRule = function(id) {
+	console.log('TODO: UP | Implement delete Rule');
+};

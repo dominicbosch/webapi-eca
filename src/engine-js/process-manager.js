@@ -103,10 +103,17 @@ geb.addListener('eventtrigger:stop', (oEvt) => {
 });
 
 geb.addListener('webhook:event', (oEvt) => {
-	broadcast({
+	let oHook = webhooks.getByUrl(oEvt.hookurl);
+	let evt = {
 		cmd: 'event',
 		evt: oEvt
-	});
+	};
+	// Here we separate public events from private ones
+	if(oHook.isPublic) {
+		broadcast(evt);
+	} else {
+		sendToWorker(oHook.UserId, evt)
+	}
 });
 
 geb.addListener('rule:new', sendRuleToUser);
@@ -114,6 +121,7 @@ geb.addListener('rule:new', sendRuleToUser);
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
 	console.log('found hook', oHook);
+	evt.hookid = oHook.id;
 	evt.hookurl = oHook.hookurl;
 	geb.emit('webhook:event', evt);
 }
@@ -227,6 +235,7 @@ function startWorker(oUser) {
 			}
 		});
 	})
+	// After a worker has been started it needs to know which modules are allowed
 	.then(() => sendToWorker(oUser.id, {
 		cmd: 'modules:allowed',
 		arr: arrAllowed
@@ -235,6 +244,16 @@ function startWorker(oUser) {
 	.then(() => db.getAllRules(oUser.id))
 	.then((arr) => {
 		for(var i = 0; i < arr.length; i++) sendRuleToUser(arr[i]);
+	})
+	// After a worker has been started, rules were loaded it needs to receive all running event triggers
+	.then(() => db.getUserEventTriggers(oUser.id))
+	.then((arr) => {
+		for(var i = 0; i < arr.length; i++) {
+			sendToWorker(oUser.id, {
+				cmd: 'eventtrigger:new',
+				trigger: arr[i]
+			})
+		}
 	});
 }
 

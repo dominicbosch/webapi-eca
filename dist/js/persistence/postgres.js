@@ -23,6 +23,7 @@ var log = require('../logging'),
 	, Schedule
 	, ModPersist
 	, CodeModule
+	, Log
 	;
 
 // ## DB Connection
@@ -85,6 +86,10 @@ function initializeModels() {
 		moduleId: Sequelize.INTEGER,
 		data: Sequelize.JSON
 	});
+	Log = sequelize.define('Log', {
+		log: Sequelize.ARRAY(Sequelize.STRING),
+		datalog: Sequelize.ARRAY(Sequelize.JSON)
+	});
 
 	// ### Define Relations
 	// If a user gets deleted, we delete all his realted data too (cascade) 
@@ -92,17 +97,28 @@ function initializeModels() {
 	Rule.belongsTo(User, { onDelete: 'cascade' });
 	Webhook.belongsTo(User, { onDelete: 'cascade' });
 	CodeModule.belongsTo(User, { onDelete: 'cascade' });
+
+	// Module persistance either belongs to a rule (AD) or a Schedule (ET)
 	ModPersist.belongsTo(Rule, { onDelete: 'cascade' });
+	ModPersist.belongsTo(Schedule, { onDelete: 'cascade' });
+	Rule.hasMany(ModPersist);
+	Schedule.hasOne(ModPersist);
+	// Log either belongs to a rule (AD) or a Schedule (ET)
+	Schedule.hasOne(Log);
+	Rule.hasOne(Log);
+	Log.belongsTo(Schedule, { onDelete: 'cascade' });
+	Log.belongsTo(Rule, { onDelete: 'cascade' });
+	
+	CodeModule.hasOne(Schedule);
+	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
+
 	User.hasOne(Worker);
 	User.hasMany(Rule);
 	User.hasMany(Webhook);
-	// User.hasMany(Schedule);
 	User.hasMany(CodeModule);
 	Rule.belongsTo(Webhook);
-	Rule.hasMany(ModPersist);
-	CodeModule.hasOne(Schedule);
-	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
-	
+
+		
 	// Return a promise
 	return sequelize.sync().then(() => log.info('PG | Synced Models'));
 	// return sequelize.sync({ force: true }).then(() => log.info('PG | Synced Models'));
@@ -393,8 +409,16 @@ function storeRule(uid, rid, oRule, hid) {
 		})
 		.then((o) => {
 			let prom;
-			if(rid===undefined) prom = o.user.createRule(oRule);
-			else prom = o.rule.update(oRule);
+			if(rid===undefined) {
+				// If it's not an update we need to initialize an empty log as well
+				prom = o.user.createRule(oRule)
+					.then((newRule) => {
+						return newRule.createLog({})
+							.then(() => newRule);
+					});
+			} else {
+				prom = o.rule.update(oRule);
+			}
 			return prom.then((oRule) => {
 					return oRule.setWebhook(o.hook);
 				})
@@ -411,9 +435,10 @@ exports.updateRule = (uid, rid, oRule, hid) => storeRule(uid, rid, oRule, hid);
 
 exports.logRule = (rid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => {
-			if(oRule) oRule.update({
+	return Rule.findById(rid, { attributes: [ 'id' ]})
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
+		.then((oLog) => {
+			if(oLog) oLog.update({
 				log: sequelize.fn('array_append', sequelize.col('log'), msg)
 			})
 		}).catch(ec);
@@ -424,22 +449,24 @@ exports.getRuleLog = (uid, rid) => {
 			where: {
 				id: rid,
 				UserId: uid
-			},
-			attributes: [ 'log' ]
+			}
 		})
-		.then((oRule) => (oRule.get('log') || []).reverse());
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
+		.then((oLog) => (oLog.get('log') || []).reverse());
 };
 
 exports.clearRuleLog = (uid, rid) => {
 	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => {
-			if(oRule) oRule.update({ log: null })
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
+		.then((oLog) => {
+			if(oLog) oLog.update({ log: null })
 		}).catch(ec);
 };
 exports.clearRuleDataLog = (uid, rid) => {
 	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => {
-			if(oRule) oRule.update({ datalog: null })
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
+		.then((oLog) => {
+			if(oLog) oLog.update({ datalog: null })
 		}).catch(ec);
 };
 
@@ -450,9 +477,10 @@ exports.logRuleData = (rid, msg) => {
 		data: msg
 	});
 	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => {
-			if(oRule) {
-				return oRule.update({
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
+		.then((oLog) => {
+			if(oLog) {
+				return oLog.update({
 					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLog)
 				})
 			}
@@ -461,14 +489,12 @@ exports.logRuleData = (rid, msg) => {
 };
 
 exports.getRuleDataLog = (uid, rid) => {
-	return Rule.findOne({
-			where: {
-				id: rid,
-				UserId: uid
-			},
-			attributes: [ 'datalog' ]
-		})
-		.then((oRule) => oRule.get('datalog'));
+	return Rule.findOne({ where: {
+			id: rid,
+			UserId: uid
+		}})
+		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
+		.then((oLog) => oLog.get('datalog'));
 };
 
 // Returns a promise
@@ -491,7 +517,7 @@ exports.deleteRule = (uid, rid) => {
 // ## except for that the Event Triggers also have a schedule
 // ## 
 
-function getCodeModule (cid) {
+function getCodeModule(cid) {
 	return CodeModule.findOne({
 			where: { id: cid },
 			include: [ Schedule, { model: User, attributes: [ 'username' ]}]
@@ -512,7 +538,7 @@ function getAllCodeModules(isaction) {
 	if(!isaction) query.include.push(Schedule);
 	return CodeModule.findAll(query)
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
-} 
+}
 
 function createCodeModule(uid, oMod, oSchedule) {
 	oMod.version = 1;
@@ -520,7 +546,7 @@ function createCodeModule(uid, oMod, oSchedule) {
 		.then((oUser) => oUser.createCodeModule(oMod))
 }
 
-function updateCodeModule (uid, cid, oMod) {
+function updateCodeModule(uid, cid, oMod) {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({
 			where: { id: cid },
@@ -589,6 +615,38 @@ exports.createActionDispatcher = (uid, oAd) => {
 // ## EVENT TRIGGERS
 // ##
 exports.getAllEventTriggers = () => getAllCodeModules(false);
+exports.getUserEventTriggers = (uid) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getCodeModules({
+			where: { isaction: false },
+			include: [{ model: Schedule, include: [ ModPersist ]}]
+		}))
+		.then((arrRecords) => arrRecordsToJSON(arrRecords));
+};
+
+exports.persistEventTriggerData = function(cid, data) {
+	return CodeModule.findById(cid, { attributes: [ 'id' ] })
+		.then((oEt) => {
+			if(!oEt) throwStatusCode(404, 'Event Trigger not found');
+			else return oEt;
+		})
+		.then((oEt) => oEt.getSchedule())
+		.then((oSched) => {
+			console.log('got schedule');
+			return oSched.getModPersist();
+		})
+		.then((oRes) => {
+			console.log('got data', oRes);
+			// if(oRes.arr.length > 0) return oRes.arr[0].update({ data: data });
+			// else return ModPersist.create({
+			// 		moduleId: cid,
+			// 		data: data
+			// 	})
+			// 	.then((oMp) => oRes.rule.addModPersist(oMp));
+		})
+		.catch(ec);
+}
+
 exports.getEventTrigger = getCodeModule;
 exports.updateEventTrigger = (uid, eid, oEt) => {
 	return updateCodeModule(uid, eid, oEt)
@@ -624,6 +682,7 @@ exports.createEventTrigger = (uid, oEt) => {
 				running: false
 			})
 			.then((sched) => {
+				sched.createLog({});
 				let ret = oNewMod.toJSON();
 				ret.Schedule = sched.toJSON();
 				return ret;

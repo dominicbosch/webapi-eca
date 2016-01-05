@@ -47,10 +47,11 @@ let log = {
 	})
 };
 engine.setLogger(log);
+engine.setSend(send);
 
 process.on('uncaughtException', (err) => {
 	console.log('Your user process produced an error!');
-	console.log(err);
+	console.log(err.stack);
 });
 process.on('disconnect', () => {
 	console.log('UP | Shutting down Code Executor');
@@ -72,11 +73,38 @@ process.on('message', (oMsg) => {
 			engine.newRule(oMsg.rule);
 		break;
 		case 'rule:delete':
-			deleteRule(oMsg.id);
+			engine.deleteRule(oMsg.id);
 		break;
 		case 'eventtrigger:new':
-			console.log('TODO implement ET new');
 			// engine.runModule();
+			// oEventTriggers[]
+
+
+			// TODO about this for ETs:
+			
+			// log.rule(oRule.id, ' --> Loading Action Dispatcher "'+oModule.name+'"...');
+			// let store = {
+			// 	log: (msg) => {
+			// 		try {
+			// 			log.rule(oRule.rid, msg.toString().substring(0, 200));
+			// 		} catch(err) {
+			// 			log.info(err.toString());
+			// 			log.rule(oRule.rid, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+			// 		}
+			// 	},
+			// 	data: (msg) => send.datalog({ rid: oRule.rid, msg: msg }),
+			// 	persist: (data) => send.persist({ rid: oRule.rid, cid: oModule.id, persistence: data })
+			// };
+			// runModule(oModule.id, store, oModule, oAction.globals, pers)
+			// 	.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
+			// 	.then(() => {
+			// 		log.rule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
+			// 		log.worker('UP | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
+			// 	})
+			// 	.catch((err) => log.error(err.toString()+'\n'+err.stack))
+
+
+			console.log('TODO implement ET new');
 		break;
 		case 'eventtrigger:start':
 			console.log('TODO implement ET start');
@@ -110,16 +138,11 @@ process.on('message', (oMsg) => {
 			console.log('Worker got new event trigger:'+oMsg.trigger);
 		break;
 		case 'event':
-			console.log('Worker got new event, HANDLE!!!:'+oMsg);
 			engine.processEvent(oMsg.evt);
 		break;
 		default: console.log('unknown command on child', oMsg)
 	}
 });
-
-function deleteRule(id) {
-	console.log('TODO: UP | Implement delete Rule');
-}
 
 
 // TODO list all modules the worker process has loaded and tell from which module it was required

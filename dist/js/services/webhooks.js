@@ -86,6 +86,7 @@ router.post('/event/:hookurl', (req, res) => {
 	if(oHook) {
 		let now = new Date();
 		let obj = {
+			hookid: oHook.id,
 			hookurl: oHook.hookurl,
 			hookname: oHook.hookname,
 			origin: req.ip,
