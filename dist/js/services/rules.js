@@ -16,35 +16,35 @@ var log = require('../logging'),
 var router = module.exports = express.Router();
 
 router.post('/get', (req, res) => {
-	log.info('SRVC | RULES | Fetching all Rules');
+	log.info('SRVC:RULES | Fetching all Rules');
 	db.getAllRules(req.session.pub.id)
 		.then((arr) => res.send(arr))
 		.catch(db.errHandler(res));
 });
 
 router.post('/get/:id', (req, res) => {
-	log.info('SRVC | RULES | Fetching Rule #'+req.params.id);
+	log.info('SRVC:RULES | Fetching Rule #'+req.params.id);
 	db.getRule(req.session.pub.id, req.params.id)
 		.then((o) => res.send(o))
 		.catch(db.errHandler(res));
 });
 
 router.post('/getlog/:id', (req, res) => {
-	log.info('SRVC | RULES | Fetching all Rule logs');
+	log.info('SRVC:RULES | Fetching all Rule logs');
 	db.getRuleLog(req.session.pub.id, req.params.id)
 		.then((log) => res.send(log))
 		.catch(db.errHandler(res));
 });
 
 router.post('/clearlog/:id', (req, res) => {
-	log.info('SRVC | RULES | Clearing Rule log #'+req.params.id);
+	log.info('SRVC:RULES | Clearing Rule log #'+req.params.id);
 	db.clearRuleLog(req.session.pub.id, req.params.id)
 		.then(() => res.send('Thanks!'))
 		.catch(db.errHandler(res));
 });
 
 router.get('/getdatalog/:id', (req, res) => {
-	log.info('SRVC | RULES | Fetching all Rule data logs');
+	log.info('SRVC:RULES | Fetching all Rule data logs');
 	db.getRuleDataLog(req.session.pub.id, req.params.id)
 		.then((log) => {
 			res.set('Content-Type', 'text/json')
@@ -55,7 +55,7 @@ router.get('/getdatalog/:id', (req, res) => {
 });
 
 router.post('/cleardatalog/:id', (req, res) => {
-	log.info('SRVC | RULES | Clearing Rule data log #'+req.params.id);
+	log.info('SRVC:RULES | Clearing Rule data log #'+req.params.id);
 	db.clearRuleDataLog(req.session.pub.id, req.params.id)
 		.then(() => db.logRule(req.params.id, 'Data Log deleted!'))
 		.then(() => res.send('Thanks!'))
@@ -79,17 +79,17 @@ function storeRule(uid, reason, body, res) {
 }
 
 router.post('/create', (req, res) => {
-	log.info('SRVC | RULES | Creating new Rule');
+	log.info('SRVC:RULES | Creating new Rule');
 	storeRule(req.session.pub.id, 'create', req.body, res);
 });
 
 router.post('/update', (req, res) => {
-	log.info('SRVC | RULES | Updating existing Rule #'+req.body.id);
+	log.info('SRVC:RULES | Updating existing Rule #'+req.body.id);
 	storeRule(req.session.pub.id, 'update', req.body, res);
 });
 
 router.post('/delete', (req, res) => {
-	log.info('SRVC | RULES | Deleting Rule #' +req.body.id);
+	log.info('SRVC:RULES | Deleting Rule #' +req.body.id);
 	db.deleteRule(req.session.pub.id, req.body.id)
 		.then(() => {
 			geb.emit('rule:delete', req.body.id);

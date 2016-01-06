@@ -29,7 +29,7 @@ router.post('/passwordchange', (req, res) => {
 		})
 		.then(() => db.updateUserAttribute(uid, 'password', req.body.newpassword))
 		.then(() => {
-			log.info('SRVC | USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
+			log.info('SRVC:USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
 			res.send('Password changed!');
 		})
 		.catch(db.errHandler(res));
@@ -42,7 +42,7 @@ router.post('/forcepasswordchange', (req, res) => {
 	} else {
 		db.updateUserAttribute(rb.userid, 'password', rb.newpassword)
 			.then(() => {
-				log.info('SRVC | USER | Password changed for (#'+rb.userid+')');
+				log.info('SRVC:USER | Password changed for (#'+rb.userid+')');
 				res.send('Password changed!');
 			})
 			.catch(db.errHandler(res));
