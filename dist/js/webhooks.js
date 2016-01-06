@@ -5,7 +5,6 @@ var activeHooks = {},
 
 geb.addListener('webhook:activated', (oHook) =>  {
 	activeHooks[oHook.hookurl] = oHook;
-	console.log(activeHooks)
 });
 
 geb.addListener('webhook:deactivated', (hid) =>  {

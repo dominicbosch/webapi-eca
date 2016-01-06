@@ -472,7 +472,7 @@ exports.clearRuleDataLog = (uid, rid) => {
 
 exports.logRuleData = (rid, msg) => {
 	log.info('PG | Logging rule data #'+rid, msg);
-	let oLog = JSON.stringify({
+	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: msg
 	});
@@ -481,7 +481,7 @@ exports.logRuleData = (rid, msg) => {
 		.then((oLog) => {
 			if(oLog) {
 				return oLog.update({
-					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLog)
+					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
 				})
 			}
 		})
