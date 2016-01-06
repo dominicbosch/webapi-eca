@@ -18,7 +18,6 @@ let dynmod = require('./dynamic-modules')
 
 	, oRules = {} //The actual exectuable functions stored under their rules (results in duplicates)
 	, oActArgs = {} // The storage for the action arguments
-	, log
 	, send
 	;
  
@@ -30,14 +29,11 @@ let dynmod = require('./dynamic-modules')
 //				function arguments as array
 
 // Hacky... but alright I guess
-exports.setLogger = (logger) => log = logger;
 exports.setSend = (sender) => send = sender;
 
 // The parent process does not only send the rule but in it also execution data such as
 // persistence data, function arguments and the action modules required to execute the action
 exports.newRule = (oRule) => {
-	let oPers = oRule.ModPersists;
-
 	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {}; // New rule
 	if(!oRules[oRule.id]) {
 		oRules[oRule.id] = {
@@ -49,12 +45,12 @@ exports.newRule = (oRule) => {
 	// Since we can't remove the modules that have been 'required' by the previous modules, this
 	// will likely lead to a filling of the memory and require a restart of the user process from time to time
 	for(let el in oRules[oRule.id].modules) {
-		log.info('UP | Removing module "'+el+'" from rule #'+oRule.id);
+		send.loginfo('UP | Removing module "'+el+'" from rule #'+oRule.id);
 		delete oRules[oRule.id].modules[el];
 	}
 
-	log.rule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
-	log.info('UP | Rule "'+oRule.name+'" initializes modules: ');
+	send.logrule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
+	send.loginfo('UP | Rule "'+oRule.name+'" initializes modules: ');
 
 	// For each action in the rule we find arguments and the required module (both provided here in the rule)
 	for(let i = 0; i < oRule.actions.length; i++) {
@@ -66,7 +62,7 @@ exports.newRule = (oRule) => {
 
 		// We use this action function for the first time in this rule (might not be the case if it's an update)
 
-		log.info('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		send.loginfo('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
 		// // Got through all action functions
 		for(let j = 0; j < oAction.functions.length; j++) {
 			let oActFunc = oAction.functions[j];
@@ -77,7 +73,7 @@ exports.newRule = (oRule) => {
 			};
 			for(let k = 0; k < arrRequiredArguments.length; k++) {
 				let val = oActFunc.args[arrRequiredArguments[k]];
-				if(val===undefined) log.rule('Missing argument: ' + arrRequiredArguments[k]);
+				if(val===undefined) send.logrule(oRule.id, 'Missing argument: ' + arrRequiredArguments[k]);
 				else {
 
 					// Attention! This is magic and needs your full attention ;)
@@ -124,6 +120,7 @@ exports.newRule = (oRule) => {
 
 		// Attach persistent data if it exists
 		let pers;
+		let oPers = oRule.ModPersists;
 		if(oPers !== undefined) {
 			for (let i = 0; i < oPers.length; i++) {
 				if(oPers[i].moduleId === oModule.id) pers = oPers[i].data;
@@ -131,67 +128,30 @@ exports.newRule = (oRule) => {
 		}
 		if(pers === undefined) pers = {};
 
-		log.rule(oRule.id, ' --> Loading Action Dispatcher "'+oModule.name+'"...');
+		send.logrule(oRule.id, ' --> Loading Action Dispatcher "'+oModule.name+'"...');
 		let store = {
 			log: (msg) => {
 				try {
-					log.rule(oRule.id, msg.toString().substring(0, 200));
+					send.logrule(oRule.id, msg.toString().substring(0, 200));
 				} catch(err) {
-					log.info(err.toString());
-					log.rule(oRule.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+					send.loginfo(err.toString());
+					send.logrule(oRule.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 				}
 			},
-			data: (msg) => send.datalog({ rid: oRule.id, msg: msg }),
-			persist: (data) => send.persist({ rid: oRule.id, cid: oModule.id, persistence: data })
+			data: (msg) => send.ruledatalog({ rid: oRule.id, msg: msg }),
+			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data })
 		};
-		runModule(store, oModule, oAction.globals, pers)
+		dynmod.runModule(store, oModule, oAction.globals, pers)
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
-				log.rule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
-				log.worker('UP | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
+				send.logrule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
+				send.logworker('UP | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
 			})
-			.catch((err) => log.error(err.toString()+'\n'+err.stack))
+			.catch((err) => send.logerror(err.toString()+'\n'+err.stack))
 	}
 }
 
 
-function runModule(store, oMod, globals, persistence) {
-	let lastEvent = {};
-	let opts = {
-		globals: globals || {},
-		modules: oMod.modules,
-		persistence: persistence,
-		logger: store.log,
-		datalogger: store.data,
-		persist: store.persist,
-		emitEvent: (hookname, evt) => {
-			let now = (new Date()).getTime();
-			let oEvt = lastEvent[hookname];
-			if(!oEvt || (now-oEvt.time)>200) {
-				oEvt = lastEvent[hookname] = {
-					time: now,
-					count: 0
-				};
-			}
-			// We allow 20 events within 200 ms per rule per eventname before we tell the user that he floods
-			if(oEvt && (now-oEvt.time)<200 && oEvt.count>20) {
-				store.log('You are flooding our system with events... We need to limit this, sorry!');
-			} else {
-				oEvt.count++;
-				send.event({
-					hookname: hookname, 
-					origin: 'internal',
-					engineReceivedTime: now,
-					body: evt
-				})
-			}
-		}
-	};
-
-	return dynmod.runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
-		.then((answ) => answ.module)
-}
-exports.runModule = runModule;
 
 let oOperators = {	
 	'<':  (x, y) => { return (x < y) },
@@ -211,13 +171,13 @@ function validConditions(evt, rule, uid) {
 		let cond = rule.conditions[i];
 		let selectedProperty = jsonQuery(evt, cond.selector).nodes();
 		if(selectedProperty.length === 0) {
-			log.worker('Error in Rule "'+rule.name+'" Condition not found in event: '+cond.selector);
+			send.logrule(rule.id, 'Error in Rule "'+rule.name+'" Condition not found in event: '+cond.selector);
 			return false;
 		}
 
 		let op = oOperators[cond.operator];
 		if(!op) {
-			log.worker('Error in Rule "'+rule.name+'": Unknown operator: "'+cond.operator
+			send.logrule(rule.id, 'Error in Rule "'+rule.name+'": Unknown operator: "'+cond.operator
 				+'" use one of ['+Object.keys(oOperators).join('|')+']');
 			return false;
 		}
@@ -229,7 +189,7 @@ function validConditions(evt, rule, uid) {
 
 			if(!op(val, cond.compare)) return false
 		} catch(err) {
-			log.worker('Unhandled Error in Rule "'+rule.name+'": Selector "'+cond.selector
+			send.logrule(rule.id, 'Unhandled Error in Rule "'+rule.name+'": Selector "'+cond.selector
 				+'", Operator "'+cond.operator+'", Compare "'+cond.compare+'"');
 			return false;
 		}
@@ -243,7 +203,7 @@ exports.processEvent = (oEvt) => {
 		let oRule = oRules[el].rule;
 		if(oRule.WebhookId === oEvt.hookid) {
 			if(validConditions(oEvt, oRule)) {
-				log.info('EN | Conditions valid: EVENT FIRED! Hook URL "'
+				send.loginfo('EN | Conditions valid: EVENT FIRED! Hook URL "'
 					+oEvt.hookurl+'" for rule "'+oRule.name+'"');
 				for(let i = 0; i < oRule.actions.length; i++) {
 					executeAction(oRule.id, oRule.UserId, oRule.actions[i].id, oEvt)
@@ -268,11 +228,11 @@ function executeAction(rid, uid, aid, evt) {
 		}
 
 		try {
-			log.info('Executing function '+func.name+' in action #'+aid);
+			send.loginfo('Executing function '+func.name+' in action #'+aid);
 			oRules[rid].modules[aid][func.name].apply(this, arrPassingArgs);
 		} catch(err) {
-			log.rule(rid, err.toString());
-			log.info(err.toString());
+			send.logrule(rid, err.toString());
+			send.loginfo(err.toString());
 		}
 	}
 }

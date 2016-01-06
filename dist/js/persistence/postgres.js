@@ -51,9 +51,7 @@ function initializeModels() {
 	});
 	Worker = sequelize.define('Worker', {
 		pid: { type: Sequelize.INTEGER, unique: true },
-		log: Sequelize.ARRAY(Sequelize.STRING),
-		modules: Sequelize.ARRAY(Sequelize.STRING),
-		activeCodes: Sequelize.ARRAY(Sequelize.STRING)
+		log: Sequelize.ARRAY(Sequelize.STRING)
 	});
 	Rule = sequelize.define('Rule', {
 		name: Sequelize.STRING,
@@ -68,6 +66,7 @@ function initializeModels() {
 		isPublic: Sequelize.BOOLEAN
 	});
 	Schedule = sequelize.define('Schedule', {
+		globals: Sequelize.JSON,
 		text: Sequelize.JSON,
 		running: Sequelize.BOOLEAN
 	});
@@ -333,7 +332,7 @@ exports.deleteWebhook = (uid, hid) => {
 // ##
 // ## RULES
 // ##
-exports.getAllRules = (uid) => {
+exports.getAllRules = (uid, full) => {
 	var query = {
 		attributes: [
 			'id',
@@ -344,15 +343,13 @@ exports.getAllRules = (uid) => {
 			'actions'
 		],
 		order: 'id DESC',
-		include: [
-			ModPersist,
-			{
-				model: Webhook,
-				attributes: [ 'id', 'hookurl' ],
-			}
-		]
+		include: [{
+			model: Webhook,
+			attributes: [ 'id', 'hookurl' ],
+		}]
 	};
 	if(uid) query.where = { UserId: uid };
+	if(full) query.include.push(ModPersist);
 	return Rule.findAll(query)
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
@@ -516,7 +513,6 @@ exports.deleteRule = (uid, rid) => {
 // ## This is because Event Triggers and Action Dispatchers have almost the same functionality
 // ## except for that the Event Triggers also have a schedule
 // ## 
-
 function getCodeModule(cid) {
 	return CodeModule.findOne({
 			where: { id: cid },
@@ -597,6 +593,8 @@ function deleteCodeModule(uid, cid) {
 		});
 }
 
+
+
 // ##
 // ## ACTION DISPATCHERS
 // ##
@@ -611,10 +609,14 @@ exports.createActionDispatcher = (uid, oAd) => {
 		.then((oNewMod) => oNewMod.toJSON())
 };
 
+
+
 // ##
 // ## EVENT TRIGGERS
 // ##
+
 exports.getAllEventTriggers = () => getAllCodeModules(false);
+exports.getEventTrigger = getCodeModule;
 exports.getUserEventTriggers = (uid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({
@@ -624,55 +626,6 @@ exports.getUserEventTriggers = (uid) => {
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
-exports.persistEventTriggerData = function(cid, data) {
-	return CodeModule.findById(cid, { attributes: [ 'id' ] })
-		.then((oEt) => {
-			if(!oEt) throwStatusCode(404, 'Event Trigger not found');
-			else return oEt;
-		})
-		.then((oEt) => oEt.getSchedule())
-		.then((oSched) => {
-			console.log('got schedule');
-			return oSched.getModPersist();
-		})
-		.then((oRes) => {
-			console.log('got data', oRes);
-			// if(oRes.arr.length > 0) return oRes.arr[0].update({ data: data });
-			// else return ModPersist.create({
-			// 		moduleId: cid,
-			// 		data: data
-			// 	})
-			// 	.then((oMp) => oRes.rule.addModPersist(oMp));
-		})
-		.catch(ec);
-}
-
-exports.getEventTrigger = getCodeModule;
-exports.updateEventTrigger = (uid, eid, oEt) => {
-	return updateCodeModule(uid, eid, oEt)
-		.then((mod) => {
-			return mod.Schedule.update({ text: oEt.schedule.text })
-				.then((sched) => {
-					let ret = mod.toJSON();
-					ret.Schedule = sched.toJSON();
-					return ret;
-				})
-		})
-}
-exports.startStopEventTrigger = (uid, eid, isStart) => {
-	return User.findById(uid, { attributes: [ 'id' ] })
-		.then((oUser) => oUser.getCodeModules({
-			where: { id: eid },
-			include: [ Schedule ]
-		}))
-		.then((arrOldMod) => {
-			if(arrOldMod.length > 0) {
-				return arrOldMod[0].Schedule.update({ running: isStart });
-			}
-			else throwStatusCode(404, 'No Code Module found to update!');
-		});
-}
-exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
 exports.createEventTrigger = (uid, oEt) => {
 	oEt.isaction = false;
 	return createCodeModule(uid, oEt)
@@ -689,4 +642,128 @@ exports.createEventTrigger = (uid, oEt) => {
 			}); // We need to return the new module with the schedule
 		})
 };
+
+exports.updateEventTrigger = (uid, eid, oEt) => {
+	return updateCodeModule(uid, eid, oEt)
+		.then((mod) => {
+			return mod.Schedule.update({ text: oEt.schedule.text })
+				.then((sched) => {
+					let ret = mod.toJSON();
+					ret.Schedule = sched.toJSON();
+					return ret;
+				})
+		})
+}
+exports.startStopEventTrigger = (uid, eid, isStart, globals) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getCodeModules({
+			where: { id: eid },
+			include: [ Schedule ]
+		}))
+		.then((arrOldMod) => {
+			if(arrOldMod.length > 0) {
+				let upd = { running: isStart };
+				if(isStart) upd.globals = globals;
+				return arrOldMod[0].Schedule.update(upd);
+			}
+			else throwStatusCode(404, 'No Code Module found to update!');
+		});
+}
+
+function getSchedule(cid) {
+	return CodeModule.findById(cid, { attributes: [ 'id' ] })
+		.then((oEt) => {
+			if(!oEt) throwStatusCode(404, 'Event Trigger not found');
+			else return oEt;
+		})
+		.then((oEt) => oEt.getSchedule())
+		.then((oSched) => {
+			if(!oSched) throwStatusCode(404, 'No Schedule found for Event Trigger #'+cid);
+			else return oSched;
+		})
+}
+
+exports.persistTriggerData = function(cid, data) {
+	return getSchedule(cid)
+		.then((oSched) => {
+			return oSched.getModPersist()
+				.then((oPers) => {
+					return {
+						schedule: oSched,
+						persist: oPers
+					}
+				});
+		})
+		.then((oRes) => {
+			if(oRes.persist) {
+				return oRes.persist.update({ data: data });
+			} else {
+				return ModPersist.create({
+					moduleId: cid,
+					data: data
+				})
+				.then((oMp) => oRes.schedule.setModPersist(oMp));
+			}
+		})
+		.catch(ec);
+}
+
+exports.logTrigger = (cid, msg) => {
+	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
+		.then((oLog) => {
+			if(oLog) oLog.update({
+				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+			})
+		})
+		.catch(ec);
+};
+
+exports.getTriggerLog = (cid) => {
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
+		.then((oLog) => (oLog.get('log') || []).reverse());
+};
+
+exports.clearRuleLog = (cid) => {
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
+		.then((oLog) => {
+			if(oLog) oLog.update({ log: null })
+		})
+		.catch(ec);
+};
+
+exports.logTriggerData = function(cid, data) {
+	let oLogVal = JSON.stringify({
+		timestamp: (new Date()).getTime(),
+		data: data
+	});
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'datalog' ] }))
+		.then((oLog) => {
+			if(oLog) oLog.update({
+				data: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
+			})
+		})
+		.catch(ec);
+};
+
+exports.getTriggerDataLog = (cid) => {
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
+		.then((oLog) => oLog.get('datalog'));
+};
+
+exports.clearTriggerDataLog = (uid, rid) => {
+	return getSchedule(cid)
+		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
+		.then((oLog) => {
+			if(oLog) oLog.update({ datalog: null })
+		})
+		.catch(ec);
+};
+
+exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
 

@@ -147,15 +147,21 @@ function MPI(uid, username) {
 		switch(oMsg.cmd) {
 			case 'log:info': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(dat));
 				break;
-			case 'log:worker': db.logWorker(uid, dat);
-				break;
-			case 'log:rule': db.logRule(dat.rid, dat.msg);
-				break;
 			case 'log:error': log.error(dat);
 				break;
-			case 'datalog': db.logRuleData(dat.rid, dat.msg);
+			case 'logworker': db.logWorker(uid, dat);
 				break;
-			case 'persist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
+			case 'logrule': db.logRule(dat.rid, dat.msg);
+				break;
+			case 'logtrigger': db.logTrigger(dat.cid, dat.msg);
+				break;
+			case 'ruledatalog': db.logRuleData(dat.rid, dat.msg);
+				break;
+			case 'rulepersist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
+				break;
+			case 'triggerdatalog': db.logTriggerData(dat.cid, dat.msg);
+				break;
+			case 'triggerpersist': db.persistTriggerData(dat.rid, dat.cid, dat.persistence);
 				break;
 			case 'event': emitEvent(uid, dat);
 				break;
@@ -241,7 +247,7 @@ function startWorker(oUser) {
 		arr: arrAllowed
 	}))
 	// After a worker has been started it needs to receive all its rules
-	.then(() => db.getAllRules(oUser.id))
+	.then(() => db.getAllRules(oUser.id, true))
 	.then((arr) => {
 		for(var i = 0; i < arr.length; i++) sendRuleToUser(arr[i]);
 	})

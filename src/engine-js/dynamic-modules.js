@@ -55,11 +55,56 @@ function searchComment(lang, src) {
 	return comm;
 }
 
+// Helper function for Event Triggers and Action Dispatchers
+exports.runModule = function(store, oMod, globals, persistence) {
+	return new Promise((resolve, reject) => {
+		if(!store || !store.log || !store.data || !store.persist) {
+			reject(new Error('No valid store provided!'));
+		} else {
+			let lastEvent = {};
+			let opts = {
+				globals: globals || {},
+				modules: oMod.modules,
+				persistence: persistence,
+				logger: store.log,
+				datalogger: store.data,
+				persist: store.persist,
+				emitEvent: (hookname, evt) => {
+					let now = (new Date()).getTime();
+					let oEvt = lastEvent[hookname];
+					if(!oEvt || (now-oEvt.time)>200) {
+						oEvt = lastEvent[hookname] = {
+							time: now,
+							count: 0
+						};
+					}
+					// We allow 20 events within 200 ms per rule per eventname before we tell the user that he floods
+					if(oEvt && (now-oEvt.time)<200 && oEvt.count>20) {
+						store.log('You are flooding our system with events... We need to limit this, sorry!');
+					} else {
+						oEvt.count++;
+						send.event({
+							hookname: hookname, 
+							origin: 'internal',
+							engineReceivedTime: now,
+							body: evt
+						})
+					}
+				}
+			};
+
+			runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
+				.then((answ) => resolve(answ.module))
+				.catch(reject);
+		}
+	});
+};
+
 // Attempt to run a JS module from a string, together with the
 // given parameters and arguments. If it is written in CoffeeScript we
 // compile it first into JS.
 // Options: id, globals, logger
-exports.runStringAsModule = (code, lang, username, opt) => {
+function runStringAsModule(code, lang, username, opt) {
 	return new Promise((resolve) => {
 		var origCode = code;
 
@@ -138,3 +183,4 @@ exports.runStringAsModule = (code, lang, username, opt) => {
 		});
 	});
 }
+exports.runStringAsModule = runStringAsModule;
