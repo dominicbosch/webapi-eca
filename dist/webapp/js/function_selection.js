@@ -159,6 +159,7 @@ window.functions = {
     var oAd, oSelMod;
     if (isEventTrigger) {
       arrSelectedFunctions = [];
+      d3.select('#selectedFunctions .firstlevel').remove();
     }
     oSelMod = arrSelectedFunctions.filter(function(o) {
       return o.id === id;

@@ -3,7 +3,6 @@
 {% block head %}
 	<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" src="/js/lib/moment.min.js"></script>
-	<script type="text/javascript" src="/js/lib/later.min.js"></script>
 	<script type="text/javascript" src="/js/lib/bootstrap-datetimepicker.min.js"></script>
 	<script src="/js/modules_create.js"></script>
 	<link rel="stylesheet" type="text/css" href="/css/modules.css">
@@ -33,11 +32,6 @@ exports.sayHelloWorld = () ->
 <div class="container-fluid">
 	<div class="row">
 		<h2>Name: <input id="input_id" type="text" /></h2>
-	</div>
-
-	<div id="schedule" class="row">
-		<h2>Schedule</h2>
- 		<input type="text" id="inp_schedule" value="every 20 mins starting on the 7th min" class="form-control"/>
 	</div>
 
 	<div class="row">

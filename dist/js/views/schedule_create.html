@@ -1,9 +1,10 @@
 {% extends 'skeleton.html' %}
 
 {% block head %}
-	<script src="/js/lib/cryptico.js" type="text/javascript" charset="utf-8"></script>
-    <script src="/js/schedule_create.js" type="text/javascript" charset="utf-8"></script>
-	<script src="/js/function_selection.js"></script>
+	<script type="text/javascript" src="/js/lib/later.min.js"></script>
+	<script type="text/javascript" src="/js/lib/cryptico.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/js/schedule_create.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/js/function_selection.js"></script>
 	<link rel="stylesheet" type="text/css" href="/css/modules.css">
 	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
 {% endblock %}
@@ -27,7 +28,7 @@
 	</div>
 	<div class="row">
 		<h2 id="schedule">Schedule</h2>
-		Type Schedule String: <input type="text" id="input_schedule" class="seventywide consoled">
+		Type Schedule String: <input type="text" id="input_schedule" class="seventywide consoled" value="every 20 mins">
 	</div>
 	
 	<div class="row">

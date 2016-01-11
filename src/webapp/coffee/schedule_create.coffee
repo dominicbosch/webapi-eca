@@ -34,7 +34,7 @@ fOnLoad = () ->
 	Promise.all(arrPromises)
 		.then () ->
 			if oParams.id is undefined then return null;
-			else return loadRule();
+			else return loadSchedule();
 		.then functions.init(true, strPublicKey)
 		.then attachListeners
 		.then () ->
@@ -45,46 +45,20 @@ fOnLoad = () ->
 
 # Preload editting of a Rule
 # -----------
-loadRule = () ->
+console.warn('TODO implement edit schedule');
+loadSchedule = () ->
 	return new Promise (resolve, reject) ->
-		console.warn('TODO implement edit rules')
-		main.post('/service/rules/get/'+oParams.id)
-			.done (oRule) ->
-				# Rule Name
-				$('#input_name').val oRule.name
+		main.post('/service/schedule/get/'+oParams.id)
+			.done (oSched) ->
+				# Schedule Name
+				$('#input_name').val oSched.name
+				$('#inp_schedule').val(oSched.schedule.text)
 
-				# Webhook
-				d3.select('#selectWebhook option[value="'+oRule.WebhookId+'"]').attr('selected', true)
-
-				# Conditions
-				editor.setValue '\n'+(JSON.stringify oRule.conditions, undefined, 2)+'\n'
-				editor.gotoLine(1, 1)
-
-				functions.fillExisting(oRule.actions)
+				functions.fillExisting([oSched.execute])
 							
 				resolve 'Rule loaded'
 			.fail reject
 
-
-# EVENT
-# -----
-fillWebhooks = (oHooks) ->
-	prl = if oHooks.private then Object.keys(oHooks.private).length else 0
-	pul = if oHooks.public then Object.keys(oHooks.public).length else 0
-	if prl + pul is 0
-		d3.select('#selectWebhook').append('h3').classed('empty', true)
-			.html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>')
-		setEditorReadOnly true
-	else
-		d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
-			.append('select').attr('class','mediummarged smallfont')
-		d3Sel.append('option').attr('value', -1).text('No Webhook selected')
-		createWebhookRow = (oHook, owner) ->
-			isSel = if oParams.webhook and oParams.webhook is oHook.hookurl then true else null
-			d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
-				.text oHook.hookname+' ('+owner+')'
-		createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
-		createWebhookRow(oHook, oHook.username) for i, oHook of oHooks.public
 
 # LISTENERS
 # ---------
@@ -95,33 +69,25 @@ attachListeners = () ->
 		try
 			if $('#input_name').val() is ''
 				$('#input_name').focus()
-				throw new Error 'Please enter a rule name!'
-			
-			hurl = parseInt($('#selectWebhook select').val())
-			if hurl is -1				
-				throw new Error 'Please select a valid Webhook!'
+				throw new Error 'Please enter a Schedule name!'
 
 			# Store all selected action dispatchers
-			arrActions = functions.getSelected()
-			if arrActions.length is 0
-				throw new Error 'Please select at least one action!'
-
-			try
-				arrConditions = JSON.parse editor.getValue()
-			catch err
-				throw new Error "Parsing of your conditions failed! Needs to be an Array of Strings!"
-
-			if arrConditions not instanceof Array
-				throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
-			for el in arrConditions
-				if el not instanceof Object then throw new Error "Conditions Invalid! Needs to be an Array of Objects!"
+			arrExecution = functions.getSelected()
+			if arrExecution.length is 0
+				throw new Error 'Please select an Event Trigger!'
 
 			obj = 
 				name: $('#input_name').val()
-				hookurl: hurl
-				conditions: arrConditions
-				actions: arrActions
+				execute: arrExecution[0]
 
+			txt = $('#input_schedule').val()
+			schedule = later.parse.text(txt)
+			if schedule.error > -1
+				throw new Error('You have an error in your schedule!')
+			obj.schedule = {
+				text: txt,
+				arr: schedule.schedules
+			};
 
 			# User is creating a new rule
 			if oParams.id is undefined
@@ -129,9 +95,9 @@ attachListeners = () ->
 			else
 				obj.id = oParams.id
 				cmd = 'update'
-			main.post('/service/rules/'+cmd, obj)
+			main.post('/service/schedule/'+cmd, obj)
 				.done (msg) ->
-					main.setInfo true, 'Rule ' + if oParams.id is undefined then 'stored!' else 'updated!'
+					main.setInfo true, 'Schedule ' + if oParams.id is undefined then 'stored!' else 'updated!'
 					wl = window.location;
 					oParams.id = msg.id;
 					newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id='+msg.id;
@@ -145,3 +111,6 @@ attachListeners = () ->
 
 # Most stuff is happening after the document has loaded:
 window.addEventListener 'load', fOnLoad, true
+
+
+

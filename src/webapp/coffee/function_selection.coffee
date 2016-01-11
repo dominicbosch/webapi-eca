@@ -118,8 +118,10 @@ window.functions =
 				d3.select('.flid'+oFunc.id+' .inp_'+key).node().value = val
 
 	add: (id, funcName) ->
+		# only one event trigger function allowed so far
 		if isEventTrigger
 			arrSelectedFunctions = []
+			d3.select('#selectedFunctions .firstlevel').remove()
 		oSelMod = arrSelectedFunctions.filter((o) -> o.id is id)[0]
 		if not oSelMod
 			oAd = arrAllFunctions.filter((d) -> d.id is id)[0]

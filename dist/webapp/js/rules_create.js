@@ -114,7 +114,7 @@ attachListeners = function() {
     try {
       if ($('#input_name').val() === '') {
         $('#input_name').focus();
-        throw new Error('Please enter a rule name!');
+        throw new Error('Please enter a Rule name!');
       }
       hurl = parseInt($('#selectWebhook select').val());
       if (hurl === -1) {

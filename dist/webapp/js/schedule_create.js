@@ -1,5 +1,5 @@
 'use strict';
-var arrSelectedActions, attachListeners, fOnLoad, fillWebhooks, loadRule, strPublicKey;
+var arrSelectedActions, attachListeners, fOnLoad, loadSchedule, strPublicKey;
 
 strPublicKey = '';
 
@@ -29,7 +29,7 @@ fOnLoad = function() {
     if (oParams.id === void 0) {
       return null;
     } else {
-      return loadRule();
+      return loadSchedule();
     }
   }).then(functions.init(true, strPublicKey)).then(attachListeners).then(function() {
     $('#input_name').get(0).setSelectionRange(0, 0);
@@ -39,87 +39,44 @@ fOnLoad = function() {
   });
 };
 
-loadRule = function() {
+console.warn('TODO implement edit schedule');
+
+loadSchedule = function() {
   return new Promise(function(resolve, reject) {
-    console.warn('TODO implement edit rules');
-    return main.post('/service/rules/get/' + oParams.id).done(function(oRule) {
-      $('#input_name').val(oRule.name);
-      d3.select('#selectWebhook option[value="' + oRule.WebhookId + '"]').attr('selected', true);
-      editor.setValue('\n' + (JSON.stringify(oRule.conditions, void 0, 2)) + '\n');
-      editor.gotoLine(1, 1);
-      functions.fillExisting(oRule.actions);
+    return main.post('/service/schedule/get/' + oParams.id).done(function(oSched) {
+      $('#input_name').val(oSched.name);
+      $('#inp_schedule').val(oSched.schedule.text);
+      functions.fillExisting([oSched.execute]);
       return resolve('Rule loaded');
     }).fail(reject);
   });
 };
 
-fillWebhooks = function(oHooks) {
-  var createWebhookRow, d3Sel, i, oHook, prl, pul, ref, ref1, results;
-  prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
-  pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
-  if (prl + pul === 0) {
-    d3.select('#selectWebhook').append('h3').classed('empty', true).html('No <b>Webhooks</b> available! <a href="/views/webhooks">Create one first!</a>');
-    return setEditorReadOnly(true);
-  } else {
-    d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:').append('select').attr('class', 'mediummarged smallfont');
-    d3Sel.append('option').attr('value', -1).text('No Webhook selected');
-    createWebhookRow = function(oHook, owner) {
-      var isSel;
-      isSel = oParams.webhook && oParams.webhook === oHook.hookurl ? true : null;
-      return d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel).text(oHook.hookname + ' (' + owner + ')');
-    };
-    ref = oHooks["private"];
-    for (i in ref) {
-      oHook = ref[i];
-      createWebhookRow(oHook, 'yours');
-    }
-    ref1 = oHooks["public"];
-    results = [];
-    for (i in ref1) {
-      oHook = ref1[i];
-      results.push(createWebhookRow(oHook, oHook.username));
-    }
-    return results;
-  }
-};
-
 attachListeners = function() {
   return $('#but_submit').click(function() {
-    var arrActions, arrConditions, cmd, el, err, error, error1, hurl, j, len, obj;
+    var arrExecution, cmd, err, error, obj, schedule, txt;
     main.clearInfo(true);
     try {
       if ($('#input_name').val() === '') {
         $('#input_name').focus();
-        throw new Error('Please enter a rule name!');
+        throw new Error('Please enter a Schedule name!');
       }
-      hurl = parseInt($('#selectWebhook select').val());
-      if (hurl === -1) {
-        throw new Error('Please select a valid Webhook!');
-      }
-      arrActions = functions.getSelected();
-      if (arrActions.length === 0) {
-        throw new Error('Please select at least one action!');
-      }
-      try {
-        arrConditions = JSON.parse(editor.getValue());
-      } catch (error) {
-        err = error;
-        throw new Error("Parsing of your conditions failed! Needs to be an Array of Strings!");
-      }
-      if (!(arrConditions instanceof Array)) {
-        throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
-      }
-      for (j = 0, len = arrConditions.length; j < len; j++) {
-        el = arrConditions[j];
-        if (!(el instanceof Object)) {
-          throw new Error("Conditions Invalid! Needs to be an Array of Objects!");
-        }
+      arrExecution = functions.getSelected();
+      if (arrExecution.length === 0) {
+        throw new Error('Please select an Event Trigger!');
       }
       obj = {
         name: $('#input_name').val(),
-        hookurl: hurl,
-        conditions: arrConditions,
-        actions: arrActions
+        execute: arrExecution[0]
+      };
+      txt = $('#input_schedule').val();
+      schedule = later.parse.text(txt);
+      if (schedule.error > -1) {
+        throw new Error('You have an error in your schedule!');
+      }
+      obj.schedule = {
+        text: txt,
+        arr: schedule.schedules
       };
       if (oParams.id === void 0) {
         cmd = 'create';
@@ -127,9 +84,9 @@ attachListeners = function() {
         obj.id = oParams.id;
         cmd = 'update';
       }
-      return main.post('/service/rules/' + cmd, obj).done(function(msg) {
+      return main.post('/service/schedule/' + cmd, obj).done(function(msg) {
         var newurl, wl;
-        main.setInfo(true, 'Rule ' + (oParams.id === void 0 ? 'stored!' : 'updated!'));
+        main.setInfo(true, 'Schedule ' + (oParams.id === void 0 ? 'stored!' : 'updated!'));
         wl = window.location;
         oParams.id = msg.id;
         newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id=' + msg.id;
@@ -139,8 +96,8 @@ attachListeners = function() {
       }).fail(function(err) {
         return main.setInfo(false, err.responseText);
       });
-    } catch (error1) {
-      err = error1;
+    } catch (error) {
+      err = error;
       console.log(err);
       return main.setInfo(false, 'Error in upload: ' + err.message);
     }

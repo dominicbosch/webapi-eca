@@ -83,22 +83,16 @@ geb.addListener('modules:allowed', (arrModules) => {
 	});
 });
 
-geb.addListener('eventtrigger:new', (oEt) => {
-	sendToWorker(oEt.UserId, {
-		cmd: 'eventtrigger:new',
-		trigger: oEt
-	});
-});
-geb.addListener('eventtrigger:start', (oEvt) => {
+geb.addListener('schedule:start', (oEvt) => {
 	sendToWorker(oEvt.uid, {
-		cmd: 'eventtrigger:start',
+		cmd: 'schedule:start',
 		eid: oEvt.eid,
-		globals: oEvt.globals
+		execute: oEvt.execute
 	});
 });
-geb.addListener('eventtrigger:stop', (oEvt) => {
+geb.addListener('schedule:stop', (oEvt) => {
 	sendToWorker(oEvt.uid, {
-		cmd: 'eventtrigger:stop',
+		cmd: 'schedule:stop',
 		eid: oEvt.eid
 	});
 });
@@ -154,19 +148,19 @@ function MPI(uid, username) {
 				break;
 			case 'logrule': db.logRule(dat.rid, dat.msg);
 				break;
-			case 'logtrigger': db.logTrigger(dat.cid, dat.msg);
+			case 'logtrigger': db.logSchedule(dat.cid, dat.msg);
 				break;
 			case 'ruledatalog': db.logRuleData(dat.rid, dat.msg);
 				break;
 			case 'rulepersist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
-			case 'triggerdatalog': db.logTriggerData(dat.cid, dat.msg);
+			case 'triggerdatalog': db.logScheduleData(dat.cid, dat.msg);
 				break;
-			case 'triggerpersist': db.persistTriggerData(dat.rid, dat.cid, dat.persistence);
+			case 'triggerpersist': db.persistScheduleData(dat.rid, dat.cid, dat.persistence);
 				break;
 			case 'triggerfails':
-				db.startStopEventTrigger(uid, dat.cid, false);
-				db.logTrigger(dat.cid, dat.msg);
+				db.startStopSchedule(uid, dat.cid, false);
+				db.logSchedule(dat.cid, dat.msg);
 				break;
 			case 'event': emitEvent(uid, dat);
 				break;
@@ -257,13 +251,15 @@ function startWorker(oUser) {
 		for(var i = 0; i < arr.length; i++) sendRuleToUser(arr[i]);
 	})
 	// After a worker has been started, rules were loaded it needs to receive all running event triggers
-	.then(() => db.getUserEventTriggers(oUser.id))
+	.then(() => db.getSchedule(oUser.id))
 	.then((arr) => {
 		for(var i = 0; i < arr.length; i++) {
-			sendToWorker(oUser.id, {
-				cmd: 'eventtrigger:new',
-				trigger: arr[i]
-			})
+			if(arr[i].running) {
+				sendToWorker(oUser.id, {
+					cmd: 'schedule:start',
+					schedule: arr[i]
+				})
+			}
 		}
 	});
 }

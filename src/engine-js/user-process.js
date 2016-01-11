@@ -84,7 +84,7 @@ process.on('message', (oMsg) => {
 		case 'rule:delete':
 			engine.deleteRule(oMsg.id);
 		break;
-		case 'eventtrigger:new':
+		case 'schedule:start':
 			trigger = oMsg.trigger;
 			glob = trigger.Schedule.globals;
 			oEventTriggerCodes[trigger.id] = trigger;
@@ -96,20 +96,18 @@ process.on('message', (oMsg) => {
 				send.logtrigger(trigger.id, 'Restaring due to changes!')
 				startEventTrigger(trigger);
 			}
-		break;
-		case 'eventtrigger:start':
 
 			trigger = oEventTriggerCodes[oMsg.eid];
-			glob = trigger.Schedule.globals;
+			glob = trigger.execute;
+			console.log('relink', trigger, glob, oMsg);
 			trigger.Schedule.globals = oMsg.globals;
 			for(let el in trigger.globals) {
 				if(trigger.globals[el]) glob[el] = encryption.decrypt(glob[el] || '');
 			}
 			startEventTrigger(trigger);
 		break;
-		case 'eventtrigger:stop':
-			console.log('TODO implement ET stop');
-			console.log('Worker got new event trigger:'+oMsg.trigger);
+		case 'schedule:stop':
+			console.log('TODO implement Schedule stop');
 		break;
 		case 'event':
 			engine.processEvent(oMsg.evt);

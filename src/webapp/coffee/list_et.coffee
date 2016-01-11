@@ -43,10 +43,10 @@ updateModules = (uid) ->
 		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
 
 deleteModule = (d) ->
-	if confirm 'Do you really want to delete the Module "'+d.name+'"?'
+	if confirm 'Do you really want to delete the Module "'+d.name+'"? All running Schedules that use this module will be deleted!'
 		main.post('/service/eventtrigger/delete', { id: d.id })
 			.done () ->
-				main.setInfo true, 'Action Dispatcher deleted!', true
+				main.setInfo true, 'Event Trigger deleted!', true
 				updateModules(parseInt(d3.select('body').attr('data-uid')))
 			.fail (err) ->
 				main.setInfo false, err.responseText 
@@ -105,37 +105,27 @@ fOnLoad = () ->
 
 window.addEventListener 'load', fOnLoad, true
 
-		# <div class="row">
-		# 	<div class="col-xs-12" id="functionEmpty">
-		# 		<h3 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h3>
-		# 	</div>
-		# 	<div class="col-md-5" id="functionList"></div>
-		# 	<div class="col-md-7" id="selectedFunctions">
-		# 		<h3>Selected Actions</h3>
-		# 	</div>
-		# </div>
-
 
 updateSchedules = () ->
 	req = main.post('/service/schedule/get')
 	req.done (arrSchedules) ->
+		console.log arrSchedules
 		if arrSchedules.length is 0
-			parent = $('#tableModules').parent()
-			$('#tableModules').remove()
-			parent.append $ "<h3 class=\"empty\">No <b>Event Triggers</b> available!
-				<a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"
+			parent = $('#tableSchedules').parent()
+			$('#tableSchedules').remove()
+			parent.append $ "<h3 class=\"empty\">No <b>Schedules</b> available!
+				<a href=\"/views/schedule_create\">Create One first!</a></h3>"
 		else
-			tr = d3.select('#tableModules tbody').selectAll('tr')
+			tr = d3.select('#tableSchedules tbody').selectAll('tr')
 				.data(arrSchedules, (d) -> d.id);
 			tr.exit().remove();
 			trNew = tr.enter().append('tr');
 			trNew.append('td').each (d) ->
-				if d.UserId is uid
-					d3.select(this).append('img')
-						.attr('class', 'icon del')
-						.attr('src', '/images/del.png')
-						.attr('title', 'Delete Module')
-						.on('click', deleteModule);
+				d3.select(this).append('img')
+					.attr('class', 'icon del')
+					.attr('src', '/images/del.png')
+					.attr('title', 'Delete Module')
+					.on('click', deleteModule);
 			trNew.append('td').append('img')
 				.attr('class', 'icon edit')
 				.attr('src', '/images/edit.png')
@@ -143,31 +133,24 @@ updateSchedules = () ->
 				.on 'click', (d) ->
 					window.location.href = 'modules_create?m=et&id='+d.id
 
+			trNew.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/log.png')
+				.attr('title', 'Show Rule Log')
+				.on('click', showLog);
+			trNew.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/bulk.png')
+				.attr('title', 'Download Data Log')
+				.on('click', showDataLog);
+			trNew.append('td').append('img')
+				.attr('class', 'icon log')
+				.attr('src', '/images/bulk_del.png')
+				.attr('title', 'Delete Data Log')
+				.on('click', clearDataLog);
 			trNew.append('td').append('div').text((d) -> d.name).each (d) ->
 				if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
 			trNew.append('td').text((d) -> d.User.username)
-
-	req.fail ( err ) ->
-		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
-
-	# <h3 class="empty">No <b>Schedules</b> available! <a href="/views/schedule_create">Create one first!</a></h3>
-
-# TODO 
-
-# txt = $('#inp_schedule').val()
-# schedule = later.parse.text(txt)
-# if schedule.error > -1
-# 	throw new Error('You have an error in your schedule!')
-# obj.schedule = {
-# 	text: txt,
-# 	arr: schedule.schedules
-# };
-
-# $('#schedule').show()
-
-# $('#inp_schedule').val(oMod.Schedule.text)
-# $('#inp_schedule').addClass('readonly')
-# 	.attr('readonly', true).attr('disabled', true)
 
 
 # img = trNew.append('td').append('img')
@@ -181,3 +164,34 @@ updateSchedules = () ->
 # updatePlayButton = (d3This) ->
 # 	d3This.attr('src', (d) -> '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
 # 		.attr('title', (d) -> if d.Schedule.running then 'Stop Module' else 'Start Module')
+
+	req.fail ( err ) ->
+		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
+
+showLog = (d) ->
+	main.post('/service/schedule/getlog/'+d.id)
+		.done (arrLog) ->
+			d3.select('#log_col').style('visibility','visible');
+			d3.select('#log_col h3').text('Log file "'+d.name+'":');
+			d3.selectAll('#log_col li').remove();
+			d3tr = d3.select('#log_col ul').selectAll('li').data(arrLog);
+			d3tr.enter().append('li').text((d) => d);
+			d3.select('#log_col button').on 'click', () -> clearLog(d);
+		.fail (err) ->
+			main.setInfo false, 'Could not get rule log: '+err.responseText
+
+showDataLog = (d) ->
+	window.location.href = '/service/schedule/getdatalog/'+d.id
+
+clearLog = (d) ->
+	main.post('/service/schedule/clearlog/'+d.id)
+		.done () ->
+			main.setInfo true, 'Log deleted!'
+			showLog(d)
+
+clearDataLog = (d) ->
+	if confirm 'Do you really want to delete all your gathered data?'
+		main.post('/service/schedule/cleardatalog/'+d.id)
+			.done () ->
+				main.setInfo true, 'Data Log deleted!'
+				showLog(d)

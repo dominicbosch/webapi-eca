@@ -45,35 +45,6 @@ router.post('/create', (req, res) => {
 		.catch(db.errHandler(res));
 });
 
-router.post('/start/:id', (req, res) => {
-	log.info('SRVC:ET | Starting: #' + req.params.id);
-	db.startStopEventTrigger(req.session.pub.id, req.params.id, true, req.body)
-		.then(() => {
-			log.info('SRVC:ET | Module started');
-			res.send('OK');
-			geb.emit('eventtrigger:start', {
-				uid: req.session.pub.id,
-				eid: req.params.id,
-				globals: req.body
-			});
-		})	
-		.catch(db.errHandler(res));
-});
-
-router.post('/stop/:id', (req, res) => {
-	log.info('SRVC:ET | Stopping: #' + req.params.id);
-	db.startStopEventTrigger(req.session.pub.id, req.params.id, false)
-		.then(() => {
-			log.info('SRVC:ET | Module stopped');
-			res.send('OK');
-			geb.emit('eventtrigger:stop', {
-				uid: req.session.pub.id,
-				eid: req.params.id
-			});
-		})	
-		.catch(db.errHandler(res));
-});
-
 router.post('/update', (req, res) => {
 	log.info('SRVC:ET | UPDATE: ' + req.body.name);
 	let args = {

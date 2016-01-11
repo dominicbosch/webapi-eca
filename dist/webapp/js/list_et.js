@@ -1,5 +1,5 @@
 'use strict';
-var deleteModule, fOnLoad, sendStartStopCommand, start, startStopModule, strPublicKey, updateModules, updateSchedules;
+var clearDataLog, clearLog, deleteModule, fOnLoad, sendStartStopCommand, showDataLog, showLog, start, startStopModule, strPublicKey, updateModules, updateSchedules;
 
 strPublicKey = '';
 
@@ -51,11 +51,11 @@ updateModules = function(uid) {
 };
 
 deleteModule = function(d) {
-  if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
+  if (confirm('Do you really want to delete the Module "' + d.name + '"? All running Schedules that use this module will be deleted!')) {
     return main.post('/service/eventtrigger/delete', {
       id: d.id
     }).done(function() {
-      main.setInfo(true, 'Action Dispatcher deleted!', true);
+      main.setInfo(true, 'Event Trigger deleted!', true);
       return updateModules(parseInt(d3.select('body').attr('data-uid')));
     }).fail(function(err) {
       return main.setInfo(false, err.responseText);
@@ -146,24 +146,26 @@ updateSchedules = function() {
   req = main.post('/service/schedule/get');
   req.done(function(arrSchedules) {
     var parent, tr, trNew;
+    console.log(arrSchedules);
     if (arrSchedules.length === 0) {
-      parent = $('#tableModules').parent();
-      $('#tableModules').remove();
-      return parent.append($("<h3 class=\"empty\">No <b>Event Triggers</b> available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
+      parent = $('#tableSchedules').parent();
+      $('#tableSchedules').remove();
+      return parent.append($("<h3 class=\"empty\">No <b>Schedules</b> available! <a href=\"/views/schedule_create\">Create One first!</a></h3>"));
     } else {
-      tr = d3.select('#tableModules tbody').selectAll('tr').data(arrSchedules, function(d) {
+      tr = d3.select('#tableSchedules tbody').selectAll('tr').data(arrSchedules, function(d) {
         return d.id;
       });
       tr.exit().remove();
       trNew = tr.enter().append('tr');
       trNew.append('td').each(function(d) {
-        if (d.UserId === uid) {
-          return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
-        }
+        return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
       });
       trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', function(d) {
         return window.location.href = 'modules_create?m=et&id=' + d.id;
       });
+      trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);
+      trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk.png').attr('title', 'Download Data Log').on('click', showDataLog);
+      trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk_del.png').attr('title', 'Delete Data Log').on('click', clearDataLog);
       trNew.append('td').append('div').text(function(d) {
         return d.name;
       }).each(function(d) {
@@ -179,4 +181,44 @@ updateSchedules = function() {
   return req.fail(function(err) {
     return main.setInfo(false, 'Error in fetching all Modules: ' + err.responseText);
   });
+};
+
+showLog = function(d) {
+  return main.post('/service/schedule/getlog/' + d.id).done(function(arrLog) {
+    var d3tr;
+    d3.select('#log_col').style('visibility', 'visible');
+    d3.select('#log_col h3').text('Log file "' + d.name + '":');
+    d3.selectAll('#log_col li').remove();
+    d3tr = d3.select('#log_col ul').selectAll('li').data(arrLog);
+    d3tr.enter().append('li').text((function(_this) {
+      return function(d) {
+        return d;
+      };
+    })(this));
+    return d3.select('#log_col button').on('click', function() {
+      return clearLog(d);
+    });
+  }).fail(function(err) {
+    return main.setInfo(false, 'Could not get rule log: ' + err.responseText);
+  });
+};
+
+showDataLog = function(d) {
+  return window.location.href = '/service/schedule/getdatalog/' + d.id;
+};
+
+clearLog = function(d) {
+  return main.post('/service/schedule/clearlog/' + d.id).done(function() {
+    main.setInfo(true, 'Log deleted!');
+    return showLog(d);
+  });
+};
+
+clearDataLog = function(d) {
+  if (confirm('Do you really want to delete all your gathered data?')) {
+    return main.post('/service/schedule/cleardatalog/' + d.id).done(function() {
+      main.setInfo(true, 'Data Log deleted!');
+      return showLog(d);
+    });
+  }
 };
