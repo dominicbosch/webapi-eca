@@ -14,10 +14,6 @@ fOnLoad = () ->
 	main.registerHoverInfo d3.select('#programcode'), 'modules_code.html'
 	main.registerHoverInfo d3.select('#webhookinfo'), 'webhooks_events.html'
 	
-	if oParams.m isnt 'ad'
-		main.registerHoverInfo d3.select('#schedule > h2'), 'modules_schedule.html'
-		$('#schedule').show()
-
 	# Setup the ACE editor
 	editor = ace.edit "editor"
 	editor.setTheme "ace/theme/crimson_editor"
@@ -96,8 +92,11 @@ fOnLoad = () ->
 	main.post('/service/webhooks/get')
 		.done (o) ->
 			arr = o.public.concat(o.private);
-			d3.select('#listWebhooks').selectAll('li').data(arr).enter()
-				.append('li').append('kbd').text (d) -> d.hookname
+			if arr.length is 0
+				d3.select('#listWebhooks').text('No Webhooks available!')
+			else
+				d3.select('#listWebhooks').selectAll('li').data(arr).enter()
+					.append('li').append('kbd').text (d) -> d.hookname
 
 	$('#tableParams').on 'keyup', 'input', (e) ->
 		code = e.keyCode or e.which
@@ -180,12 +179,9 @@ fOnLoad = () ->
 		main.post('/service/'+moduleType+'/get/'+oParams.id)
 			.done (oMod) ->
 				if oMod
-					console.log(oMod)
 					uid = parseInt d3.select('body').attr('data-uid')
 					fAddUserParam param, shielded for param, shielded of oMod.globals
 					$('#input_id').val(oMod.name)
-					if oParams.m isnt 'ad'
-						$('#inp_schedule').val(oMod.Schedule.text)
 					if uid is oMod.UserId 
 						fAddUserParam '', false
 					else
@@ -194,8 +190,6 @@ fOnLoad = () ->
 						$('#editor').addClass 'readonly'
 						$('#editor_mode').hide()
 						$('#but_submit').hide()
-						$('#inp_schedule').addClass('readonly')
-							.attr('readonly', true).attr('disabled', true)
 						$('#tableParams input').addClass('readonly')
 							.attr('readonly', true).attr('disabled', true)
 						$('#tableParams img').remove()

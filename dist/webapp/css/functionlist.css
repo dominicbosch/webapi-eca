@@ -1,0 +1,53 @@
+
+#functionList { visibility: hidden }
+
+#functionList > table { width: 100% }
+#functionList td {
+	padding-left: 1px;
+	vertical-align: top;
+}
+
+#functionList .bullet { padding: 0px 8px 0px 8px }
+
+#functionList button {
+	padding: 0px 1px;
+	margin: 1px 1px 1px 10px;
+	font-size: 0.75em;
+}
+
+#selectedFunctions { visibility: hidden }
+#selectedFunctions div { overflow: hidden }
+#selectedFunctions > div { font-size: 0.8em }
+
+#selectedFunctions h4, #selectedFunctions h5 { 
+	font-weight: bold;
+}
+#selectedFunctions input { width: 100% }
+
+.firstlevel {
+	padding: 2px;
+	border-top: 1px solid #DDD;
+	border-left: 1px solid #DDD;
+	border-right: 1px solid #DDD;
+}
+.firstlevel:last-child { border-bottom: 1px solid #DDD }
+.firstlevel .row { padding: 1px }
+.firstlevel:nth-child(even) { background: #F8F8F8 }
+/*.firstlevel:nth-child(even) .functions { border: 1px solid #F2F9F9 }*/
+.firstlevel:nth-child(odd) { background: #FFF }
+/*.firstlevel:nth-child(odd) .functions { border: 1px solid #FFF }*/
+
+.functions { 
+	border: 1px solid rgba(0,0,0,0.1);
+	background: rgba(0,0,0,0.05);
+}
+.functions span { font-weight: bold }
+/*
+.functions:nth-child(even) { background: rgba(0,0,0,0.05) }
+.functions:nth-child(odd) { background: rgba(0,0,0,0.1) }
+*/
+.col-xs-3, .col-xs-9,
+.col-sm-3, .col-sm-4,
+.col-sm-9, .col-sm-12 {
+	padding: 0px 12px;
+}

@@ -1,19 +1,14 @@
 'use strict';
 
-editor = null
 strPublicKey = ''
 arrSelectedActions = []
-
-setEditorReadOnly = (isTrue) ->
-	editor.setReadOnly isTrue
-	$('.ace_content').css 'background', if isTrue then '#BBB' else '#FFF'
-	$('#fill_example').toggle !isTrue
 
 # ONLOAD
 # ------
 #
 # When the document has loaded we really start to execute some logic
 fOnLoad = () ->
+	main.registerHoverInfo d3.select('#schedule'), 'schedule.html'
 
 	# First we need to fetch a lot of stuff. If all promises fulfill eventually the rule gets loaded
 	# TODO Yes we could move this above onLoad and also take the loading as a promise and then do all 
@@ -31,11 +26,8 @@ fOnLoad = () ->
 	addPromise '/service/session/publickey', afterwards,
 		'Error when fetching public key. Unable to send user specific parameters securely!'
 
-	# Load Webhooks
-	addPromise '/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks'
-
 	# Load Actions
-	addPromise '/service/actiondispatcher/get', functions.fillList, 'Unable to fetch Action Dispatchers'
+	addPromise '/service/eventtrigger/get', functions.fillList, 'Unable to fetch Event Triggers'
 
 	# First we want to load all data, then we want to load a rule if the user edits one
 	# finally we want to attach all the listeners on the document so it works properly
@@ -43,40 +35,12 @@ fOnLoad = () ->
 		.then () ->
 			if oParams.id is undefined then return null;
 			else return loadRule();
-		.then functions.init(false, strPublicKey)
+		.then functions.init(true, strPublicKey)
 		.then attachListeners
 		.then () ->
 			$('#input_name').get(0).setSelectionRange(0,0);
 			$('#input_name').focus()
 		.catch (err) -> main.setInfo false, err.toString()
-
-	editor = ace.edit "divConditionsEditor"
-	editor.setTheme "ace/theme/crimson_editor"
-	editor.setFontSize "14px"
-	editor.getSession().setMode "ace/mode/json"
-	editor.setShowPrintMargin false
-
-	$('#editor_theme').change (el) ->
-		editor.setTheme "ace/theme/" + $(this).val()
-		
-	$('#editor_font').change (el) ->
-		editor.setFontSize $(this).val()
-		
-	$('#fill_example').click () ->
-		editor.setValue """
-
-			[
-				{
-					"selector": ".nested_property",
-					"type": "string",
-					"operator": "<=",
-					"compare": "has this value"
-				}
-			]
-			"""
-		editor.gotoLine(1, 1);
-
-	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
 
 
 # Preload editting of a Rule

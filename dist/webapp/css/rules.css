@@ -14,77 +14,11 @@
 	width: 500px;
 }
 
-#actionSection { visibility: hidden }
-
-#actionSection > table { width: 100% }
-#actionSection td {
-	padding-left: 1px;
-	vertical-align: top;
-}
-
-/*#actionSection>table>tr:nth-child(even) { background: #E6FFFD }*/
-/*#actionSection>table>tr:nth-child(even) { background: #F2F9F9 }*/
-#actionSection .bullet { padding: 0px 8px 0px 8px }
-
-#actionSection button {
-	padding: 0px 1px;
-	margin: 1px 1px 1px 10px;
-	font-size: 0.75em;
-}
-
-#selectedActions { visibility: hidden }
-#selectedActions div { overflow: hidden }
-#selectedActions > div { font-size: 0.8em }
-
-#selectedActions h4, #selectedActions h5 { 
-	font-weight: bold;
-}
-#selectedActions input { width: 100% }
-
-.firstlevel {
-	padding: 2px;
-	border-top: 1px solid #DDD;
-	border-left: 1px solid #DDD;
-	border-right: 1px solid #DDD;
-}
-.firstlevel:last-child { border-bottom: 1px solid #DDD }
-.firstlevel .row { padding: 1px }
-.firstlevel:nth-child(even) { background: #F8F8F8 }
-/*.firstlevel:nth-child(even) .actions { border: 1px solid #F2F9F9 }*/
-.firstlevel:nth-child(odd) { background: #FFF }
-/*.firstlevel:nth-child(odd) .actions { border: 1px solid #FFF }*/
-
-.actions { 
-	border: 1px solid rgba(0,0,0,0.1);
-	background: rgba(0,0,0,0.05);
-}
-.actions span { font-weight: bold }
-/*
-.actions:nth-child(even) { background: rgba(0,0,0,0.05) }
-.actions:nth-child(odd) { background: rgba(0,0,0,0.1) }
-*/
-.col-xs-3, .col-xs-9,
-.col-sm-3, .col-sm-4,
-.col-sm-9, .col-sm-12 {
-	padding: 0px 12px;
-}
 #tableRules .mystyle>tbody>tr>td:first-child {
 	width: 20px;
 	padding-left: 3px;
 }
-#log_col {
-	visibility: hidden;
-}
 
-#log_col ul {
-	padding: 5px;
-	border: 1px dotted #444;
-	max-height: 600px;
-	overflow: auto;
-}
-#log_col li {
-	list-style-type: none;
-}
 .jumping {
 	width: 18px;
 	position: relative;

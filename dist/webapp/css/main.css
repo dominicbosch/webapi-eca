@@ -124,6 +124,20 @@ table.mystyle td { padding-right: 12px }
 .smallfont { font-size: 0.75em }
 .nowrap { white-space: nowrap }
 
+#log_col {
+	visibility: hidden;
+}
+
+#log_col ul {
+	padding: 5px;
+	border: 1px dotted #444;
+	max-height: 600px;
+	overflow: auto;
+}
+#log_col li {
+	list-style-type: none;
+}
+
 #mainbody {
 	padding-left: 2%;
 	padding-right: 2%;

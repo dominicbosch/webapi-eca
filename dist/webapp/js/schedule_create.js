@@ -1,20 +1,13 @@
 'use strict';
-var arrSelectedActions, attachListeners, editor, fOnLoad, fillWebhooks, loadRule, setEditorReadOnly, strPublicKey;
-
-editor = null;
+var arrSelectedActions, attachListeners, fOnLoad, fillWebhooks, loadRule, strPublicKey;
 
 strPublicKey = '';
 
 arrSelectedActions = [];
 
-setEditorReadOnly = function(isTrue) {
-  editor.setReadOnly(isTrue);
-  $('.ace_content').css('background', isTrue ? '#BBB' : '#FFF');
-  return $('#fill_example').toggle(!isTrue);
-};
-
 fOnLoad = function() {
   var addPromise, afterwards, arrPromises;
+  main.registerHoverInfo(d3.select('#schedule'), 'schedule.html');
   arrPromises = [];
   addPromise = function(url, thenFunc, failMsg) {
     var p;
@@ -31,36 +24,19 @@ fOnLoad = function() {
     return strPublicKey = key;
   };
   addPromise('/service/session/publickey', afterwards, 'Error when fetching public key. Unable to send user specific parameters securely!');
-  addPromise('/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks');
-  addPromise('/service/actiondispatcher/get', functions.fillList, 'Unable to fetch Action Dispatchers');
-  Promise.all(arrPromises).then(function() {
+  addPromise('/service/eventtrigger/get', functions.fillList, 'Unable to fetch Event Triggers');
+  return Promise.all(arrPromises).then(function() {
     if (oParams.id === void 0) {
       return null;
     } else {
       return loadRule();
     }
-  }).then(functions.init(false, strPublicKey)).then(attachListeners).then(function() {
+  }).then(functions.init(true, strPublicKey)).then(attachListeners).then(function() {
     $('#input_name').get(0).setSelectionRange(0, 0);
     return $('#input_name').focus();
   })["catch"](function(err) {
     return main.setInfo(false, err.toString());
   });
-  editor = ace.edit("divConditionsEditor");
-  editor.setTheme("ace/theme/crimson_editor");
-  editor.setFontSize("14px");
-  editor.getSession().setMode("ace/mode/json");
-  editor.setShowPrintMargin(false);
-  $('#editor_theme').change(function(el) {
-    return editor.setTheme("ace/theme/" + $(this).val());
-  });
-  $('#editor_font').change(function(el) {
-    return editor.setFontSize($(this).val());
-  });
-  $('#fill_example').click(function() {
-    editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
-    return editor.gotoLine(1, 1);
-  });
-  return main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
 };
 
 loadRule = function() {

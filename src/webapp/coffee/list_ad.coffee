@@ -15,7 +15,7 @@ updateModules = (uid) ->
 		if arrModules.length is 0
 			parent = $('#tableModules').parent()
 			$('#tableModules').remove()
-			parent.append $ "<h3 class=\"empty\">No Action Dispatchers available!
+			parent.append $ "<h3 class=\"empty\">No <b>Action Dispatchers</b> available!
 				<a href=\"/views/modules_create?m=ad\">Create One first!</a></h3>"
 		else
 			tr = d3.select('#tableModules tbody').selectAll('tr')
@@ -105,7 +105,6 @@ sendStartStopCommand = (d, action, data) ->
 		main.setInfo false, 'Unable to '+action+' Event Trigger'
 
 fOnLoad = () ->
-	$('#linkMod').attr 'href', '/views/modules_create?m=ad'
 	updateModules(parseInt(d3.select('body').attr('data-uid')))
 
 window.addEventListener 'load', fOnLoad, true

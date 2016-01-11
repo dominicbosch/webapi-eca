@@ -1,7 +1,5 @@
 'use strict';
-var deleteModule, fOnLoad, sendStartStopCommand, start, startStopModule, strPublicKey, updateModules, updatePlayButton, urlService;
-
-urlService = '/service/eventtrigger';
+var deleteModule, fOnLoad, sendStartStopCommand, start, startStopModule, strPublicKey, updateModules, updateSchedules;
 
 strPublicKey = '';
 
@@ -14,13 +12,13 @@ main.post('/service/session/publickey').done(function(key) {
 updateModules = function(uid) {
   var req;
   d3.select('#moduleparams').style('visibility', 'hidden');
-  req = main.post(urlService + '/get');
+  req = main.post('/service/eventtrigger/get');
   req.done(function(arrModules) {
-    var img, parent, tr, trNew;
+    var parent, tr, trNew;
     if (arrModules.length === 0) {
       parent = $('#tableModules').parent();
       $('#tableModules').remove();
-      return parent.append($("<h3 class=\"empty\">No Event Triggers available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
+      return parent.append($("<h3 class=\"empty\">No <b>Event Triggers</b> available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
     } else {
       tr = d3.select('#tableModules tbody').selectAll('tr').data(arrModules, function(d) {
         return d.id;
@@ -35,12 +33,6 @@ updateModules = function(uid) {
       trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', function(d) {
         return window.location.href = 'modules_create?m=et&id=' + d.id;
       });
-      img = trNew.append('td').append('img').attr('id', function(d) {
-        return 'ico' + d.id;
-      }).attr('class', function(d) {
-        return 'icon edit';
-      }).on('click', startStopModule);
-      updatePlayButton(img);
       trNew.append('td').append('div').text(function(d) {
         return d.name;
       }).each(function(d) {
@@ -48,11 +40,8 @@ updateModules = function(uid) {
           return main.registerHoverInfoHTML(d3.select(this), d.comment);
         }
       });
-      trNew.append('td').text(function(d) {
+      return trNew.append('td').text(function(d) {
         return d.User.username;
-      });
-      return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
-        return d.Schedule.schedule;
       });
     }
   });
@@ -61,21 +50,9 @@ updateModules = function(uid) {
   });
 };
 
-updatePlayButton = function(d3This) {
-  return d3This.attr('src', function(d) {
-    return '/images/' + (d.Schedule.running ? 'pause' : 'play') + '.png';
-  }).attr('title', function(d) {
-    if (d.Schedule.running) {
-      return 'Stop Module';
-    } else {
-      return 'Start Module';
-    }
-  });
-};
-
 deleteModule = function(d) {
   if (confirm('Do you really want to delete the Module "' + d.name + '"?')) {
-    return main.post(urlService + '/delete', {
+    return main.post('/service/eventtrigger/delete', {
       id: d.id
     }).done(function() {
       main.setInfo(true, 'Action Dispatcher deleted!', true);
@@ -144,7 +121,7 @@ start = function(id) {
 sendStartStopCommand = function(d, action, data) {
   var req;
   d3.select('#moduleparams').style('visibility', 'hidden');
-  req = main.post(urlService + '/' + action + '/' + d.id, data);
+  req = main.post('/service/eventtrigger/' + action + '/' + d.id, data);
   req.done(function() {
     action = d.Schedule.running ? 'stopped' : 'started';
     d.Schedule.running = !d.Schedule.running;
@@ -158,10 +135,48 @@ sendStartStopCommand = function(d, action, data) {
 };
 
 fOnLoad = function() {
-  $('#linkMod').attr('href', '/views/modules_create?m=et');
-  d3.select('#tableModules thead tr').append('th').text('Schedule');
-  d3.select('#tableModules thead tr').insert('th', ':first-child');
-  return updateModules(parseInt(d3.select('body').attr('data-uid')));
+  updateModules(parseInt(d3.select('body').attr('data-uid')));
+  return updateSchedules();
 };
 
 window.addEventListener('load', fOnLoad, true);
+
+updateSchedules = function() {
+  var req;
+  req = main.post('/service/schedule/get');
+  req.done(function(arrSchedules) {
+    var parent, tr, trNew;
+    if (arrSchedules.length === 0) {
+      parent = $('#tableModules').parent();
+      $('#tableModules').remove();
+      return parent.append($("<h3 class=\"empty\">No <b>Event Triggers</b> available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
+    } else {
+      tr = d3.select('#tableModules tbody').selectAll('tr').data(arrSchedules, function(d) {
+        return d.id;
+      });
+      tr.exit().remove();
+      trNew = tr.enter().append('tr');
+      trNew.append('td').each(function(d) {
+        if (d.UserId === uid) {
+          return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
+        }
+      });
+      trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', function(d) {
+        return window.location.href = 'modules_create?m=et&id=' + d.id;
+      });
+      trNew.append('td').append('div').text(function(d) {
+        return d.name;
+      }).each(function(d) {
+        if (d.comment) {
+          return main.registerHoverInfoHTML(d3.select(this), d.comment);
+        }
+      });
+      return trNew.append('td').text(function(d) {
+        return d.User.username;
+      });
+    }
+  });
+  return req.fail(function(err) {
+    return main.setInfo(false, 'Error in fetching all Modules: ' + err.responseText);
+  });
+};

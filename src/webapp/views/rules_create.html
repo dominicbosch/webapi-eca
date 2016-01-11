@@ -2,9 +2,11 @@
 
 {% block head %}
 	<link rel="stylesheet" type="text/css" href="/css/rules.css">
+	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
 	<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/js/lib/cryptico.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/js/rules_create.js"></script>
+	<script src="/js/function_selection.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -71,22 +73,11 @@
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-xs-12" id="actionEmpty">
+			<div class="col-xs-12" id="functionEmpty">
 				<h3 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h3>
 			</div>
-
-			<div class="col-md-5" id="actionSection">
-				<h3>Available Actions</h3>
-				<table class="mystyle">
-					<thead><tr>
-						<th>Module</th>
-						<th>Owner</th>
-						<th>Action Function</th>
-					</tr></thead>
-					<tbody></tbody>
-				</table>
-			</div>
-			<div class="col-md-7" id="selectedActions">
+			<div class="col-md-5" id="functionList"></div>
+			<div class="col-md-7" id="selectedFunctions">
 				<h3>Selected Actions</h3>
 			</div>
 		</div>

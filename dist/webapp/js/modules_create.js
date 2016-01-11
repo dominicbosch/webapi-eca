@@ -19,10 +19,6 @@ fOnLoad = function() {
   updateTitle();
   main.registerHoverInfo(d3.select('#programcode'), 'modules_code.html');
   main.registerHoverInfo(d3.select('#webhookinfo'), 'webhooks_events.html');
-  if (oParams.m !== 'ad') {
-    main.registerHoverInfo(d3.select('#schedule > h2'), 'modules_schedule.html');
-    $('#schedule').show();
-  }
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
   editor.getSession().setMode("ace/mode/coffee");
@@ -105,9 +101,13 @@ fOnLoad = function() {
   main.post('/service/webhooks/get').done(function(o) {
     var arr;
     arr = o["public"].concat(o["private"]);
-    return d3.select('#listWebhooks').selectAll('li').data(arr).enter().append('li').append('kbd').text(function(d) {
-      return d.hookname;
-    });
+    if (arr.length === 0) {
+      return d3.select('#listWebhooks').text('No Webhooks available!');
+    } else {
+      return d3.select('#listWebhooks').selectAll('li').data(arr).enter().append('li').append('kbd').text(function(d) {
+        return d.hookname;
+      });
+    }
   });
   $('#tableParams').on('keyup', 'input', function(e) {
     var code, i, myNewVal, par;
@@ -202,7 +202,6 @@ fOnLoad = function() {
     return main.post('/service/' + moduleType + '/get/' + oParams.id).done(function(oMod) {
       var param, ref, shielded, uid;
       if (oMod) {
-        console.log(oMod);
         uid = parseInt(d3.select('body').attr('data-uid'));
         ref = oMod.globals;
         for (param in ref) {
@@ -210,9 +209,6 @@ fOnLoad = function() {
           fAddUserParam(param, shielded);
         }
         $('#input_id').val(oMod.name);
-        if (oParams.m !== 'ad') {
-          $('#inp_schedule').val(oMod.Schedule.text);
-        }
         if (uid === oMod.UserId) {
           fAddUserParam('', false);
         } else {
@@ -221,7 +217,6 @@ fOnLoad = function() {
           $('#editor').addClass('readonly');
           $('#editor_mode').hide();
           $('#but_submit').hide();
-          $('#inp_schedule').addClass('readonly').attr('readonly', true).attr('disabled', true);
           $('#tableParams input').addClass('readonly').attr('readonly', true).attr('disabled', true);
           $('#tableParams img').remove();
         }

@@ -94,6 +94,7 @@ function initializeModels() {
 	// If a user gets deleted, we delete all his realted data too (cascade) 
 	Worker.belongsTo(User, { onDelete: 'cascade' });
 	Rule.belongsTo(User, { onDelete: 'cascade' });
+	Schedule.belongsTo(User, { onDelete: 'cascade' });
 	Webhook.belongsTo(User, { onDelete: 'cascade' });
 	CodeModule.belongsTo(User, { onDelete: 'cascade' });
 
@@ -102,6 +103,7 @@ function initializeModels() {
 	ModPersist.belongsTo(Schedule, { onDelete: 'cascade' });
 	Rule.hasMany(ModPersist);
 	Schedule.hasOne(ModPersist);
+
 	// Log either belongs to a rule (AD) or a Schedule (ET)
 	Schedule.hasOne(Log);
 	Rule.hasOne(Log);
@@ -516,7 +518,7 @@ exports.deleteRule = (uid, rid) => {
 function getCodeModule(cid) {
 	return CodeModule.findOne({
 			where: { id: cid },
-			include: [ Schedule, { model: User, attributes: [ 'username' ]}]
+			include: [{ model: User, attributes: [ 'username' ] }]
 		})
 		.then((oMod) => {
 			if(oMod) return oMod.toJSON();
@@ -530,13 +532,11 @@ function getAllCodeModules(isaction) {
 		include: [{ model: User, attributes: [ 'username' ]}],
 		order: [['id', 'DESC']]
 	};
-	// If an Event Trigger is requested, we also load the schedule
-	if(!isaction) query.include.push(Schedule);
 	return CodeModule.findAll(query)
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 }
 
-function createCodeModule(uid, oMod, oSchedule) {
+function createCodeModule(uid, oMod) {
 	oMod.version = 1;
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.createCodeModule(oMod))
@@ -545,8 +545,7 @@ function createCodeModule(uid, oMod, oSchedule) {
 function updateCodeModule(uid, cid, oMod) {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({
-			where: { id: cid },
-			include: [ Schedule ]
+			where: { id: cid }
 		}))
 		.then((arrOldMod) => {
 			if(arrOldMod.length > 0) {
@@ -620,13 +619,35 @@ exports.getEventTrigger = getCodeModule;
 exports.getUserEventTriggers = (uid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({
-			where: { isaction: false },
-			include: [{ model: Schedule, include: [ ModPersist ]}]
+			where: { isaction: false }
 		}))
 		.then((arrRecords) => arrRecordsToJSON(arrRecords));
 };
 
 exports.createEventTrigger = (uid, oEt) => {
+	oEt.isaction = false;
+	return createCodeModule(uid, oEt)
+		.then((oNewMod) => oNewMod.toJSON())
+};
+
+exports.updateEventTrigger = (uid, eid, oEt) => {
+	return updateCodeModule(uid, eid, oEt)
+		.then((mod) => {
+			return mod.Schedule.update({ text: oEt.schedule.text })
+				.then((sched) => {
+					let ret = mod.toJSON();
+					ret.Schedule = sched.toJSON();
+					return ret;
+				})
+		})
+}
+
+
+// ##
+// ## Schedule
+// ##
+
+exports.createSchedule = (uid, oSched) => {
 	oEt.isaction = false;
 	return createCodeModule(uid, oEt)
 		.then((oNewMod) => {
@@ -643,9 +664,11 @@ exports.createEventTrigger = (uid, oEt) => {
 		})
 };
 
-exports.updateEventTrigger = (uid, eid, oEt) => {
-	return updateCodeModule(uid, eid, oEt)
-		.then((mod) => {
+exports.updateSchedule = (uid, eid, oEt) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getSchedule())
+		.then((sched) => {
+			console.log('got schedule', sched)
 			return mod.Schedule.update({ text: oEt.schedule.text })
 				.then((sched) => {
 					let ret = mod.toJSON();
@@ -654,6 +677,7 @@ exports.updateEventTrigger = (uid, eid, oEt) => {
 				})
 		})
 }
+
 exports.startStopEventTrigger = (uid, eid, isStart, globals) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({

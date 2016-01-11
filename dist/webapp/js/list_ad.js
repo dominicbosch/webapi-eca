@@ -20,7 +20,7 @@ updateModules = function(uid) {
     if (arrModules.length === 0) {
       parent = $('#tableModules').parent();
       $('#tableModules').remove();
-      return parent.append($("<h3 class=\"empty\">No Action Dispatchers available! <a href=\"/views/modules_create?m=ad\">Create One first!</a></h3>"));
+      return parent.append($("<h3 class=\"empty\">No <b>Action Dispatchers</b> available! <a href=\"/views/modules_create?m=ad\">Create One first!</a></h3>"));
     } else {
       tr = d3.select('#tableModules tbody').selectAll('tr').data(arrModules, function(d) {
         return d.id;
@@ -149,7 +149,6 @@ sendStartStopCommand = function(d, action, data) {
 };
 
 fOnLoad = function() {
-  $('#linkMod').attr('href', '/views/modules_create?m=ad');
   return updateModules(parseInt(d3.select('body').attr('data-uid')));
 };
 

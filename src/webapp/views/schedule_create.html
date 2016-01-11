@@ -1,0 +1,39 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<script src="/js/lib/cryptico.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/schedule_create.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/js/function_selection.js"></script>
+	<link rel="stylesheet" type="text/css" href="/css/modules.css">
+	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
+{% endblock %}
+
+{% block pagetitle %}Create Schedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row">
+		<h2>Schedule Name : <input id="input_name" type="text" value="My new Schedule"></h2>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-12" id="functionEmpty">
+			<h3 class="empty">No <b>Event Triggers</b> available! <a href="/views/modules_create?m=et">Create one first!</a></h3>
+		</div>
+		<div class="col-md-5" id="functionList"></div>
+		<div class="col-md-7" id="selectedFunctions">
+			<h3>Selected Event Trigger</h3>
+		</div>
+	</div>
+	<div class="row">
+		<h2 id="schedule">Schedule</h2>
+		Type Schedule String: <input type="text" id="input_schedule" class="seventywide consoled">
+	</div>
+	
+	<div class="row">
+		<div class="col-xs-12">
+			<button id="but_submit">Save Schedule</button>
+		</div>
+	</div>
+</div>
+{% endblock %}
