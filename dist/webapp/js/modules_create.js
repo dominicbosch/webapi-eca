@@ -137,7 +137,7 @@ fOnLoad = function() {
     }
   });
   $('#but_submit').click(function() {
-    var action, e, error, listParams, obj, schedule, txt;
+    var action, e, error, listParams, obj;
     if ($('#input_id').val() === '') {
       return main.setInfo(false, "Please enter an " + moduleTypeName + " name!");
     } else {
@@ -166,17 +166,6 @@ fOnLoad = function() {
               return obj.modules.push(d.name);
             }
           });
-          if (oParams.m !== 'ad') {
-            txt = $('#inp_schedule').val();
-            schedule = later.parse.text(txt);
-            if (schedule.error > -1) {
-              throw new Error('You have an error in your schedule!');
-            }
-            obj.schedule = {
-              text: txt,
-              arr: schedule.schedules
-            };
-          }
           action = oParams.id ? 'update' : 'create';
           return main.post('/service/' + moduleType + '/' + action, obj).done(function(msg) {
             var newurl, wl;

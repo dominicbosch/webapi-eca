@@ -92,7 +92,8 @@ geb.addListener('eventtrigger:new', (oEt) => {
 geb.addListener('eventtrigger:start', (oEvt) => {
 	sendToWorker(oEvt.uid, {
 		cmd: 'eventtrigger:start',
-		eid: oEvt.eid
+		eid: oEvt.eid,
+		globals: oEvt.globals
 	});
 });
 geb.addListener('eventtrigger:stop', (oEvt) => {
@@ -162,6 +163,10 @@ function MPI(uid, username) {
 			case 'triggerdatalog': db.logTriggerData(dat.cid, dat.msg);
 				break;
 			case 'triggerpersist': db.persistTriggerData(dat.rid, dat.cid, dat.persistence);
+				break;
+			case 'triggerfails':
+				db.startStopEventTrigger(uid, dat.cid, false);
+				db.logTrigger(dat.cid, dat.msg);
 				break;
 			case 'event': emitEvent(uid, dat);
 				break;

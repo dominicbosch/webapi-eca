@@ -108,8 +108,8 @@ function initializeModels() {
 	Log.belongsTo(Schedule, { onDelete: 'cascade' });
 	Log.belongsTo(Rule, { onDelete: 'cascade' });
 	
-	CodeModule.hasOne(Schedule);
 	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
+	CodeModule.hasMany(Schedule);
 
 	User.hasOne(Worker);
 	User.hasMany(Rule);

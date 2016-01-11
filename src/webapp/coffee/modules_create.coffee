@@ -147,16 +147,6 @@ fOnLoad = () ->
 						if d3.select(this).select('input').property 'checked'
 							obj.modules.push d.name
 
-					if oParams.m isnt 'ad'
-						txt = $('#inp_schedule').val()
-						schedule = later.parse.text(txt)
-						if schedule.error > -1
-							throw new Error('You have an error in your schedule!')
-						obj.schedule = {
-							text: txt,
-							arr: schedule.schedules
-						};
-
 					action = if oParams.id then 'update' else 'create'
 					main.post('/service/'+moduleType+'/'+action, obj)
 						.done (msg) ->

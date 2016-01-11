@@ -49,7 +49,8 @@ let send = {
 	ruledatalog: (data) => sendToParent({ cmd: 'ruledatalog', data: data }),
 	rulepersist: (data) => sendToParent({ cmd: 'rulepersist', data: data }),
 	triggerpersist: (data) => sendToParent({ cmd: 'triggerpersist', data: data }),
-	triggerdatalog: (data) => sendToParent({ cmd: 'triggerdatalog', data: data })
+	triggerdatalog: (data) => sendToParent({ cmd: 'triggerdatalog', data: data }),
+	triggerfails: (cid, msg) => sendToParent({ cmd: 'triggerfails', data: { cid: cid, msg: msg } })
 };
 
 send.startup();
@@ -97,7 +98,8 @@ process.on('message', (oMsg) => {
 			}
 		break;
 		case 'eventtrigger:start':
-			trigger = oEventTriggers[oMsg.id];
+
+			trigger = oEventTriggerCodes[oMsg.eid];
 			glob = trigger.Schedule.globals;
 			trigger.Schedule.globals = oMsg.globals;
 			for(let el in trigger.globals) {
@@ -107,30 +109,6 @@ process.on('message', (oMsg) => {
 		break;
 		case 'eventtrigger:stop':
 			console.log('TODO implement ET stop');
-		// TODO check if is running . because it might be an update on a non running module
-// 		Got event ttrigger { id: 3,
-//   name: 'Hello Worldqwqwfasdasdasq',
-//   lang: 'CoffeeScript',
-//   version: 2,
-//   code: '\n# A simple Hello World code block\nexports.pollHelloWorld = () ->\n\tlog \'Hello World!\'\n\t',
-//   comment: 'A simple Hello World code block\n',
-//   modules: [],
-//   functions: { pollHelloWorld: [] },
-//   globals: {},
-//   isaction: false,
-//   UserId: 1,
-//   Schedule: 
-//    { id: 3,
-//      text: 'every 20 mins starting on the 7th min',
-//      running: true,
-//      CodeModuleId: 3 } }
-// Worker got new event trigger:[object Object]
-// Executing (default): select pg_database_size('webapi-eca')
-// [11:33:42] Redeploying:  src/engine-js/process-manager.js
-// [11:33:42] [nodemon] restarting due to changes...
-// [11:33:42] [nodemon] starting `node dist/js/webapi-eca.js`
-// [11:33:42] 
-// [2015-12-21T10:33:
 			console.log('Worker got new event trigger:'+oMsg.trigger);
 		break;
 		case 'event':
@@ -141,44 +119,45 @@ process.on('message', (oMsg) => {
 });
 
 function startEventTrigger(trigger) {
+	// Attach persistent data if it exists
+	let pers;
+	let oPers = trigger.ModPersists;
+	if(oPers !== undefined) {
+		for (let i = 0; i < oPers.length; i++) {
+			if(oPers[i].moduleId === trigger.id) pers = oPers[i].data;
+		}
+	}
+	if(pers === undefined) pers = {};
 
-			schedule = later.parse.text(txt)
-			// Attach persistent data if it exists
-			let pers;
-			let oPers = trigger.ModPersists;
-			console.log('oPers', oPers)
-			console.log('TODO attach globals to schedule', oPers)
-			if(oPers !== undefined) {
-				for (let i = 0; i < oPers.length; i++) {
-					if(oPers[i].moduleId === trigger.id) pers = oPers[i].data;
-				}
+	send.logtrigger(trigger.id, ' --> Loading Event Trigger "'+trigger.name+'"...');
+	let store = {
+		log: (msg) => {
+			try {
+				send.logtrigger(trigger.id, msg.toString().substring(0, 200));
+			} catch(err) {
+				send.loginfo(err.toString());
+				send.logtrigger(trigger.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
-			if(pers === undefined) pers = {};
+		},
+		data: (msg) => send.triggerdatalog({ cid: trigger.id, msg: msg }),
+		persist: (data) => send.triggerpersist({ cid: trigger.id, persistence: data })
+	};
+	
+	dynmod.runModule(store, trigger.Schedule.globals, pers)
+		.then((oMod) => oRules[oRule.id].modules[trigger.id] = oMod)
+		.then((mod) => {
+			oEventTriggers[trigger.id] = mod;
+			// Since module has been loaded succesfully, we now execute it according to the schedule
+			let schedule = later.parse.text(trigger.Schedule.text)
 
-			send.logtrigger(trigger.id, ' --> Loading Event Trigger "'+trigger.name+'"...');
-			let store = {
-				log: (msg) => {
-					try {
-						send.logtrigger(trigger.id, msg.toString().substring(0, 200));
-					} catch(err) {
-						send.loginfo(err.toString());
-						send.logtrigger(trigger.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
-					}
-				},
-				data: (msg) => send.triggerdatalog({ cid: trigger.id, msg: msg }),
-				persist: (data) => send.triggerpersist({ cid: trigger.id, persistence: data })
-			};
-			
-			dynmod.runModule(trigger.id, store, trigger.globals, pers)
-				.then((oMod) => oRules[oRule.id].modules[trigger.id] = oMod)
-				.then((mod) => {
-					oEventTriggers[trigger.id] = mod;
-					send.logtrigger(trigger.id, ' --> Event Trigger "'+trigger.name+'" (v'+trigger.version+') loaded');
-					send.logworker('UP | Event Trigger "'+trigger.name+'" loaded for user '+trigger.User.username);
-				})
-				.catch((err) => send.logerror(err.toString()+'\n'+err.stack))
+			send.logtrigger(trigger.id, ' --> Event Trigger "'+trigger.name+'" (v'+trigger.version+') loaded');
+			send.logworker('UP | Event Trigger "'+trigger.name+'" loaded for user '+trigger.User.username);
+		})
+		.catch((err) => {
+			send.logerror(err.toString()+'\n'+err.stack);
+			send.triggerfails(trigger.id, err.toString());
+		})
 
-	oEventTriggers[id] = sandbox;
 }
 
 
