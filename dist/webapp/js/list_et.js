@@ -1,5 +1,5 @@
 'use strict';
-var clearDataLog, clearLog, deleteModule, fOnLoad, sendStartStopCommand, showDataLog, showLog, start, startStopModule, strPublicKey, updateModules, updateSchedules;
+var clearDataLog, clearLog, deleteModule, fOnLoad, sendStartStopCommand, showDataLog, showLog, start, startStopModule, strPublicKey, updateModules, updatePlayButton, updateSchedules;
 
 strPublicKey = '';
 
@@ -56,7 +56,8 @@ deleteModule = function(d) {
       id: d.id
     }).done(function() {
       main.setInfo(true, 'Event Trigger deleted!', true);
-      return updateModules(parseInt(d3.select('body').attr('data-uid')));
+      updateModules(parseInt(d3.select('body').attr('data-uid')));
+      return updateSchedules();
     }).fail(function(err) {
       return main.setInfo(false, err.responseText);
     });
@@ -65,7 +66,7 @@ deleteModule = function(d) {
 
 startStopModule = function(d) {
   var arr, newTr;
-  if (d.Schedule.running) {
+  if (d.running) {
     d3.select('#moduleparams').style('visibility', 'hidden');
     return sendStartStopCommand(d, 'stop');
   } else {
@@ -123,13 +124,13 @@ sendStartStopCommand = function(d, action, data) {
   d3.select('#moduleparams').style('visibility', 'hidden');
   req = main.post('/service/eventtrigger/' + action + '/' + d.id, data);
   req.done(function() {
-    action = d.Schedule.running ? 'stopped' : 'started';
-    d.Schedule.running = !d.Schedule.running;
+    action = d.running ? 'stopped' : 'started';
+    d.running = !d.running;
     updatePlayButton(d3.select('#ico' + d.id));
     return main.setInfo(true, 'Event Trigger ' + action);
   });
   return req.fail(function(err) {
-    action = d.Schedule.running ? 'stop' : 'start';
+    action = d.running ? 'stop' : 'start';
     return main.setInfo(false, 'Unable to ' + action + ' Event Trigger');
   });
 };
@@ -144,8 +145,8 @@ window.addEventListener('load', fOnLoad, true);
 updateSchedules = function() {
   var req;
   req = main.post('/service/schedule/get');
-  req.done(function(arrSchedules) {
-    var parent, tr, trNew;
+  return req.done(function(arrSchedules) {
+    var img, parent, tr, trNew;
     console.log(arrSchedules);
     if (arrSchedules.length === 0) {
       parent = $('#tableSchedules').parent();
@@ -166,6 +167,12 @@ updateSchedules = function() {
       trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);
       trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk.png').attr('title', 'Download Data Log').on('click', showDataLog);
       trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk_del.png').attr('title', 'Delete Data Log').on('click', clearDataLog);
+      img = trNew.append('td').append('img').attr('id', function(d) {
+        return 'ico' + d.id;
+      }).attr('class', function(d) {
+        return 'icon edit';
+      }).on('click', startStopModule);
+      updatePlayButton(img);
       trNew.append('td').append('div').text(function(d) {
         return d.name;
       }).each(function(d) {
@@ -173,13 +180,25 @@ updateSchedules = function() {
           return main.registerHoverInfoHTML(d3.select(this), d.comment);
         }
       });
-      return trNew.append('td').text(function(d) {
-        return d.User.username;
+      trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
+        return d.CodeModule.name + ' -> ' + d.execute.functions[0].name;
+      });
+      return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
+        return d.text;
       });
     }
   });
-  return req.fail(function(err) {
-    return main.setInfo(false, 'Error in fetching all Modules: ' + err.responseText);
+};
+
+updatePlayButton = function(d3This) {
+  return d3This.attr('src', function(d) {
+    return '/images/' + (d.running ? 'pause' : 'play') + '.png';
+  }).attr('title', function(d) {
+    if (d.running) {
+      return 'Stop Module';
+    } else {
+      return 'Start Module';
+    }
   });
 };
 

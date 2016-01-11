@@ -69,7 +69,7 @@ function initializeModels() {
 		name: Sequelize.STRING,
 		execute: Sequelize.JSON,
 		text: Sequelize.JSON,
-		running: { type: Sequelize.BOOLEAN, defaultValue: false }
+		running: { type: Sequelize.BOOLEAN, defaultValue: true }
 	});
 	CodeModule = sequelize.define('CodeModule', {
 		name: Sequelize.STRING,
@@ -632,18 +632,26 @@ exports.createEventTrigger = (uid, oEt) => {
 // ## Schedule
 // ##
 
+function getSchedule(sid) {
+	return Schedule.findById(sid, { attributes: [ 'id' ] })
+		.then((answ) => {
+			if(!answ) throwStatusCode(404, 'Schedule not found');
+			else return answ;
+		})
+}
+
 exports.getSchedule = (uid, sid) => {
 	let options = {
 		include: [CodeModule, { model: User, attributes: [ 'username' ] }]
 	}
 	if(sid) options.where = { id: sid };
-	return Schedule.findOne(options)
-		.then((oSched) => {
+	return Schedule.findAll(options)
+		.then((answ) => {
 			if(sid) {
-				if(!oSched) throwStatusCode(404, 'Schedule not found');
-				else return oSched;
+				if(answ.length === 0) throwStatusCode(404, 'Schedule not found');
+				else return answ[0];
 			} else {
-				return oSched || []
+				return (answ || []);
 			};
 		})
 };
@@ -698,18 +706,6 @@ exports.updateSchedule = (uid, sid, oSched, cid) => {
 		})
 }
 
-// exports.updateEventTrigger = (uid, eid, oEt) => {
-// 	return updateCodeModule(uid, eid, oEt)
-// 		.then((mod) => {
-// 			return mod.Schedule.update({ text: oEt.schedule.text })
-// 				.then((sched) => {
-// 					let ret = mod.toJSON();
-// 					ret.Schedule = sched.toJSON();
-// 					return ret;
-// 				})
-// 		})
-// }
-
 exports.startStopSchedule = (uid, sid, isStart, execute) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getSchedules({
@@ -752,9 +748,9 @@ exports.persistScheduleData = function(sid, data) {
 		.catch(ec);
 }
 
-exports.logSchedule = (cid, msg) => {
+exports.logSchedule = (sid, msg) => {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	return getSchedule(cid)
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
 		.then((oLog) => {
 			if(oLog) oLog.update({
@@ -764,14 +760,14 @@ exports.logSchedule = (cid, msg) => {
 		.catch(ec);
 };
 
-exports.getScheduleLog = (cid) => {
-	return getSchedule(cid)
+exports.getScheduleLog = (sid) => {
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
 		.then((oLog) => (oLog.get('log') || []).reverse());
 };
 
-exports.clearScheduleLog = (cid) => {
-	return getSchedule(cid)
+exports.clearScheduleLog = (sid) => {
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
 		.then((oLog) => {
 			if(oLog) oLog.update({ log: null })
@@ -779,12 +775,12 @@ exports.clearScheduleLog = (cid) => {
 		.catch(ec);
 };
 
-exports.logScheduleData = function(cid, data) {
+exports.logScheduleData = function(sid, data) {
 	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: data
 	});
-	return getSchedule(cid)
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'datalog' ] }))
 		.then((oLog) => {
 			if(oLog) oLog.update({
@@ -794,14 +790,14 @@ exports.logScheduleData = function(cid, data) {
 		.catch(ec);
 };
 
-exports.getScheduleDataLog = (cid) => {
-	return getSchedule(cid)
+exports.getScheduleDataLog = (sid) => {
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
 		.then((oLog) => oLog.get('datalog'));
 };
 
 exports.clearScheduleDataLog = (uid, rid) => {
-	return getSchedule(cid)
+	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
 		.then((oLog) => {
 			if(oLog) oLog.update({ datalog: null })

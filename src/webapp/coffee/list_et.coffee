@@ -48,11 +48,12 @@ deleteModule = (d) ->
 			.done () ->
 				main.setInfo true, 'Event Trigger deleted!', true
 				updateModules(parseInt(d3.select('body').attr('data-uid')))
+				updateSchedules()
 			.fail (err) ->
 				main.setInfo false, err.responseText 
 
 startStopModule = (d) ->
-	if d.Schedule.running 
+	if d.running 
 		d3.select('#moduleparams').style('visibility', 'hidden')
 		sendStartStopCommand d, 'stop'
 	else
@@ -90,13 +91,13 @@ sendStartStopCommand = (d, action, data) ->
 	d3.select('#moduleparams').style('visibility', 'hidden')
 	req = main.post('/service/eventtrigger/'+action+'/'+d.id, data)
 	req.done () ->
-		action = if d.Schedule.running then 'stopped' else 'started'
-		d.Schedule.running = !d.Schedule.running;
+		action = if d.running then 'stopped' else 'started'
+		d.running = !d.running;
 		updatePlayButton d3.select('#ico'+d.id)
 		main.setInfo true, 'Event Trigger '+action
 
 	req.fail (err) ->
-		action = if d.Schedule.running then 'stop' else 'start'
+		action = if d.running then 'stop' else 'start'
 		main.setInfo false, 'Unable to '+action+' Event Trigger'
 
 fOnLoad = () ->
@@ -148,25 +149,21 @@ updateSchedules = () ->
 				.attr('src', '/images/bulk_del.png')
 				.attr('title', 'Delete Data Log')
 				.on('click', clearDataLog);
+			img = trNew.append('td').append('img')
+				.attr('id', (d) -> 'ico'+d.id)
+				.attr('class', (d) -> 'icon edit')
+				.on('click', startStopModule);
+			updatePlayButton img
 			trNew.append('td').append('div').text((d) -> d.name).each (d) ->
 				if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
-			trNew.append('td').text((d) -> d.User.username)
+			trNew.append('td').attr('class','consoled mediumfont')
+				.text((d) -> d.CodeModule.name+' -> '+d.execute.functions[0].name)
+			trNew.append('td').attr('class','consoled mediumfont')
+				.text((d) -> d.text)
 
-
-# img = trNew.append('td').append('img')
-# 	.attr('id', (d) -> 'ico'+d.id)
-# 	.attr('class', (d) -> 'icon edit')
-# 	.on('click', startStopModule);
-# updatePlayButton img
-# trNew.append('td').attr('class','consoled mediumfont')
-# 	.text((d) -> d.Schedule.schedule)
-
-# updatePlayButton = (d3This) ->
-# 	d3This.attr('src', (d) -> '/images/'+(if d.Schedule.running then 'pause' else 'play')+'.png')
-# 		.attr('title', (d) -> if d.Schedule.running then 'Stop Module' else 'Start Module')
-
-	req.fail ( err ) ->
-		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
+updatePlayButton = (d3This) ->
+	d3This.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
+		.attr('title', (d) -> if d.running then 'Stop Module' else 'Start Module')
 
 showLog = (d) ->
 	main.post('/service/schedule/getlog/'+d.id)
