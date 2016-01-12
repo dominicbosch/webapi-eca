@@ -35,7 +35,12 @@ fOnLoad = () ->
 	addPromise '/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks'
 
 	# Load Actions
-	addPromise '/service/actiondispatcher/get', functions.fillList, 'Unable to fetch Action Dispatchers'
+	checkLength = (arr) ->
+		if arr.length  is 0
+			setEditorReadOnly true
+		else
+			functions.fillList arr
+	addPromise '/service/actiondispatcher/get', checkLength, 'Unable to fetch Action Dispatchers'
 
 	# First we want to load all data, then we want to load a rule if the user edits one
 	# finally we want to attach all the listeners on the document so it works properly

@@ -14,7 +14,7 @@ setEditorReadOnly = function(isTrue) {
 };
 
 fOnLoad = function() {
-  var addPromise, afterwards, arrPromises;
+  var addPromise, afterwards, arrPromises, checkLength;
   arrPromises = [];
   addPromise = function(url, thenFunc, failMsg) {
     var p;
@@ -32,7 +32,14 @@ fOnLoad = function() {
   };
   addPromise('/service/session/publickey', afterwards, 'Error when fetching public key. Unable to send user specific parameters securely!');
   addPromise('/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks');
-  addPromise('/service/actiondispatcher/get', functions.fillList, 'Unable to fetch Action Dispatchers');
+  checkLength = function(arr) {
+    if (arr.length === 0) {
+      return setEditorReadOnly(true);
+    } else {
+      return functions.fillList(arr);
+    }
+  };
+  addPromise('/service/actiondispatcher/get', checkLength, 'Unable to fetch Action Dispatchers');
   Promise.all(arrPromises).then(function() {
     if (oParams.id === void 0) {
       return null;

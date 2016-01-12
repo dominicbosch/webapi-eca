@@ -56,7 +56,7 @@ function searchComment(lang, src) {
 }
 
 // Helper function for Event Triggers and Action Dispatchers
-exports.runModule = function(store, oMod, globals, persistence) {
+exports.runModule = function(store, oMod, globals, persistence, username) {
 	return new Promise((resolve, reject) => {
 		if(!store || !store.log || !store.data || !store.persist) {
 			reject(new Error('No valid store provided!'));
@@ -93,7 +93,7 @@ exports.runModule = function(store, oMod, globals, persistence) {
 				}
 			};
 
-			runStringAsModule(oMod.code, oMod.lang, oMod.User.username, opts)
+			runStringAsModule(oMod.code, oMod.lang, username, opts)
 				.then((answ) => resolve(answ.module))
 				.catch(reject);
 		}

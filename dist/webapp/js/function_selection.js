@@ -97,9 +97,7 @@ window.functions = {
   fillList: function(arr, name) {
     var d3row, d3sel;
     arrAllFunctions = arr;
-    if (arr.length === 0) {
-      return setEditorReadOnly(true);
-    } else {
+    if (arr.length > 0) {
       d3.select('#functionEmpty').style('display', 'none');
       d3.select('#functionList').style('visibility', 'visible').select('tbody').selectAll('tr').data(arr, function(d) {
         return d != null ? d.id : void 0;

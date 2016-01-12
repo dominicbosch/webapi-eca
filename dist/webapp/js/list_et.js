@@ -18,7 +18,7 @@ updateModules = function(uid) {
     if (arrModules.length === 0) {
       parent = $('#tableModules').parent();
       $('#tableModules').remove();
-      return parent.append($("<h3 class=\"empty\">No <b>Schedules</b> available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
+      return parent.append($("<h3 class=\"empty\">No <b>Event Trigger</b> available! <a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"));
     } else {
       tr = d3.select('#tableModules tbody').selectAll('tr').data(arrModules, function(d) {
         return d.id;
@@ -72,7 +72,10 @@ startStopSchedule = function(d) {
     action = d.running ? 'stopped' : 'started';
     d.running = !d.running;
     updatePlayButton(d3.select('#ico' + d.id));
-    return main.setInfo(true, 'Schedule ' + action);
+    main.setInfo(true, 'Schedule ' + action);
+    return setTimeout(function() {
+      return showLog(d);
+    }, 500);
   });
   return req.fail(function(err) {
     action = d.running ? 'stop' : 'start';
@@ -130,6 +133,7 @@ updateSchedules = function() {
         }
       });
       trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
+        console.log(d);
         return d.CodeModule.name + ' -> ' + d.execute.functions[0].name;
       });
       return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {

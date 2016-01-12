@@ -693,7 +693,14 @@ exports.createSchedule = (uid, oSched, cid) => {
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
 						return newSchedule.createLog({})
-							.then(() => exports.getSchedule(uid, newSchedule.id))
+							.then(() => exports.logSchedule(newSchedule.id, 'Schedule created'))
+							.then(() => Schedule.findById(newSchedule.id, {
+								include: [
+									CodeModule,
+									ModPersist,
+									{ model: User, attributes: [ 'username' ] }
+								]
+							}))
 							.then((res) => res.toJSON());
 					})
 
@@ -705,26 +712,36 @@ exports.updateSchedule = (uid, sid, oSched, cid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getSchedules({
 			where: { id: sid },
-			include: [CodeModule, { model: User, attributes: [ 'username' ] }]
+			include: [CodeModule, ModPersist, { model: User, attributes: [ 'username' ] }]
 		}))
 		.then((sched) => {
 			if(sched.length === 0) throwStatusCode(404, 'Schedule not found!');
 			else return sched[0].update(oSched);
 		})
-		.then((newSched) => newSched.toJSON())
+		.then((newSched) => {
+			exports.logSchedule(newSched.id, 'Schedule updated');
+			return newSched.toJSON();
+		});
 }
 
 exports.startStopSchedule = (uid, sid, isStart, execute) => {
-	return User.findById(uid, { attributes: [ 'id' ] })
-		.then((oUser) => oUser.getSchedules({
-			where: { id: sid },
-			include: [ CodeModule ]
-		}))
+	return User.findById(uid, { attributes: [ 'id', 'username' ] })
+		.then((oUser) => {
+			let opt = {
+				where: { id: sid },
+				include: [ CodeModule ]
+			}
+			if(isStart) {
+				opt.include.push(ModPersist);
+				opt.include.push({ model: User, attributes: [ 'username' ] });
+			}
+			return oUser.getSchedules(opt);
+		})
 		.then((arrOldSched) => {
 			if(arrOldSched.length > 0) {
 				let upd = { running: isStart };
 				if(isStart) {
-					upd.execute = execute;
+					if(execute) upd.execute = execute;
 					upd.error = null;
 				}
 				return arrOldSched[0].update(upd);

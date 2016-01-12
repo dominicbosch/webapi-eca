@@ -103,7 +103,7 @@ function storeSchedule(uid, reason, body, res) {
 
 router.post('/start/:id', (req, res) => {
 	log.info('SRVC:SH | Starting: #' + req.params.id);
-	db.startStopSchedule(req.session.pub.id, req.params.id, true, req.body)
+	db.startStopSchedule(req.session.pub.id, req.params.id, true)
 		.then((oSched) => {
 			log.info('SRVC:SH | Module started');
 			res.send('OK');

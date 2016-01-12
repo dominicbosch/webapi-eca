@@ -65,7 +65,6 @@ process.on('disconnect', () => {
 
 // Message Passing Interface: Incoming from main process
 process.on('message', (oMsg) => {
-	console.log('got message', oMsg)
 	switch(oMsg.cmd) {
 		case 'init':
 			pl(send.stats, oMsg.startIndex);
@@ -83,22 +82,15 @@ process.on('message', (oMsg) => {
 		case 'schedule:start':
 			let sched = oMsg.schedule;
 			oSchedules[sched.id] = {
-				trigger: null,
+				timer: null,
 				schedule: sched
 			};
-
-			// // If the Event Trigger is already running we restart it due to changes
-			// if(oEventTriggers[trigger.id]) {
-			// 	send.logschedule(trigger.id, 'Restaring due to changes!')
-			// 	startSchedule(trigger);
-			// }
-
-			// }
-			// startSchedule(trigger);
+			startSchedule(oSchedules[sched.id]);
 		break;
 		case 'schedule:stop':
 			let sid = oMsg.sid;
-			console.log('TODO implement Schedule stop for '+sid);
+			send.logschedule(sid, 'Stopping Schedule!');
+			if(oSchedules[sid] && oSchedules[sid].timer) oSchedules[sid].timer.clear();
 		break;
 		case 'event':
 			engine.processEvent(oMsg.evt);
@@ -107,44 +99,47 @@ process.on('message', (oMsg) => {
 	}
 });
 
-function startSchedule(trigger) {
+function startSchedule(oExecution) {
+	let oSched = oExecution.schedule;
 	// Attach persistent data if it exists
 	let pers;
-	let oPers = trigger.ModPersists;
+	let oPers = oSched.ModPersists;
 	if(oPers !== undefined) {
 		for (let i = 0; i < oPers.length; i++) {
-			if(oPers[i].moduleId === trigger.id) pers = oPers[i].data;
+			if(oPers[i].moduleId === oSched.CodeModuleId) pers = oPers[i].data;
 		}
 	}
 	if(pers === undefined) pers = {};
-
-	send.logschedule(trigger.id, ' --> Loading Event Trigger "'+trigger.name+'"...');
+	send.logschedule(oSched.id, ' --> Loading Event Trigger "'+oSched.CodeModule.name+'"...');
 	let store = {
 		log: (msg) => {
 			try {
-				send.logschedule(trigger.id, msg.toString().substring(0, 200));
+				send.logschedule(oSched.id, msg.toString().substring(0, 200));
 			} catch(err) {
 				send.loginfo(err.toString());
-				send.logschedule(trigger.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+				send.logschedule(oSched.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		data: (msg) => send.scheduledatalog({ cid: trigger.id, msg: msg }),
-		persist: (data) => send.schedulepersist({ cid: trigger.id, persistence: data })
+		data: (msg) => send.scheduledatalog({ sid: oSched.id, msg: msg }),
+		persist: (data) => send.schedulepersist({ sid: oSched.id, persistence: data })
 	};
 	
-	dynmod.runModule(store, trigger.Schedule.globals, pers)
-		.then((oMod) => oRules[oRule.id].modules[trigger.id] = oMod)
-		.then((mod) => {
-			oEventTriggers[trigger.id] = mod;
+	dynmod.runModule(store, oSched.CodeModule, oSched.execute.globals, pers, oSched.User.username)
+		.then((oMod) => {
+			let schedule = later.parse.text(oSched.text);
+			let func = oSched.execute.functions[0];
+			let trigger = () => {
+				oMod[func.name].apply(func.args);
+			}
 			// Since module has been loaded succesfully, we now execute it according to the schedule
-			let schedule = later.parse.text(trigger.Schedule.text)
-
-			send.logschedule(trigger.id, ' --> Event Trigger "'+trigger.name+'" (v'+trigger.version+') loaded');
-			send.logworker('UP | Event Trigger "'+trigger.name+'" loaded for user '+trigger.User.username);
+			if(oExecution.timer) oExecution.timer.clear();
+			oExecution.timer = later.setInterval(trigger, schedule);
+			send.logschedule(oSched.id, ' --> Event Trigger "'+oSched.CodeModule.name+'" (v'+oSched.CodeModule.version+') loaded');
+			send.logworker('UP | Event Trigger "'+oSched.CodeModule.name+'" loaded for user #'+oSched.UserId);
 		})
 		.catch((err) => {
 			send.logerror(err.toString()+'\n'+err.stack);
-			send.schedulefails(trigger.id, err.toString());
+			send.schedulefails(oSched.id, err.toString());
 		})
 
 }

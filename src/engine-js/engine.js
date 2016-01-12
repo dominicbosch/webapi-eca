@@ -141,7 +141,7 @@ exports.newRule = (oRule) => {
 			data: (msg) => send.ruledatalog({ rid: oRule.id, msg: msg }),
 			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data })
 		};
-		dynmod.runModule(store, oModule, oAction.globals, pers)
+		dynmod.runModule(store, oModule, oAction.globals, pers, oModule.User.username)
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
 				send.logrule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');

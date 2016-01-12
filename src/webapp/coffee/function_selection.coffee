@@ -81,9 +81,7 @@ window.functions =
 			</table>"""
 	fillList: (arr, name) ->
 		arrAllFunctions = arr
-		if(arr.length is 0)
-			setEditorReadOnly true
-		else
+		if arr.length > 0
 			d3.select('#functionEmpty').style('display', 'none');
 			d3.select('#functionList').style('visibility', 'visible')
 				.select('tbody').selectAll('tr').data(arr, (d) -> d?.id)

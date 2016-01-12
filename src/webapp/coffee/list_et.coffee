@@ -14,7 +14,7 @@ updateModules = (uid) ->
 		if arrModules.length is 0
 			parent = $('#tableModules').parent()
 			$('#tableModules').remove()
-			parent.append $ "<h3 class=\"empty\">No <b>Schedules</b> available!
+			parent.append $ "<h3 class=\"empty\">No <b>Event Trigger</b> available!
 				<a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"
 		else
 			tr = d3.select('#tableModules tbody').selectAll('tr')
@@ -60,6 +60,9 @@ startStopSchedule = (d) ->
 		d.running = !d.running;
 		updatePlayButton d3.select('#ico'+d.id)
 		main.setInfo true, 'Schedule '+action
+		setTimeout () -> 
+			showLog(d)
+		, 500
 
 	req.fail (err) ->
 		action = if d.running then 'stop' else 'start'
@@ -126,7 +129,7 @@ updateSchedules = () ->
 			trNew.append('td').append('div').text((d) -> d.name).each (d) ->
 				if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
 			trNew.append('td').attr('class','consoled mediumfont')
-				.text((d) -> d.CodeModule.name+' -> '+d.execute.functions[0].name)
+				.text((d) -> console.log(d);d.CodeModule.name+' -> '+d.execute.functions[0].name)
 			trNew.append('td').attr('class','consoled mediumfont')
 				.text((d) -> d.text)
 
