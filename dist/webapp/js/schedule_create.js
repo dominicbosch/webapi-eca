@@ -44,11 +44,17 @@ console.warn('TODO implement edit schedule');
 loadSchedule = function() {
   return new Promise(function(resolve, reject) {
     return main.post('/service/schedule/get/' + oParams.id).done(function(oSched) {
+      console.log(oSched);
       $('#input_name').val(oSched.name);
-      $('#inp_schedule').val(oSched.schedule.text);
+      $('#inp_schedule').val(oSched.text);
       functions.fillExisting([oSched.execute]);
-      return resolve('Rule loaded');
-    }).fail(reject);
+      d3.select('#mainbody h1').text('Update Schedule');
+      return resolve('Schedule loaded');
+    }).fail(function() {
+      oParams.id = void 0;
+      main.setInfo(false, 'Unable to edit this schedule since it is not existing!');
+      return resolve('Schedule not loaded');
+    });
   });
 };
 

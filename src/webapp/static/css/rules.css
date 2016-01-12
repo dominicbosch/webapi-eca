@@ -19,15 +19,3 @@
 	padding-left: 3px;
 }
 
-.jumping {
-	width: 18px;
-	position: relative;
-}
-.jumping img {
-	position: absolute;
-    animation: jump 0.3s infinite alternate;
-}
-@keyframes jump {
-    from { bottom: 2px }
-    to { bottom: 7px }
-}

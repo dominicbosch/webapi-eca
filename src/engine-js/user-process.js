@@ -9,16 +9,13 @@
 let pl = require('./process-logger')
 	// [Dynamic Modules](dynamic-modules.html)
 	, dynmod = require('./dynamic-modules')
-	// [Encryption](encryption.html)
-	, encryption = require('./encryption')
 	// - [Engine](engine.html)
 	, engine = require('./engine')
 
 	// - External Modules: [later](http://bunkat.github.io/later/)
 	, later = require('later')
 
-	, oEventTriggerCodes = {}
-	, oEventTriggers = {}
+	, oSchedules = {}
 	;
 
 // Message Passing Interface: Outgoing to main process
@@ -41,16 +38,16 @@ let send = {
 		rid: rid, 
 		msg: msg
 	}}),
-	logtrigger: (cid, msg) => sendToParent({ cmd: 'logtrigger', data: {
-		cid: cid, 
+	logschedule: (sid, msg) => sendToParent({ cmd: 'logschedule', data: {
+		sid: sid, 
 		msg: msg
 	}}),
 	event: (evt) => sendToParent({ cmd: 'event', data: evt }),
 	ruledatalog: (data) => sendToParent({ cmd: 'ruledatalog', data: data }),
 	rulepersist: (data) => sendToParent({ cmd: 'rulepersist', data: data }),
-	triggerpersist: (data) => sendToParent({ cmd: 'triggerpersist', data: data }),
-	triggerdatalog: (data) => sendToParent({ cmd: 'triggerdatalog', data: data }),
-	triggerfails: (cid, msg) => sendToParent({ cmd: 'triggerfails', data: { cid: cid, msg: msg } })
+	schedulepersist: (data) => sendToParent({ cmd: 'schedulepersist', data: data }),
+	scheduledatalog: (data) => sendToParent({ cmd: 'scheduledatalog', data: data }),
+	schedulefails: (sid, msg) => sendToParent({ cmd: 'schedulefails', data: { sid: sid, msg: msg } })
 };
 
 send.startup();
@@ -68,7 +65,6 @@ process.on('disconnect', () => {
 
 // Message Passing Interface: Incoming from main process
 process.on('message', (oMsg) => {
-	let trigger, glob;
 	console.log('got message', oMsg)
 	switch(oMsg.cmd) {
 		case 'init':
@@ -85,29 +81,24 @@ process.on('message', (oMsg) => {
 			engine.deleteRule(oMsg.id);
 		break;
 		case 'schedule:start':
-			trigger = oMsg.trigger;
-			glob = trigger.Schedule.globals;
-			oEventTriggerCodes[trigger.id] = trigger;
-			for(let el in trigger.globals) {
-				if(trigger.globals[el]) glob[el] = encryption.decrypt(glob[el] || '');
-			}
-			// If the Event Trigger is already running we restart it due to changes
-			if(oEventTriggers[trigger.id]) {
-				send.logtrigger(trigger.id, 'Restaring due to changes!')
-				startEventTrigger(trigger);
-			}
+			let sched = oMsg.schedule;
+			oSchedules[sched.id] = {
+				trigger: null,
+				schedule: sched
+			};
 
-			trigger = oEventTriggerCodes[oMsg.eid];
-			glob = trigger.execute;
-			console.log('relink', trigger, glob, oMsg);
-			trigger.Schedule.globals = oMsg.globals;
-			for(let el in trigger.globals) {
-				if(trigger.globals[el]) glob[el] = encryption.decrypt(glob[el] || '');
-			}
-			startEventTrigger(trigger);
+			// // If the Event Trigger is already running we restart it due to changes
+			// if(oEventTriggers[trigger.id]) {
+			// 	send.logschedule(trigger.id, 'Restaring due to changes!')
+			// 	startSchedule(trigger);
+			// }
+
+			// }
+			// startSchedule(trigger);
 		break;
 		case 'schedule:stop':
-			console.log('TODO implement Schedule stop');
+			let sid = oMsg.sid;
+			console.log('TODO implement Schedule stop for '+sid);
 		break;
 		case 'event':
 			engine.processEvent(oMsg.evt);
@@ -116,7 +107,7 @@ process.on('message', (oMsg) => {
 	}
 });
 
-function startEventTrigger(trigger) {
+function startSchedule(trigger) {
 	// Attach persistent data if it exists
 	let pers;
 	let oPers = trigger.ModPersists;
@@ -127,18 +118,18 @@ function startEventTrigger(trigger) {
 	}
 	if(pers === undefined) pers = {};
 
-	send.logtrigger(trigger.id, ' --> Loading Event Trigger "'+trigger.name+'"...');
+	send.logschedule(trigger.id, ' --> Loading Event Trigger "'+trigger.name+'"...');
 	let store = {
 		log: (msg) => {
 			try {
-				send.logtrigger(trigger.id, msg.toString().substring(0, 200));
+				send.logschedule(trigger.id, msg.toString().substring(0, 200));
 			} catch(err) {
 				send.loginfo(err.toString());
-				send.logtrigger(trigger.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
+				send.logschedule(trigger.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		data: (msg) => send.triggerdatalog({ cid: trigger.id, msg: msg }),
-		persist: (data) => send.triggerpersist({ cid: trigger.id, persistence: data })
+		data: (msg) => send.scheduledatalog({ cid: trigger.id, msg: msg }),
+		persist: (data) => send.schedulepersist({ cid: trigger.id, persistence: data })
 	};
 	
 	dynmod.runModule(store, trigger.Schedule.globals, pers)
@@ -148,12 +139,12 @@ function startEventTrigger(trigger) {
 			// Since module has been loaded succesfully, we now execute it according to the schedule
 			let schedule = later.parse.text(trigger.Schedule.text)
 
-			send.logtrigger(trigger.id, ' --> Event Trigger "'+trigger.name+'" (v'+trigger.version+') loaded');
+			send.logschedule(trigger.id, ' --> Event Trigger "'+trigger.name+'" (v'+trigger.version+') loaded');
 			send.logworker('UP | Event Trigger "'+trigger.name+'" loaded for user '+trigger.User.username);
 		})
 		.catch((err) => {
 			send.logerror(err.toString()+'\n'+err.stack);
-			send.triggerfails(trigger.id, err.toString());
+			send.schedulefails(trigger.id, err.toString());
 		})
 
 }

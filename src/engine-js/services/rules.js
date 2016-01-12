@@ -48,7 +48,7 @@ router.get('/getdatalog/:id', (req, res) => {
 	db.getRuleDataLog(req.session.pub.id, req.params.id)
 		.then((log) => {
 			res.set('Content-Type', 'text/json')
-				.set('Content-Disposition', 'attachment; filename=rule_'+req.params.id+'_data.json')
+				.set('Content-Disposition', 'attachment; filename=datalog_rule_'+req.params.id+'.json')
 				.send(log)
 		})
 		.catch(db.errHandler(res));

@@ -67,6 +67,7 @@ function initializeModels() {
 	});
 	Schedule = sequelize.define('Schedule', {
 		name: Sequelize.STRING,
+		error: Sequelize.STRING,
 		execute: Sequelize.JSON,
 		text: Sequelize.JSON,
 		running: { type: Sequelize.BOOLEAN, defaultValue: true }
@@ -659,7 +660,9 @@ exports.getSchedule = (uid, sid) => {
 exports.createSchedule = (uid, oSched, cid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => {
-			return oUser.getSchedules()
+			return oUser.getSchedules({
+					include: [CodeModule, { model: User, attributes: [ 'username' ] }]
+				})
 				.then((arrScheds) => {
 					return {
 						user: oUser,
@@ -694,16 +697,15 @@ exports.createSchedule = (uid, oSched, cid) => {
 
 exports.updateSchedule = (uid, sid, oSched, cid) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
-		.then((oUser) => oUser.getSchedules({ where: { id: sid } }))
+		.then((oUser) => oUser.getSchedules({
+			where: { id: sid },
+			include: [CodeModule, { model: User, attributes: [ 'username' ] }]
+		}))
 		.then((sched) => {
-			console.log('got schedule', sched)
-			return mod.Schedule.update({ text: oSched.schedule.text })
-				.then((sched) => {
-					let ret = mod.toJSON();
-					ret.Schedule = sched.toJSON();
-					return ret;
-				})
+			if(sched.length === 0) throwStatusCode(404, 'Schedule not found!');
+			else return sched[0].update(oSched);
 		})
+		.then((newSched) => newSched.toJSON())
 }
 
 exports.startStopSchedule = (uid, sid, isStart, execute) => {
@@ -715,8 +717,26 @@ exports.startStopSchedule = (uid, sid, isStart, execute) => {
 		.then((arrOldSched) => {
 			if(arrOldSched.length > 0) {
 				let upd = { running: isStart };
-				if(isStart) upd.execute = execute;
-				return arrOldSched[0].Schedule.update(upd);
+				if(isStart) {
+					upd.execute = execute;
+					upd.error = null;
+				}
+				return arrOldSched[0].update(upd);
+			}
+			else throwStatusCode(404, 'No Code Module found to update!');
+		});
+}
+
+exports.setErrorSchedule = (uid, sid, msg) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getSchedules({ where: { id: sid } }))
+		.then((arrSched) => {
+			if(arrSched.length > 0) {
+				let upd = {
+					running: false,
+					error: msg
+				};
+				return arrSched[0].update(upd);
 			}
 			else throwStatusCode(404, 'No Code Module found to update!');
 		});
@@ -760,13 +780,13 @@ exports.logSchedule = (sid, msg) => {
 		.catch(ec);
 };
 
-exports.getScheduleLog = (sid) => {
+exports.getScheduleLog = (uid, sid) => {
 	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
 		.then((oLog) => (oLog.get('log') || []).reverse());
 };
 
-exports.clearScheduleLog = (sid) => {
+exports.clearScheduleLog = (uid, sid) => {
 	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
 		.then((oLog) => {
@@ -775,7 +795,7 @@ exports.clearScheduleLog = (sid) => {
 		.catch(ec);
 };
 
-exports.logScheduleData = function(sid, data) {
+exports.logScheduleData = (uid, sid, data) => {
 	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: data
@@ -790,7 +810,7 @@ exports.logScheduleData = function(sid, data) {
 		.catch(ec);
 };
 
-exports.getScheduleDataLog = (sid) => {
+exports.getScheduleDataLog = (uid, sid) => {
 	return getSchedule(sid)
 		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
 		.then((oLog) => oLog.get('datalog'));

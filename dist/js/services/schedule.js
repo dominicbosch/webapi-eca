@@ -48,7 +48,7 @@ router.post('/delete', (req, res) => {
 });
 
 router.post('/getlog/:id', (req, res) => {
-	log.info('SRVC:SH | Fetching all Schedule logs');
+	log.info('SRVC:SH | Fetching Schedule log');
 	db.getScheduleLog(req.session.pub.id, req.params.id)
 		.then((log) => res.send(log))
 		.catch(db.errHandler(res));
@@ -66,7 +66,7 @@ router.get('/getdatalog/:id', (req, res) => {
 	db.getScheduleDataLog(req.session.pub.id, req.params.id)
 		.then((log) => {
 			res.set('Content-Type', 'text/json')
-				.set('Content-Disposition', 'attachment; filename=schedule_'+req.params.id+'_data.json')
+				.set('Content-Disposition', 'attachment; filename=datalog_schedule_'+req.params.id+'.json')
 				.send(log)
 		})
 		.catch(db.errHandler(res));
@@ -90,7 +90,10 @@ function storeSchedule(uid, reason, body, res) {
 	if(reason === 'create') prom = db.createSchedule(uid, oSchedule, body.execute.id)
 	else prom = db.updateSchedule(uid, body.id, oSchedule, body.execute.id)
 	prom.then((oSchedule) => {
-			if(oSchedule.running) geb.emit('schedule:start', oSchedule);
+			geb.emit('schedule:start', {
+				uid: uid,
+				schedule: oSchedule
+			});
 			res.send({ id: oSchedule.id });
 		})
 		.catch(db.errHandler(res))
@@ -104,9 +107,7 @@ router.post('/start/:id', (req, res) => {
 			res.send('OK');
 			geb.emit('schedule:start', {
 				uid: req.session.pub.id,
-				text: oSched.text,
-				sid: req.params.id,
-				execute: req.body
+				schedule: oSched
 			});
 		})	
 		.catch(db.errHandler(res));

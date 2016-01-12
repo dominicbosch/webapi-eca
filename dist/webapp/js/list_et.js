@@ -158,13 +158,18 @@ updateSchedules = function() {
       });
       tr.exit().remove();
       trNew = tr.enter().append('tr');
+      trNew.append('td').attr('class', 'jumping').each(function(d) {
+        if (d.error) {
+          return d3.select(this).append('img').attr('src', '/images/exclamation.png').attr('title', d.error);
+        }
+      });
       trNew.append('td').each(function(d) {
-        return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Module').on('click', deleteModule);
+        return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Schedule').on('click', deleteModule);
       });
-      trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Module').on('click', function(d) {
-        return window.location.href = 'modules_create?m=et&id=' + d.id;
+      trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Schedule').on('click', function(d) {
+        return window.location.href = 'schedule_create?id=' + d.id;
       });
-      trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Rule Log').on('click', showLog);
+      trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/log.png').attr('title', 'Show Schedule Log').on('click', showLog);
       trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk.png').attr('title', 'Download Data Log').on('click', showDataLog);
       trNew.append('td').append('img').attr('class', 'icon log').attr('src', '/images/bulk_del.png').attr('title', 'Delete Data Log').on('click', clearDataLog);
       img = trNew.append('td').append('img').attr('id', function(d) {
@@ -195,9 +200,9 @@ updatePlayButton = function(d3This) {
     return '/images/' + (d.running ? 'pause' : 'play') + '.png';
   }).attr('title', function(d) {
     if (d.running) {
-      return 'Stop Module';
+      return 'Stop Schedule';
     } else {
-      return 'Start Module';
+      return 'Start Schedule';
     }
   });
 };

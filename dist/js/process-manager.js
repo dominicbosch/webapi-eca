@@ -84,16 +84,18 @@ geb.addListener('modules:allowed', (arrModules) => {
 });
 
 geb.addListener('schedule:start', (oEvt) => {
-	sendToWorker(oEvt.uid, {
-		cmd: 'schedule:start',
-		eid: oEvt.eid,
-		execute: oEvt.execute
-	});
+	let sched = decryptScheduleGlobals(oEvt.schedule);
+	if(sched) {
+		sendToWorker(oEvt.uid, {
+			cmd: 'schedule:start',
+			schedule: sched
+		})
+	}
 });
 geb.addListener('schedule:stop', (oEvt) => {
 	sendToWorker(oEvt.uid, {
 		cmd: 'schedule:stop',
-		eid: oEvt.eid
+		sid: oEvt.sid
 	});
 });
 
@@ -115,7 +117,6 @@ geb.addListener('rule:new', sendRuleToUser);
 
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
-	console.log('found hook', oHook);
 	evt.hookid = oHook.id;
 	evt.hookurl = oHook.hookurl;
 	geb.emit('webhook:event', evt);
@@ -148,19 +149,19 @@ function MPI(uid, username) {
 				break;
 			case 'logrule': db.logRule(dat.rid, dat.msg);
 				break;
-			case 'logtrigger': db.logSchedule(dat.cid, dat.msg);
+			case 'logschedule': db.logSchedule(dat.sid, dat.msg);
 				break;
 			case 'ruledatalog': db.logRuleData(dat.rid, dat.msg);
 				break;
 			case 'rulepersist': db.persistRuleData(dat.rid, dat.cid, dat.persistence);
 				break;
-			case 'triggerdatalog': db.logScheduleData(dat.cid, dat.msg);
+			case 'scheduledatalog': db.logScheduleData(dat.cid, dat.msg);
 				break;
-			case 'triggerpersist': db.persistScheduleData(dat.rid, dat.cid, dat.persistence);
+			case 'schedulepersist': db.persistScheduleData(dat.rid, dat.cid, dat.persistence);
 				break;
-			case 'triggerfails':
-				db.startStopSchedule(uid, dat.cid, false);
-				db.logSchedule(dat.cid, dat.msg);
+			case 'schedulefails':
+				db.startStopSchedule(uid, dat.sid, false);
+				db.logSchedule(dat.sid, dat.msg);
 				break;
 			case 'event': emitEvent(uid, dat);
 				break;
@@ -255,13 +256,38 @@ function startWorker(oUser) {
 	.then((arr) => {
 		for(var i = 0; i < arr.length; i++) {
 			if(arr[i].running) {
-				sendToWorker(oUser.id, {
-					cmd: 'schedule:start',
-					schedule: arr[i]
-				})
+				let sched = decryptScheduleGlobals(arr[i]);
+				if(sched) {
+					sendToWorker(oUser.id, {
+						cmd: 'schedule:start',
+						schedule: sched
+					})
+				}
 			}
 		}
 	});
+}
+
+function decryptScheduleGlobals(oSched) {
+	db.logSchedule(oSched.id, 'Starting Schedule!');
+	let glob = oSched.execute.globals;
+	let hasNoErr = true;
+	for(let el in oSched.CodeModule.globals) {
+		if(!glob[el]) {
+			db.logSchedule(oSched.id, 'Your Event Trigger seems to have changed!'
+				+' Missing global parameter "'+el+'". Please edit this Schedule!');
+			hasNoErr = false;
+
+		} else if(oSched.CodeModule.globals[el]) glob[el] = encryption.decrypt(glob[el] || '');
+	}
+
+	if(hasNoErr) return oSched;
+	else {
+		db.setErrorSchedule(oSched.UserId, oSched.id, 'Your Event Trigger needs more globals than '
+				+'you provided in your Schedule! Please edit schedule!')
+			.catch((err) => log.error(err));
+		return null;
+	}
 }
 
 function killWorker(uid, uname) {

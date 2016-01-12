@@ -248,6 +248,21 @@ kbd {
     0%   {transform: rotate(0deg)}
     100% {transform: rotate(360deg)}
 }
+
+.jumping {
+	width: 18px;
+	position: relative;
+}
+.jumping img {
+	position: absolute;
+    animation: jump 0.3s infinite alternate;
+}
+@keyframes jump {
+    from { bottom: 2px }
+    to { bottom: 7px }
+}
+
+
 input.readonly {
 	color: #888;
 	background: #eeeeee

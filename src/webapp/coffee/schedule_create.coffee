@@ -51,13 +51,18 @@ loadSchedule = () ->
 		main.post('/service/schedule/get/'+oParams.id)
 			.done (oSched) ->
 				# Schedule Name
+				console.log(oSched)
 				$('#input_name').val oSched.name
-				$('#inp_schedule').val(oSched.schedule.text)
+				$('#inp_schedule').val(oSched.text)
 
 				functions.fillExisting([oSched.execute])
-							
-				resolve 'Rule loaded'
-			.fail reject
+				
+				d3.select('#mainbody h1').text('Update Schedule');
+				resolve 'Schedule loaded'
+			.fail () ->
+				oParams.id = undefined
+				main.setInfo false, 'Unable to edit this schedule since it is not existing!'
+				resolve 'Schedule not loaded'
 
 
 # LISTENERS

@@ -121,23 +121,28 @@ updateSchedules = () ->
 				.data(arrSchedules, (d) -> d.id);
 			tr.exit().remove();
 			trNew = tr.enter().append('tr');
+			trNew.append('td').attr('class', 'jumping').each (d) -> 
+				if d.error
+					d3.select(this).append('img')
+						.attr('src', '/images/exclamation.png')
+						.attr('title', d.error);
 			trNew.append('td').each (d) ->
 				d3.select(this).append('img')
 					.attr('class', 'icon del')
 					.attr('src', '/images/del.png')
-					.attr('title', 'Delete Module')
+					.attr('title', 'Delete Schedule')
 					.on('click', deleteModule);
 			trNew.append('td').append('img')
 				.attr('class', 'icon edit')
 				.attr('src', '/images/edit.png')
-				.attr('title', 'Edit Module')
+				.attr('title', 'Edit Schedule')
 				.on 'click', (d) ->
-					window.location.href = 'modules_create?m=et&id='+d.id
+					window.location.href = 'schedule_create?id='+d.id
 
 			trNew.append('td').append('img')
 				.attr('class', 'icon log')
 				.attr('src', '/images/log.png')
-				.attr('title', 'Show Rule Log')
+				.attr('title', 'Show Schedule Log')
 				.on('click', showLog);
 			trNew.append('td').append('img')
 				.attr('class', 'icon log')
@@ -163,7 +168,7 @@ updateSchedules = () ->
 
 updatePlayButton = (d3This) ->
 	d3This.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
-		.attr('title', (d) -> if d.running then 'Stop Module' else 'Start Module')
+		.attr('title', (d) -> if d.running then 'Stop Schedule' else 'Start Schedule')
 
 showLog = (d) ->
 	main.post('/service/schedule/getlog/'+d.id)
