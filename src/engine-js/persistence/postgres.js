@@ -125,7 +125,10 @@ function initializeModels(isReset) {
 		
 	// Return a promise
 	let opt;
-	if(isReset) opt = { force: true };
+	if(isReset) {
+		opt = { force: true };
+		log.warn('PG | Resetting Database!')
+	}
 	return sequelize.sync(opt).then(() => log.info('PG | Synced Models'));
 }
 
