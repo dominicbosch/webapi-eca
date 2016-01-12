@@ -14,7 +14,7 @@ updateModules = (uid) ->
 		if arrModules.length is 0
 			parent = $('#tableModules').parent()
 			$('#tableModules').remove()
-			parent.append $ "<h3 class=\"empty\">No <b>Event Triggers</b> available!
+			parent.append $ "<h3 class=\"empty\">No <b>Schedules</b> available!
 				<a href=\"/views/modules_create?m=et\">Create One first!</a></h3>"
 		else
 			tr = d3.select('#tableModules tbody').selectAll('tr')
@@ -26,12 +26,12 @@ updateModules = (uid) ->
 					d3.select(this).append('img')
 						.attr('class', 'icon del')
 						.attr('src', '/images/del.png')
-						.attr('title', 'Delete Module')
+						.attr('title', 'Delete Event Trigger')
 						.on('click', deleteModule);
 			trNew.append('td').append('img')
 				.attr('class', 'icon edit')
 				.attr('src', '/images/edit.png')
-				.attr('title', 'Edit Module')
+				.attr('title', 'Edit Event Trigger')
 				.on 'click', (d) ->
 					window.location.href = 'modules_create?m=et&id='+d.id
 
@@ -40,65 +40,30 @@ updateModules = (uid) ->
 			trNew.append('td').text((d) -> d.User.username)
 
 	req.fail ( err ) ->
-		main.setInfo false, 'Error in fetching all Modules: ' + err.responseText
+		main.setInfo false, 'Error in fetching all Event Triggers: ' + err.responseText
 
 deleteModule = (d) ->
-	if confirm 'Do you really want to delete the Module "'+d.name+'"? All running Schedules that use this module will be deleted!'
+	if confirm 'Do you really want to delete the Event Trigger "'+d.name+'"? All running Schedules that use this Event Trigger will be deleted!'
 		main.post('/service/eventtrigger/delete', { id: d.id })
 			.done () ->
-				main.setInfo true, 'Event Trigger deleted!', true
+				main.setInfo true, 'Schedule deleted!', true
 				updateModules(parseInt(d3.select('body').attr('data-uid')))
 				updateSchedules()
 			.fail (err) ->
 				main.setInfo false, err.responseText 
 
-startStopModule = (d) ->
-	if d.running 
-		d3.select('#moduleparams').style('visibility', 'hidden')
-		sendStartStopCommand d, 'stop'
-	else
-		arr = Object.keys(d.globals)
-		d3.select('#moduleparams tbody').selectAll('tr').remove();
-		if arr.length is 0
-			d3.select('#moduleparams tbody').append('tr')
-				.append('td').classed('consoled', true).text('No parameters required')
-		else
-			newTr = d3.select('#moduleparams tbody').selectAll('tr').data(arr).enter().append('tr')
-			newTr.append('td').text (d) -> d
-			newTr.append('td').append('input').attr('type', (nd) -> if d.globals[nd] then 'password' else 'text')
-				.on 'change', () -> d3.select(this).attr('changed', 'yes')
-		d3.select('#moduleparams button').attr('onclick', 'start('+d.id+')')
-		d3.select('#moduleparams').style('visibility', 'visible')
-
-start = (id) ->
-	data = d3.select('#ico'+id).data()[0]
-	try
-		globals = {}
-		d3.selectAll('#moduleparams input').each (d) ->
-			d3This = d3.select(this)
-			val = d3This.node().value
-			if val is ''
-				d3This.node().focus()
-				throw new Error('Please enter a value in all required fields!')
-			if data.globals[d] && d3This.attr('changed') is 'yes'
-				val = cryptico.encrypt(val, strPublicKey).cipher
-			globals[d] = val
-		sendStartStopCommand data, 'start', globals
-	catch err
-		main.setInfo false, err.message
-
-sendStartStopCommand = (d, action, data) ->
-	d3.select('#moduleparams').style('visibility', 'hidden')
-	req = main.post('/service/eventtrigger/'+action+'/'+d.id, data)
+startStopSchedule = (d) ->
+	action = if d.running then 'stop' else 'start'
+	req = main.post('/service/schedule/'+action+'/'+d.id)
 	req.done () ->
 		action = if d.running then 'stopped' else 'started'
 		d.running = !d.running;
 		updatePlayButton d3.select('#ico'+d.id)
-		main.setInfo true, 'Event Trigger '+action
+		main.setInfo true, 'Schedule '+action
 
 	req.fail (err) ->
 		action = if d.running then 'stop' else 'start'
-		main.setInfo false, 'Unable to '+action+' Event Trigger'
+		main.setInfo false, 'Unable to '+action+' Schedule'
 
 fOnLoad = () ->
 	updateModules(parseInt(d3.select('body').attr('data-uid')))
@@ -110,7 +75,6 @@ window.addEventListener 'load', fOnLoad, true
 updateSchedules = () ->
 	req = main.post('/service/schedule/get')
 	req.done (arrSchedules) ->
-		console.log arrSchedules
 		if arrSchedules.length is 0
 			parent = $('#tableSchedules').parent()
 			$('#tableSchedules').remove()
@@ -157,7 +121,7 @@ updateSchedules = () ->
 			img = trNew.append('td').append('img')
 				.attr('id', (d) -> 'ico'+d.id)
 				.attr('class', (d) -> 'icon edit')
-				.on('click', startStopModule);
+				.on('click', startStopSchedule);
 			updatePlayButton img
 			trNew.append('td').append('div').text((d) -> d.name).each (d) ->
 				if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment

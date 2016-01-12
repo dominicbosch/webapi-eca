@@ -175,7 +175,6 @@ attachListeners = () ->
 				.fail (err) -> main.setInfo false, err.responseText
 
 		catch err
-			console.log err
 			main.setInfo false, 'Error in upload: '+err.message
 
 

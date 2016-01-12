@@ -94,6 +94,14 @@ function storeModule(args) {
 router.post('/delete', (req, res) => {
 	log.info('SRVC:ET | DELETE: #' + req.body.id);
 	db.deleteEventTrigger(req.session.pub.id, req.body.id)
+		.then((arrSchedules) => {
+			for(let i = 0; i < arrSchedules.length; i++) {
+				geb.emit('schedule:stop', {
+					uid: req.session.pub.id,
+					sid: arrSchedules[i].id
+				});
+			}	
+		})
 		.then(() => res.send('Deleted!'))
 		.catch(db.errHandler(res));
 });

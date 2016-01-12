@@ -45,13 +45,11 @@ fOnLoad = () ->
 
 # Preload editting of a Rule
 # -----------
-console.warn('TODO implement edit schedule');
 loadSchedule = () ->
 	return new Promise (resolve, reject) ->
 		main.post('/service/schedule/get/'+oParams.id)
 			.done (oSched) ->
 				# Schedule Name
-				console.log(oSched)
 				$('#input_name').val oSched.name
 				$('#inp_schedule').val(oSched.text)
 
@@ -103,10 +101,9 @@ attachListeners = () ->
 			main.post('/service/schedule/'+cmd, obj)
 				.done (msg) ->
 					main.setInfo true, 'Schedule ' + if oParams.id is undefined then 'stored!' else 'updated!'
-					wl = window.location;
-					oParams.id = msg.id;
-					newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id='+msg.id;
-					window.history.pushState({path:newurl},'',newurl);
+					setTimeout () ->
+						window.location.href = 'list_et'
+					, 500
 				.fail (err) -> main.setInfo false, err.responseText
 
 		catch err

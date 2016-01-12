@@ -152,6 +152,10 @@ fOnLoad = () ->
 							main.setInfo true, (moduleTypeName+' stored!'), true
 							if oParams.id and oParams.m is 'ad' then alert "You need to update the rules that use this module in 
 											order for the changes to be applied to them!"
+							
+							setTimeout () ->
+								window.location.href = 'list_et'
+							, 500
 							# Since we stored a new module we got the id back. we add this id to the URL query 
 							# like this we are in a clean edit (update) mode after creating a new event trigger
 							wl = window.location;

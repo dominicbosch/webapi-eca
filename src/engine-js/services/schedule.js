@@ -83,8 +83,10 @@ router.post('/cleardatalog/:id', (req, res) => {
 function storeSchedule(uid, reason, body, res) {
 	let oSchedule = {
 		name: body.name,
+		error: null,
 		execute: body.execute,
-		text: body.schedule.text
+		text: body.schedule.text,
+		running: true
 	};
 	let prom;
 	if(reason === 'create') prom = db.createSchedule(uid, oSchedule, body.execute.id)

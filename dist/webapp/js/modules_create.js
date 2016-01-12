@@ -173,6 +173,9 @@ fOnLoad = function() {
             if (oParams.id && oParams.m === 'ad') {
               alert("You need to update the rules that use this module in order for the changes to be applied to them!");
             }
+            setTimeout(function() {
+              return window.location.href = 'list_et';
+            }, 500);
             wl = window.location;
             oParams.id = msg.id;
             newurl = wl.href + '&id=' + msg.id;

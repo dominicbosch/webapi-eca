@@ -39,12 +39,9 @@ fOnLoad = function() {
   });
 };
 
-console.warn('TODO implement edit schedule');
-
 loadSchedule = function() {
   return new Promise(function(resolve, reject) {
     return main.post('/service/schedule/get/' + oParams.id).done(function(oSched) {
-      console.log(oSched);
       $('#input_name').val(oSched.name);
       $('#inp_schedule').val(oSched.text);
       functions.fillExisting([oSched.execute]);
@@ -91,14 +88,10 @@ attachListeners = function() {
         cmd = 'update';
       }
       return main.post('/service/schedule/' + cmd, obj).done(function(msg) {
-        var newurl, wl;
         main.setInfo(true, 'Schedule ' + (oParams.id === void 0 ? 'stored!' : 'updated!'));
-        wl = window.location;
-        oParams.id = msg.id;
-        newurl = wl.protocol + "//" + wl.host + wl.pathname + '?id=' + msg.id;
-        return window.history.pushState({
-          path: newurl
-        }, '', newurl);
+        return setTimeout(function() {
+          return window.location.href = 'list_et';
+        }, 500);
       }).fail(function(err) {
         return main.setInfo(false, err.responseText);
       });

@@ -165,7 +165,6 @@ attachListeners = function() {
       });
     } catch (error1) {
       err = error1;
-      console.log(err);
       return main.setInfo(false, 'Error in upload: ' + err.message);
     }
   });

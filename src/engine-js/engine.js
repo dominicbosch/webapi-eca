@@ -238,6 +238,6 @@ function executeAction(rid, uid, aid, evt) {
 }
 
 
+console.log('TODO: UP | Implement delete Rule');
 exports.deleteRule = function(id) {
-	console.log('TODO: UP | Implement delete Rule');
 };

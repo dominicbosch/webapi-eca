@@ -585,12 +585,17 @@ exports.persistRuleData = function(rid, cid, data) {
 		.catch(ec);
 }
 
-function deleteCodeModule(uid, cid) {
+function deleteCodeModule(uid, cid, isEt) {
 	log.info('PG | Deleting CodeModule #'+cid);
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
 		.then((arrOldMod) => {
-			if(arrOldMod.length > 0) return arrOldMod[0].destroy();
+			if(arrOldMod.length > 0) {
+				return arrOldMod[0].getSchedules((arrSched) => {
+					return arrOldMod[0].destroy()
+						.then(() => arrSched.toJSON())
+				})
+			}
 			else throwStatusCode(404, 'No Code Module found to delete!');
 		});
 }
@@ -620,7 +625,7 @@ exports.createActionDispatcher = (uid, oAd) => {
 exports.getAllEventTriggers = () => getAllCodeModules(false);
 exports.getEventTrigger = getCodeModule;
 exports.updateEventTrigger = updateCodeModule;
-exports.deleteEventTrigger = deleteCodeModule;
+exports.deleteEventTrigger = (uid, cid) => deleteCodeModule(uid, cid, true)
 exports.createEventTrigger = (uid, oEt) => {
 	oEt.isaction = false;
 	return createCodeModule(uid, oEt)
@@ -688,7 +693,8 @@ exports.createSchedule = (uid, oSched, cid) => {
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
 						return newSchedule.createLog({})
-							.then(() => newSchedule.toJSON());
+							.then(() => exports.getSchedule(uid, newSchedule.id))
+							.then((res) => res.toJSON());
 					})
 
 			}
