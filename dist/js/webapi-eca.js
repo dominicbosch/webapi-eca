@@ -73,6 +73,11 @@ let opt = {
 		alias : 'db-db',
 		describe: 'Specify a database identifier'
 	},
+//  `-r`, `--db-reset`: Specify a database
+	r: {
+		alias : 'db-reset',
+		describe: 'Reset database'
+	},
 //  `-m`, `--mode`: Specify a run mode: [development|productive]
 	m: {
 		alias : 'mode',
@@ -125,6 +130,7 @@ conf.httpport = parseInt(argv.w) || parseInt(conf.httpport) || 8125;
 conf.db.module = conf.db.module || 'redis';
 conf.db.port = parseInt(argv.d) || parseInt(conf.db.port) || 6379;
 conf.db.db = argv.s || conf.db.db || 0;
+conf.db.reset = argv.r || false;
 
 if(!conf.log) conf.log = {};
 conf.mode = argv.m || conf.mode || 'productive'

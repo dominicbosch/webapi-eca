@@ -38,11 +38,11 @@ exports.init = (oDB) => {
 		define: { timestamps: false }
 	});
 
-	return sequelize.authenticate().then(initializeModels);
+	return sequelize.authenticate().then(() => initializeModels(oDB.reset));
 };
 
 // Initializes the Database model and returns also a promise
-function initializeModels() {
+function initializeModels(isReset) {
 	// See http://docs.sequelizejs.com/en/latest/docs/models-definition/ for a list of available data types
 	User = sequelize.define('User', {
 		username: { type: Sequelize.STRING, unique: true },
@@ -124,8 +124,9 @@ function initializeModels() {
 
 		
 	// Return a promise
-	return sequelize.sync().then(() => log.info('PG | Synced Models'));
-	// return sequelize.sync({ force: true }).then(() => log.info('PG | Synced Models'));
+	let opt;
+	if(isReset) opt = { force: true };
+	return sequelize.sync(opt).then(() => log.info('PG | Synced Models'));
 }
 
 function ec(err) { log.error(err) }
