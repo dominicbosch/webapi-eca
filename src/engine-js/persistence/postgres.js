@@ -822,7 +822,7 @@ exports.clearScheduleLog = (uid, sid) => {
 		.catch(ec);
 };
 
-exports.logScheduleData = (uid, sid, data) => {
+exports.logScheduleData = (sid, data) => {
 	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: data
@@ -831,7 +831,7 @@ exports.logScheduleData = (uid, sid, data) => {
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'datalog' ] }))
 		.then((oLog) => {
 			if(oLog) oLog.update({
-				data: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
+				datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
 			})
 		})
 		.catch(ec);
