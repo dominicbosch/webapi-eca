@@ -157,7 +157,7 @@ function MPI(uid, username) {
 				break;
 			case 'scheduledatalog': db.logScheduleData(dat.sid, dat.msg);
 				break;
-			case 'schedulepersist': db.persistScheduleData(dat.rid, dat.sid, dat.persistence);
+			case 'schedulepersist': db.persistScheduleData(dat.sid, dat.persistence);
 				break;
 			case 'schedulefails':
 				db.startStopSchedule(uid, dat.sid, false);
