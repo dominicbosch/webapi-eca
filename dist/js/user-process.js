@@ -134,7 +134,11 @@ function startSchedule(oExecution) {
 				args.push(func.args[arrArgs[i]]);
 			};
 			let trigger = () => {
-				oMod[func.name].apply(null, args);
+				try {
+					oMod[func.name].apply(null, args);
+				} catch(err) {
+					send.logschedule(oSched.id, '!!! ERROR: ' + err.message);
+				}
 			}
 			// Since module has been loaded succesfully, we now execute it according to the schedule
 			if(oExecution.timer) oExecution.timer.clear();

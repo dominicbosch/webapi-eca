@@ -260,7 +260,7 @@ exports.logWorker = (uid, msg) => {
 		.then((oUser) => oUser.getWorker())
 		.then((oWorker) => {
 			if(oWorker) oWorker.update({
-				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
 			})
 		}).catch(ec);
 };
@@ -445,7 +445,7 @@ exports.logRule = (rid, msg) => {
 		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
 		.then((oLog) => {
 			if(oLog) oLog.update({
-				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
 			})
 		}).catch(ec);
 };
@@ -801,7 +801,7 @@ exports.logSchedule = (sid, msg) => {
 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
 		.then((oLog) => {
 			if(oLog) oLog.update({
-				log: sequelize.fn('array_append', sequelize.col('log'), msg)
+				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
 			})
 		})
 		.catch(ec);
