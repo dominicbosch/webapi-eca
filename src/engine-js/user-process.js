@@ -128,8 +128,13 @@ function startSchedule(oExecution) {
 		.then((oMod) => {
 			let schedule = later.parse.text(oSched.text);
 			let func = oSched.execute.functions[0];
+			let arrArgs = oSched.CodeModule.functions[func.name];
+			let args = [];
+			for (let i = 0; i < arrArgs.length; i++) {
+				args.push(func.args[arrArgs[i]]);
+			};
 			let trigger = () => {
-				oMod[func.name].apply(func.args);
+				oMod[func.name].apply(null, args);
 			}
 			// Since module has been loaded succesfully, we now execute it according to the schedule
 			if(oExecution.timer) oExecution.timer.clear();

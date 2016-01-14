@@ -270,6 +270,8 @@ function startWorker(oUser) {
 
 function decryptScheduleGlobals(oSched) {
 	db.logSchedule(oSched.id, 'Starting Schedule!');
+
+	// Check valid global paremeters
 	let glob = oSched.execute.globals;
 	let hasNoErr = true;
 	for(let el in oSched.CodeModule.globals) {
@@ -281,9 +283,20 @@ function decryptScheduleGlobals(oSched) {
 		} else if(oSched.CodeModule.globals[el]) glob[el] = encryption.decrypt(glob[el] || '');
 	}
 
+	// Check valid function arguments
+	let exefunc = oSched.execute.functions[0];
+	let arrArgs = oSched.CodeModule.functions[exefunc.name];
+	for(let i = 0; i < arrArgs.length; i++) {
+		if(!exefunc.args[arrArgs[i]]) {
+			db.logSchedule(oSched.id, 'Your Event Trigger seems to have changed!'
+				+' Missing function argument "'+arrArgs[i]+'". Please edit this Schedule!');
+			hasNoErr = false;
+		}
+	}
+
 	if(hasNoErr) return oSched;
 	else {
-		db.setErrorSchedule(oSched.UserId, oSched.id, 'Your Event Trigger needs more globals than '
+		db.setErrorSchedule(oSched.UserId, oSched.id, 'Your Event Trigger requires more values than '
 				+'you provided in your Schedule! Please edit schedule!')
 			.catch((err) => log.error(err));
 		return null;

@@ -43,7 +43,7 @@ loadSchedule = function() {
   return new Promise(function(resolve, reject) {
     return main.post('/service/schedule/get/' + oParams.id).done(function(oSched) {
       $('#input_name').val(oSched.name);
-      $('#inp_schedule').val(oSched.text);
+      $('#input_schedule').val(oSched.text);
       functions.fillExisting([oSched.execute]);
       d3.select('#mainbody h1').text('Update Schedule');
       return resolve('Schedule loaded');

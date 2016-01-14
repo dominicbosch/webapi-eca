@@ -51,7 +51,7 @@ loadSchedule = () ->
 			.done (oSched) ->
 				# Schedule Name
 				$('#input_name').val oSched.name
-				$('#inp_schedule').val(oSched.text)
+				$('#input_schedule').val(oSched.text)
 
 				functions.fillExisting([oSched.execute])
 				
