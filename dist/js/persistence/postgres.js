@@ -655,7 +655,11 @@ exports.getSchedule = (uid, sid) => {
 		include: [CodeModule, { model: User, attributes: [ 'username' ] }]
 	}
 	if(sid) options.where = { id: sid };
-	return Schedule.findAll(options)
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => {
+			if(!oUser) throwStatusCode(404, 'User not found!');
+			return oUser.getSchedules(options);
+		})
 		.then((answ) => {
 			if(sid) {
 				if(answ.length === 0) throwStatusCode(404, 'Schedule not found');
