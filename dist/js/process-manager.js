@@ -255,7 +255,6 @@ function startWorker(oUser) {
 	.then(() => db.getSchedule(oUser.id))
 	.then((arr) => {
 		for(var i = 0; i < arr.length; i++) {
-			console.log('sending schedule', arr[i].id, 'to', oUser.username)
 			if(arr[i].running) {
 				let sched = decryptScheduleGlobals(arr[i]);
 				if(sched) {

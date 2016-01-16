@@ -652,7 +652,7 @@ function getSchedule(sid) {
 
 exports.getSchedule = (uid, sid) => {
 	let options = {
-		include: [CodeModule, { model: User, attributes: [ 'username' ] }]
+		include: [CodeModule, ModPersist, { model: User, attributes: [ 'username' ] }]
 	}
 	if(sid) options.where = { id: sid };
 	return User.findById(uid, { attributes: [ 'id' ] })

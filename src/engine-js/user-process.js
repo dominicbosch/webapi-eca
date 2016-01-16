@@ -102,14 +102,8 @@ process.on('message', (oMsg) => {
 function startSchedule(oExecution) {
 	let oSched = oExecution.schedule;
 	// Attach persistent data if it exists
-	let pers;
-	let oPers = oSched.ModPersists;
-	if(oPers !== undefined) {
-		for (let i = 0; i < oPers.length; i++) {
-			if(oPers[i].moduleId === oSched.CodeModuleId) pers = oPers[i].data;
-		}
-	}
-	if(pers === undefined) pers = {};
+	let oPers = {};
+	if(oSched.ModPersist) oPers = oSched.ModPersist.data;
 	send.logschedule(oSched.id, ' --> Loading Event Trigger "'+oSched.CodeModule.name+'"...');
 	let store = {
 		log: (msg) => {
@@ -124,7 +118,7 @@ function startSchedule(oExecution) {
 		persist: (data) => send.schedulepersist({ sid: oSched.id, persistence: data })
 	};
 	
-	dynmod.runModule(store, oSched.CodeModule, oSched.execute.globals, pers, oSched.User.username)
+	dynmod.runModule(store, oSched.CodeModule, oSched.execute.globals, oPers, oSched.User.username)
 		.then((oMod) => {
 			let schedule = later.parse.text(oSched.text);
 			let func = oSched.execute.functions[0];
