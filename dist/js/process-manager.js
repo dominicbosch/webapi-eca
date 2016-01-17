@@ -313,8 +313,9 @@ function killWorker(uid, uname) {
 			db.setWorker(uid, null)
 				.then(() => {
 					oChildren[uid] = null;
-					resolve();			
+					resolve();
 				})
+				.catch((err) => reject(err))
 		}
 	});
 }

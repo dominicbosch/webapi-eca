@@ -63,15 +63,14 @@ router.post('/deleteuser', (req, res) => {
 	if(uid === req.session.pub.id) {
 		res.status(403).send('You dream du! You really shouldn\'t delete yourself!')
 	} else {
-		db.deleteUser(uid).then(() => {
-			log.info('SRVC:ADMIN |User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
-			log.warn('SRVC:ADMIN | Remove all rules, all ADs and all ETs from user!');
-			return pm.killWorker(uid, req.body.username);
-		})
-		.then(() => {
-			res.send('User "'+req.body.username+'" properly deleted!');
-			// TODO req.body.username should not be used, but yeah it's anyways only the admin who can use it 
-		})
-		.catch(db.errHandler(res))
+		log.warn('SRVC:ADMIN | Remove all rules, all ADs and all ETs from user!');
+		pm.killWorker(uid, req.body.username)
+			.then(db.deleteUser(uid))
+			.then(() => {
+				log.info('SRVC:ADMIN |User "'+req.body.username+'" deleted by "'+req.session.pub.username+'"!');
+				res.send('User "'+req.body.username+'" properly deleted!');
+				// TODO req.body.username should not be used, but yeah it's anyways only the admin who can use it 
+			})
+			.catch(db.errHandler(res))
 	}
 });
