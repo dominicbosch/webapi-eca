@@ -24,6 +24,7 @@ var log = require('../logging'),
 	, ModPersist
 	, CodeModule
 	, Log
+	, LogList
 	;
 
 // ## DB Connection
@@ -87,6 +88,7 @@ function initializeModels(isReset) {
 		moduleId: Sequelize.INTEGER,
 		data: Sequelize.JSON
 	});
+	LogList = sequelize.define('LogList', { log: Sequelize.STRING });
 	Log = sequelize.define('Log', {
 		log: Sequelize.ARRAY(Sequelize.STRING),
 		datalog: Sequelize.ARRAY(Sequelize.JSON)
@@ -108,9 +110,13 @@ function initializeModels(isReset) {
 
 	// Log either belongs to a rule (AD) or a Schedule (ET)
 	Schedule.hasOne(Log);
+	Schedule.hasOne(LogList);
 	Rule.hasOne(Log);
+	Rule.hasOne(LogList);
 	Log.belongsTo(Schedule, { onDelete: 'cascade' });
 	Log.belongsTo(Rule, { onDelete: 'cascade' });
+	LogList.belongsTo(Schedule, { onDelete: 'cascade' });
+	LogList.belongsTo(Rule, { onDelete: 'cascade' });
 	
 	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
 	CodeModule.hasMany(Schedule);
@@ -652,7 +658,12 @@ function getSchedule(sid) {
 
 exports.getSchedule = (uid, sid) => {
 	let options = {
-		include: [CodeModule, ModPersist, { model: User, attributes: [ 'username' ] }],
+		include: [
+			CodeModule,
+			ModPersist,
+			{ model: Log, attributes: [ 'id' ] },
+			{ model: User, attributes: [ 'username' ] }
+		],
 		order: 'id DESC'
 	}
 	if(sid) options.where = { id: sid };
@@ -702,7 +713,7 @@ exports.createSchedule = (uid, oSched, cid) => {
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
 						return newSchedule.createLog({})
-							.then(() => exports.logSchedule(newSchedule.id, 'Schedule created'))
+							.then((oLog) => exports.log(oLog.get('id'), 'Schedule created'))
 							.then(() => Schedule.findById(newSchedule.id, {
 								include: [
 									CodeModule,
@@ -728,7 +739,7 @@ exports.updateSchedule = (uid, sid, oSched, cid) => {
 			else return sched[0].update(oSched);
 		})
 		.then((newSched) => {
-			exports.logSchedule(newSched.id, 'Schedule updated');
+			exports.logSchedule(newSched.get('LogId'), 'Schedule updated');
 			return newSched.toJSON();
 		});
 }
@@ -800,17 +811,50 @@ exports.persistScheduleData = function(sid, data) {
 		.catch(ec);
 }
 
-exports.logSchedule = (sid, msg) => {
-	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
-		.then((oLog) => {
-			if(oLog) oLog.update({
-				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
-			})
-		})
-		.catch(ec);
+
+// Executing (default): UPDATE "Logs" SET "log"=array_append("log", '2016/01/18 15:32:00.011 (UTC+0100) | Event Chain Tester AD got event!') WHERE "id" = 4
+
+log.error('PG | TODO: logs can\'t be in a array, create one row per each. then eventually we need to delete old ones?')
+exports.dblog = (sid, msg) => {
+	// msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+	msg = (new Date()).getTime()+' | '+msg;
+	// Log.update()
+	LogList.create({ log: msg.substring(0, 255), ScheduleId: sid })
+
+	// Log.update({
+	// 	log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
+	// }, {
+	// 	where: { id: lid }
+	// })
+	// sequelize.query('UPDATE "Logs" SET "log"=array_append(log, "'+msg+'") WHERE "id"='+lid).spread(function(results, metadata) {
+	// // Results will be an empty array and metadata will contain the number of affected rows.
+	// console.log('results', lid, results);
+	// console.log(metadata);
+	// })
+	.catch(ec);
+	// return getSchedule(sid)
+	// 	.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
+	// 	.then((oLog) => {
+	// 		if(oLog) oLog.update({
+	// 			log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
+	// 		})
+	// 	})
+	// 	.catch(ec);
 };
+
+
+// exports.logSchedule = (sid, msg) => {
+// 	// msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+// 	msg = (new Date()).getTime()+' | '+msg;
+// 	return getSchedule(sid)
+// 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
+// 		.then((oLog) => {
+// 			if(oLog) oLog.update({
+// 				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
+// 			})
+// 		})
+// 		.catch(ec);
+// };
 
 exports.getScheduleLog = (uid, sid) => {
 	return getSchedule(sid)

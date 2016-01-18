@@ -79,7 +79,7 @@ exports.runModule = function(store, oMod, globals, persistence, username) {
 						};
 					}
 					// We allow 20 events within 200 ms per rule per eventname before we tell the user that he floods
-					if(oEvt && (now-oEvt.time)<200 && oEvt.count>20) {
+					if(oEvt && (now-oEvt.time)<500 && oEvt.count>200) {
 						store.log('You are flooding our system with events... We need to limit this, sorry!');
 					} else {
 						oEvt.count++;

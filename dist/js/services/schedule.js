@@ -75,7 +75,6 @@ router.get('/getdatalog/:id', (req, res) => {
 router.post('/cleardatalog/:id', (req, res) => {
 	log.info('SRVC:SH | Clearing Schedule data log #'+req.params.id);
 	db.clearScheduleDataLog(req.session.pub.id, req.params.id)
-		.then(() => db.logSchedule(req.params.id, 'Data Log deleted!'))
 		.then(() => res.send('Thanks!'))
 		.catch(db.errHandler(res));
 });
