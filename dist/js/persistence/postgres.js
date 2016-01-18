@@ -477,7 +477,7 @@ exports.clearRuleDataLog = (uid, rid) => {
 };
 
 exports.logRuleData = (rid, msg) => {
-	log.info('PG | Logging rule data #'+rid, msg);
+	log.info('PG | Logging rule data #'+rid);
 	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: msg
