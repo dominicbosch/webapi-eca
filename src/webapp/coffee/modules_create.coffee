@@ -1,5 +1,8 @@
 'use strict';
 
+# We support event trigger and action dispatcher
+oParams.m = if oParams.m is 'ad' then 'ad' else 'et'
+
 moduleTypeName = if oParams.m is 'ad' then 'Action Dispatcher' else 'Event Trigger'
 moduleType = if oParams.m is 'ad' then 'actiondispatcher' else 'eventtrigger'
 arrUsedModules = null
@@ -18,7 +21,7 @@ fOnLoad = () ->
 	editor = ace.edit "editor"
 	editor.setTheme "ace/theme/crimson_editor"
 	# editor.setTheme "ace/theme/monokai"
-	editor.getSession().setMode "ace/mode/coffee"
+	editor.getSession().setMode "ace/mode/javascript"
 	editor.setFontSize "14px"
 	editor.setShowPrintMargin false
 	editor.session.setUseSoftTabs false
@@ -154,7 +157,7 @@ fOnLoad = () ->
 											order for the changes to be applied to them!"
 							
 							setTimeout () ->
-								window.location.href = 'list_et'
+								window.location.href = 'list_'+oParams.m
 							, 500
 							# Since we stored a new module we got the id back. we add this id to the URL query 
 							# like this we are in a clean edit (update) mode after creating a new event trigger

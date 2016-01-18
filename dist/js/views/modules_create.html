@@ -8,21 +8,23 @@
 	<link rel="stylesheet" type="text/css" href="/css/modules.css">
 	<link rel="stylesheet" type="text/css" href="/css/bootstrap-datetimepicker.min.css">
 	<script type="text/template" id="etSource">
-# A simple Hello World code block
-exports.pollHelloWorld = () ->
-	log 'Hello World!'
+// A simple Hello World code block
+exports.pollHelloWorld = function() {
+	log('Hello World!');
+};
 	</script>
 	<script type="text/template" id="adSource">
-# A simple Hello World code block
-exports.sayHelloWorld = () ->
-	log 'Hello World!'
-	datalog your: 'first data log'
-	log 'Got persistence: ' + persistence.test
-	if not persistence.id then persistence.id = 0
-	persistence[persistence.id++] = 'valuabe value'
-	persistence.test = 'timestamp: ' + new Date()
-	persist()
-	</script>
+// A simple Hello World code block
+exports.sayHelloWorld = function () {
+	log('Hello World!');
+	datalog({ your: 'first data log' });
+	log('Got persistence: '+persistence.test);
+	if(!persistence.id) persistence.id = 0;
+	persistence[persistence.id++] = 'valuabe value';
+	persistence.test = 'timestamp: '+(new Date());
+	persist();
+};
+</script>
 
 {% endblock %}
 
@@ -61,7 +63,7 @@ exports.sayHelloWorld = () ->
 				</select>
 				<select id="editor_mode">
 					<option>CoffeeScript</option>
-					<option>JavaScript</option>
+					<option selected>JavaScript</option>
 				</select>
 			</div>
 		</div>

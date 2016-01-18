@@ -1,6 +1,8 @@
 'use strict';
 var arrUsedModules, fOnLoad, moduleType, moduleTypeName, updateTitle;
 
+oParams.m = oParams.m === 'ad' ? 'ad' : 'et';
+
 moduleTypeName = oParams.m === 'ad' ? 'Action Dispatcher' : 'Event Trigger';
 
 moduleType = oParams.m === 'ad' ? 'actiondispatcher' : 'eventtrigger';
@@ -21,7 +23,7 @@ fOnLoad = function() {
   main.registerHoverInfo(d3.select('#webhookinfo'), 'webhooks_events.html');
   editor = ace.edit("editor");
   editor.setTheme("ace/theme/crimson_editor");
-  editor.getSession().setMode("ace/mode/coffee");
+  editor.getSession().setMode("ace/mode/javascript");
   editor.setFontSize("14px");
   editor.setShowPrintMargin(false);
   editor.session.setUseSoftTabs(false);
@@ -174,7 +176,7 @@ fOnLoad = function() {
               alert("You need to update the rules that use this module in order for the changes to be applied to them!");
             }
             setTimeout(function() {
-              return window.location.href = 'list_et';
+              return window.location.href = 'list_' + oParams.m;
             }, 500);
             wl = window.location;
             oParams.id = msg.id;
