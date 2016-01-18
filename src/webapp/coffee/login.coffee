@@ -2,7 +2,7 @@
 
 
 fOnLoad = () ->
-	$('#password').keypress (e) ->
+	$('input').keypress (e) ->
     	if(e.which is 13)
     		fSubmit()
 

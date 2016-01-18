@@ -2,7 +2,7 @@
 var fOnLoad, fSubmit;
 
 fOnLoad = function() {
-  $('#password').keypress(function(e) {
+  $('input').keypress(function(e) {
     if (e.which === 13) {
       return fSubmit();
     }
