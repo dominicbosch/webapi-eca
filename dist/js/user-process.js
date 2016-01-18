@@ -115,7 +115,8 @@ function startSchedule(oExecution) {
 			}
 		},
 		data: (msg) => send.scheduledatalog({ sid: oSched.id, msg: msg }),
-		persist: (data) => send.schedulepersist({ sid: oSched.id, persistence: data })
+		persist: (data) => send.schedulepersist({ sid: oSched.id, persistence: data }),
+		event: send.event
 	};
 	
 	dynmod.runModule(store, oSched.CodeModule, oSched.execute.globals, oPers, oSched.User.username)

@@ -58,12 +58,12 @@ exports.newRule = (oRule) => {
 		let oModule = oRule.actionModules[oAction.id];
 		// This is where we actually store all actions:
 		let actFuncs = [];
-		if(!oActArgs[oRule.id][oAction.id]) oActArgs[oRule.id][oAction.id] = actFuncs;
+		oActArgs[oRule.id][oAction.id] = actFuncs;
 
 		// We use this action function for the first time in this rule (might not be the case if it's an update)
 
 		send.loginfo('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
-		// // Got through all action functions
+		// Got through all action functions
 		for(let j = 0; j < oAction.functions.length; j++) {
 			let oActFunc = oAction.functions[j];
 			let arrRequiredArguments = oModule.functions[oActFunc.name];
@@ -88,13 +88,15 @@ exports.newRule = (oRule) => {
 						oFunc.args.push(() => val);
 					} else {
 						let sel = arrSelectors[0];
-
 						// If the selector is the only argument that is passed, a selector array will be passed
 						// which can be reused in the action dispatcher
 						if(arrSelectors.length===1 && sel===arg) {
 							let selector = sel.substring(2, sel.length-1);
 							// If only one selector is used in a field, the whole resulting object is attached
-							oFunc.args.push((evt) => jsonQuery(evt, selector).nodes());
+							let f = (evt) => {
+								return jsonQuery(evt, selector).nodes()
+							};
+							oFunc.args.push(f);
 
 						// If there was more then just a selector in the argument we will pass a string
 						// and substitute all selectors beforehand
@@ -139,7 +141,8 @@ exports.newRule = (oRule) => {
 				}
 			},
 			data: (msg) => send.ruledatalog({ rid: oRule.id, msg: msg }),
-			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data })
+			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data }),
+			event: (evt) => send.event(evt)
 		};
 		dynmod.runModule(store, oModule, oAction.globals, pers, oModule.User.username)
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)

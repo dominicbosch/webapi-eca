@@ -58,7 +58,7 @@ function searchComment(lang, src) {
 // Helper function for Event Triggers and Action Dispatchers
 exports.runModule = function(store, oMod, globals, persistence, username) {
 	return new Promise((resolve, reject) => {
-		if(!store || !store.log || !store.data || !store.persist) {
+		if(!store || !store.log || !store.data || !store.persist || !store.event) {
 			reject(new Error('No valid store provided!'));
 		} else {
 			let lastEvent = {};
@@ -83,7 +83,7 @@ exports.runModule = function(store, oMod, globals, persistence, username) {
 						store.log('You are flooding our system with events... We need to limit this, sorry!');
 					} else {
 						oEvt.count++;
-						send.event({
+						store.event({
 							hookname: hookname, 
 							origin: 'internal',
 							engineReceivedTime: now,
