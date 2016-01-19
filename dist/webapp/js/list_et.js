@@ -55,7 +55,7 @@ deleteModule = function(d) {
     return main.post('/service/eventtrigger/delete', {
       id: d.id
     }).done(function() {
-      main.setInfo(true, 'Schedule deleted!', true);
+      main.setInfo(true, 'Event Trigger deleted!', true);
       updateModules(parseInt(d3.select('body').attr('data-uid')));
       return updateSchedules();
     }).fail(function(err) {
@@ -111,7 +111,7 @@ updateSchedules = function() {
         }
       });
       trNew.append('td').each(function(d) {
-        return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Schedule').on('click', deleteModule);
+        return d3.select(this).append('img').attr('class', 'icon del').attr('src', '/images/del.png').attr('title', 'Delete Schedule').on('click', deleteSchedule);
       });
       trNew.append('td').append('img').attr('class', 'icon edit').attr('src', '/images/edit.png').attr('title', 'Edit Schedule').on('click', function(d) {
         return window.location.href = 'schedule_create?id=' + d.id;
@@ -153,6 +153,19 @@ updatePlayButton = function(d3This) {
       return 'Start Schedule';
     }
   });
+};
+
+deleteModule = function(d) {
+  if (confirm('Do you really want to delete the Schedule "' + d.name + '"?')) {
+    return main.post('/service/schedule/delete', {
+      id: d.id
+    }).done(function() {
+      main.setInfo(true, 'Schedule deleted!', true);
+      return updateSchedules();
+    }).fail(function(err) {
+      return main.setInfo(false, err.responseText);
+    });
+  }
 };
 
 showLog = function(d) {

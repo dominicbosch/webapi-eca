@@ -11,6 +11,7 @@ var log = require('../logging'),
 
 	Sequelize = require('sequelize'),
 	moment = require('moment'),
+	fs = require('graceful-fs'),
 
 // Internal variables :
 	sequelize
@@ -23,8 +24,6 @@ var log = require('../logging'),
 	, Schedule
 	, ModPersist
 	, CodeModule
-	, Log
-	, LogList
 	;
 
 // ## DB Connection
@@ -88,11 +87,6 @@ function initializeModels(isReset) {
 		moduleId: Sequelize.INTEGER,
 		data: Sequelize.JSON
 	});
-	LogList = sequelize.define('LogList', { log: Sequelize.STRING });
-	Log = sequelize.define('Log', {
-		log: Sequelize.ARRAY(Sequelize.STRING),
-		datalog: Sequelize.ARRAY(Sequelize.JSON)
-	});
 
 	// ### Define Relations
 	// If a user gets deleted, we delete all his realted data too (cascade) 
@@ -107,16 +101,6 @@ function initializeModels(isReset) {
 	ModPersist.belongsTo(Schedule, { onDelete: 'cascade' });
 	Rule.hasMany(ModPersist);
 	Schedule.hasOne(ModPersist);
-
-	// Log either belongs to a rule (AD) or a Schedule (ET)
-	Schedule.hasOne(Log);
-	Schedule.hasOne(LogList);
-	Rule.hasOne(Log);
-	Rule.hasOne(LogList);
-	Log.belongsTo(Schedule, { onDelete: 'cascade' });
-	Log.belongsTo(Rule, { onDelete: 'cascade' });
-	LogList.belongsTo(Schedule, { onDelete: 'cascade' });
-	LogList.belongsTo(Rule, { onDelete: 'cascade' });
 	
 	Schedule.belongsTo(CodeModule, { onDelete: 'cascade' });
 	CodeModule.hasMany(Schedule);
@@ -423,11 +407,7 @@ function storeRule(uid, rid, oRule, hid) {
 			let prom;
 			if(rid===undefined) {
 				// If it's not an update we need to initialize an empty log as well
-				prom = o.user.createRule(oRule)
-					.then((newRule) => {
-						return newRule.createLog({})
-							.then(() => newRule);
-					});
+				prom = o.user.createRule(oRule);
 			} else {
 				prom = o.rule.update(oRule);
 			}
@@ -445,68 +425,47 @@ function storeRule(uid, rid, oRule, hid) {
 exports.createRule = (uid, oRule, hid) => storeRule(uid, undefined, oRule, hid);
 exports.updateRule = (uid, rid, oRule, hid) => storeRule(uid, rid, oRule, hid);
 
+function checkRuleExists(uid, rid) {
+	return Rule.findOne({
+		where: {
+			id: rid,
+			UserId: uid
+		},
+		attributes: [ 'id' ]
+	})
+	.then((oRule) => {
+		if(!oRule) throwStatusCode(404, 'Rule not found for user')
+	});
+}
+
 exports.logRule = (rid, msg) => {
-	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	return Rule.findById(rid, { attributes: [ 'id' ]})
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
-		.then((oLog) => {
-			if(oLog) oLog.update({
-				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
-			})
-		}).catch(ec);
+	setLog('rule_'+rid, msg);
 };
 
 exports.getRuleLog = (uid, rid) => {
-	return Rule.findOne({
-			where: {
-				id: rid,
-				UserId: uid
-			}
-		})
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
-		.then((oLog) => (oLog.get('log') || []).reverse());
+	return checkRuleExists(uid, rid)
+		.then(() => getLog('rule_'+rid));
 };
 
 exports.clearRuleLog = (uid, rid) => {
-	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'log' ]}))
-		.then((oLog) => {
-			if(oLog) oLog.update({ log: null })
-		}).catch(ec);
-};
-exports.clearRuleDataLog = (uid, rid) => {
-	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
-		.then((oLog) => {
-			if(oLog) oLog.update({ datalog: null })
-		}).catch(ec);
-};
-
-exports.logRuleData = (rid, msg) => {
-	log.info('PG | Logging rule data #'+rid);
-	let oLogVal = JSON.stringify({
-		timestamp: (new Date()).getTime(),
-		data: msg
-	});
-	return Rule.findById(rid, { attributes: [ 'id' ] })
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
-		.then((oLog) => {
-			if(oLog) {
-				return oLog.update({
-					datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
-				})
-			}
-		})
+	return checkRuleExists(uid, rid)
+		.then(() => deleteLog('rule_'+rid))
 		.catch(ec);
 };
 
+exports.logRuleData = (rid, data) => {
+	setLog('rule_data_'+rid, JSON.strinigfy(data));
+};
+
 exports.getRuleDataLog = (uid, rid) => {
-	return Rule.findOne({ where: {
-			id: rid,
-			UserId: uid
-		}})
-		.then((oRule) => oRule.getLog({ attributes: [ 'id', 'datalog' ]}))
-		.then((oLog) => oLog.get('datalog'));
+	return checkRuleExists(uid, rid)
+		.then(() => getDataLog('rule_data_'+rid));
+};
+
+exports.clearRuleDataLog = (uid, rid) => {
+	return checkRuleExists(uid, rid)
+		.then(() => deleteLog('rule_data_'+rid))
+		.catch(ec);
 };
 
 // Returns a promise
@@ -515,7 +474,11 @@ exports.deleteRule = (uid, rid) => {
 	return Rule.findById(rid, { attributes: [ 'id', 'UserId' ] })
 		.then((oRecord) => {
 			if(oRecord) {
-				if(oRecord.get('UserId') === uid) return oRecord.destroy();
+				if(oRecord.get('UserId') === uid) {
+					exports.clearRuleLog(uid, rid);
+					exports.clearRuleDataLog(uid, rid);
+					return oRecord.destroy();
+				}
 				else throwStatusCode(403, 'You are not the owner of this Rule!');
 			} else throwStatusCode(404, 'Rule doesn\'t exist!');
 		})
@@ -661,7 +624,6 @@ exports.getSchedule = (uid, sid) => {
 		include: [
 			CodeModule,
 			ModPersist,
-			{ model: Log, attributes: [ 'id' ] },
 			{ model: User, attributes: [ 'username' ] }
 		],
 		order: 'id DESC'
@@ -712,8 +674,8 @@ exports.createSchedule = (uid, oSched, cid) => {
 				return o.user.createSchedule(oSched)
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
-						return newSchedule.createLog({})
-							.then((oLog) => exports.log(oLog.get('id'), 'Schedule created'))
+						return newSchedule
+							.then(() => exports.logSchedule(uid, newSchedule.get('id'), 'Schedule created'))
 							.then(() => Schedule.findById(newSchedule.id, {
 								include: [
 									CodeModule,
@@ -811,95 +773,96 @@ exports.persistScheduleData = function(sid, data) {
 		.catch(ec);
 }
 
-
-// Executing (default): UPDATE "Logs" SET "log"=array_append("log", '2016/01/18 15:32:00.011 (UTC+0100) | Event Chain Tester AD got event!') WHERE "id" = 4
-
-log.error('PG | TODO: logs can\'t be in a array, create one row per each. then eventually we need to delete old ones?')
-exports.dblog = (sid, msg) => {
-	// msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	msg = (new Date()).getTime()+' | '+msg;
-	// Log.update()
-	LogList.create({ log: msg.substring(0, 255), ScheduleId: sid })
-
-	// Log.update({
-	// 	log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
-	// }, {
-	// 	where: { id: lid }
-	// })
-	// sequelize.query('UPDATE "Logs" SET "log"=array_append(log, "'+msg+'") WHERE "id"='+lid).spread(function(results, metadata) {
-	// // Results will be an empty array and metadata will contain the number of affected rows.
-	// console.log('results', lid, results);
-	// console.log(metadata);
-	// })
-	.catch(ec);
-	// return getSchedule(sid)
-	// 	.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
-	// 	.then((oLog) => {
-	// 		if(oLog) oLog.update({
-	// 			log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
-	// 		})
-	// 	})
-	// 	.catch(ec);
+console.warn('PG  | Implement deleteSchedule');
+exports.deleteSchedule = (uid, sid) => {
+	exports.clearScheduleLog(uid, sid);
 };
 
-
-// exports.logSchedule = (sid, msg) => {
-// 	// msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-// 	msg = (new Date()).getTime()+' | '+msg;
-// 	return getSchedule(sid)
-// 		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ] }))
-// 		.then((oLog) => {
-// 			if(oLog) oLog.update({
-// 				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
-// 			})
-// 		})
-// 		.catch(ec);
-// };
-
-exports.getScheduleLog = (uid, sid) => {
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
-		.then((oLog) => (oLog.get('log') || []).reverse());
-};
-
-exports.clearScheduleLog = (uid, sid) => {
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'log' ]}))
-		.then((oLog) => {
-			if(oLog) oLog.update({ log: null })
-		})
-		.catch(ec);
-};
-
-exports.logScheduleData = (sid, data) => {
-	let oLogVal = JSON.stringify({
-		timestamp: (new Date()).getTime(),
-		data: data
+function checkScheduleExists(uid, sid) {
+	return Schedule.findOne({
+		where: {
+			id: sid,
+			UserId: uid
+		},
+		attributes: [ 'id' ]
+	})
+	.then((oSched) => {
+		if(!oSched) throwStatusCode(404, 'Schedule not found for user')
 	});
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'id', 'datalog' ] }))
-		.then((oLog) => {
-			if(oLog) oLog.update({
-				datalog: sequelize.fn('array_append', sequelize.col('datalog'), oLogVal)
-			})
-		})
+}
+
+exports.logSchedule = (rid, msg) => {
+	setLog('rule_'+rid, msg);
+};
+
+exports.getScheduleLog = (uid, rid) => {
+	return checkScheduleExists(uid, rid)
+		.then(() => getLog('rule_'+rid));
+};
+
+exports.clearScheduleLog = (uid, rid) => {
+	return checkScheduleExists(uid, rid)
+		.then(() => deleteLog('rule_'+rid))
 		.catch(ec);
 };
 
-exports.getScheduleDataLog = (uid, sid) => {
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
-		.then((oLog) => oLog.get('datalog'));
+exports.logScheduleData = (rid, data) => {
+	setLog('rule_data_'+rid, JSON.stringify(data));
+};
+
+exports.getScheduleDataLog = (uid, rid) => {
+	return checkScheduleExists(uid, rid)
+		.then(() => getDataLog('rule_data_'+rid));
 };
 
 exports.clearScheduleDataLog = (uid, rid) => {
-	return getSchedule(sid)
-		.then((oSched) => oSched.getLog({ attributes: [ 'datalog' ] }))
-		.then((oLog) => {
-			if(oLog) oLog.update({ datalog: null })
-		})
+	return checkScheduleExists(uid, rid)
+		.then(() => deleteLog('rule_data_'+rid))
 		.catch(ec);
 };
 
-exports.deleteEventTrigger = (uid, eid) => deleteCodeModule(uid, eid);
 
+
+
+
+
+// ##
+// ## Log
+// ##
+
+function setLog(lid, msg) {
+	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+	fs.appendFile(lid+'.log', msg.substring(0, 255));
+}
+
+function getLog(lid) {
+	return new Promise((resolve, reject) => {
+		fs.readFile(lid+'.log', (err, data) => {
+			if(err) throwStatusCode(500, err.message);
+			else resolve(data.split('\n').reverse());
+		})
+	})
+}
+log.warn('PG | What if there is no entry currently in a log?')
+function getDataLog(lid) {
+	return new Promise((resolve, reject) => {
+		fs.readFile(lid+'.log', 'utf-8', (err, data) => {
+			if(err) throwStatusCode(500, err.message);
+			else {
+				// after some benchmarking this seemed to be the fastest possibility to
+				// return a parsed array of JSON objects. This also allows for very fast writes.
+				// since we have one line break too much we append a null (removing the comma at the end was too expensive)
+				let str = '['+data.replace(/\n/g, ',')+'null]';
+				// parse the now valid JSON
+				let res = JSON.parse(str);
+				// and pop the null immediately again
+				res.pop();
+				resolve(res);
+			};
+		})
+	})
+}
+
+function deleteLog(lid) {
+	fs.unlink(lid+'.log');
+}

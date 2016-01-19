@@ -14,7 +14,7 @@ Getting started
 
 **Prerequisites:**
 
- - `node.js` (v5.0.0) and `npm` (v3.3.12) (find it [here](http://nodejs.org/))
+ - `node.js` (v5.4.1) and `npm` (v3.5.3) (find it [here](http://nodejs.org/))
  - Running [PostgreSQL](http://www.postgresql.org/) (update config/system.json)
  - Running [Firebase](https://www.firebase.com/) (update config/system.json)
  - *(optional) Gulp if you want to use the implemented build tool:

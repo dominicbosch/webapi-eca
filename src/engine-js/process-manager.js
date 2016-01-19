@@ -149,7 +149,7 @@ function MPI(uid, username) {
 				break;
 			case 'logrule': db.logRule(dat.rid, dat.msg);
 				break;
-			case 'logschedule': db.dblog(dat.sid, dat.msg);
+			case 'logschedule': db.logSchedule(dat.sid, dat.msg);
 				break;
 			case 'ruledatalog': db.logRuleData(dat.rid, dat.msg);
 				break;
@@ -161,7 +161,7 @@ function MPI(uid, username) {
 				break;
 			case 'schedulefails':
 				db.startStopSchedule(uid, dat.sid, false);
-				db.dblog(dat.sid, dat.msg);
+				db.logSchedule(dat.sid, dat.msg);
 				break;
 			case 'event': emitEvent(uid, dat);
 				break;
@@ -269,14 +269,14 @@ function startWorker(oUser) {
 }
 
 function decryptScheduleGlobals(oSched) {
-	db.dblog(oSched.id, 'Starting Schedule!');
+	db.logSchedule(oSched.id, 'Starting Schedule!');
 
 	// Check valid global paremeters
 	let glob = oSched.execute.globals;
 	let hasNoErr = true;
 	for(let el in oSched.CodeModule.globals) {
 		if(!glob[el]) {
-			db.dblog(oSched.id, 'Your Event Trigger seems to have changed!'
+			db.logSchedule(oSched.id, 'Your Event Trigger seems to have changed!'
 				+' Missing global parameter "'+el+'". Please edit this Schedule!');
 			hasNoErr = false;
 
@@ -288,7 +288,7 @@ function decryptScheduleGlobals(oSched) {
 	let arrArgs = oSched.CodeModule.functions[exefunc.name];
 	for(let i = 0; i < arrArgs.length; i++) {
 		if(!exefunc.args[arrArgs[i]]) {
-			db.dblog(oSched.id, 'Your Event Trigger seems to have changed!'
+			db.logSchedule(oSched.id, 'Your Event Trigger seems to have changed!'
 				+' Missing function argument "'+arrArgs[i]+'". Please edit this Schedule!');
 			hasNoErr = false;
 		}

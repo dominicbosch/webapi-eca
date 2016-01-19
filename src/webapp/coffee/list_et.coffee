@@ -46,7 +46,7 @@ deleteModule = (d) ->
 	if confirm 'Do you really want to delete the Event Trigger "'+d.name+'"? All running Schedules that use this Event Trigger will be deleted!'
 		main.post('/service/eventtrigger/delete', { id: d.id })
 			.done () ->
-				main.setInfo true, 'Schedule deleted!', true
+				main.setInfo true, 'Event Trigger deleted!', true
 				updateModules(parseInt(d3.select('body').attr('data-uid')))
 				updateSchedules()
 			.fail (err) ->
@@ -98,7 +98,7 @@ updateSchedules = () ->
 					.attr('class', 'icon del')
 					.attr('src', '/images/del.png')
 					.attr('title', 'Delete Schedule')
-					.on('click', deleteModule);
+					.on('click', deleteSchedule);
 			trNew.append('td').append('img')
 				.attr('class', 'icon edit')
 				.attr('src', '/images/edit.png')
@@ -136,6 +136,15 @@ updateSchedules = () ->
 updatePlayButton = (d3This) ->
 	d3This.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
 		.attr('title', (d) -> if d.running then 'Stop Schedule' else 'Start Schedule')
+
+deleteModule = (d) ->
+	if confirm 'Do you really want to delete the Schedule "'+d.name+'"?'
+		main.post('/service/schedule/delete', { id: d.id })
+			.done () ->
+				main.setInfo true, 'Schedule deleted!', true
+				updateSchedules()
+			.fail (err) ->
+				main.setInfo false, err.responseText
 
 showLog = (d) ->
 	main.post('/service/schedule/getlog/'+d.id)
