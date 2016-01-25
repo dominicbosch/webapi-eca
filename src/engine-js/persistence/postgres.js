@@ -35,7 +35,7 @@ exports.init = (oDB) => {
 	log.info('PG | Connecting module: '+oDB.module+', host: '
 		+oDB.host+', port: '+dbPort+', username: '+oDB.user+', database: '+oDB.db);
 	sequelize = new Sequelize('postgres://'+oDB.user+':'+oDB.pass+'@'+oDB.host+':'+dbPort+'/'+oDB.db, {
-		// logging: false,
+		logging: false,
 		define: { timestamps: false }
 	});
 
@@ -860,6 +860,9 @@ function getDataLog(lid) {
 				let str = '['+data.replace(/\n/g, ',')+'null]';
 				// parse the now valid JSON
 				let res = JSON.parse(str);
+				for(let i = 0; i < res.length; i++) {
+					res[i] = JSON.parse(res[i]);
+				}
 				// and pop the null immediately again
 				res.pop();
 				resolve(res);
