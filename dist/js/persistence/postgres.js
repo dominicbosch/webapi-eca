@@ -12,19 +12,20 @@ var log = require('../logging'),
 	Sequelize = require('sequelize'),
 	moment = require('moment'),
 	fs = require('graceful-fs'),
+	path = require('path'),
 
 // Internal variables :
-	sequelize
+	sequelize,
+	logDir = path.resolve(__dirname, 'logs'),
 
 // DB Models:
-	, User
-	, Worker
-	, Rule
-	, Webhook
-	, Schedule
-	, ModPersist
-	, CodeModule
-	;
+	User,
+	Worker,
+	Rule,
+	Webhook,
+	Schedule,
+	ModPersist,
+	CodeModule;
 
 // ## DB Connection
 
@@ -454,7 +455,7 @@ exports.clearRuleLog = (uid, rid) => {
 };
 
 exports.logRuleData = (rid, data) => {
-	setLog('rule_data_'+rid, JSON.strinigfy(data));
+	setLogData('rule_data_'+rid, data);
 };
 
 exports.getRuleDataLog = (uid, rid) => {
@@ -773,7 +774,7 @@ exports.persistScheduleData = function(sid, data) {
 		.catch(ec);
 }
 
-console.warn('PG  | Implement deleteSchedule');
+log.warn('PG | Implement deleteSchedule');
 exports.deleteSchedule = (uid, sid) => {
 	exports.clearScheduleLog(uid, sid);
 };
@@ -807,7 +808,7 @@ exports.clearScheduleLog = (uid, rid) => {
 };
 
 exports.logScheduleData = (rid, data) => {
-	setLog('rule_data_'+rid, JSON.stringify(data));
+	setLogData('schedule_data_'+rid, data);
 };
 
 exports.getScheduleDataLog = (uid, rid) => {
@@ -823,21 +824,25 @@ exports.clearScheduleDataLog = (uid, rid) => {
 
 
 
-
-
-
 // ##
 // ## Log
 // ##
 
 function setLog(lid, msg) {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	fs.appendFile(lid+'.log', msg.substring(0, 255));
+	fs.appendFile(logDir+'/'+lid+'.log', msg.substring(0, 255)+'\n');
+}
+function setLogData(lid, data) {
+	let oLogVal = JSON.stringify({
+		timestamp: (new Date()).getTime(),
+		data: data
+	});
+	fs.appendFile(logDir+'/'+lid+'.log', JSON.stringify(oLogVal)+'\n');
 }
 
 function getLog(lid) {
 	return new Promise((resolve, reject) => {
-		fs.readFile(lid+'.log', (err, data) => {
+		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
 			if(err) throwStatusCode(500, err.message);
 			else resolve(data.split('\n').reverse());
 		})
@@ -846,7 +851,7 @@ function getLog(lid) {
 log.warn('PG | What if there is no entry currently in a log?')
 function getDataLog(lid) {
 	return new Promise((resolve, reject) => {
-		fs.readFile(lid+'.log', 'utf-8', (err, data) => {
+		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
 			if(err) throwStatusCode(500, err.message);
 			else {
 				// after some benchmarking this seemed to be the fastest possibility to
@@ -864,5 +869,5 @@ function getDataLog(lid) {
 }
 
 function deleteLog(lid) {
-	fs.unlink(lid+'.log');
+	fs.unlink(logDir+'/'+lid+'.log');
 }

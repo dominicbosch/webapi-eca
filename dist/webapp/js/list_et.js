@@ -1,5 +1,5 @@
 'use strict';
-var clearDataLog, clearLog, deleteModule, fOnLoad, showDataLog, showLog, startStopSchedule, strPublicKey, updateModules, updatePlayButton, updateSchedules;
+var clearDataLog, clearLog, deleteModule, deleteSchedule, fOnLoad, showDataLog, showLog, startStopSchedule, strPublicKey, updateModules, updatePlayButton, updateSchedules;
 
 strPublicKey = '';
 
@@ -133,7 +133,6 @@ updateSchedules = function() {
         }
       });
       trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
-        console.log(d);
         return d.CodeModule.name + ' -> ' + d.execute.functions[0].name;
       });
       return trNew.append('td').attr('class', 'consoled mediumfont').text(function(d) {
@@ -155,7 +154,7 @@ updatePlayButton = function(d3This) {
   });
 };
 
-deleteModule = function(d) {
+deleteSchedule = function(d) {
   if (confirm('Do you really want to delete the Schedule "' + d.name + '"?')) {
     return main.post('/service/schedule/delete', {
       id: d.id

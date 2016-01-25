@@ -129,7 +129,7 @@ updateSchedules = () ->
 			trNew.append('td').append('div').text((d) -> d.name).each (d) ->
 				if d.comment then main.registerHoverInfoHTML d3.select(this), d.comment
 			trNew.append('td').attr('class','consoled mediumfont')
-				.text((d) -> console.log(d);d.CodeModule.name+' -> '+d.execute.functions[0].name)
+				.text((d) -> d.CodeModule.name+' -> '+d.execute.functions[0].name)
 			trNew.append('td').attr('class','consoled mediumfont')
 				.text((d) -> d.text)
 
@@ -137,7 +137,7 @@ updatePlayButton = (d3This) ->
 	d3This.attr('src', (d) -> '/images/'+(if d.running then 'pause' else 'play')+'.png')
 		.attr('title', (d) -> if d.running then 'Stop Schedule' else 'Start Schedule')
 
-deleteModule = (d) ->
+deleteSchedule = (d) ->
 	if confirm 'Do you really want to delete the Schedule "'+d.name+'"?'
 		main.post('/service/schedule/delete', { id: d.id })
 			.done () ->
