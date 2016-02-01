@@ -866,7 +866,7 @@ function setLogData(lid, data) {
 function getLog(lid) {
 	return new Promise((resolve, reject) => {
 		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
-			if(err) throwStatusCode(500, err.message);
+			if(err) resolve([]);
 			else resolve(data.split('\n').reverse());
 		})
 	})
