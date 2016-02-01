@@ -124,9 +124,13 @@ geb.addListener('rule:delete', (oEvt) => {
 
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
-	evt.hookid = oHook.id;
-	evt.hookurl = oHook.hookurl;
-	geb.emit('webhook:event', evt);
+	if(oHook) {
+		evt.hookid = oHook.id;
+		evt.hookurl = oHook.hookurl;
+		geb.emit('webhook:event', evt);
+	} else {
+		log.warn('PM | Webhook not existing anymore! UID#'+uid+', hook name: ' + evt.hooknameook);
+	}
 }
 
 function sendToWorker(uid, evt) {
