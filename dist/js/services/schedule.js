@@ -41,7 +41,10 @@ router.post('/delete', (req, res) => {
 	log.info('SRVC:SH | Deleting Schedule #' +req.body.id);
 	db.deleteSchedule(req.session.pub.id, req.body.id)
 		.then(() => {
-			geb.emit('schedule:stop', req.body.id);
+			geb.emit('schedule:stop', {
+				uid: req.session.pub.id,
+				sid: req.body.id
+			});
 			res.send('Schedule deleted!')
 		})
 		.catch(db.errHandler(res))

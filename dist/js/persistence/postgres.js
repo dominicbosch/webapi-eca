@@ -476,8 +476,8 @@ exports.deleteRule = (uid, rid) => {
 		.then((oRecord) => {
 			if(oRecord) {
 				if(oRecord.get('UserId') === uid) {
-					exports.clearRuleLog(uid, rid);
-					exports.clearRuleDataLog(uid, rid);
+					deleteLog('rule_'+rid);
+					deleteLog('rule_data_'+rid);
 					return oRecord.destroy();
 				}
 				else throwStatusCode(403, 'You are not the owner of this Rule!');
@@ -561,17 +561,31 @@ exports.persistRuleData = function(rid, cid, data) {
 
 function deleteCodeModule(uid, cid, isEt) {
 	log.info('PG | Deleting CodeModule #'+cid);
-	return User.findById(uid, { attributes: [ 'id' ] })
+	let pGetCodeModule = User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
 		.then((arrOldMod) => {
-			if(arrOldMod.length > 0) {
-				return arrOldMod[0].getSchedules((arrSched) => {
-					return arrOldMod[0].destroy()
-						.then(() => arrSched.toJSON())
-				})
-			}
+			if(arrOldMod.length > 0) return arrOldMod[0];
 			else throwStatusCode(404, 'No Code Module found to delete!');
 		});
+
+	return pGetCodeModule.then((mod) => mod.getSchedules())
+		.then((arr) => {
+			return pGetCodeModule.value()
+				.destroy()
+				.then(() => arrRecordsToJSON(arr));
+		})
+	// return User.findById(uid, { attributes: [ 'id' ] })
+	// 	.then((oUser) => oUser.getCodeModules({ where: { id: cid }}))
+	// 	.then((arrOldMod) => {
+	// 		if(arrOldMod.length > 0) {
+	// 			return arrOldMod[0].getSchedules()
+	// 				.then((arrSched) => {
+	// 					return arrOldMod[0].destroy()
+	// 						.then(() => arrSched.toJSON())
+	// 				})
+	// 		}
+	// 		else throwStatusCode(404, 'No Code Module found to delete!');
+	// 	});
 }
 
 
@@ -675,17 +689,16 @@ exports.createSchedule = (uid, oSched, cid) => {
 				return o.user.createSchedule(oSched)
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
-						return newSchedule
-							.then(() => exports.logSchedule(uid, newSchedule.get('id'), 'Schedule created'))
-							.then(() => Schedule.findById(newSchedule.id, {
+						exports.logSchedule(uid, newSchedule.id, 'Schedule created');
+						return Schedule.findById(newSchedule.id, {
 								include: [
 									CodeModule,
 									ModPersist,
 									{ model: User, attributes: [ 'username' ] }
 								]
-							}))
-							.then((res) => res.toJSON());
+							});
 					})
+					.then((res) => res.toJSON());
 
 			}
 		});
@@ -774,9 +787,19 @@ exports.persistScheduleData = function(sid, data) {
 		.catch(ec);
 }
 
-log.warn('PG | Implement deleteSchedule');
 exports.deleteSchedule = (uid, sid) => {
-	exports.clearScheduleLog(uid, sid);
+	log.info('PG | Deleting Schedule #'+sid);
+	return Schedule.findById(sid, { attributes: [ 'id', 'UserId' ] })
+		.then((oRecord) => {
+			if(oRecord) {
+				if(oRecord.get('UserId') === uid) {
+					deleteLog('schedule_'+sid);
+					deleteLog('schedule_data_'+sid);
+					return oRecord.destroy();
+				}
+				else throwStatusCode(403, 'You are not the owner of this Schedule!');
+			} else throwStatusCode(404, 'Schedule doesn\'t exist!');
+		})
 };
 
 function checkScheduleExists(uid, sid) {
@@ -848,11 +871,11 @@ function getLog(lid) {
 		})
 	})
 }
-log.warn('PG | What if there is no entry currently in a log?')
 function getDataLog(lid) {
 	return new Promise((resolve, reject) => {
 		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
-			if(err) throwStatusCode(500, err.message);
+			// In the current architecture it causes a lot less pain to just return the empty array
+			if(err) resolve([]);
 			else {
 				// after some benchmarking this seemed to be the fastest possibility to
 				// return a parsed array of JSON objects. This also allows for very fast writes.
@@ -872,5 +895,8 @@ function getDataLog(lid) {
 }
 
 function deleteLog(lid) {
-	fs.unlink(logDir+'/'+lid+'.log');
+	log.info('PG | Deleting log "'+lid+'.log"')
+	fs.unlink(logDir+'/'+lid+'.log', (err) => {
+		if(err) log.info('PG | Log "'+lid+'.log" didn\'t exist!')
+	});
 }

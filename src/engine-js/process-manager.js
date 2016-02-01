@@ -115,6 +115,13 @@ geb.addListener('webhook:event', (oEvt) => {
 
 geb.addListener('rule:new', sendRuleToUser);
 
+geb.addListener('rule:delete', (oEvt) => {
+	sendToWorker(oEvt.uid, {
+		cmd: 'rule:delete',
+		rid: oEvt.rid
+	});
+});
+
 function emitEvent(uid, evt) {
 	let oHook = webhooks.getByUser(uid, evt.hookname);
 	evt.hookid = oHook.id;
@@ -141,7 +148,7 @@ function MPI(uid, username) {
 	return (oMsg) => {
 		let dat = oMsg.data;
 		switch(oMsg.cmd) {
-			case 'log:info': log.info('PM | Child "'+username+'" sent: ' + JSON.stringify(dat));
+			case 'log:info': log.info(dat);
 				break;
 			case 'log:error': log.error(dat);
 				break;

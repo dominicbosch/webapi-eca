@@ -30,7 +30,7 @@ router.post('/get/:id', (req, res) => {
 });
 
 router.post('/getlog/:id', (req, res) => {
-	log.info('SRVC:RULES | Fetching all Rule logs');
+	log.info('SRVC:RULES | Fetching Rule log #'+req.params.id);
 	db.getRuleLog(req.session.pub.id, req.params.id)
 		.then((log) => res.send(log))
 		.catch(db.errHandler(res));
@@ -44,7 +44,7 @@ router.post('/clearlog/:id', (req, res) => {
 });
 
 router.get('/getdatalog/:id', (req, res) => {
-	log.info('SRVC:RULES | Fetching all Rule data logs');
+	log.info('SRVC:RULES | Fetching Rule data logs #'+req.params.id);
 	db.getRuleDataLog(req.session.pub.id, req.params.id)
 		.then((log) => {
 			res.set('Content-Type', 'text/json')
@@ -92,7 +92,10 @@ router.post('/delete', (req, res) => {
 	log.info('SRVC:RULES | Deleting Rule #' +req.body.id);
 	db.deleteRule(req.session.pub.id, req.body.id)
 		.then(() => {
-			geb.emit('rule:delete', req.body.id);
+			geb.emit('rule:delete', {
+				uid: req.session.pub.id,
+				rid: req.body.id
+			});
 			res.send('Rule deleted!')
 		})
 		.catch(db.errHandler(res))

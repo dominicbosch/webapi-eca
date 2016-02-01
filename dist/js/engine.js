@@ -31,6 +31,56 @@ let dynmod = require('./dynamic-modules')
 // Hacky... but alright I guess
 exports.setSend = (sender) => send = sender;
 
+
+function prepareArgumentFunctions(arrRequired, oAvailable, rid) {
+	let arrReturn = [];
+	for(let k = 0; k < arrRequired.length; k++) {
+		let val = oAvailable[arrRequired[k]];
+		if(val===undefined) send.logrule(rid, 'Missing argument: ' + arrRequired[k]);
+		else {
+
+			// Attention! This is magic and needs your full attention ;)
+
+			// We attach event handlers as arguments which expect the event to be handed over in
+			// order to find an answer to the query whenever an event arrives. This is preprocessing to
+			// process events as fast as possible
+			let arg = val.trim();
+			let arrSelectors = arg.match(/#\{(.*?)\}/g);
+			// Only substitute selectors with data if there are any
+			if(!arrSelectors) {
+				arrReturn.push(() => val);
+			} else {
+				let sel = arrSelectors[0];
+				// If the selector is the only argument that is passed, a selector array will be passed
+				// which can be reused in the action dispatcher
+				if(arrSelectors.length===1 && sel===arg) {
+					let selector = sel.substring(2, sel.length-1);
+					// If only one selector is used in a field, the whole resulting object is attached
+					// This is a callback function which will be executed as soon as an event arrives
+					arrReturn.push((evt) => jsonQuery(evt, selector).nodes());
+
+				// If there was more then just a selector in the argument we will pass a string
+				// and substitute all selectors beforehand
+				} else {
+					arrReturn.push((evt) => {
+						let answer = val.trim();
+						for(let k = 0; k < arrSelectors.length; k++) {
+							let sel = arrSelectors[k];
+							let selector = sel.substring(2, sel.length-1);
+							let data = jsonQuery(evt, selector).nodes();
+							if(data.length === 0) data = '[selector "'+arrSelectors[k]+'" did not select any data]';
+							answer = answer.replace(new RegExp(sel, 'g'), data.toString());
+						}
+						return answer;
+					});
+
+				}
+			}
+		}
+	}
+	return arrReturn;
+}
+
 // The parent process does not only send the rule but in it also execution data such as
 // persistence data, function arguments and the action modules required to execute the action
 exports.newRule = (oRule) => {
@@ -45,12 +95,12 @@ exports.newRule = (oRule) => {
 	// Since we can't remove the modules that have been 'required' by the previous modules, this
 	// will likely lead to a filling of the memory and require a restart of the user process from time to time
 	for(let el in oRules[oRule.id].modules) {
-		send.loginfo('UP | Removing module "'+el+'" from rule #'+oRule.id);
+		send.loginfo('UP('+process.pid+') | EN | Removing module "'+el+'" from rule #'+oRule.id);
 		delete oRules[oRule.id].modules[el];
 	}
 
 	send.logrule(oRule.id, 'Rule "'+oRule.name+'" initializes modules ');
-	send.loginfo('UP | Rule "'+oRule.name+'" initializes modules: ');
+	send.loginfo('UP('+process.pid+') | EN | Rule "'+oRule.name+'" initializes modules: ');
 
 	// For each action in the rule we find arguments and the required module (both provided here in the rule)
 	for(let i = 0; i < oRule.actions.length; i++) {
@@ -62,61 +112,16 @@ exports.newRule = (oRule) => {
 
 		// We use this action function for the first time in this rule (might not be the case if it's an update)
 
-		send.loginfo('UP | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
+		send.loginfo('UP('+process.pid+') | EN | Rule "'+oRule.name+'" initializes module -> '+oModule.name);
 		// Got through all action functions
 		for(let j = 0; j < oAction.functions.length; j++) {
 			let oActFunc = oAction.functions[j];
 			let arrRequiredArguments = oModule.functions[oActFunc.name];
-			let oFunc = {
-				name: oActFunc.name,
-				args: []
-			};
-			for(let k = 0; k < arrRequiredArguments.length; k++) {
-				let val = oActFunc.args[arrRequiredArguments[k]];
-				if(val===undefined) send.logrule(oRule.id, 'Missing argument: ' + arrRequiredArguments[k]);
-				else {
-
-					// Attention! This is magic and needs your full attention ;)
-
-					// We attach event handlers as arguments which expect the event to be handed over in
-					// order to find an answer to the query whenever an event arrives. This is preprocessing to
-					// process events as fast as possible
-					let arg = val.trim();
-					let arrSelectors = arg.match(/#\{(.*?)\}/g);
-					// Only substitute selectors with data if there are any
-					if(!arrSelectors) {
-						oFunc.args.push(() => val);
-					} else {
-						let sel = arrSelectors[0];
-						// If the selector is the only argument that is passed, a selector array will be passed
-						// which can be reused in the action dispatcher
-						if(arrSelectors.length===1 && sel===arg) {
-							let selector = sel.substring(2, sel.length-1);
-							// If only one selector is used in a field, the whole resulting object is attached
-							let f = (evt) => {
-								return jsonQuery(evt, selector).nodes()
-							};
-							oFunc.args.push(f);
-
-						// If there was more then just a selector in the argument we will pass a string
-						// and substitute all selectors beforehand
-						} else {
-							oFunc.args.push((evt) => {
-								let answer = val.trim();
-								for(let k = 0; k < arrSelectors.length; k++) {
-									let sel = arrSelectors[k];
-									let selector = sel.substring(2, sel.length-1);
-									let data = jsonQuery(evt, selector).nodes();
-									if(data.length === 0) data = '[selector "'+arrSelectors[k]+'" did not select any data]';
-									answer = answer.replace(new RegExp(sel, 'g'), data.toString());
-								}
-								return answer;
-							});
-
-						}
-					}
-				}
-			}
+			let oFunc = { name: oActFunc.name };
+			// This preprocesses all arguments and checks whether the arguments contain placeholders
+			// which are going to be functions of the arriving events, e.g. #{ .root }, which will
+			// pass the whole event as an argument to the action dispatcher
+			oFunc.args = prepareArgumentFunctions(arrRequiredArguments, oActFunc.args, oRule.id);
 			actFuncs.push(oFunc);
 		}
 
@@ -148,14 +153,15 @@ exports.newRule = (oRule) => {
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
 				send.logrule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
-				send.logworker('UP | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
+				send.logworker('UP('+process.pid+') | EN | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
 			})
 			.catch((err) => send.logerror(err.toString()+'\n'+err.stack))
 	}
 }
 
 
-
+// The possible operators used in the conditions part of a rule in order to
+// compare fields of an event against defined values
 let oOperators = {	
 	'<':  (x, y) => { return (x < y) },
 	'<=': (x, y) => { return (x <= y) },
@@ -241,6 +247,14 @@ function executeAction(rid, uid, aid, evt) {
 }
 
 
-console.log('TODO: UP | Implement delete Rule');
-exports.deleteRule = function(id) {
+exports.deleteRule = function(rid) {
+	send.loginfo('UP('+process.pid+') | EN | Deleting Rule #'+rid+' "'+oRules[rid].rule.name+'"!');
+	for(let el in oRules[rid].modules) {
+		let name = oRules[rid].rule.actionModules[el].name;
+		send.loginfo('UP('+process.pid+') | EN | Removing Action Dispatcher #'+el
+			+' "'+name+'" from rule #'+rid+' and purging its arguments');
+		delete oActArgs[rid][el];
+		delete oRules[rid].modules[el];
+	}
+
 };

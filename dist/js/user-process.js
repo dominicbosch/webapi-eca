@@ -55,11 +55,11 @@ send.startup();
 engine.setSend(send);
 
 process.on('uncaughtException', (err) => {
-	console.log('Your user process produced an error!');
+	console.log('Your user process produced an error! PID #'+process.pid);
 	console.log(err.stack);
 });
 process.on('disconnect', () => {
-	console.log('UP | Shutting down Code Executor');
+	console.log('UP | Shutting down Code Executor with PID #'+process.pid);
 	process.exit();
 });
 
@@ -77,7 +77,7 @@ process.on('message', (oMsg) => {
 			engine.newRule(oMsg.rule);
 		break;
 		case 'rule:delete':
-			engine.deleteRule(oMsg.id);
+			engine.deleteRule(oMsg.rid);
 		break;
 		case 'schedule:start':
 			let sched = oMsg.schedule;
@@ -89,8 +89,11 @@ process.on('message', (oMsg) => {
 		break;
 		case 'schedule:stop':
 			let sid = oMsg.sid;
-			send.logschedule(sid, 'Stopping Schedule!');
-			if(oSchedules[sid] && oSchedules[sid].timer) oSchedules[sid].timer.clear();
+			let obj = oSchedules[sid];
+			send.loginfo('UP ('+process.pid+') | Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
+			send.logschedule(sid, 'Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
+			if(obj && obj.timer) obj.timer.clear();
+			delete oSchedules[sid];
 		break;
 		case 'event':
 			engine.processEvent(oMsg.evt);
@@ -101,6 +104,7 @@ process.on('message', (oMsg) => {
 
 function startSchedule(oExecution) {
 	let oSched = oExecution.schedule;
+	send.loginfo('UP ('+process.pid+') | Starting new Schedule #'+oSched.id+' "'+oSched.name+'"!');
 	// Attach persistent data if it exists
 	let oPers = {};
 	if(oSched.ModPersist) oPers = oSched.ModPersist.data;
@@ -148,5 +152,3 @@ function startSchedule(oExecution) {
 
 }
 
-
-// TODO list all modules the worker process has loaded and tell from which module it was required
