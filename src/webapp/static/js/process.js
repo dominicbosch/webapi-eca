@@ -211,6 +211,7 @@ $(document).ready(function() {
 	function updateButton() {
 		main.post('/service/user/worker/get', { username: selectBox.node().value })
 			.done(function(oWorker) {
+				console.log(oWorker);
 				if(oWorker) {
 					button.text((!oWorker.pid) ? 'Start Worker' : 'Stop Worker');
 					if((oWorker.pid && button.text() === 'Stop Worker') 
