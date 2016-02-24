@@ -129,8 +129,8 @@ function emitEvent(uid, evt) {
 		evt.hookurl = oHook.hookurl;
 		geb.emit('webhook:event', evt);
 	} else {
-		log.warn('PM | Webhook not existing anymore! UID#'+uid+', hook name: '+evt.hooknameook);
-		db.logWorker(uid, 'Webhook not existing anymore: "'+evt.hooknameook+'"');
+		log.warn('PM | Webhook not existing anymore! UID#'+uid+', hook name: '+evt.hookname);
+		db.logWorker(uid, 'Webhook not existing anymore: "'+evt.hookname+'"');
 	}
 }
 

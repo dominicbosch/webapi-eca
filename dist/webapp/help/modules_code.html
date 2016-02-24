@@ -3,6 +3,7 @@ Program code is custom code provided by you which will run in the system for you
 <p>
 <h4 style="font-weight: bold">Available Variables</h4>
 <ul>
+	<li><kbd>modules</kbd>: All NodeJS modules available for this code module are attached to this object by name as property, e.g. var needle = modules['needle'].</li>
 	<li><kbd>exports</kbd>: Attach your executable functions to this object.</li>
 	<li><kbd>globals</kbd>: Global parameters required to run this module. Those need to be provided whenever this code module is used (e.g. in a rule when ran as an Action Dispatcher). They can be defined in the right section on this page under "Required Global Variables"</li>
 	<li><kbd>persistence</kbd>: Everything within this object can be persisted in the database by calling <kbd>persist()</kbd>. <span style="color: firebrick; text-decoration: underline">Depending on the size of the attached object this can be a very expensive operation! Use wisely!</span></li>
