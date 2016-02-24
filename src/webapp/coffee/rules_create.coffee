@@ -120,12 +120,13 @@ fillWebhooks = (oHooks) ->
 		d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:')
 			.append('select').attr('class','mediummarged smallfont')
 		d3Sel.append('option').attr('value', -1).text('No Webhook selected')
+		console.log(oHooks)
 		createWebhookRow = (oHook, owner) ->
 			isSel = if oParams.webhook and oParams.webhook is oHook.hookurl then true else null
 			d3Sel.append('option').attr('value', oHook.id).attr('selected', isSel)
 				.text oHook.hookname+' ('+owner+')'
 		createWebhookRow(oHook, 'yours') for i, oHook of oHooks.private
-		createWebhookRow(oHook, oHook.username) for i, oHook of oHooks.public
+		createWebhookRow(oHook, oHook.User.username) for i, oHook of oHooks.public
 
 # LISTENERS
 # ---------
