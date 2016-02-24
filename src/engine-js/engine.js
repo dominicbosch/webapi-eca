@@ -153,7 +153,8 @@ exports.newRule = (oRule) => {
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
 				send.logrule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
-				send.logworker('UP('+process.pid+') | EN | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
+				send.logworker('Action Dispatcher "'+oModule.name+'" loaded');
+				send.loginfo('UP('+process.pid+') | EN | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
 			})
 			.catch((err) => send.logerror(err.toString()+'\n'+err.stack))
 	}

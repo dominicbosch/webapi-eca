@@ -142,8 +142,9 @@ function startSchedule(oExecution) {
 			// Since module has been loaded succesfully, we now execute it according to the schedule
 			if(oExecution.timer) oExecution.timer.clear();
 			oExecution.timer = later.setInterval(trigger, schedule);
+			send.loginfo('UP ('+process.pid+') | Event Trigger "'+oSched.CodeModule.name+'" loaded for user "'+oSched.User.username+'"');
 			send.logschedule(oSched.id, ' --> Event Trigger "'+oSched.CodeModule.name+'" (v'+oSched.CodeModule.version+') loaded');
-			send.logworker('UP | Event Trigger "'+oSched.CodeModule.name+'" loaded for user #'+oSched.UserId);
+			send.logworker('Event Trigger "'+oSched.CodeModule.name+'" loaded');
 		})
 		.catch((err) => {
 			send.logerror(err.toString()+'\n'+err.stack);

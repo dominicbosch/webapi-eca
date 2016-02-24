@@ -246,11 +246,17 @@ exports.getAllUsers = () => {
 // ## DEDICATED WORKER PROCESS
 // ##
 
+// TODO all logging should go into files since db connection somehow is very slow sadly atm...
+// Either drastically improve DB interaction or change this logging also into files.
+// Anyways how it is at the moment, it is fine because the only logging that is done for the
+// worker is when new modules are loaded, therefore we really should not have a lot of log entries.
+// otherwise we have other problems to solve,  such as training our users to behave ;)
 exports.logWorker = (uid, msg) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getWorker())
 		.then((oWorker) => {
 			if(oWorker) oWorker.update({
+				// and also array_append seems to show very bad performance
 				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))
 			})
 		}).catch(ec);
