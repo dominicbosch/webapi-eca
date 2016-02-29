@@ -90,7 +90,7 @@ process.on('message', (oMsg) => {
 		case 'schedule:stop':
 			let sid = oMsg.sid;
 			let obj = oSchedules[sid];
-			send.loginfo('UP ('+process.pid+') | Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
+			send.loginfo('UP('+process.pid+') | Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
 			send.logschedule(sid, 'Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
 			if(obj && obj.timer) obj.timer.clear();
 			delete oSchedules[sid];
@@ -104,7 +104,7 @@ process.on('message', (oMsg) => {
 
 function startSchedule(oExecution) {
 	let oSched = oExecution.schedule;
-	send.loginfo('UP ('+process.pid+') | Starting new Schedule #'+oSched.id+' "'+oSched.name+'"!');
+	send.loginfo('UP('+process.pid+') | Starting new Schedule #'+oSched.id+' "'+oSched.name+'"!');
 	// Attach persistent data if it exists
 	let oPers = {};
 	if(oSched.ModPersist) oPers = oSched.ModPersist.data;
@@ -145,7 +145,7 @@ function startSchedule(oExecution) {
 			// Execute the trigger immediately so we don't have to wait for the first schedule occurence
 			trigger();
 			oExecution.timer = later.setInterval(trigger, schedule);
-			send.loginfo('UP ('+process.pid+') | Event Trigger "'+oSched.CodeModule.name+'" loaded for user "'+oSched.User.username+'"');
+			send.loginfo('UP('+process.pid+') | Event Trigger "'+oSched.CodeModule.name+'" loaded for user "'+oSched.User.username+'"');
 			send.logschedule(oSched.id, ' --> Event Trigger "'+oSched.CodeModule.name+'" (v'+oSched.CodeModule.version+') loaded');
 			send.logworker('Event Trigger "'+oSched.CodeModule.name+'" loaded');
 		})
