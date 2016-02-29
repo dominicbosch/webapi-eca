@@ -133,6 +133,7 @@ function startSchedule(oExecution) {
 				args.push(func.args[arrArgs[i]]);
 			};
 			let trigger = () => {
+				send.logschedule(oSched.id, 'Polling with "'+func.name+'"');
 				try {
 					oMod[func.name].apply(null, args);
 				} catch(err) {
@@ -141,6 +142,8 @@ function startSchedule(oExecution) {
 			}
 			// Since module has been loaded succesfully, we now execute it according to the schedule
 			if(oExecution.timer) oExecution.timer.clear();
+			// Execute the trigger immediately so we don't have to wait for the first schedule occurence
+			trigger();
 			oExecution.timer = later.setInterval(trigger, schedule);
 			send.loginfo('UP ('+process.pid+') | Event Trigger "'+oSched.CodeModule.name+'" loaded for user "'+oSched.User.username+'"');
 			send.logschedule(oSched.id, ' --> Event Trigger "'+oSched.CodeModule.name+'" (v'+oSched.CodeModule.version+') loaded');
