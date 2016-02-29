@@ -848,7 +848,7 @@ exports.getScheduleDataLog = (uid, sid) => {
 
 exports.clearScheduleDataLog = (uid, sid) => {
 	return checkScheduleExists(uid, sid)
-		.then(() => deleteLog('schedule_data'+sid))
+		.then(() => deleteLog('schedule_data_'+sid))
 		.catch(ec);
 };
 
