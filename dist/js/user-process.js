@@ -118,7 +118,14 @@ function startSchedule(oExecution) {
 				send.logschedule(oSched.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 			}
 		},
-		data: (msg) => send.scheduledatalog({ sid: oSched.id, msg: msg }),
+		data: (dat) => {
+			try {
+				JSON.stringify(dat);
+				send.scheduledatalog({ sid: oSched.id, msg: dat });
+			} catch(err) {
+				send.logschedule(oSched.id, '!!! Error logging your data: '+err.message);
+			}
+		},
 		persist: (data) => send.schedulepersist({ sid: oSched.id, persistence: data }),
 		event: send.event
 	};

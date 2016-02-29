@@ -13,6 +13,7 @@ var log = require('../logging'),
 	moment = require('moment'),
 	fs = require('graceful-fs'),
 	path = require('path'),
+	util = require('util'),
 
 // Internal variables :
 	sequelize,
@@ -446,12 +447,12 @@ function checkRuleExists(uid, rid) {
 }
 
 exports.logRule = (rid, msg) => {
-	setLog('rule_'+rid, msg);
+	return setLog('rule', rid, msg);
 };
 
 exports.getRuleLog = (uid, rid) => {
 	return checkRuleExists(uid, rid)
-		.then(() => getLog('rule_'+rid));
+		.then(() => getLog('rule', rid));
 };
 
 exports.clearRuleLog = (uid, rid) => {
@@ -461,12 +462,12 @@ exports.clearRuleLog = (uid, rid) => {
 };
 
 exports.logRuleData = (rid, data) => {
-	setLogData('rule_data_'+rid, data);
+	return setLogData('rule', rid, data);
 };
 
 exports.getRuleDataLog = (uid, rid) => {
 	return checkRuleExists(uid, rid)
-		.then(() => getDataLog('rule_data_'+rid));
+		.then(() => getDataLog('rule', rid));
 };
 
 exports.clearRuleDataLog = (uid, rid) => {
@@ -821,33 +822,33 @@ function checkScheduleExists(uid, sid) {
 	});
 }
 
-exports.logSchedule = (rid, msg) => {
-	setLog('rule_'+rid, msg);
+exports.logSchedule = (sid, msg) => {
+	return setLog('schedule', sid, msg);
 };
 
-exports.getScheduleLog = (uid, rid) => {
-	return checkScheduleExists(uid, rid)
-		.then(() => getLog('rule_'+rid));
+exports.getScheduleLog = (uid, sid) => {
+	return checkScheduleExists(uid, sid)
+		.then(() => getLog('schedule', sid));
 };
 
-exports.clearScheduleLog = (uid, rid) => {
-	return checkScheduleExists(uid, rid)
-		.then(() => deleteLog('rule_'+rid))
+exports.clearScheduleLog = (uid, sid) => {
+	return checkScheduleExists(uid, sid)
+		.then(() => deleteLog('schedule_'+sid))
 		.catch(ec);
 };
 
-exports.logScheduleData = (rid, data) => {
-	setLogData('schedule_data_'+rid, data);
+exports.logScheduleData = (sid, data) => {
+	return setLogData('schedule', sid, data);
 };
 
-exports.getScheduleDataLog = (uid, rid) => {
-	return checkScheduleExists(uid, rid)
-		.then(() => getDataLog('rule_data_'+rid));
+exports.getScheduleDataLog = (uid, sid) => {
+	return checkScheduleExists(uid, sid)
+		.then(() => getDataLog('schedule', sid));
 };
 
-exports.clearScheduleDataLog = (uid, rid) => {
-	return checkScheduleExists(uid, rid)
-		.then(() => deleteLog('rule_data_'+rid))
+exports.clearScheduleDataLog = (uid, sid) => {
+	return checkScheduleExists(uid, sid)
+		.then(() => deleteLog('schedule_data'+sid))
 		.catch(ec);
 };
 
@@ -857,37 +858,47 @@ exports.clearScheduleDataLog = (uid, rid) => {
 // ## Log
 // ##
 
-function setLog(lid, msg) {
-	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	try {
-		fs.appendFile(logDir+'/'+lid+'.log', msg.substring(0, 255)+'\n');
-	} catch (err) {
+function setLog(mod, id, msg) {
+	return new Promise((resolve, reject) => {
+		msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
+		fs.appendFile(logDir+'/'+mod+'_'+id+'.log', msg.substring(0, 255)+'\n', (err) => {
+			if(err) reject(err);
+			else resolve();
+		});
+	})
+	.catch((err) => {
+		log.info(err);
 		fs.appendFile(logDir+'/'+lid+'.log', 'Error: '+err.message+'\n');
-	}
-}
-function setLogData(lid, data) {
-	let oLogVal = JSON.stringify({
-		timestamp: (new Date()).getTime(),
-		data: data
 	});
-	try {
-		fs.appendFile(logDir+'/'+lid+'.log', JSON.stringify(oLogVal)+'\n');
-	} catch (err) {
-		fs.appendFile(logDir+'/'+lid+'.log', '{"Error": "'+err.message+'"}\n');
-	}
+}
+function setLogData(mod, id, data) {
+	return new Promise((resolve, reject) => {
+		let oLogVal = JSON.stringify({
+			timestamp: (new Date()).getTime(),
+			data: data
+		});
+		fs.appendFile(logDir+'/'+mod+'_data_'+id+'.log', oLogVal+'\n', (err) => {
+			if(err) reject(err);
+			else resolve();
+		});
+	})
+	.catch((err) => {
+		setLog(mod, id, 'Error: '+err.message);
+	});
 }
 
-function getLog(lid) {
+function getLog(mod, id) {
 	return new Promise((resolve, reject) => {
-		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
+		fs.readFile(logDir+'/'+mod+'_'+id+'.log', 'utf-8', (err, data) => {
 			if(err) resolve([]);
 			else resolve(data.split('\n').reverse());
 		})
 	})
 }
-function getDataLog(lid) {
+function getDataLog(mod, id) {
 	return new Promise((resolve, reject) => {
-		fs.readFile(logDir+'/'+lid+'.log', 'utf-8', (err, data) => {
+		fs.readFile(logDir+'/'+mod+'_data_'+id+'.log', 'utf-8', (err, data) => {
+			log.info(err);
 			// In the current architecture it causes a lot less pain to just return the empty array
 			if(err) resolve([]);
 			else {
@@ -896,9 +907,13 @@ function getDataLog(lid) {
 				// since we have one line break too much we append a null (removing the comma at the end was too expensive)
 				let str = '['+data.replace(/\n/g, ',')+'null]';
 				// parse the now valid JSON
-				let res = JSON.parse(str);
-				for(let i = 0; i < res.length; i++) {
-					res[i] = JSON.parse(res[i]);
+				let res;
+				try {
+					res = JSON.parse(str);
+				} catch(err) {
+					log.info('Error parsing data log file of "'+mod+'_data_'+id+'.log": '+err.message);
+					setLog(mod, id, '!!! Error parsing data log file: '+err.message);
+					res = [null];
 				}
 				// and pop the null immediately again
 				res.pop();
@@ -908,9 +923,9 @@ function getDataLog(lid) {
 	})
 }
 
-function deleteLog(lid) {
-	log.info('PG | Deleting log "'+lid+'.log"')
-	fs.unlink(logDir+'/'+lid+'.log', (err) => {
-		if(err) log.info('PG | Log "'+lid+'.log" didn\'t exist!')
+function deleteLog(uniqueID) {
+	log.info('PG | Deleting log "'+uniqueID+'.log"')
+	fs.unlink(logDir+'/'+uniqueID+'.log', (err) => {
+		if(err) log.info('PG | Log "'+uniqueID+'.log" didn\'t exist!')
 	});
 }

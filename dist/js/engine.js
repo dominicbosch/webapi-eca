@@ -145,7 +145,14 @@ exports.newRule = (oRule) => {
 					send.logrule(oRule.id, 'It seems you didn\'t log a string. Only strings are allowed for the function log(msg)');
 				}
 			},
-			data: (msg) => send.ruledatalog({ rid: oRule.id, msg: msg }),
+			data: (dat) => {
+				try {
+					JSON.stringify(dat);
+					send.ruledatalog({ rid: oRule.id, msg: dat });
+				} catch(err) {
+					send.logrule(oRule.id, '!!! Error logging your data: '+err.message);
+				}
+			},
 			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data }),
 			event: (evt) => send.event(evt)
 		};
