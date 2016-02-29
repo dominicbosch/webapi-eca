@@ -182,8 +182,6 @@ let oOperators = {
 
 // Checks whether all conditions of the rule are met by the event.
 function validConditions(evt, rule, uid) {
-	console.log('checking conditions');
-	console.log(evt, rule, uid)
 	if(rule.conditions.length === 0) return true;
 
 	for(let i = 0; i < rule.conditions.length; i++) {	
