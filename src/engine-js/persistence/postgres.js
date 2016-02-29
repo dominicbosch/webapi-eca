@@ -859,14 +859,22 @@ exports.clearScheduleDataLog = (uid, rid) => {
 
 function setLog(lid, msg) {
 	msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
-	fs.appendFile(logDir+'/'+lid+'.log', msg.substring(0, 255)+'\n');
+	try {
+		fs.appendFile(logDir+'/'+lid+'.log', msg.substring(0, 255)+'\n');
+	} catch (err) {
+		fs.appendFile(logDir+'/'+lid+'.log', 'Error: '+err.message+'\n');
+	}
 }
 function setLogData(lid, data) {
 	let oLogVal = JSON.stringify({
 		timestamp: (new Date()).getTime(),
 		data: data
 	});
-	fs.appendFile(logDir+'/'+lid+'.log', JSON.stringify(oLogVal)+'\n');
+	try {
+		fs.appendFile(logDir+'/'+lid+'.log', JSON.stringify(oLogVal)+'\n');
+	} catch (err) {
+		fs.appendFile(logDir+'/'+lid+'.log', '{"Error": "'+err.message+'"}\n');
+	}
 }
 
 function getLog(lid) {
