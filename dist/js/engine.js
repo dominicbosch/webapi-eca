@@ -212,7 +212,7 @@ function validConditions(evt, rule, uid) {
 		}
 	}
 			
-	return true
+	return true;
 }
 
 exports.processEvent = (oEvt) => {

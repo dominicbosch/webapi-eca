@@ -82,6 +82,7 @@ fOnLoad = () ->
 		editor.gotoLine(1, 1);
 
 	main.registerHoverInfo d3.select('#actiontitle'), 'modules_params.html'
+	main.registerHoverInfo d3.select('#conditionstitle'), 'conditions.html'
 
 
 # Preload editting of a Rule
