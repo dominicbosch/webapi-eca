@@ -67,7 +67,8 @@ fOnLoad = function() {
     editor.setValue("\n[\n	{\n		\"selector\": \".nested_property\",\n		\"type\": \"string\",\n		\"operator\": \"<=\",\n		\"compare\": \"has this value\"\n	}\n]");
     return editor.gotoLine(1, 1);
   });
-  return main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
+  main.registerHoverInfo(d3.select('#actiontitle'), 'modules_params.html');
+  return main.registerHoverInfo(d3.select('#conditionstitle'), 'conditions.html');
 };
 
 loadRule = function() {

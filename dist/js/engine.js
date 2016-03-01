@@ -188,31 +188,31 @@ function validConditions(evt, rule, uid) {
 		let cond = rule.conditions[i];
 		let selectedProperty = jsonQuery(evt, cond.selector).nodes();
 		if(selectedProperty.length === 0) {
-			send.logrule(rule.id, 'Error in Rule "'+rule.name+'" Condition not found in event: '+cond.selector);
+			// send.logrule(rule.id, 'Error in Rule "'+rule.name+'" Condition not found in event: '+cond.selector);
 			return false;
 		}
 
 		let op = oOperators[cond.operator];
 		if(!op) {
-			send.logrule(rule.id, 'Error in Rule "'+rule.name+'": Unknown operator: "'+cond.operator
-				+'" use one of ['+Object.keys(oOperators).join('|')+']');
+			send.logrule(rule.id, 'Error: Unknown operator: "'+cond.operator+'"');
 			return false;
 		}
 
 		try {
+			let val;
 			if(cond.type==='string') val = selectedProperty[0];
 			else if(cond.type==='bool') val = selectedProperty[0];
-			else if(cond.type==='value') val = parseFloat(selectedProperty[0]) || 0
+			else if(cond.type==='value') val = parseFloat(selectedProperty[0]) || 0;
+			else  send.logrule(rule.id, 'Error: Unknown type: "'+cond.type+'"!');
 
 			if(!op(val, cond.compare)) return false
 		} catch(err) {
-			send.logrule(rule.id, 'Unhandled Error in Rule "'+rule.name+'": Selector "'+cond.selector
-				+'", Operator "'+cond.operator+'", Compare "'+cond.compare+'"');
+			send.logrule(rule.id, 'Unhandled Error: "'+err.message+'"');
 			return false;
 		}
 	}
 			
-	return true
+	return true;
 }
 
 exports.processEvent = (oEvt) => {
