@@ -8,9 +8,6 @@ var log = require('../logging'),
 
 	Firebase = require('firebase'),
 
-	geb = global.eventBackbone,
-
-	oUsers = {},
 	fb, hostid;
 
 exports.init = (conf) => {

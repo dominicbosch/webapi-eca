@@ -230,9 +230,12 @@ exports.processEvent = (oEvt) => {
 	}
 };
 
-function executeAction(rid, uid, aid, evt) {
+function executeAction(rid, uid, aid, aname, evt) {
 	let arrFuncs = oActArgs[rid][aid];
-	
+	if(!arrFuncs) {
+		send.logrule(rid, 'No action (ActionID #'+aid+') functions exist for execution!');
+		return;
+	}
 	// Go through all functions that need to be executed
 	for(let i = 0; i < arrFuncs.length; i++) {	
 		let func = arrFuncs[i];

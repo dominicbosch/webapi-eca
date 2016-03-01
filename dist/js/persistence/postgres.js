@@ -791,7 +791,9 @@ exports.persistScheduleData = function(sid, data) {
 				.then((oMp) => oRes.schedule.setModPersist(oMp));
 			}
 		})
-		.catch(ec);
+		.catch((err) => {
+			log.info('Error while persisting schedule (ScheduleID #'+sid+') data: '+err.message)
+		});
 }
 
 exports.deleteSchedule = (uid, sid) => {

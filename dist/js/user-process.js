@@ -90,10 +90,15 @@ process.on('message', (oMsg) => {
 		case 'schedule:stop':
 			let sid = oMsg.sid;
 			let obj = oSchedules[sid];
-			send.loginfo('UP('+process.pid+') | Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
-			send.logschedule(sid, 'Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
-			if(obj && obj.timer) obj.timer.clear();
-			delete oSchedules[sid];
+			if(obj) {
+				send.loginfo('UP('+process.pid+') | Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
+				send.logschedule(sid, 'Stopping Schedule #'+sid+' "'+obj.schedule.name+'"!');
+				if(obj.timer) obj.timer.clear();
+				delete oSchedules[sid];
+			} else {
+				send.loginfo('UP('+process.pid+') | Can\'t stop Schedule #'+sid+' because it is not running!');
+				send.logschedule(sid, 'Can\'t stop Schedule #'+sid+' because it is not running!');
+			}
 		break;
 		case 'event':
 			engine.processEvent(oMsg.evt);
