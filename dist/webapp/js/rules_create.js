@@ -50,7 +50,7 @@ fOnLoad = function() {
     $('#input_name').get(0).setSelectionRange(0, 0);
     return $('#input_name').focus();
   })["catch"](function(err) {
-    return main.setInfo(false, err.meesage);
+    return main.setInfo(false, err.message);
   });
   editor = ace.edit("divConditionsEditor");
   editor.setTheme("ace/theme/crimson_editor");
