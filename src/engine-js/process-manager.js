@@ -298,6 +298,11 @@ function decryptScheduleGlobals(oSched) {
 	// Check valid function arguments
 	let exefunc = oSched.execute.functions[0];
 	let arrArgs = oSched.CodeModule.functions[exefunc.name];
+	if(!arrArgs) {
+		db.setErrorSchedule(oSched.UserId, oSched.id, 'Your Event Trigger function "'+exefunc.name+'" is not existing anymore!')
+			.catch((err) => log.error(err));
+		return null;
+	}
 	for(let i = 0; i < arrArgs.length; i++) {
 		if(!exefunc.args[arrArgs[i]]) {
 			db.logSchedule(oSched.id, 'Your Event Trigger seems to have changed!'
