@@ -26,7 +26,7 @@ updateWebhookList = () ->
 				table = $('<table>').attr('class', 'hundredywide').appendTo $ '#table_webhooks'
 				table.append '<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>'
 				createWebhookRow(oHook, true) for hookurl, oHook of oHooks.private
-				createWebhookRow(oHook) for hookurl, oHook of oHooks.public
+				# createWebhookRow(oHook) for hookurl, oHook of oHooks.public
 			else
 				$('#table_webhooks').append $('<h3>').attr('class', 'empty').text 'You don\'t have any active Webhooks!'
 		.fail (err) -> main.setInfo false, 'Unable to get Webhook list: '+err.responseText

@@ -5,7 +5,7 @@ hostUrl = [location.protocol, '//', location.host].join('');
 
 updateWebhookList = function() {
   return main.post('/service/webhooks/get').done(function(oHooks) {
-    var createWebhookRow, hookurl, oHook, prl, pul, ref, ref1, results, table;
+    var createWebhookRow, hookurl, oHook, prl, pul, ref, results, table;
     $('#table_webhooks *').remove();
     prl = oHooks["private"] ? Object.keys(oHooks["private"]).length : 0;
     pul = oHooks["public"] ? Object.keys(oHooks["public"]).length : 0;
@@ -20,15 +20,10 @@ updateWebhookList = function() {
       table = $('<table>').attr('class', 'hundredywide').appendTo($('#table_webhooks'));
       table.append('<tr><th></th><th>Event Name</th><th>Owner</th><th></th><th>Hook Url</th></tr>');
       ref = oHooks["private"];
+      results = [];
       for (hookurl in ref) {
         oHook = ref[hookurl];
-        createWebhookRow(oHook, true);
-      }
-      ref1 = oHooks["public"];
-      results = [];
-      for (hookurl in ref1) {
-        oHook = ref1[hookurl];
-        results.push(createWebhookRow(oHook));
+        results.push(createWebhookRow(oHook, true));
       }
       return results;
     } else {
