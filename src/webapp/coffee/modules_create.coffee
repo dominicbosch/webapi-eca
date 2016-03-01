@@ -94,7 +94,8 @@ fOnLoad = () ->
 
 	main.post('/service/webhooks/get')
 		.done (o) ->
-			arr = o.public.concat(o.private);
+			# arr = o.public.concat(o.private);
+			arr = o.private;
 			if arr.length is 0
 				d3.select('#listWebhooks').text('No Webhooks available!')
 			else

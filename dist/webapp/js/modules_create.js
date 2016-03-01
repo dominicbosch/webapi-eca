@@ -102,7 +102,7 @@ fOnLoad = function() {
   });
   main.post('/service/webhooks/get').done(function(o) {
     var arr;
-    arr = o["public"].concat(o["private"]);
+    arr = o["private"];
     if (arr.length === 0) {
       return d3.select('#listWebhooks').text('No Webhooks available!');
     } else {
