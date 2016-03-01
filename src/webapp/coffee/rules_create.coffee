@@ -53,7 +53,7 @@ fOnLoad = () ->
 		.then () ->
 			$('#input_name').get(0).setSelectionRange(0,0);
 			$('#input_name').focus()
-		.catch (err) -> main.setInfo false, err.toString()
+		.catch (err) -> main.setInfo false, err.meesage
 
 	editor = ace.edit "divConditionsEditor"
 	editor.setTheme "ace/theme/crimson_editor"
