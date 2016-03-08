@@ -95,7 +95,6 @@ fillWebhooks = function(oHooks) {
   } else {
     d3Sel = d3.select('#selectWebhook').append('h3').text('Active Webhooks:').append('select').attr('class', 'mediummarged smallfont');
     d3Sel.append('option').attr('value', -1).text('No Webhook selected');
-    console.log(oHooks);
     createWebhookRow = function(oHook, owner) {
       var isSel;
       isSel = oParams.webhook && oParams.webhook === oHook.hookurl ? true : null;

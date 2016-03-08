@@ -696,7 +696,7 @@ exports.createSchedule = (uid, oSched, cid) => {
 				return o.user.createSchedule(oSched)
 					.then((newSchedule) => newSchedule.setCodeModule(o.module))
 					.then((newSchedule) => {
-						exports.logSchedule(uid, newSchedule.id, 'Schedule created');
+						exports.logSchedule(newSchedule.id, 'Schedule created');
 						return Schedule.findById(newSchedule.id, {
 								include: [
 									CodeModule,
