@@ -1,0 +1,41 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:		  webapi-engine
+# Required-Start:	
+# Required-Stop:	 
+# Default-Start:	 2 3 4 5
+# Default-Stop:	  0 1 6
+# Short-Description: webapi-engine process events
+# Description:	  webapi-engine processes evets and allows the setting up of rules
+### END INIT INFO
+
+# Description:	  webapi-engine processes evets and allows the setting up of rules
+# Author: Dominic Bosch <dominic.bosch.db@gmail.com>
+NAME=start-webapi-engine
+DAEMON_PATH=/opt/webapi-eca
+export PATH=$PATH:/usr/local/bin
+export NODE_PATH=$NODE_PATH:/usr/local/lib/node_modules:$DAEMON_PATH/node_modules
+
+case "$1" in
+  start)
+	echo -n "Starting webapi-engine: "
+	mkdir -p /var/run/forever/
+	exec forever start -p /var/run/forever $DAEMON_PATH/$NAME
+	echo "Done!"
+	;;
+  stop)
+	echo -n "Stopping webapi-engine: "
+  exec forever stop $DAEMON_PATH/$NAME
+	echo "Done!"
+	;;
+  restart)
+	echo "Restarting webapi-engine: "
+  exec forever restart $DAEMON_PATH/$NAME
+	echo "Done!"
+	;;
+  *)
+	echo "Usage: /etc/init.d/webapi-engine {start|stop|restart}"
+	exit 1
+	;;
+esac
+exit 0

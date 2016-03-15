@@ -1,0 +1,92 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<link rel="stylesheet" type="text/css" href="/css/rules.css">
+	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
+	<script type="text/javascript" src="/js/lib/ace-src-min-noconflict/ace.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/js/lib/cryptico.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/js/rules_create.js"></script>
+	<script type="text/javascript" src="/js/function_selection.js"></script>
+{% endblock %}
+
+{% block content %}
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-xs-12">
+				<h3>Rule Name : <input id="input_name" type="text" value="My new Rule"></h3>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<h2 class="capitalized">EVENT</h2>
+				<div id="selectWebhook"></div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<h2 class="capitalized" id="conditionstitle">CONDITIONS</h2>
+			</div>
+		</div>
+		
+		<div class="row">
+			<div class="col-xs-12">
+			Refer to <a target="_blank" href="https://github.com/harthur/js-select#selectors">js-select selectors</a> for valid selectors!<br>
+				<div id="divConditions">
+					<div id="divConditionsEditor">
+	[ ]
+</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row editorSettings">
+			<div class="col-xs-12">
+				<button id="fill_example">Fill with example condition</button>
+				
+				Theme:
+				<select id="editor_theme">
+					<option value="monokai">Monokai</option>
+					<option value="crimson_editor" selected>Crimson Editor</option>
+				</select>
+
+				Font Size: 
+				<select id="editor_font">
+					<option>10px</option>
+					<option>11px</option>
+					<option>12px</option>
+					<option>13px</option>
+					<option selected>14px</option>
+					<option>15px</option>
+					<option>16px</option>
+					<option>18px</option>
+					<option>20px</option>
+					<option>24px</option>
+				</select>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<h2 class="capitalized" id="actiontitle">ACTIONS</h2>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-12" id="functionEmpty">
+				<h3 class="empty">No <b>Action Dispatchers</b> available! <a href="/views/modules_create?m=ad">Create one first!</a></h3>
+			</div>
+			<div class="col-md-5" id="functionList"></div>
+			<div class="col-md-7" id="selectedFunctions">
+				<h3>Selected Actions</h3>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<button id="but_submit">Save Rule</button>
+			</div>
+		</div>
+	</div>
+
+{% endblock %}

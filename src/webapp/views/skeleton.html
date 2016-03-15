@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>{% block title %}WebAPI ECA System{% endblock %}</title>
+		<link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="/css/main.css">
+		<script src="/js/lib/jquery-2.1.3.min.js" type="text/javascript"></script>
+		<script src="/js/lib/d3.v3.min.js" charset="utf-8"></script>
+		<script src="/js/lib/bootstrap.min.js" type="text/javascript"></script>
+		<script src="/js/main.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/js/dialog.js" type="text/javascript" charset="utf-8"></script>
+		<link rel="shortcut icon" type="image/x-icon" href="/images/unibas.ico">
+		{% block head %}{% endblock %}
+	</head>
+	<body data-uid="{{ user.id }}">
+		<div class="container-fluid">
+			<div class="row bannerrow">
+				<div class="banner">
+					<a href="/">
+						<img id="bannerimg" src="/images/uni-basel-logo.svg" class="img-responsive">
+						<!-- <img id="bannerimg" src="/images/unibas_hpwc.svg" class="img-responsive"> -->
+					</a>
+				</div>
+			</div>
+		</div>
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+			<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapsible-navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<!-- <a class="navbar-brand" href="/">Start</a> -->
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="collapsible-navbar">
+					<ul class="nav navbar-nav">
+						{% if user %}
+							<li class="important"><a href="/views/list_et">Event Trigger</a></li>
+							<li class="arrow hidden-xs">⇒</li>
+							<li class="important"><a href="/views/webhooks">Webhook</a></li>
+							<li class="arrow hidden-xs">⇒</li>
+							<li class="important"><a href="/views/rules">Rule</a></li>
+							<li class="arrow hidden-xs">⇒</li>
+							<li class="important"><a href="/views/list_ad">Action Dispatcher</a></li>
+							<li class="arrow hidden-xs">|</li>
+							<li><a href="/views/events">Test</a></li>
+							<li><a href="/views/profile">Profile</a></li>
+							{% if user.isAdmin %}
+								<li><a href="/views/admin">Administration</a></li>
+							{% endif %}
+							<li><a id="skeletonLogout" href="#">Logout</a></li>
+						{% else %}
+							<li><a href="/views/login">Login</a></li>
+						{% endif %}
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		{% block carousel %}{% endblock %}
+		
+		<div id="skeletonTicker" class="infoticker"></div>
+		<div id="mainbody">
+			<h1>{% block pagetitle %}{% endblock %}</h1>
+			{% block content %}{% endblock %}
+		</div>
+
+		<div class="dialog">
+			<div class="window">
+				<h3>Welcome!</h3>
+				<p>It's really nice to have you here!</p>
+				<div style="text-align: center">
+					<button>OK!</button>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

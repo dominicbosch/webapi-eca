@@ -1,0 +1,62 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<script src="/js/lib/cryptico.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/js/list_et.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/js/function_selection.js"></script>
+	<link rel="stylesheet" type="text/css" href="/css/modules.css">
+	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
+{% endblock %}
+
+{% block pagetitle %}Event Trigger{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-xs-12">
+			<a href="/views/modules_create?m=et">Create a new Event Trigger!</a>
+			<table id="tableModules" class="mystyle smallpadded">
+				<thead><tr>
+					<th></th>
+					<th></th>
+					<th>Name</th>
+					<th>Owner</th>
+				</tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-12" id="functionEmpty">
+			<h2>Schedules</h2>
+		</div>
+		<div class="col-xs-12" id="functionEmpty">
+			<a href="/views/schedule_create">Create a new Schedule!</a>
+			<table id="tableSchedules" class="mystyle">
+				<thead><tr>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th>Name</th>
+					<th>Trigger</th>
+					<th>Schedule</th>
+				</tr></thead>
+				<tbody></tbody>
+			</table>			
+		</div>
+		<div class="col-xs-12" id="log_col">
+			<h3></h3>
+			<ul class="consoled smallfont"></ul>
+			<button>Clear Log</button>
+		</div>
+	</div>
+
+
+</div>
+{% endblock %}

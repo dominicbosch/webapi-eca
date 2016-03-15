@@ -1,28 +1,6 @@
 {
   "admin": {
     "password": "7407946a7a90b037ba5e825040f184a142161e4c61d81feb83ec8c7f011a99b0d77f39c9170c3231e1003c5cf859c69bd93043b095feff5cce6f6d45ec513764",
-    "roles": [
-      "admin"
-    ]
-  },
-  "dominic": {
-    "password": "2d51496fbe5b6d3e98e22d68140609eaedd64de457b2f75c346a4a98f87928eac11ea2be747709ae7a2f5b177af09a60a8dbf14bf703e0cb9b147fc0a3e3a064",
-    "roles": [ 
-      "user",
-      "expert"
-    ]
-  },
-  "alexander": {
-    "password": "b6c06f2e1badf7a3a2804163a04026dc97226b0bc920c0466c59a0709b1ea83a8bdc3cb7a4ce82f4205b5a82d1a64484a160939d70d728eec302ebdebc270f30",
-    "roles": [ 
-      "user",
-      "expert"
-    ]
-  },
-  "User": {
-    "password": "7c1c76febef7f6a650902613e2cd8da84ecf2b6ef03cf67c728fae0fe973950e8dbd6fc3c7eaab18129f2a0bc027bed451462b90e264c1758baf6e0fb18662fa",
-    "roles": [ 
-      "user"
-    ]
+    "isAdmin": true
   }
 }

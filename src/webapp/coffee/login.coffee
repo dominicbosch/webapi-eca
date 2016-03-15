@@ -1,22 +1,27 @@
+'use strict';
+
 
 fOnLoad = () ->
-	document.title = 'Login'
-	$( '#pagetitle' ).text 'Login!'
+	$('input').keypress (e) ->
+    	if(e.which is 13)
+    		fSubmit()
 
-	if not window.CryptoJS
-		$( '#info' ).text 'CryptoJS library missing! Are you connected to the internet?'
+	$('#loginButton').click fSubmit
 
-	$( '#but_submit' ).click () ->
-		hp = CryptoJS.SHA3 $( '#password' ).val(),
-			outputLength: 512
-		data =
-			username: $( '#username' ).val()
-			password: hp.toString()
-		$.post( '/login', JSON.stringify( data ) )
-			.done ( data ) ->
-				window.location.href = document.URL
-			.fail ( err ) ->
-				alert 'Authentication not successful!'
+fSubmit = () ->
+	hp = CryptoJS.SHA3 $('#password').val(),
+		outputLength: 512
+	data =
+		username: $('#username').val()
+		password: hp.toString()
+	main.post('/service/session/login', data)
+		.done (data) ->
+			main.setInfo true, 'Authentication successful!'
+			redirect = () ->
+				window.location.href = '/'
+			setTimeout redirect, 500
+		.fail (err) ->
+			main.setInfo false, 'Authentication not successful!'
 
 window.addEventListener 'load', fOnLoad, true
 

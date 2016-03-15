@@ -1,0 +1,36 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+	<script src="/js/rules.js"></script>
+	<link rel="stylesheet" type="text/css" href="/css/rules.css">
+	<link rel="stylesheet" type="text/css" href="/css/functionlist.css">
+{% endblock %}
+
+{% block pagetitle %}Rules{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row" id="hasnorules">
+		<div class="col-xs-12">
+			<h3 class="empty">You don't have any <b>Rules</b>! <a href="/views/rules_create">Create One first!</a></h3>
+		</div>
+	</div>
+	<div class="row" id="hasrules">
+		<div class="col-md-5">
+			<a href="rules_create">Create a new Rule!</a>
+			<div id="tableRules" class="hundredwide">
+				<table class="mystyle">
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+		<div class="col-md-7" id="log_col">
+			<h3></h3>
+			<ul class="consoled smallfont"></ul>
+			<button>Clear Log</button>
+		</div>
+	</div>
+</div>
+
+{% endblock %}
+

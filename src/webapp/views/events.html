@@ -1,0 +1,64 @@
+{% extends 'skeleton.html' %}
+
+{% block head %}
+<script src="/js/lib/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="/js/events.js"></script>
+<script type="text/template" id="eventSource">{"clickername": "{{user.username}}"}</script>
+{% endblock %}
+
+{% block pagetitle %}Test the System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<div class="row" id="eventControls">
+		<h2>Prerequisites:</h2>
+		Before emitting an event, be sure:
+	</div>
+	<div id="tls" class="row">
+		<div class="col-xs-12">
+			<img id="tlwebh" src="/images/tl_red.png" class="icon tl red">
+			 A Webhook listens for your event<span id="info_webhook"></span>
+		</div>
+		<div class="col-xs-11 col-xs-offset-1">
+			<div class="row">
+				<div class="col-sm-5"><select id="sel_webh"></select></div>
+				<div class="col-sm-7">
+					<input id="inp_webh" class="consoled" /><button id="but_webh">Create Webhook</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-xs-12">
+			<img id="tlrule" src="/images/tl_red.png" class="icon tl red"> A Rule is setup on this webhook <span id="info_rule"></span> <button id="but_rule">Create Rule</button>
+		</div>
+	</div>
+	<div class="row">
+		<h2 id="eventbody">Event Body:</h2>
+		<div id="editor"></div>
+	</div>
+	<div class="row editorSettings">
+		Theme: 
+		<select id="editor_theme">
+			<option value="monokai">Monokai</option>
+			<option value="crimson_editor" selected>Crimson Editor</option>
+		</select>
+		Font Size: 
+		<select id="editor_font">
+			<option>10px</option>
+			<option>11px</option>
+			<option>12px</option>
+			<option>13px</option>
+			<option selected>14px</option>
+			<option>15px</option>
+			<option>16px</option>
+			<option>18px</option>
+			<option>20px</option>
+			<option>24px</option>
+		</select>
+	</div>
+	<div class="row">
+		<button id="but_emit">Emit Event</button>
+	</div>
+</div>
+{% endblock %}

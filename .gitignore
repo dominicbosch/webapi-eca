@@ -2,4 +2,6 @@
 *.log
 .project
 .settings
+proc.pid
 node_modules/
+npm-debug.log.*
