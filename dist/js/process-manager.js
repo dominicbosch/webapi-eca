@@ -130,7 +130,7 @@ function emitEvent(uid, evt) {
 		geb.emit('webhook:event', evt);
 	} else {
 		log.warn('PM | Webhook not existing anymore! UID#'+uid+', hook name: '+evt.hookname);
-		db.logWorker(uid, 'Webhook not existing anymore: "'+evt.hookname+'"');
+		db.logWorker(uid, 'Your Webhook "'+evt.hookname+'" not existing! You should either stop emitting events on it or create the webhook!');
 	}
 }
 
