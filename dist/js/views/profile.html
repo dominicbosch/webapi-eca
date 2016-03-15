@@ -12,46 +12,58 @@
 {% block pagetitle %}Profile '{{ user.username }}'{% endblock %}
 
 {% block content %}
-
-		<h2 id="workertitle">Worker</h2>
-		<select id="usernames"></select>
-		<span class="legend load">- CPU</span>
-		<span class="legend heapTotal">- Heap Total</span>
-		<span class="legend heapUsed">- Heap Used</span>
-		<span class="legend rss">- Resident Set Size</span>
-		<span class="legend startup">| Worker Start</span>
-		<span class="legend shutdown">| Worker Shutdown</span>
-		<div class="monitor">
-			<div class="loading"><img src="/images/refresh.png"></div>
-			<svg id="processes-svg" data-admin="{{user.isAdmin}}" data-user="{{user.username}}" data-system="{{system.name}}" style="width: 100%;height: 300px;"></svg>
-		</div>
-		<button id="workerbutton" disabled>Stop Worker</button>
-	
 <div class="container-fluid">
+
 	<div class="row">
-		<h2>Change Password</h2>
-		<table class="padded">
-			<tr>
-				<td>Current Password</td>
-				<td>:</td>
-				<td><input type="password" id="pwcurrent" class="consoled" /></td>
-			</tr>
-			<tr>
-				<td>New Password</td>
-				<td>:</td>
-				<td><input type="password" id="pwnew" class="consoled" /></td>
-			</tr>
-			<tr>
-				<td>Verify New Password</td>
-				<td>:</td>
-				<td><input type="password" id="pwnewverify" class="consoled" /></td>
-			</tr>
-			<tr>
-				<td colspan="3" class="centered">
-					<button id="submit">Submit</button>
-				</td>
-			</tr>
-		</table>
+		<div class="col-md-6">
+			<h2>Worker Log</h2>
+			<div id="log_col" data-username="{{ user.username }}">
+				<ul class="consoled smallfont"></ul>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<h2 id="workertitle">Worker Statistics</h2>
+			<select id="usernames"></select>
+			<span class="legend load">- CPU</span>
+			<span class="legend heapTotal">- Heap Total</span>
+			<span class="legend heapUsed">- Heap Used</span>
+			<span class="legend rss">- Resident Set Size</span>
+			<span class="legend startup">| Worker Start</span>
+			<span class="legend shutdown">| Worker Shutdown</span>
+			<div class="monitor">
+				<div class="loading"><img src="/images/refresh.png"></div>
+				<svg id="processes-svg" data-admin="{{user.isAdmin}}" data-user="{{user.username}}" data-system="{{system.name}}" style="width: 100%;height: 300px;"></svg>
+			</div>
+			<button id="workerbutton" disabled>Stop Worker</button>
+		</div>
+	</div>
+	
+	<div class="row">
+		<div class="col-xs-12">
+			<h2>Change Password</h2>
+			<table class="padded">
+				<tr>
+					<td>Current Password</td>
+					<td>:</td>
+					<td><input type="password" id="pwcurrent" class="consoled" /></td>
+				</tr>
+				<tr>
+					<td>New Password</td>
+					<td>:</td>
+					<td><input type="password" id="pwnew" class="consoled" /></td>
+				</tr>
+				<tr>
+					<td>Verify New Password</td>
+					<td>:</td>
+					<td><input type="password" id="pwnewverify" class="consoled" /></td>
+				</tr>
+				<tr>
+					<td colspan="3" class="centered">
+						<button id="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</div>
 	</div>
 </div>
 {% endblock %}

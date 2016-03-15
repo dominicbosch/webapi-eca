@@ -256,6 +256,7 @@ exports.logWorker = (uid, msg) => {
 	return User.findById(uid, { attributes: [ 'id' ] })
 		.then((oUser) => oUser.getWorker())
 		.then((oWorker) => {
+			msg = moment().format('YYYY/MM/DD HH:mm:ss.SSS (UTCZZ)')+' | '+msg;
 			if(oWorker) oWorker.update({
 				// and also array_append seems to show very bad performance
 				log: sequelize.fn('array_append', sequelize.col('log'), msg.substring(0, 255))

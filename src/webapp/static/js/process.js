@@ -1,7 +1,7 @@
 'use strict';
 
 $(document).ready(function() {
-	main.post('/service/user/worker/memsize')
+	main.post('/service/worker/memsize')
 		.done(function(memsize) {
 			console.log('Current memsize set to '+memsize+'MB')
 		}).fail(function(e) {
@@ -31,7 +31,7 @@ $(document).ready(function() {
 		var cmd = (button.text() === 'Stop Worker') ? 'kill' : 'start'
 		if(cmd==='start' || confirm('Do you really want to kill this process?')) {
 			button.attr('disabled', 'disabled');
-			main.post('/service/user/worker/state/'+cmd, { username: selectBox.node().value })
+			main.post('/service/worker/state/'+cmd, { username: selectBox.node().value })
 				.done(updateButton)
 				.fail(function(err) {
 					alert(err.responseText);
@@ -209,7 +209,7 @@ $(document).ready(function() {
 	}
 	
 	function updateButton() {
-		main.post('/service/user/worker/get', { username: selectBox.node().value })
+		main.post('/service/worker/get', { username: selectBox.node().value })
 			.done(function(oWorker) {
 				console.log(oWorker);
 				if(oWorker) {

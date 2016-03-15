@@ -159,9 +159,10 @@ exports.newRule = (oRule) => {
 		dynmod.runModule(store, oModule, oAction.globals, pers, oModule.User.username)
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
-				send.logrule(oRule.id, ' --> Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded');
-				send.logworker('Action Dispatcher "'+oModule.name+'" loaded');
-				send.loginfo('UP('+process.pid+') | EN | Action Dispatcher "'+oModule.name+'" loaded for user '+oModule.User.username);
+				let msg = 'Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded for rule "'+oRule.name+'"';
+				send.logrule(oRule.id, ' --> '+msg);
+				send.logworker(msg);
+				send.loginfo('UP('+process.pid+') | EN | '+msg+' for user '+oModule.User.username);
 			})
 			.catch((err) => send.logerror(err.toString()+'\n'+err.stack))
 	}

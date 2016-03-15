@@ -8,7 +8,6 @@
 
 // - [Logging](logging.html)
 var log = require('../logging'),
-	pm = require('../process-manager'),
 
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
@@ -20,15 +19,16 @@ var log = require('../logging'),
 
 router.post('/passwordchange', (req, res) => {
 	let uid = req.session.pub.id;
-	db.getUser(uid)
-		.then((oUser) => {
+	let pUser = db.getUser(uid);
+
+	pUser.then((oUser) => {
 			if(req.body.oldpassword !== oUser.password) {
 				db.throwStatusCode(409, 'Wrong Password!');
 			}
-			return oUser;
 		})
 		.then(() => db.updateUserAttribute(uid, 'password', req.body.newpassword))
 		.then(() => {
+			let oUser = pUser.value(); // Get the value of the previously executed promise
 			log.info('SRVC:USER | Password changed for: '+oUser.username+' (#'+oUser.id+')');
 			res.send('Password changed!');
 		})
@@ -54,35 +54,3 @@ router.post('/getall', (req, res) => {
 		.then((arrUsers) => res.send(arrUsers))
 		.catch(db.errHandler(res));
 });
-
-router.post('/worker/state/start', (req, res) => {
-	let uname = req.body.username;
-	let now = (new Date()).getTime();
-	if(arrLastStart[uname] && arrLastStart[uname] > (now - 60*1000)) {
-		res.status(400).send('You can\'t start your worker all the time. Please wait at least one minute!');
-	} else {
-		db.getUserByName(req.body.username)
-			.then((oUser) => pm.startWorker(oUser))
-			.then(() => {
-				res.send('Done');
-				arrLastStart[uname] = now;
-			})
-			.catch(db.errHandler(res));
-	}
-});
-
-router.post('/worker/state/kill', (req, res) => {
-	db.getUserByName(req.body.username)
-		.then((oUser) => pm.killWorker(oUser.id, oUser.username))
-		.then(() => res.send('Done'))
-		.catch(db.errHandler(res));
-});
-
-
-router.post('/worker/get', (req, res) => {
-	db.getWorker(req.body.username)
-		.then((oWorker) => res.send(oWorker))
-		.catch(db.errHandler(res));
-});
-
-router.post('/worker/memsize', (req, res) => { res.send(''+pm.getMaxMem()) });

@@ -109,11 +109,12 @@ process.on('message', (oMsg) => {
 
 function startSchedule(oExecution) {
 	let oSched = oExecution.schedule;
+	let oCM = oSched.CodeModule;
 	send.loginfo('UP('+process.pid+') | Starting new Schedule #'+oSched.id+' "'+oSched.name+'"!');
 	// Attach persistent data if it exists
 	let oPers = {};
 	if(oSched.ModPersist) oPers = oSched.ModPersist.data;
-	send.logschedule(oSched.id, ' --> Loading Event Trigger "'+oSched.CodeModule.name+'"...');
+	send.logschedule(oSched.id, ' --> Loading Event Trigger "'+oCM.name+'"...');
 	let store = {
 		log: (msg) => {
 			try {
@@ -135,11 +136,11 @@ function startSchedule(oExecution) {
 		event: send.event
 	};
 	
-	dynmod.runModule(store, oSched.CodeModule, oSched.execute.globals, oPers, oSched.User.username)
+	dynmod.runModule(store, oCM, oSched.execute.globals, oPers, oSched.User.username)
 		.then((oMod) => {
 			let schedule = later.parse.text(oSched.text);
 			let func = oSched.execute.functions[0];
-			let arrArgs = oSched.CodeModule.functions[func.name];
+			let arrArgs = oCM.functions[func.name];
 			let args = [];
 			for (let i = 0; i < arrArgs.length; i++) {
 				args.push(func.args[arrArgs[i]]);
@@ -157,9 +158,10 @@ function startSchedule(oExecution) {
 			// Execute the trigger immediately so we don't have to wait for the first schedule occurence
 			trigger();
 			oExecution.timer = later.setInterval(trigger, schedule);
-			send.loginfo('UP('+process.pid+') | Event Trigger "'+oSched.CodeModule.name+'" loaded for user "'+oSched.User.username+'"');
-			send.logschedule(oSched.id, ' --> Event Trigger "'+oSched.CodeModule.name+'" (v'+oSched.CodeModule.version+') loaded');
-			send.logworker('Event Trigger "'+oSched.CodeModule.name+'" loaded');
+			let msg = 'Event Trigger "'+oCM.name+'" (v'+oCM.version+') loaded for schedule "'+oSched.name+'"';
+			send.loginfo('UP('+process.pid+') | '+msg);
+			send.logschedule(oSched.id, ' --> '+msg);
+			send.logworker(msg);
 		})
 		.catch((err) => {
 			send.logerror(err.toString()+'\n'+err.stack);
