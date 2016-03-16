@@ -87,26 +87,26 @@ $(document).ready(function() {
 	}
 
 	appendLineToGraph(gPath, 'heapTotal avg', lineFunc(['heapTotal', 'avg']));
-	appendLineToGraph(gPath, 'heapTotal min', lineFunc(['heapTotal', 'min']), '1,1');
-	appendLineToGraph(gPath, 'heapTotal max', lineFunc(['heapTotal', 'max']), '5,5');
+	// appendLineToGraph(gPath, 'heapTotal min', lineFunc(['heapTotal', 'min']), '1,1');
+	// appendLineToGraph(gPath, 'heapTotal max', lineFunc(['heapTotal', 'max']), '5,5');
 
 	appendLineToGraph(gPath, 'heapUsed avg', lineFunc(['heapUsed', 'avg']));
-	appendLineToGraph(gPath, 'heapUsed min', lineFunc(['heapUsed', 'min']), '1,1');
-	appendLineToGraph(gPath, 'heapUsed max', lineFunc(['heapUsed', 'max']), '5,5');
+	// appendLineToGraph(gPath, 'heapUsed min', lineFunc(['heapUsed', 'min']), '1,1');
+	// appendLineToGraph(gPath, 'heapUsed max', lineFunc(['heapUsed', 'max']), '5,5');
 
 	appendLineToGraph(gPath, 'rss avg', lineFunc(['rss', 'avg']));
-	appendLineToGraph(gPath, 'rss min', lineFunc(['rss', 'min']), '1,1');
-	appendLineToGraph(gPath, 'rss max', lineFunc(['rss', 'max']), '5,5');
+	// appendLineToGraph(gPath, 'rss min', lineFunc(['rss', 'min']), '1,1');
+	// appendLineToGraph(gPath, 'rss max', lineFunc(['rss', 'max']), '5,5');
 
 	if(isAdmin) {
 		appendLineToGraph(gPath, 'load avg', lineCPU(['loadavg', 'avg']));
-		appendLineToGraph(gPath, 'load min', lineCPU(['loadavg', 'min']), '1,1');
-		appendLineToGraph(gPath, 'load max', lineCPU(['loadavg', 'max']), '5,5');
+		// appendLineToGraph(gPath, 'load min', lineCPU(['loadavg', 'min']), '1,1');
+		// appendLineToGraph(gPath, 'load max', lineCPU(['loadavg', 'max']), '5,5');
 
 
 		appendLineToGraph(gDB, 'dbsize avg', lineDB(['dbsize', 'avg']));
-		appendLineToGraph(gDB, 'dbsize min', lineDB(['dbsize', 'min']), '1,1');
-		appendLineToGraph(gDB, 'dbsize max', lineDB(['dbsize', 'max']), '5,5');
+		// appendLineToGraph(gDB, 'dbsize min', lineDB(['dbsize', 'min']), '1,1');
+		// appendLineToGraph(gDB, 'dbsize max', lineDB(['dbsize', 'max']), '5,5');
 
 		canvas.append('g')
 			.attr('class', 'y axis load')
