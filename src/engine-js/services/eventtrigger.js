@@ -76,7 +76,7 @@ function storeModule(args) {
 		.then(() => {
 			let options = { globals: {} };
 			for(let el in ab.globals) options.globals[el] = 'dummy';
-			log.info('SRVC:ET | Running ET ', ab.name);
+			log.info('SRVC:ET | Running ET '+ab.name);
 			return dynmod.runStringAsModule(ab.code, ab.lang, args.username, options)
 		})
 		.then((oMod) => {

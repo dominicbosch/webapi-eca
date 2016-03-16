@@ -231,7 +231,7 @@ exports.processEvent = (oEvt) => {
 	}
 };
 
-function executeAction(rid, uid, aid, aname, evt) {
+function executeAction(rid, uid, aid, evt) {
 	let arrFuncs = oActArgs[rid][aid];
 	if(!arrFuncs) {
 		send.logrule(rid, 'No action (ActionID #'+aid+') functions exist for execution!');
