@@ -34,7 +34,6 @@ function fOnLoad() {
 	$('#pwnew').on('input', comparePWs);
 	$('#submit').click(submit);
 
-	// FIXME worker log needs to be deleted too
 	main.post('/service/worker/get', { username: $('#log_col').attr('data-username') })
 		.done(function(data) {
 			d3.select('#log_col')
