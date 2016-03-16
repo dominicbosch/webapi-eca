@@ -38,6 +38,7 @@ exports.broadcast = ( title, message, sound ) ->
 		sound = 'pushover'
 	body =
 		priority: 1
+		title: title
 		sound: sound
 		token: params.appKey
 		user: params.userKey
