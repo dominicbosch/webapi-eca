@@ -49,7 +49,8 @@ $(document).ready(function() {
 
 	var username = svg.attr('data-user');
 	var isAdmin = svg.attr('data-admin') === 'true';
-	var systemname = svg.attr('data-system');
+	var systemname = 'amazon-engine';
+	// var systemname = svg.attr('data-system');
 
 
 	var formatMBs = function(d) { return d3.format(',.0f')(d/1024/1024) };
@@ -163,23 +164,37 @@ $(document).ready(function() {
 			// .concat(arrShutdowns)
 			;
 		// arrTs.push((new Date()).getTime());
+
+		// Since we are only looking at the avg currently we also need to calculate the
+		// maximums of the yAxis depending on the avg and not the max!
+		// memMax = d3.max(
+		// 	arrData.map(function(d) {
+		// 		return d3.max([d.heapTotal.max, d.heapUsed.max, d.rss.max])
+		// 	})
+		// );
+		// cpuMax = d3.max(arrData, function(d) { return d.loadavg.max });
+		// dbMax = d3.max(arrSystemData, function(d) {return d.dbsize.max });
 		memMax = d3.max(
 			arrData.map(function(d) {
-				return d3.max([d.heapTotal.max, d.heapUsed.max, d.rss.max])
+				return d3.max([d.heapTotal.avg, d.heapUsed.avg, d.rss.avg])
 			})
 		);
-		cpuMax = d3.max(arrData, function(d) { return d.loadavg.max });
-		dbMax = d3.max(arrSystemData, function(d) {return d.dbsize.max });
+		cpuMax = d3.max(arrData, function(d) { return d.loadavg.avg });
+		dbMax = d3.max(arrSystemData, function(d) {return d.dbsize.avg });
 
-		scaleX = d3.time.scale().range([0, width])
+		scaleX = d3.time.scale()
+			.range([0, width])
 			.domain(d3.extent(arrTs));
 
-		scaleY = d3.scale.linear().range([height, 0])
+		scaleY = d3.scale.linear()
+			.range([height, 0])
 			.domain([0, memMax]);
 
-		var scaleYCPU = d3.scale.linear().range([height, 0])
+		var scaleYCPU = d3.scale.linear()
+			.range([height, 0])
 			.domain([0, cpuMax]);
-		var scaleYDB = d3.scale.linear().range([height, 0])
+		var scaleYDB = d3.scale.linear()
+			.range([height, 0])
 			.domain([0, dbMax]);
 
 		xAxis = d3.svg.axis().scale(scaleX);//.orient('bottom'),
@@ -270,15 +285,19 @@ $(document).ready(function() {
 	function fetchData(firsttime) {
 		var firsttime = true;
 		fb.child(systemname).on('value', function(snapshot) {
+			
+			var arr, sel, name, oUser;
+
 			if(!suspendUpdates) {
 				allData = snapshot.val();
-				var sel = selectBox.node().value || username;
+				sel = selectBox.node().value || username;
 				selectBox.selectAll('*').remove();
-				for(var name in allData.users) {
-					var arr = allData.users[name].data;
+				for(name in allData.users) {
+					oUser = allData.users[name];
+					arr = oUser.data;
 					if(arr[0].dbsize) systemname = name;
 					// Relink the array so the path gets linked right
-					allData.users[name].data = arr.splice(arr.index+1).concat(arr);
+					oUser.data = arr.splice(oUser.index+1).concat(arr);
 					selectBox.append('option').attr('value', name).text(name);
 				}
 				selectBox.select('[value="'+sel+'"]').property('selected', true);
