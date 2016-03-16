@@ -49,8 +49,7 @@ $(document).ready(function() {
 
 	var username = svg.attr('data-user');
 	var isAdmin = svg.attr('data-admin') === 'true';
-	var systemname = 'amazon-engine';
-	// var systemname = svg.attr('data-system');
+	var systemname = svg.attr('data-system');
 
 
 	var formatMBs = function(d) { return d3.format(',.0f')(d/1024/1024) };
