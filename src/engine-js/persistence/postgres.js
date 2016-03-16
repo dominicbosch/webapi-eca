@@ -264,6 +264,15 @@ exports.logWorker = (uid, msg) => {
 		}).catch(ec);
 };
 
+exports.deleteWorkerLog = (uid, msg) => {
+	return User.findById(uid, { attributes: [ 'id' ] })
+		.then((oUser) => oUser.getWorker())
+		.then((oWorker) => {
+			if(!oWorker) throwStatusCode(404, 'User not found!');
+			else return oWorker.update({ log: [] })
+		});
+};
+
 exports.getWorker = (username) => {
 	return User.findOne({ where: { username: username } })
 		.then((oUser) => {

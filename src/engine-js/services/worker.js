@@ -49,4 +49,10 @@ router.post('/get', isAdminOrUser, (req, res) => {
 		.catch(db.errHandler(res));
 });
 
+router.post('/log/delete', isAdminOrUser, (req, res) => {
+	db.deleteWorkerLog(req.session.pub.id)
+		.then(() => res.send('Worker log deleted!'))
+		.catch(db.errHandler(res));
+});
+
 router.post('/memsize', (req, res) => { res.send(''+pm.getMaxMem()) });
