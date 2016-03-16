@@ -15,13 +15,7 @@
 <div class="container-fluid">
 
 	<div class="row">
-		<div class="col-md-6">
-			<h2>Worker Log</h2>
-			<div id="log_col" data-username="{{ user.username }}">
-				<ul class="consoled smallfont"></ul>
-			</div>
-		</div>
-		<div class="col-md-6">
+		<div class="col-md-12">
 			<h2 id="workertitle">Worker Statistics</h2>
 			<select id="usernames"></select>
 			<span class="legend load">- CPU</span>
@@ -35,6 +29,12 @@
 				<svg id="processes-svg" data-admin="{{user.isAdmin}}" data-user="{{user.username}}" data-system="{{system.name}}" style="width: 100%;height: 300px;"></svg>
 			</div>
 			<button id="workerbutton" disabled>Stop Worker</button>
+		</div>
+		<div class="col-md-12">
+			<h2>Worker Log</h2>
+			<div id="log_col" data-username="{{ user.username }}">
+				<ul class="consoled smallfont"></ul>
+			</div>
 		</div>
 	</div>
 	

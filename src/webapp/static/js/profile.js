@@ -1,3 +1,5 @@
+'use strict';
+
 function fOnLoad() {
 	function comparePWs() {	
 		var pn = $('#pwnew').val();
