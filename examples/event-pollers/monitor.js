@@ -8,7 +8,11 @@
 //   <li><kbd>message</kbd>: the status message</li>
 // </ul>
 var needle = modules.needle;
-var statusCode = -1;
+
+if(!persistence.statusCode) {
+	persistence.statusCode = -1;
+	persist();
+}
 exports.statusChange = function(url, webhookname) {
 	needle.get(url, function(err, resp) {
 		var status = {
@@ -20,11 +24,31 @@ exports.statusChange = function(url, webhookname) {
 			status.code = -1;
 			status.message = err.message;
 		}
-		if(statusCode !== status.code) {
+		if(persistence.statusCode !== status.code) {
 			log('Change detected on "'+url+'"! now: '+status.code);
 			datalog(status);
 			emitEvent(webhookname, status);
-			statusCode = status.code;	
+			persistence.statusCode = status.code;
+			persist();
+		}
+	});
+};
+
+if(!persistence.pageSnippet) {
+	persistence.pageSnippet = '';
+	persist();
+}
+exports.webpageChange = function(url, selector, webhookname) {
+	needle.get(url, function(err, resp) {
+		if(err) log('Error fetching "'+url+'": '+err.message);
+		else {
+			var content = cheerio.load(resp.body)(selector);
+			if(persistence.pageSnippet !== content) {
+				log('Change detected on "'+url+'"! now: '+content);
+				emitEvent(webhookname, { old: persistence.pageSnippet, new: content });
+				persistence.pageSnippet = content;
+				persist();
+			}
 		}
 	});
 };

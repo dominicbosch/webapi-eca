@@ -27,18 +27,12 @@ function fOnLoad() {
 		}
 	}
 	
-	$('input').keypress(function(e) { if(e.which === 13) submit() });
+	$('input').keypress(function(e) {
+		if(e.which === 13) submit();
+	});
 	$('#pwnewverify').on('input', comparePWs);
 	$('#pwnew').on('input', comparePWs);
 	$('#submit').click(submit);
-	$('#logbutton').click(function() {
-		main.post('/service/worker/log/delete')
-			.done(function() {
-				d3.select('#log_col').selectAll('li').remove();
-				main.setInfo(true, 'Worker log deleted!')
-			})
-			.fail(function(err) { main.setInfo(false, err.responseText) });
-	});
 
 	main.post('/service/worker/get', { username: $('#log_col').attr('data-username') })
 		.done(function(data) {

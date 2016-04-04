@@ -57,6 +57,7 @@ engine.setSend(send);
 process.on('uncaughtException', (err) => {
 	console.log('Your user process produced an error! PID #'+process.pid);
 	console.log(err.stack);
+	send.logworker(err.stack);
 });
 process.on('disconnect', () => {
 	console.log('UP | Shutting down Code Executor with PID #'+process.pid);
