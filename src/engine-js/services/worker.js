@@ -10,6 +10,9 @@ let log = require('../logging'),
 	pm = require('../process-manager'),
 	// - External Modules: [express](http://expressjs.com/api.html)
 	express = require('express'),
+
+	arrLastStart = {},
+
 	db = global.db,
 	geb = global.eventBackbone,
 	router = module.exports = express.Router();
