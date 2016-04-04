@@ -156,7 +156,8 @@ exports.newRule = (oRule) => {
 			persist: (data) => send.rulepersist({ rid: oRule.id, cid: oModule.id, persistence: data }),
 			event: (evt) => send.event(evt)
 		};
-		dynmod.runModule(store, oModule, oAction.globals, pers, oModule.User.username)
+		let mid = 'rule['+oRule.name+']->action['+oModule.name+']';
+		dynmod.runModule(store, oModule, oAction.globals, pers, oModule.User.username, mid)
 			.then((oMod) => oRules[oRule.id].modules[oModule.id] = oMod)
 			.then(() => {
 				let msg = 'Action Dispatcher "'+oModule.name+'" (v'+oModule.version+') loaded for rule "'+oRule.name+'"';

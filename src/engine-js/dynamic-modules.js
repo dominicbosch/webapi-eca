@@ -56,13 +56,14 @@ function searchComment(lang, src) {
 }
 
 // Helper function for Event Triggers and Action Dispatchers
-exports.runModule = function(store, oMod, globals, persistence, username) {
+exports.runModule = function(store, oMod, globals, persistence, username, mid) {
 	return new Promise((resolve, reject) => {
 		if(!store || !store.log || !store.data || !store.persist || !store.event) {
 			reject(new Error('No valid store provided!'));
 		} else {
 			let lastEvent = {};
 			let opts = {
+				id: mid,
 				globals: globals || {},
 				modules: oMod.modules,
 				persistence: persistence,

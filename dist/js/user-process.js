@@ -137,7 +137,8 @@ function startSchedule(oExecution) {
 		event: send.event
 	};
 	
-	dynmod.runModule(store, oCM, oSched.execute.globals, oPers, oSched.User.username)
+	let mid = 'schedule['+oSched.name+']->trigger['+oCM.name+']';
+	dynmod.runModule(store, oCM, oSched.execute.globals, oPers, oSched.User.username, mid)
 		.then((oMod) => {
 			let schedule = later.parse.text(oSched.text);
 			let func = oSched.execute.functions[0];
