@@ -31,6 +31,7 @@ window.addEventListener('load', function() {
 	}
 	// Load public key for encryption
 	function afterwards(key) {
+		console.log('initiating');
 		functions.init(false, key);
 	}
 	addPromise('/service/session/publickey', afterwards,
@@ -41,6 +42,7 @@ window.addEventListener('load', function() {
 
 	// Load Actions
 	function checkLength (arr) {
+		console.log('filling', arr);
 		if(arr.length === 0) setEditorReadOnly(true);
 		else functions.fillList(arr);
 	}
