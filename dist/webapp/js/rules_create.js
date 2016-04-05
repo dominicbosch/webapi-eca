@@ -1,7 +1,6 @@
 'use strict';
 
 let editor;
-let strPublicKey = '';
 let arrSelectedActions = [];
 
 function setEditorReadOnly(isReadOnly) {
@@ -16,7 +15,6 @@ function setEditorReadOnly(isReadOnly) {
 // When the document has loaded we really start to execute some logic
 // Most stuff is happening after the document has loaded:
 window.addEventListener('load', function() {
-
 	// First we need to fetch a lot of stuff. If all promises fulfill eventually the rule gets loaded
 	// TODO Yes we could move this above onLoad and also take the loading as a promise and then do all 
 	// the other stuff in order to optimize document loading time. Let's do this another day ;)
@@ -32,7 +30,9 @@ window.addEventListener('load', function() {
 		arrPromises.push(p.then(thenFunc));
 	}
 	// Load public key for encryption
-	function afterwards(key) { strPublicKey = key }
+	function afterwards(key) {
+		functions.init(false, key);
+	}
 	addPromise('/service/session/publickey', afterwards,
 		'Error when fetching public key. Unable to send user specific parameters securely!');
 
@@ -40,7 +40,7 @@ window.addEventListener('load', function() {
 	addPromise('/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks');
 
 	// Load Actions
-	function checkLength (arr) {	
+	function checkLength (arr) {
 		if(arr.length === 0) setEditorReadOnly(true);
 		else functions.fillList(arr);
 	}
@@ -53,13 +53,12 @@ window.addEventListener('load', function() {
 			if(oParams.id === undefined) return null;
 			else return loadRule();
 		})
-		.then(function() { functions.init(false, strPublicKey) })
 		.then(attachListeners)
 		.then(function() {	
 			$('#input_name').get(0).setSelectionRange(0,0);
 			$('#input_name').focus();
 		})
-		.catch(function(err) { main.setInfo(false, err.message) };
+		.catch(function(err) { main.setInfo(false, err.message) });
 
 	editor = ace.edit('divConditionsEditor');
 	editor.setTheme('ace/theme/crimson_editor');
@@ -68,7 +67,7 @@ window.addEventListener('load', function() {
 	editor.setShowPrintMargin(false);
 
 	$('#editor_theme').change(function(el) { editor.setTheme('ace/theme/'+$(this).val()) });
-	$('#editor_font').change(function(el) { editor.setFontSize($(this).val()) };
+	$('#editor_font').change(function(el) { editor.setFontSize($(this).val()) });
 	$('#fill_example').click(function() {
 		editor.setValue(`
 			[
@@ -93,7 +92,6 @@ window.addEventListener('load', function() {
 // -----------
 function loadRule() {
 	return new Promise(function(resolve, reject) {	
-		console.warn('TODO FIXME implement edit rules'); // FIXME
 		main.post('/service/rules/get/'+oParams.id)
 			.done(function(oRule) {
 
@@ -110,9 +108,9 @@ function loadRule() {
 				functions.fillExisting(oRule.actions);
 							
 				resolve('Rule loaded');
+			})
 			.fail(reject);
 		});
-	});
 }
 
 
@@ -165,7 +163,7 @@ function attachListeners() {
 
 			let arrConditions;
 			try {
-				arrConditions = JSON.parse editor.getValue()
+				arrConditions = JSON.parse(editor.getValue());
 			} catch(err) {
 				throw new Error('Parsing of your conditions failed! Needs to be an Array of Strings!');
 			}
@@ -206,5 +204,5 @@ function attachListeners() {
 			main.setInfo(false, 'Error in upload: '+err.message);
 		}
 
-	}
+	});
 }

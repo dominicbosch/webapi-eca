@@ -79,7 +79,8 @@ window.functions =
 				</tr></thead>
 				<tbody></tbody>
 			</table>"""
-	fillList: (arr, name) ->
+			
+	fillList: (arr) ->
 		arrAllFunctions = arr
 		if arr.length > 0
 			d3.select('#functionEmpty').style('display', 'none');

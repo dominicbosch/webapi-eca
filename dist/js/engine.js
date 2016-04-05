@@ -85,12 +85,11 @@ function prepareArgumentFunctions(arrRequired, oAvailable, rid) {
 // persistence data, function arguments and the action modules required to execute the action
 exports.newRule = (oRule) => {
 	if(!oActArgs[oRule.id]) oActArgs[oRule.id] = {}; // New rule
-	if(!oRules[oRule.id]) {
-		oRules[oRule.id] = {
-			rule: oRule,
-			modules: {}
-		}
-	}; // New rule
+	// We overwrite the existing rule and start from scratch
+	oRules[oRule.id] = {
+		rule: oRule,
+		modules: {}
+	}
 	// We don't need any already existing actions for this module anymore because we got fresh ones
 	// Since we can't remove the modules that have been 'required' by the previous modules, this
 	// will likely lead to a filling of the memory and require a restart of the user process from time to time

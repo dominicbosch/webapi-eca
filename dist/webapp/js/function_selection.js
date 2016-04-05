@@ -94,7 +94,7 @@ window.functions = {
     }
     return d3.select('#functionList').html("<h3>Available " + name + "s</h3>\n<table class=\"mystyle\">\n	<thead><tr>\n		<th>Module</th>\n		<th>Owner</th>\n		<th>" + name + " Function</th>\n	</tr></thead>\n	<tbody></tbody>\n</table>");
   },
-  fillList: function(arr, name) {
+  fillList: function(arr) {
     var d3row, d3sel;
     arrAllFunctions = arr;
     if (arr.length > 0) {
