@@ -249,7 +249,7 @@ function executeAction(rid, uid, aid, evt) {
 		}
 
 		try {
-			send.loginfo('Executing function "'+func.name+'" in action #'+aid);
+			send.loginfo('Executing function "'+func.name+'" for user #'+uid+' rule #'+rid+' action #'+aid);
 			oRules[rid].modules[aid][func.name].apply(this, arrPassingArgs);
 		} catch(err) {
 			send.logrule(rid, err.toString());
