@@ -31,7 +31,6 @@ window.addEventListener('load', function() {
 	}
 	// Load public key for encryption
 	function afterwards(key) {
-		console.log('initiating');
 		functions.init(false, key);
 	}
 	addPromise('/service/session/publickey', afterwards,
@@ -40,9 +39,7 @@ window.addEventListener('load', function() {
 	// Load Webhooks
 	addPromise('/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks');
 
-	// Load Actions
 	// function checkLength (arr) {
-	// 	console.log('filling', arr);
 	// 	if(arr.length === 0) setEditorReadOnly(true);
 	// 	else functions.fillList(arr);
 	// }
@@ -51,6 +48,7 @@ window.addEventListener('load', function() {
 	// First we want to load all data, then we want to load a rule if the user edits one
 	// finally we want to attach all the listeners on the document so it works properly
 	Promise.all(arrPromises)
+		// Load Actions, can't be done synchronously with before promises as one inits parts of the DOM...: 
 		.then(function() {
 			return new Promise(function(resolve, reject) {
 				main.post('/service/actiondispatcher/get')
