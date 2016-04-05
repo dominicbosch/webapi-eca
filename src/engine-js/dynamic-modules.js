@@ -141,6 +141,8 @@ function runStringAsModule(code, lang, username, opt) {
 			datalog: opt.datalogger,
 			modules: {},
 			exports: {},
+			setInterval: setInterval,
+			setTimeout: setTimeout,
 			persistence: opt.persistence,
 			persist: () => opt.persist(opt.persistence),
 			emitEvent: opt.emitEvent
