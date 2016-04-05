@@ -41,16 +41,29 @@ window.addEventListener('load', function() {
 	addPromise('/service/webhooks/get', fillWebhooks, 'Unable to fetch Webhooks');
 
 	// Load Actions
-	function checkLength (arr) {
-		console.log('filling', arr);
-		if(arr.length === 0) setEditorReadOnly(true);
-		else functions.fillList(arr);
-	}
-	addPromise('/service/actiondispatcher/get', checkLength, 'Unable to fetch Action Dispatchers');
+	// function checkLength (arr) {
+	// 	console.log('filling', arr);
+	// 	if(arr.length === 0) setEditorReadOnly(true);
+	// 	else functions.fillList(arr);
+	// }
+	// addPromise('/service/actiondispatcher/get', checkLength, 'Unable to fetch Action Dispatchers');
 
 	// First we want to load all data, then we want to load a rule if the user edits one
 	// finally we want to attach all the listeners on the document so it works properly
 	Promise.all(arrPromises)
+		.then(function() {
+			return new Promise(function(resolve, reject) {
+				main.post('/service/actiondispatcher/get')
+					.done(function(arr) {
+						if(arr.length === 0) setEditorReadOnly(true);
+						else functions.fillList(arr);
+						resolve();
+					})
+					.fail(function(err) {
+						reject(new Error('Unable to fetch Action Dispatchers'))
+					})
+				});
+		})
 		.then(function() {	
 			if(oParams.id === undefined) return null;
 			else return loadRule();
