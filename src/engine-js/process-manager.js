@@ -240,6 +240,16 @@ function startWorker(oUser) {
 				db.setWorker(oUser.id, proc.pid)
 					.then(() => {
 						proc.on('message', MPI(oUser.id, oUser.username));
+						proc.on('exit', function(code, signal) {
+							let msg = 'process exited on its own with'
+								+(code?' code "'+code+'"':'')
+								+(signal?' signal "'+signal+'"':'');
+							db.logWorker(oUser.id, 'Your '+msg);
+							log.warn('PROCESS('+pid+') EXIT! User "'+oUser.name+'"\'s '+msg);
+							killWorker(oUser.id, oUser.name).catch(function() {
+								log.error('Unable to kill user "'+oUser.name+'"\'s worker ('+pid+')!')
+							});
+						})
 						sendToWorker(oUser.id, {
 							cmd: 'init',
 							startIndex: id,
@@ -326,7 +336,7 @@ function killWorker(uid, uname) {
 		else {
 			oChildren[uid].kill('SIGINT');
 			log.warn('PM | Killed user process for user ID#'+uid);
-			fb.logState(uname, 'shutdown', (new Date().getTime()))
+			fb.logState(uname, 'shutdown', (new Date().getTime()));
 			db.setWorker(uid, null)
 				.then(() => {
 					oChildren[uid] = null;
