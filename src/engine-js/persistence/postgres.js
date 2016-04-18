@@ -910,7 +910,7 @@ function getLog(mod, id) {
 function getDataLog(mod, id) {
 	return new Promise((resolve, reject) => {
 		fs.readFile(logDir+'/'+mod+'_data_'+id+'.log', 'utf-8', (err, data) => {
-			log.info(err);
+			// log.info(err);
 			// In the current architecture it causes a lot less pain to just return the empty array
 			if(err) resolve([]);
 			else {
