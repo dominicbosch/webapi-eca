@@ -225,13 +225,9 @@ $(document).ready(function() {
 	function updateButton() {
 		main.post('/service/worker/get', { username: selectBox.node().value })
 			.done(function(oWorker) {
-				console.log(oWorker);
 				if(oWorker) {
 					button.text((!oWorker.pid) ? 'Start Worker' : 'Stop Worker');
-					if((oWorker.pid && button.text() === 'Stop Worker') 
-					|| !oWorker.pid && button.text() === 'Start Worker') {
-						button.attr('disabled', null);
-					}
+					button.attr('disabled', null);
 				}
 			})//.fail(() => console.log('failed'));
 	}
