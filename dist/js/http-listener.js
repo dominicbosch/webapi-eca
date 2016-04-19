@@ -94,7 +94,7 @@ exports.init = (conf) => {
 	// If the routing is getting down here, then we didn't find anything to do and
 	// tell the user that he ran into a 404, Not found
 	app.get('*', (req, res, next) => {
-		let err = new Error();
+		let err = new Error('Request from "'+req.ip+'" produced error making '+req.method+' request: '+req.originalUrl);
 		err.status = 404;
 		next(err);
 	});

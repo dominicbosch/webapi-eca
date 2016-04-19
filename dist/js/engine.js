@@ -221,8 +221,8 @@ exports.processEvent = (oEvt) => {
 		let oRule = oRules[el].rule;
 		if(oRule.WebhookId === oEvt.hookid) {
 			if(validConditions(oEvt, oRule)) {
-				send.loginfo('EN | Conditions valid: EVENT FIRED! Hook URL "'
-					+oEvt.hookurl+'" for rule "'+oRule.name+'"');
+				// send.loginfo('EN | Conditions valid: EVENT FIRED! Hook URL "'
+				// 	+oEvt.hookurl+'" for rule "'+oRule.name+'"');
 				for(let i = 0; i < oRule.actions.length; i++) {
 					executeAction(oRule.id, oRule.UserId, oRule.actions[i].id, oEvt)
 				}
@@ -249,7 +249,7 @@ function executeAction(rid, uid, aid, evt) {
 		}
 
 		try {
-			send.loginfo('Executing function "'+func.name+'" for user #'+uid+' rule #'+rid+' action #'+aid);
+			// send.loginfo('Executing function "'+func.name+'" for user #'+uid+' rule #'+rid+' action #'+aid);
 			oRules[rid].modules[aid][func.name].apply(this, arrPassingArgs);
 		} catch(err) {
 			send.logrule(rid, err.toString());
