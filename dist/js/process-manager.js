@@ -245,9 +245,9 @@ function startWorker(oUser) {
 								+(code?' code "'+code+'"':'')
 								+(signal?' signal "'+signal+'"':'');
 							db.logWorker(oUser.id, 'Your '+msg);
-							log.warn('PROCESS('+proc.pid+') EXIT! User "'+oUser.name+'"\'s '+msg);
-							killWorker(oUser.id, oUser.name).catch(function() {
-								log.error('Unable to kill user "'+oUser.name+'"\'s worker ('+pid+')!')
+							log.warn('PROCESS('+proc.pid+') EXIT! User "'+oUser.username+'"\'s '+msg);
+							killWorker(oUser.id, oUser.username).catch(function() {
+								log.error('Unable to kill user "'+oUser.username+'"\'s worker ('+pid+')!')
 							});
 						})
 						sendToWorker(oUser.id, {
